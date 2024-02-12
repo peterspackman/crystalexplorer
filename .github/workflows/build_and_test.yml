@@ -80,20 +80,3 @@ jobs:
       with:
         files: |
           binaries-${{ github.sha }}/*
-
-    - name: Upload binaries to Cloudflare storage
-      run: |
-        aws configure set aws_access_key_id $CF_API_ID
-        aws configure set aws_secret_access_key $CF_API_KEY
-        aws configure set default.region auto      
-        for file_to_copy in binaries-${{ github.sha }}/*; do
-          filename=$(basename $file_to_copy)
-          destination="s3://crystalexplorer-releases/$filename"
-          aws s3 cp  "$destination" --endpoint-url https://$CF_ACCOUNT_ID.r2.cloudflarestorage.com
-        done
-      env:
-        CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-        CF_API_KEY: ${{ secrets.CF_API_KEY}}
-        CF_API_ID: ${{ secrets.CF_API_ID}}
-      working-directory: ${{github.workspace}}/build
-
