@@ -36,3 +36,23 @@ ninja package
 ```
 
 By default this will build the Release version. 
+
+
+## Citation
+
+See the [documentation](https://crystalexplorer.net/docs/how-to-cite), but for basic functionality please cite the following:
+
+```bibtex
+@article{Spackman:oc5008,
+author = "Spackman, Peter R. and Turner, Michael J. and McKinnon, Joshua J. and Wolff, Stephen K. and Grimwood, Daniel J. and Jayatilaka, Dylan and Spackman, Mark A.",
+title = "{{\it CrystalExplorer}: a program for Hirshfeld surface analysis, visualization and quantitative analysis of molecular crystals}",
+journal = "Journal of Applied Crystallography",
+year = "2021",
+volume = "54",
+number = "3",
+pages = "",
+month = "Jun",
+doi = {10.1107/S1600576721002910},
+url = {https://doi.org/10.1107/S1600576721002910},
+}
+```
