@@ -1,0 +1,4 @@
+Checks: '-*,modernize-*,cppcoreguidelines-*,-modernize-use-trailing-return-type'
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+User: prs

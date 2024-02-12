@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="128"
+   height="128"
+   id="svg2"
+   version="1.1"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="check.svg"
+   inkscape:export-filename="/home/prs/git/crystalexplorer/icons/tick.png"
+   inkscape:export-xdpi="132"
+   inkscape:export-ydpi="132">
+  <defs
+     id="defs4">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 606.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 606.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 430.78739 : 1"
+       id="perspective10" />
+    <inkscape:perspective
+       id="perspective2852"
+       inkscape:persp3d-origin="0.5 : 80.333333 : 1"
+       inkscape:vp_z="1 : 80.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 80.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2866"
+       inkscape:persp3d-origin="0.5 : 80.333333 : 1"
+       inkscape:vp_z="1 : 80.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 80.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="3.3440258"
+     inkscape:cx="117.84482"
+     inkscape:cy="59.852171"
+     inkscape:document-units="px"
+     inkscape:current-layer="g2411"
+     showgrid="true"
+     inkscape:window-width="1281"
+     inkscape:window-height="1379"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:document-rotation="0"
+     showguides="false"
+     inkscape:guide-bbox="true"
+     inkscape:snap-grids="true"
+     inkscape:snap-object-midpoints="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid1503" />
+    <sodipodi:guide
+       position="60,67"
+       orientation="0,-1"
+       id="guide1562" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-1004.3622)">
+    <g
+       id="g2291"
+       transform="translate(-243.86558,955.66837)">
+      <g
+         id="g2235">
+        <g
+           id="g2411"
+           transform="matrix(2.7711417,-0.36406031,0.34006393,2.7679856,239.75062,60.880833)">
+          <g
+             id="g2354"
+             style="stroke:#0d0d0d;stroke-opacity:1;fill:#009f00;fill-opacity:1;stroke-width:0.71637741;stroke-miterlimit:4;stroke-dasharray:none">
+            <g
+               id="g2352"
+               style="stroke:#0d0d0d;stroke-opacity:1;fill:#009f00;fill-opacity:1;stroke-width:0.71637741;stroke-miterlimit:4;stroke-dasharray:none">
+              <path
+                 d="m 20.687,38.332 c -2.072,2.072 -5.434,2.072 -7.505,0 L 1.554,26.704 c -2.072,-2.071 -2.072,-5.433 0,-7.504 2.071,-2.072 5.433,-2.072 7.505,0 l 6.928,6.927 c 0.523,0.522 1.372,0.522 1.896,0 L 36.642,7.368 c 2.071,-2.072 5.433,-2.072 7.505,0 0.995,0.995 1.554,2.345 1.554,3.752 0,1.407 -0.559,2.757 -1.554,3.752 z"
+                 id="path2350"
+                 style="stroke:#0d0d0d;stroke-opacity:1;fill:#009f00;fill-opacity:1;stroke-width:0.71637741;stroke-miterlimit:4;stroke-dasharray:none" />
+            </g>
+          </g>
+          <g
+             id="g2356" />
+          <g
+             id="g2358" />
+          <g
+             id="g2360" />
+          <g
+             id="g2362" />
+          <g
+             id="g2364" />
+          <g
+             id="g2366" />
+          <g
+             id="g2368" />
+          <g
+             id="g2370" />
+          <g
+             id="g2372" />
+          <g
+             id="g2374" />
+          <g
+             id="g2376" />
+          <g
+             id="g2378" />
+          <g
+             id="g2380" />
+          <g
+             id="g2382" />
+          <g
+             id="g2384" />
+        </g>
+      </g>
+      <g
+         id="g2237" />
+      <g
+         id="g2239" />
+      <g
+         id="g2241" />
+      <g
+         id="g2243" />
+      <g
+         id="g2245" />
+      <g
+         id="g2247" />
+      <g
+         id="g2249" />
+      <g
+         id="g2251" />
+      <g
+         id="g2253" />
+      <g
+         id="g2255" />
+      <g
+         id="g2257" />
+      <g
+         id="g2259" />
+      <g
+         id="g2261" />
+      <g
+         id="g2263" />
+      <g
+         id="g2265" />
+    </g>
+  </g>
+</svg>

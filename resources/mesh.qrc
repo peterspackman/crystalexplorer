@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/mesh">
+        <file>icosphere.obj</file>
+        <file>cylinder.obj</file>
+    </qresource>
+    <qresource prefix="/resources">
+        <file>elementdata.json</file>
+        <file>elementdata.txt</file>
+        <file>jmol_colours.json</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,15 @@
+add_library(cx_crystal
+    "${CMAKE_CURRENT_SOURCE_DIR}/crystalstructure.cpp"
+)
+
+target_link_libraries(
+    cx_crystal PUBLIC 
+    cx_core
+    occ_crystal 
+)
+
+target_compile_features(cx_crystal PUBLIC cxx_std_20)
+
+target_include_directories(cx_crystal PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)

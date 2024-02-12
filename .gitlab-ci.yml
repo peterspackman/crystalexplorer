@@ -1,0 +1,25 @@
+variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    
+stages:
+    - build
+    - test
+    - deploy
+
+windows build:
+    stage: build
+    tags:
+        - crystalexplorer-release
+    script:
+        - powershell -File ".\scripts\windows_package.ps1"
+    artifacts:
+        paths:
+            - 'build/CrystalExplorer*.exe'
+ 
+
+windows deploy:
+    stage: deploy
+    tags:
+        - crystalexplorer-release
+    script:
+        - echo Deploying

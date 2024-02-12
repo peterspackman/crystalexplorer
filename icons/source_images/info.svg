@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="48"
+   height="48"
+   id="svg2"
+   version="1.1"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="info.svg"
+   inkscape:export-filename="/home/prs/git/crystalexplorer/icons/info.png"
+   inkscape:export-xdpi="352"
+   inkscape:export-ydpi="352">
+  <defs
+     id="defs4">
+    <linearGradient
+       id="linearGradient3655">
+      <stop
+         style="stop-color:#00007e;stop-opacity:1;"
+         offset="0"
+         id="stop3657" />
+      <stop
+         id="stop3663"
+         offset="0.73694384"
+         style="stop-color:#0059d8;stop-opacity:0.64313728;" />
+      <stop
+         style="stop-color:#006ab0;stop-opacity:0.49411765;"
+         offset="1"
+         id="stop3659" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3633">
+      <stop
+         style="stop-color:#002378;stop-opacity:0.16078432;"
+         offset="0"
+         id="stop3635" />
+      <stop
+         style="stop-color:#0036c1;stop-opacity:0.76422763;"
+         offset="1"
+         id="stop3637" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3605">
+      <stop
+         style="stop-color:#000066;stop-opacity:0.24705882;"
+         offset="0"
+         id="stop3615" />
+      <stop
+         style="stop-color:#000066;stop-opacity:0;"
+         offset="1"
+         id="stop3609" />
+    </linearGradient>
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective10" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="13.376104"
+     inkscape:cx="29.890226"
+     inkscape:cy="19.095128"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:snap-grids="false"
+     inkscape:window-width="1972"
+     inkscape:window-height="1156"
+     inkscape:window-x="51"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:document-rotation="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3651"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-1004.3622)">
+    <ellipse
+       style="fill:#4f82fe;stroke:none;stroke-width:1.3049;stroke-linecap:round;stroke-linejoin:bevel;stroke-dasharray:1.3049, 3.91469999999999985;fill-opacity:1"
+       id="path845"
+       cx="23.884241"
+       cy="1028.3052"
+       rx="23.347584"
+       ry="23.347626" />
+    <path
+       style="fill:#4f82fe;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.09179;stroke-opacity:0.995851"
+       id="path2816"
+       cx="24"
+       cy="1028.3622"
+       rx="23.577888"
+       ry="23.458115"
+       inkscape:export-filename="/home/prs/git/crystalexplorer/icons/path2816.png"
+       inkscape:export-xdpi="256"
+       inkscape:export-ydpi="256" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.4388px;line-height:0%;font-family:Georgia;-inkscape-font-specification:'Georgia Bold';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.1199"
+       x="15.243838"
+       y="1083.7906"
+       id="text3647"
+       transform="scale(1.0374741,0.96387952)"><tspan
+         sodipodi:role="line"
+         id="tspan3649"
+         x="15.243838"
+         y="1083.7906"
+         style="font-size:44.695px;line-height:1.25;stroke-width:1.1199">i</tspan></text>
+  </g>
+</svg>

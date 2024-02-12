@@ -1,0 +1,1067 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Crystalx</class>
+ <widget class="QMainWindow" name="Crystalx">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>1080</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>23</width>
+    <height>366</height>
+   </size>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
+  <property name="windowTitle">
+   <string>CrystalExplorer</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1920</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="fileMenu">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="openRecentMenu">
+     <property name="title">
+      <string>Open Recent</string>
+     </property>
+    </widget>
+    <addaction name="fileNewAction"/>
+    <addaction name="fileOpenAction"/>
+    <addaction name="openRecentMenu"/>
+    <addaction name="separator"/>
+    <addaction name="fileSaveAction"/>
+    <addaction name="fileSaveAsAction"/>
+    <addaction name="separator"/>
+    <addaction name="preferencesAction"/>
+    <addaction name="actionExport_As"/>
+   </widget>
+   <widget class="QMenu" name="sceneMenu">
+    <property name="title">
+     <string>Scene</string>
+    </property>
+    <widget class="QMenu" name="menuOrientation">
+     <property name="title">
+      <string>Orientation</string>
+     </property>
+     <addaction name="orientationSaveAsAction"/>
+     <addaction name="orientationSwitchToAction"/>
+    </widget>
+    <addaction name="actionRotateAction"/>
+    <addaction name="actionTranslateAction"/>
+    <addaction name="actionScaleAction"/>
+    <addaction name="separator"/>
+    <addaction name="depthFadingOptionsAction"/>
+    <addaction name="clippingOptionsAction"/>
+    <addaction name="separator"/>
+    <addaction name="animateAction"/>
+    <addaction name="menuOrientation"/>
+    <addaction name="backgroundColorAction"/>
+    <addaction name="actionImport"/>
+   </widget>
+   <widget class="QMenu" name="actionsMenu">
+    <property name="title">
+     <string>Actions</string>
+    </property>
+    <addaction name="completeFragmentsAction"/>
+    <addaction name="generateCellsAction"/>
+    <addaction name="toggleContactAtomsAction"/>
+    <addaction name="showAtomsWithinRadiusAction"/>
+    <addaction name="generateSurfaceAction"/>
+    <addaction name="cloneSurfaceAction"/>
+    <addaction name="calculateEnergiesAction"/>
+    <addaction name="selectAction"/>
+    <addaction name="separator"/>
+    <addaction name="distanceAction"/>
+    <addaction name="angleAction"/>
+    <addaction name="dihedralAction"/>
+    <addaction name="OutOfPlaneBendAction"/>
+    <addaction name="InPlaneBendAction"/>
+    <addaction name="undoLastMeasurementAction"/>
+    <addaction name="separator"/>
+    <addaction name="calculateVoidDomainsAction"/>
+    <addaction name="setFragmentChargesAction"/>
+   </widget>
+   <widget class="QMenu" name="helpMenu">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="helpAboutAction"/>
+    <addaction name="separator"/>
+    <addaction name="crystalExplorerWebsiteAction"/>
+    <addaction name="howtoCiteCrystalExplorerWebsiteAction"/>
+   </widget>
+   <widget class="QMenu" name="displayMenu">
+    <property name="title">
+     <string>Display</string>
+    </property>
+    <widget class="QMenu" name="optionsMoleculeStylePopup">
+     <property name="title">
+      <string>Molecule Style</string>
+     </property>
+    </widget>
+    <widget class="QMenu" name="clearMenu">
+     <property name="title">
+      <string>Delete Crystal</string>
+     </property>
+     <addaction name="clearCurrentCrystalAction"/>
+     <addaction name="clearAllCrystalsAction"/>
+    </widget>
+    <widget class="QMenu" name="showFileMenu">
+     <property name="title">
+      <string>Show File</string>
+     </property>
+     <addaction name="showCifAction"/>
+     <addaction name="separator"/>
+     <addaction name="stdinAction"/>
+     <addaction name="stdoutAction"/>
+     <addaction name="gaussianStdoutAction"/>
+     <addaction name="nwchemStdoutAction"/>
+     <addaction name="psi4OutputAction"/>
+     <addaction name="occOutputAction"/>
+    </widget>
+    <widget class="QMenu" name="selectMenu">
+     <property name="title">
+      <string>Select</string>
+     </property>
+     <addaction name="selectAllAtomsAction"/>
+     <addaction name="selectsAtomsInsideCurrentSurfaceAction"/>
+     <addaction name="selectAtomsOutsideCurrentSurfaceAction"/>
+     <addaction name="selectAtomsOutsideRadiusAction"/>
+     <addaction name="selectSuppressedAtomsAction"/>
+     <addaction name="separator"/>
+     <addaction name="invertSelectionAction"/>
+    </widget>
+    <widget class="QMenu" name="removeMenu">
+     <property name="title">
+      <string>Remove</string>
+     </property>
+     <addaction name="removeIncompleteFragmentsAction"/>
+     <addaction name="removeSelectedAtomsAction"/>
+    </widget>
+    <addaction name="showUnitCellAxesAction"/>
+    <addaction name="showAtomicLabelsAction"/>
+    <addaction name="showHydrogenAtomsAction"/>
+    <addaction name="showSuppressedAtomsAction"/>
+    <addaction name="showSurfaceCapsAction"/>
+    <addaction name="separator"/>
+    <addaction name="energyFrameworksAction"/>
+    <addaction name="optionsMoleculeStylePopup"/>
+    <addaction name="enableMultipleUnitCellBoxesAction"/>
+    <addaction name="cycleDisorderHighlightingAction"/>
+    <addaction name="separator"/>
+    <addaction name="selectMenu"/>
+    <addaction name="removeMenu"/>
+    <addaction name="separator"/>
+    <addaction name="suppressSelectedAtomsAction"/>
+    <addaction name="unsuppressSelectedAtomsAction"/>
+    <addaction name="separator"/>
+    <addaction name="hbondOptionsAction"/>
+    <addaction name="closeContactOptionsAction"/>
+    <addaction name="separator"/>
+    <addaction name="resetCrystalAction"/>
+    <addaction name="clearMenu"/>
+    <addaction name="separator"/>
+    <addaction name="showFileMenu"/>
+   </widget>
+   <addaction name="fileMenu"/>
+   <addaction name="sceneMenu"/>
+   <addaction name="displayMenu"/>
+   <addaction name="actionsMenu"/>
+   <addaction name="helpMenu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>24</height>
+    </size>
+   </property>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>Main Toolbar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="fileOpenAction"/>
+   <addaction name="separator"/>
+   <addaction name="actionRotateAction"/>
+   <addaction name="actionTranslateAction"/>
+   <addaction name="actionScaleAction"/>
+   <addaction name="separator"/>
+   <addaction name="completeFragmentsAction"/>
+   <addaction name="generateCellsAction"/>
+   <addaction name="toggleContactAtomsAction"/>
+   <addaction name="showAtomsWithinRadiusAction"/>
+   <addaction name="generateSurfaceAction"/>
+   <addaction name="cloneSurfaceAction"/>
+   <addaction name="calculateEnergiesAction"/>
+   <addaction name="showCrystalPlanesAction"/>
+   <addaction name="separator"/>
+   <addaction name="selectAction"/>
+   <addaction name="distanceAction"/>
+   <addaction name="angleAction"/>
+   <addaction name="dihedralAction"/>
+   <addaction name="undoLastMeasurementAction"/>
+   <addaction name="separator"/>
+   <addaction name="infoAction"/>
+   <addaction name="experimentalAction"/>
+  </widget>
+  <action name="fileOpenAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/open.png</normaloff>:/images/open.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open CIF</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="fileSaveGraphicsAction">
+   <property name="text">
+    <string>Save Screenshot...</string>
+   </property>
+   <property name="statusTip">
+    <string>Save a .png image (default) or Windows Bitmap (add .bmp)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="fileSaveAnimationAction">
+   <property name="text">
+    <string>Save Animation...</string>
+   </property>
+  </action>
+  <action name="preferencesAction">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Preferences...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+,</string>
+   </property>
+  </action>
+  <action name="editCopyAction">
+   <property name="text">
+    <string>Copy Selected Atoms to Clipboard</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionTranslateAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+    <normaloff>:/images/translate.png</normaloff>:/images/translate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Translate Scene</string>
+   </property>
+   <property name="toolTip">
+    <string>Translate scene (left mouse button)</string>
+   </property>
+   <property name="statusTip">
+    <string>Translate the scene (using the left-mouse button)</string>
+   </property>
+   <property name="whatsThis">
+    <string>Translate the scene (using the left-mouse button)</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+  </action>
+  <action name="actionRotateAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/rotate.png</normaloff>:/images/rotate.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rotate Scene</string>
+   </property>
+   <property name="toolTip">
+    <string>Rotate scene (left mouse button)</string>
+   </property>
+   <property name="statusTip">
+    <string>Rotate the scene (using the left-mouse button)</string>
+   </property>
+   <property name="whatsThis">
+    <string>Rotate the scene (using the left-mouse button)</string>
+   </property>
+   <property name="shortcut">
+    <string>R</string>
+   </property>
+  </action>
+  <action name="actionScaleAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/scale.png</normaloff>:/images/scale.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom In/Out of Scene</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom in/out (left mouse button)</string>
+   </property>
+   <property name="statusTip">
+    <string>Zoom in/out of the scene (using the left mouse button)</string>
+   </property>
+   <property name="whatsThis">
+    <string>Zoom in/out of the scene (using the left mouse button)</string>
+   </property>
+   <property name="shortcut">
+    <string>S</string>
+   </property>
+  </action>
+  <action name="animateAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Animate Scene...</string>
+   </property>
+   <property name="toolTip">
+    <string>Start/Stop animation of the scene</string>
+   </property>
+   <property name="statusTip">
+    <string>Start/Stop animation of the scene</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="cycleDisorderHighlightingAction">
+   <property name="text">
+    <string>Cycle Disorder Highlighting</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="showUnitCellAxesAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Unit Cell Axes</string>
+   </property>
+   <property name="statusTip">
+    <string>Show Crystal Cell Axes (red=a;green=b;blue=c)</string>
+   </property>
+   <property name="whatsThis">
+    <string>Show/Hide crystal cell axes (RGB = abc)</string>
+   </property>
+   <property name="shortcut">
+    <string>U</string>
+   </property>
+  </action>
+  <action name="moleculeHideSelectedMoleculesAction">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Selected Atoms</string>
+   </property>
+  </action>
+  <action name="hideInsideAtomsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Atoms Inside Surface</string>
+   </property>
+  </action>
+  <action name="hideOutsideAtomsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Atoms Outside Surface</string>
+   </property>
+  </action>
+  <action name="hideAtomsOutsideRadiusAction">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Atoms Outside Radius...</string>
+   </property>
+   <property name="toolTip">
+    <string>Hide atoms outside a chosen radius of the selected atom(s)</string>
+   </property>
+  </action>
+  <action name="moleculeUnhideAllAction">
+   <property name="text">
+    <string>Show All</string>
+   </property>
+  </action>
+  <action name="completeFragmentsAction">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/complete_fragment.png</normaloff>:/images/complete_fragment.png</iconset>
+   </property>
+   <property name="text">
+    <string>Complete Fragments</string>
+   </property>
+   <property name="toolTip">
+    <string>Complete fragments</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="toggleContactAtomsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/contact_atoms.png</normaloff>:/images/contact_atoms.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show/Hide Contact Atoms</string>
+   </property>
+   <property name="toolTip">
+    <string>Show/Hide contact atoms</string>
+   </property>
+   <property name="shortcut">
+    <string>X</string>
+   </property>
+  </action>
+  <action name="generateSurfaceAction">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/generate_surface.png</normaloff>:/images/generate_surface.png</iconset>
+   </property>
+   <property name="text">
+    <string>Generate Surface...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="distanceAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/distance.png</normaloff>:/images/distance.png</iconset>
+   </property>
+   <property name="text">
+    <string>Distance</string>
+   </property>
+   <property name="toolTip">
+    <string>Calculate the distance between two seleted objects (responds to atoms &amp; individual surface points)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Shift+D</string>
+   </property>
+  </action>
+  <action name="minDistanceAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>:/images/min_distance.xpm</normaloff>:/images/min_distance.xpm</iconset>
+   </property>
+   <property name="text">
+    <string>Minimum Distance</string>
+   </property>
+   <property name="toolTip">
+    <string>Calculate the minimum distance between two selected objects</string>
+   </property>
+  </action>
+  <action name="angleAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/angle.png</normaloff>:/images/angle.png</iconset>
+   </property>
+   <property name="text">
+    <string>Angle</string>
+   </property>
+   <property name="toolTip">
+    <string>Angle between selected entities</string>
+   </property>
+   <property name="statusTip">
+    <string>Evaluate the angle between three right-selected entities</string>
+   </property>
+   <property name="whatsThis">
+    <string>Evaluate the angle between three right-selected entities</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Shift+A</string>
+   </property>
+  </action>
+  <action name="dihedralAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/dihedral.png</normaloff>:/images/dihedral.png</iconset>
+   </property>
+   <property name="text">
+    <string>Dihedral Angle</string>
+   </property>
+   <property name="toolTip">
+    <string>The dihedral angle between four atoms</string>
+   </property>
+  </action>
+  <action name="OutOfPlaneBendAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Out of Plane Bend Angle</string>
+   </property>
+  </action>
+  <action name="InPlaneBendAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>In Plane Bend Angle</string>
+   </property>
+  </action>
+  <action name="helpAboutAction">
+   <property name="text">
+    <string>&amp;About...</string>
+   </property>
+   <property name="toolTip">
+    <string>About CrystalExplorer</string>
+   </property>
+   <property name="statusTip">
+    <string>About the CrystalExplorer program</string>
+   </property>
+   <property name="whatsThis">
+    <string>About the CrystalExplorer program</string>
+   </property>
+  </action>
+  <action name="crystalExplorerWebsiteAction">
+   <property name="text">
+    <string>CrystalExplorer Website...</string>
+   </property>
+  </action>
+  <action name="selectAction">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/measurement_arrow.png</normaloff>:/images/measurement_arrow.png</iconset>
+   </property>
+   <property name="text">
+    <string>Enable Selection Mode</string>
+   </property>
+   <property name="toolTip">
+    <string>Selection Tool</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+S</string>
+   </property>
+  </action>
+  <action name="showSurfaceCapsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show Surface Caps</string>
+   </property>
+  </action>
+  <action name="showAtomicLabelsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Atom Labels</string>
+   </property>
+  </action>
+  <action name="stdoutAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/tonto_ok.png</normaloff>:/images/tonto_ok.png</iconset>
+   </property>
+   <property name="text">
+    <string>Tonto Output</string>
+   </property>
+  </action>
+  <action name="gaussianStdoutAction">
+   <property name="text">
+    <string>Gaussian Output</string>
+   </property>
+  </action>
+  <action name="fileSaveAsAction">
+   <property name="text">
+    <string>Save As...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save project as...</string>
+   </property>
+  </action>
+  <action name="showHydrogenAtomsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Hydrogen Atoms</string>
+   </property>
+  </action>
+  <action name="fileSaveAction">
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="toolTip">
+    <string>Save project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="generateCellsAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/expand_cells.png</normaloff>:/images/expand_cells.png</iconset>
+   </property>
+   <property name="text">
+    <string>Generate Unit Cells</string>
+   </property>
+   <property name="toolTip">
+    <string>Generate Unit Cells</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+G</string>
+   </property>
+  </action>
+  <action name="clearCurrentCrystalAction">
+   <property name="text">
+    <string>Current</string>
+   </property>
+  </action>
+  <action name="clearAllCrystalsAction">
+   <property name="text">
+    <string>All</string>
+   </property>
+  </action>
+  <action name="showAtomsWithinRadiusAction">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/radial_cluster.png</normaloff>:/images/radial_cluster.png</iconset>
+   </property>
+   <property name="text">
+    <string>Generate Atoms Within Radius...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="undoLastMeasurementAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/undo_measurement.png</normaloff>:/images/undo_measurement.png</iconset>
+   </property>
+   <property name="text">
+    <string>Undo Last Measurement</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="showCifAction">
+   <property name="text">
+    <string>CIF</string>
+   </property>
+  </action>
+  <action name="howtoCiteCrystalExplorerWebsiteAction">
+   <property name="text">
+    <string>How to Cite CrystalExplorer...</string>
+   </property>
+  </action>
+  <action name="closeContactOptionsAction">
+   <property name="text">
+    <string>Close Contacts...</string>
+   </property>
+  </action>
+  <action name="hbondOptionsAction">
+   <property name="text">
+    <string>Hydrogen Bonds...</string>
+   </property>
+  </action>
+  <action name="depthFadingOptionsAction">
+   <property name="text">
+    <string>Depth Fading...</string>
+   </property>
+  </action>
+  <action name="clippingOptionsAction">
+   <property name="text">
+    <string>Clipping...</string>
+   </property>
+  </action>
+  <action name="backgroundColorAction">
+   <property name="text">
+    <string>Background Color...</string>
+   </property>
+  </action>
+  <action name="orientationSaveAsAction">
+   <property name="text">
+    <string>Save As...</string>
+   </property>
+  </action>
+  <action name="orientationSwitchToAction">
+   <property name="text">
+    <string>Switch to...</string>
+   </property>
+  </action>
+  <action name="hideAllAtomsAction">
+   <property name="text">
+    <string>All Atoms</string>
+   </property>
+  </action>
+  <action name="removeIncompleteFragmentsAction">
+   <property name="text">
+    <string>Incomplete Fragments</string>
+   </property>
+  </action>
+  <action name="resetCrystalAction">
+   <property name="text">
+    <string>Reset Crystal</string>
+   </property>
+  </action>
+  <action name="fileNewAction">
+   <property name="text">
+    <string>New</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="stdinAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/tonto_ok.png</normaloff>:/images/tonto_ok.png</iconset>
+   </property>
+   <property name="text">
+    <string>Tonto Input</string>
+   </property>
+  </action>
+  <action name="cloneSurfaceAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/clone_surface.png</normaloff>:/images/clone_surface.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clone Surface</string>
+   </property>
+   <property name="toolTip">
+    <string>Clone Surface</string>
+   </property>
+  </action>
+  <action name="experimentalAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/x.png</normaloff>:/images/x.png</iconset>
+   </property>
+   <property name="text">
+    <string>Experimental</string>
+   </property>
+   <property name="toolTip">
+    <string>Experimental</string>
+   </property>
+  </action>
+  <action name="showSuppressedAtomsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Suppressed Atoms</string>
+   </property>
+  </action>
+  <action name="enableMultipleUnitCellBoxesAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Enable Multiple Unit Cell Boxes</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+U</string>
+   </property>
+  </action>
+  <action name="selectAllAtomsAction">
+   <property name="text">
+    <string>All Atoms</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+A</string>
+   </property>
+  </action>
+  <action name="suppressSelectedAtomsAction">
+   <property name="text">
+    <string>Suppress Selected Atoms</string>
+   </property>
+  </action>
+  <action name="selectsAtomsInsideCurrentSurfaceAction">
+   <property name="text">
+    <string>Atoms Inside Current Surface</string>
+   </property>
+  </action>
+  <action name="selectAtomsOutsideCurrentSurfaceAction">
+   <property name="text">
+    <string>Atoms Outside Current Surface</string>
+   </property>
+  </action>
+  <action name="selectAtomsOutsideRadiusAction">
+   <property name="text">
+    <string>Atoms Outside Radius...</string>
+   </property>
+  </action>
+  <action name="removeSelectedAtomsAction">
+   <property name="text">
+    <string>Selected Atoms</string>
+   </property>
+  </action>
+  <action name="selectSuppressedAtomsAction">
+   <property name="text">
+    <string>Suppressed Atoms</string>
+   </property>
+  </action>
+  <action name="actionSupressed_Atoms">
+   <property name="text">
+    <string>Supressed Atoms</string>
+   </property>
+  </action>
+  <action name="unsuppressSelectedAtomsAction">
+   <property name="text">
+    <string>Unsuppress Selected Atoms</string>
+   </property>
+  </action>
+  <action name="calculateEnergiesAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/energy.png</normaloff>:/images/energy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Calculate Energies...</string>
+   </property>
+   <property name="toolTip">
+    <string>Calculate Energies</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="infoAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/info.png</normaloff>:/images/info.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Crystal Information...</string>
+   </property>
+   <property name="toolTip">
+    <string>Show Crystal Information</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
+   </property>
+  </action>
+  <action name="togglePairHighlightingAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Toggle Pair Highlighting</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Y</string>
+   </property>
+  </action>
+  <action name="calculateVoidDomainsAction">
+   <property name="text">
+    <string>Calculate Void Domains</string>
+   </property>
+  </action>
+  <action name="energyFrameworkCutoffAction">
+   <property name="text">
+    <string>Energy Framework Cutoff...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="energyFrameworkScaleAction">
+   <property name="text">
+    <string>Energy Framework Scale...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
+   </property>
+  </action>
+  <action name="energyFrameworksAction">
+   <property name="text">
+    <string>Energy frameworks...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="setFragmentChargesAction">
+   <property name="text">
+    <string>Fragment charges/mulitplicities...</string>
+   </property>
+   <property name="toolTip">
+    <string>Set the charges and/or mulitplicities for specific fragments</string>
+   </property>
+  </action>
+  <action name="invertSelectionAction">
+   <property name="text">
+    <string>Invert Selection</string>
+   </property>
+  </action>
+  <action name="nwchemStdoutAction">
+   <property name="text">
+    <string>Show NWChem Output</string>
+   </property>
+  </action>
+  <action name="psi4OutputAction">
+   <property name="text">
+    <string>Psi4 Output</string>
+   </property>
+   <property name="toolTip">
+    <string>Show Psi4 Output</string>
+   </property>
+  </action>
+  <action name="actionExport_As">
+   <property name="text">
+    <string>Export As...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+E</string>
+   </property>
+  </action>
+  <action name="occOutputAction">
+   <property name="text">
+    <string>Occ Output</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import...</string>
+   </property>
+  </action>
+  <action name="showCrystalPlanesAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/plane_icon.png</normaloff>:/images/plane_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Crystal Planes...</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../icons/crystalexplorer.qrc"/>
+  <include location="../icons/crystalexplorer.qrc"/>
+ </resources>
+ <connections/>
+</ui>
