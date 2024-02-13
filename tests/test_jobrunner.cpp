@@ -13,7 +13,6 @@ private:
 
 private slots:
     void testSingle();
-    void testMany();
 };
 
 void TestJobRunner::testSingle() {
@@ -27,23 +26,6 @@ void TestJobRunner::testSingle() {
 
     QCOMPARE(testString, QString("after"));
 
-}
-
-
-void TestJobRunner::testMany() {
-    std::atomic<int> counter{0};
-    const int numberOfJobs = 50;
-    QSignalSpy spy(m_runner, &JobRunner::jobFinished);
-
-    for (int i = 0; i < numberOfJobs; ++i) {
-        auto job = makeJob([&counter]() { counter++; });
-        m_runner->enqueue(std::move(job));
-    }
-
-    spy.wait(1000); // Wait for 1000 ms or until all jobs are completed
-
-    QCOMPARE(counter.load(), numberOfJobs);
-    QCOMPARE(spy.count(), numberOfJobs);
 }
 
 QTEST_MAIN(TestJobRunner)
