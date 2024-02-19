@@ -5,6 +5,7 @@ add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/interactions.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/isosurface.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/mesh.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/taskrunner.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/volume.cpp"
 )
 
@@ -12,7 +13,7 @@ target_link_libraries(
     cx_core PUBLIC 
     Qt6::Core Qt6::Gui
     Eigen3::Eigen sbf_cpp fmt::fmt
-    occ_core 
+    occ_core Taskflow
 )
 
 target_compile_features(cx_core PUBLIC cxx_std_20)

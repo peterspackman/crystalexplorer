@@ -40,7 +40,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     infodocuments.cpp
     infoviewer.cpp
     jobparameters.cpp
-    jobrunner.cpp
     measurement.cpp
     nwcheminterface.cpp
     occinterface.cpp
@@ -114,7 +113,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     infodocuments.h
     infoviewer.h
     jobparameters.h
-    jobrunner.h
     measurement.h
     nwcheminterface.h
     occinterface.h

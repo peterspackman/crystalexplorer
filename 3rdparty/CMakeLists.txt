@@ -41,3 +41,10 @@ if("${gemmi_ADDED}")
     add_library(gemmi::gemmi INTERFACE IMPORTED GLOBAL)
     target_include_directories(gemmi::gemmi INTERFACE "${gemmi_SOURCE_DIR}/include")
 endif()
+
+CPMAddPackage(
+    NAME taskflow
+    GITHUB_REPOSITORY taskflow/taskflow
+    VERSION "3.6.0"
+    OPTIONS "TF_BUILD_TESTS OFF" "TF_BUILD_EXAMPLES OFF"
+)

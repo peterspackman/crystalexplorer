@@ -7,6 +7,7 @@ enum class AtomFlag : int {
   Contact = 0x2,
   Suppressed = 0x4,
   CustomColor = 0x8,
+  Fixed = 0x16
 };
 
 Q_DECLARE_FLAGS(AtomFlags, AtomFlag);
