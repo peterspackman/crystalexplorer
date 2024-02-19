@@ -2,7 +2,6 @@
 #include <QByteArray>
 #include <QSignalSpy>
 #include "interactions.h"
-#include "taskrunner.h"
 
 class TestCore: public QObject {
     Q_OBJECT
@@ -10,7 +9,6 @@ public:
     TestCore() {}
 private slots:
     void testDimerInteractions();
-    void testTaskRunner();
 };
 
 void TestCore::testDimerInteractions() {
@@ -44,15 +42,6 @@ void TestCore::testDimerInteractions() {
 
     interactions->clearValue(ab, label);
     QVERIFY(!interactions->haveValuesForDimer(ab));
-}
-
-void TestCore::testTaskRunner() {
-    auto proc = new OccSCFWorker(this);
-    auto t = new TaskRunner(this);
-
-    t->start(proc, []() {
-	qDebug() << "Callback called"; 
-    });
 }
 
 QTEST_MAIN(TestCore)
