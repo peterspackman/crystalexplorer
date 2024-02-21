@@ -12,7 +12,7 @@ target_link_libraries(
     cx_core PUBLIC 
     Qt6::Core Qt6::Gui Qt6::Concurrent
     Eigen3::Eigen sbf_cpp fmt::fmt
-    occ_core Taskflow
+    occ_core
 )
 
 target_compile_features(cx_core PUBLIC cxx_std_20)
