@@ -3,10 +3,13 @@ name: CMake
 on:
   push:
     branches: [ "main" ]
+    tags: "v*"
   pull_request:
     branches: [ "main" ]
+    tags: "v*"
   workflow_dispatch:
     branches: [ "main" ]
+    tags: "v*"
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
