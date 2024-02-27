@@ -30,7 +30,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: lukka/get-cmake@latest
 
     - name: Cache CPM Dependencies and build dir
       uses: actions/cache@v3
@@ -46,19 +45,8 @@ jobs:
         version: 6.6.2
         cache: true
 
-
-    - name: Configure CMake (Windows)
-      if: matrix.os == 'windows-latest'
-      shell: cmd
-      run: |
-        CALL "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath > "vs_path.txt"
-        SET /p VSPATH=<vs_path.txt
-        CALL "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat"
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -GNinja
-
-      # should be no op on windows
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -GNinja
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
