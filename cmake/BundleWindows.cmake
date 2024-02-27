@@ -16,4 +16,4 @@ configure_file(
     ${PROJECT_SOURCE_DIR}/scripts/setup.iss.in
     ${PROJECT_BINARY_DIR}/setup.iss
 )
-
+find_program(WINDEPLOYQT_COMMAND NAMES windeployqt HINTS "${CMAKE_PREFIX_PATH}/bin")

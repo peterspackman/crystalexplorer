@@ -84,7 +84,9 @@ endif()
 
 
 if(APPLE)
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/PackageMacOS.cmake")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/PackageMacOS.cmake")
+elseif(WIN32)
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/PackageWindows.cmake")
 endif(APPLE)
 
 include(CPack)
