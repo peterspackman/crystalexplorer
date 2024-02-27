@@ -1,6 +1,7 @@
 add_subdirectory(occ)
 add_subdirectory(config)
 add_subdirectory(core)
+add_subdirectory(exe)
 add_subdirectory(io)
 add_subdirectory(crystal)
 add_subdirectory(graphics)
@@ -200,6 +201,7 @@ qt_add_library(cx STATIC
 target_link_libraries(
     cx PUBLIC 
     cx_core
+    cx_exe
     cx_io
     cx_crystal
     cx_graphics
