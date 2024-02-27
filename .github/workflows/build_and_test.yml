@@ -46,6 +46,15 @@ jobs:
         version: 6.6.2
         cache: true
 
+
+    - name: Setup Visual Studio Environment for Windows
+      if: matrix.os == 'windows-latest'
+      shell: cmd
+      run: |
+        CALL "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath > "vs_path.txt"
+        SET /p VSPATH=<vs_path.txt
+        CALL "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat"
+
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -GNinja
 

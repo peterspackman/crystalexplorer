@@ -52,12 +52,27 @@ namespace interaction {
     };
 }
 
+struct ExternalProgramResult {
+    int exitCode{1};
+    QString errorMessage{};
+    QString stdoutContents;
+    QString stderrContents;
+    inline bool success() const { return exitCode == 0; }
+};
+
 
 class ExternalProgram {
+public:
+    ExternalProgram(const QString &location);
     virtual QPromise<wfn::Result> wavefunction(const wfn::Parameters&) = 0;
+    virtual QPromise<surface::Result> surface(const surface::Parameters&) = 0;
+    virtual QPromise<interaction::Result> interaction(const interaction::Parameters&) = 0;
+private:
+    QString m_executableLocation;
 };
 
 
 
-};
+ExternalProgramResult runExternalProgramBlocking(const QString& exePath, const QStringList& arguments, const QString& workingDirectory);
 
+}
