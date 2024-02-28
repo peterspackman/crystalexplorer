@@ -1,16 +1,19 @@
 #include "externalprogram.h"
 
 
-namespace exe {
-class Occ : exe::ExternalProgram {
+class OccWavefunctionTask : public ExternalProgramTask {
 
 public:
-    Occ(const QString &location);
-    QPromise<wfn::Result> wavefunction(const wfn::Parameters&) override;;
-    QPromise<surface::Result> surface(const surface::Parameters&) override;
-    QPromise<interaction::Result> interaction(const interaction::Parameters&) override;
+    explicit OccWavefunctionTask(QObject * parent = nullptr);
+
+    void setBasisSetDirectory(const QString &d);
+
+    void setWavefunctionParameters(const exe::wfn::Parameters &);
+
+    virtual void start() override;
+
 private:
-
+    exe::wfn::Parameters m_parameters;
+    QString m_wavefunctionSuffix{".json"};
+    QString m_basisSetDirectory;
 };
-
-}
