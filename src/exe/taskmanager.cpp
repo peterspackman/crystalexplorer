@@ -43,6 +43,12 @@ void TaskManager::runBlocking(TaskID id) {
 
     QEventLoop loop;
     QObject::connect(task, &Task::completed, &loop, &QEventLoop::quit);
+    QObject::connect(task, &Task::progressText, [](QString text) {
+	qDebug() << "@" << text;
+    });
+    QObject::connect(task, &Task::progress, [](int progress) {
+	qDebug() << "@prog" << progress;
+    });
     task->start();
     loop.exec();
 }

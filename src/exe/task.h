@@ -24,6 +24,9 @@ protected:
 	    watcher, &Watcher::progressValueChanged, this, &Task::progress);
 
 	QObject::connect(
+	    watcher, &Watcher::progressTextChanged, this, &Task::progressText);
+
+	QObject::connect(
 	    watcher, &Watcher::finished, watcher, &Watcher::deleteLater);
 
 	auto future = QtConcurrent::run([=](QPromise<void> &promise) {
@@ -37,6 +40,7 @@ private:
 
 signals:
     void progress(int percentage);
+    void progressText(QString desc);
     void completed();
     void canceled();
     void errorOccurred(QString);

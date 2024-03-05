@@ -516,16 +516,7 @@ bool FingerprintPlot::includeArea(int face) {
 }
 
 bool FingerprintPlot::includeAreaFilteredBySelection(int face) {
-  bool incArea = true;
-
-  // Ids of the parent
-  AtomId insideAtomIdForFace = _surface->insideAtomIdForFace(face);
-  AtomId outsideAtomIdForFace = _surface->outsideAtomIdForFace(face);
-
-  // QVector<Atom*> diAtoms = _crystal->diSelection();
-  // QVector<Atom*> deAtoms = _crystal->deSelection();
-
-  return incArea;
+  return true;
 }
 
 bool FingerprintPlot::includeAreaFilteredByElement(int face) {

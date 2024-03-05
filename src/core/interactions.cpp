@@ -9,12 +9,12 @@ void DimerInteractions::clear() {
 void DimerInteractions::clearValue(DimerPair pair, const QString &label) {
     auto kv = m_interactions.find(pair);
     if(kv != m_interactions.end()) {
-	size_t removed = kv->second.erase(label);
+	kv->second.erase(label);
     }
 }
 
 void DimerInteractions::clearValues(DimerPair pair) {
-    size_t removed = m_interactions.erase(pair);
+    m_interactions.erase(pair);
 }
 
 void DimerInteractions::setValue(DimerPair pair, double value, const QString &label) {

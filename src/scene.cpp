@@ -15,8 +15,9 @@
 using cx::graphics::SelectionType;
 
 Scene::Scene(const XYZFile &xyz)
-    : m_deprecatedCrystal(nullptr), m_structure(new ChemicalStructure()),
-      m_surfaceHandler(nullptr) {
+    : m_deprecatedCrystal(nullptr),
+      m_surfaceHandler(nullptr),
+      m_structure(new ChemicalStructure()) {
 
   m_periodicity = ScenePeriodicity::ZeroDimensions;
   m_structure->setAtoms(xyz.getAtomSymbols(), xyz.getAtomPositions());
@@ -29,8 +30,9 @@ Scene::Scene(const XYZFile &xyz)
 }
 
 Scene::Scene(ChemicalStructure *structure)
-    : m_deprecatedCrystal(nullptr), m_structure(structure),
-      m_surfaceHandler(nullptr) {
+    : m_deprecatedCrystal(nullptr),
+      m_surfaceHandler(nullptr),
+      m_structure(structure) {
   m_periodicity = ScenePeriodicity::ZeroDimensions;
   init();
 }
@@ -2515,7 +2517,6 @@ void Scene::unsuppressSelectedAtoms() {
   if (m_periodicity == ScenePeriodicity::ThreeDimensions) {
     m_deprecatedCrystal->unsuppressSelectedAtoms();
   } else if (m_structure) {
-    AtomFlags flags;
     m_structure->setFlagForAtomsFiltered(AtomFlag::Suppressed,
                                          AtomFlag::Selected, false);
     m_atomsNeedUpdate = true;
@@ -2985,9 +2986,6 @@ void Scene::exportToPovrayTextStream(QTextStream &ts) {
   ts << "#include \"glass.inc\"\n";
   ts << "#include \"stones.inc\"\n";
 
-  auto v2ts = [](QTextStream &ts, const QVector3D &v) {
-    ts << "<" << v.x() << "," << v.y() << "," << v.z() << ">";
-  };
   QMatrix4x4 view = m_camera.view();
   QMatrix4x4 projection = m_camera.projection();
   QMatrix4x4 viewInverse = view.inverted();

@@ -467,7 +467,7 @@ void PreferencesDialog::loadExternalProgramSettings() {
     QStandardItem *programItem = new QStandardItem(kv->first);
     programItem->setFlags(programItem->flags() & ~Qt::ItemIsEditable);
     m_externalProgramSettingsModel->appendRow(programItem);
-    for (const auto setting : std::as_const(kv->second)) {
+    for (const auto &setting : std::as_const(kv->second)) {
       QString fullKey = kv->first + "/" + setting;
       QString currentValue = settings::readSetting(fullKey).toString();
       if (setting == "executablePath" && !currentValue.isEmpty()) {
@@ -499,7 +499,7 @@ void PreferencesDialog::loadExternalProgramSettings() {
 
 void PreferencesDialog::updateExternalProgramSettings() {
   const int PROGRAM_COLUMN = 0;
-  const int SETTING_COLUMN = 1;
+  // const int SETTING_COLUMN = 1;
   const int VALUE_COLUMN = 2;
 
   int rowCount = m_externalProgramSettingsModel->rowCount();

@@ -226,7 +226,6 @@ occ::crystal::UnitCell buildUnitCell(const CifCellData &cellData) {
 }
 
 occ::crystal::SpaceGroup buildSpacegroup(const CifSymmetryData &symmetryData) {
-  bool found = false;
   if (!symmetryData.isValid()) {
     qDebug() << "Symmetry data not valid, unable to determine space group from "
                 "CIF, using P1";

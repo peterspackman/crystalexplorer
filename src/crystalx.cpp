@@ -2246,7 +2246,6 @@ void Crystalx::cloneVoidSurface(Scene *scene) {
   int cLimit = 0;
   // If we have cell limits used to generate cells of atoms
   // then use them as settings::keys:: for surface cloning
-  const auto &lowerSaved = _savedCellLimits.first;
   const auto &upperSaved = _savedCellLimits.second;
   aLimit = upperSaved[0];
   bLimit = upperSaved[1];

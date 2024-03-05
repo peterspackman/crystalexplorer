@@ -75,6 +75,7 @@ void TestSerialization::testAtom() {
 
     auto data = serialize(atom);
     int n = deserialize(data, atom2);
+    qDebug() << "Deserialized" << n << "bytes";
 
     QCOMPARE(atom.label(), atom2.label());
     QCOMPARE(atom.pos(), atom2.pos());
@@ -114,6 +115,7 @@ void TestSerialization::testSurface() {
 
     auto data = serialize(s);
     int n = deserialize(data, s2);
+    qDebug() << "Deserialized" << n << "bytes";
 
     QCOMPARE(s.surfaceName(), s2.surfaceName());
     QCOMPARE(s.volume(), s2.volume());

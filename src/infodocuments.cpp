@@ -580,7 +580,7 @@ void InfoDocuments::insertEnergyScalingPreamble(QTextCursor cursor) {
   QTextListFormat listFormat;
   listFormat.setStyle(QTextListFormat::ListDisc);
   listFormat.setIndent(1);
-  QTextList *list = cursor.insertList(listFormat);
+  cursor.insertList(listFormat);
   cursor.insertHtml("All energies are reported in kJ/mol");
   cursor.insertBlock();
   cursor.insertHtml("<b>R</b> is the distance between molecular centroids "

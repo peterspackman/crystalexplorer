@@ -367,7 +367,6 @@ void Crystal::set_connectivity_criteria(bool guess) {
 
 void Crystal::update_unit_cell_connectivity() const {
   auto s = slab({-2, -2, -2}, {2, 2, 2});
-  size_t n_asym = num_sites();
   size_t n_uc = m_unit_cell_atoms.size();
   m_bond_graph_vertices.clear();
 
@@ -386,7 +385,6 @@ void Crystal::update_unit_cell_connectivity() const {
   tree.index->buildIndex();
   auto covalent_radii = m_asymmetric_unit.covalent_radii();
   auto vdw_radii = m_asymmetric_unit.vdw_radii();
-  double max_cov = covalent_radii.maxCoeff();
   double max_vdw = vdw_radii.maxCoeff();
 
   std::vector<std::pair<size_t, double>> idxs_dists;
@@ -688,7 +686,6 @@ CrystalDimers Crystal::unit_cell_dimers(double radius) const {
 
   const auto &uc_mols = unit_cell_molecules();
 
-  size_t mol_idx = 0;
   for (const auto &mol : uc_mols) {
     Mat3N pos_frac = to_fractional(mol.positions());
     for (size_t i = 0; i < pos_frac.cols(); i++) {

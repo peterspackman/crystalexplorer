@@ -411,7 +411,6 @@ bool SurfaceData::processVertexNormalsBlock(QTextStream &ts, Surface *surface,
 bool SurfaceData::processVertexPropertiesBlock(QTextStream &ts,
                                                Surface *surface) {
   bool successfullyReadProperties = true;
-  int nProperties = 0;
 
   QString blockTypeForWarning;
 
@@ -437,7 +436,6 @@ bool SurfaceData::processVertexPropertiesBlock(QTextStream &ts,
     if (blockDelimiter == "begin") {
       bool success = processProperty(ts, surface, blockType, tokens[2].toInt());
       successfullyReadProperties = successfullyReadProperties && success;
-      nProperties++;
     }
   }
   return successfullyReadProperties;

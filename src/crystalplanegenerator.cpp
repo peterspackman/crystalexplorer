@@ -94,6 +94,7 @@ void CrystalPlaneGenerator::calculateVectors() {
       break;
     }
   }
+  if(!found) qDebug() << "Candidate vector not found!";
   m_angle = std::acos(m_aVector.normalized().dot(m_bVector.normalized()));
   m_depthVector = depthMagnitude * unitNormal;
 }

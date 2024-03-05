@@ -178,71 +178,63 @@ void ExternalProgramTask::start() {
     QStringList args = m_arguments;
 
     auto taskLogic = [this, exe, args](QPromise<void>& promise) {
-	qDebug() << "Task logic";
-	promise.setProgressValueAndText(0, "Starting background process");
 	QProcess process;
 
-	qDebug() << "Make temporary directory";
 	QTemporaryDir tempDir;
 	if (!tempDir.isValid()) {
 	    m_errorMessage = "Cannot create temporary directory";
 	    promise.finish();
 	    return;
 	}
+	promise.setProgressValueAndText(1, "Temporary directory created");
 
-	qDebug() << "Set process environment";
 	process.setProcessEnvironment(m_environment);
-	qDebug() << "Set working in tempdir";
 	process.setWorkingDirectory(tempDir.path());
+	promise.setProgressValueAndText(2, "Process environment set");
 
-	qDebug() << "Setting up connections";
 	setupProcessConnectionsPrivate(process);
 
-	qDebug() << "Copy requirements files";
 	if(!copyRequirements(tempDir.path())) {
 	    m_errorMessage = "Could not copy into temp";
 	    promise.finish();
 	    return;
 	}
-	qDebug() << "Call setting progress value";
-	promise.setProgressValueAndText(10, "Starting background process");
-	qDebug() << "Start process";
+	promise.setProgressValueAndText(3, "Copied files to temporary directory");
 	process.start(exe, args);
-	qDebug() << "Wating for start";
+	promise.setProgressValueAndText(4, "Starting background process");
 	process.waitForStarted();
+	promise.setProgressValueAndText(5, "Background process started");
 
 	int timeTaken = 0;
 
 	while (!process.waitForFinished(m_timeIncrement)) {
-	    qDebug() << "Wait for finished";
 	    timeTaken += m_timeIncrement;
+	    promise.setProgressValueAndText(timeTaken/m_timeIncrement, "test");
 	    if (promise.isCanceled()) {
-		qDebug() << "Canceled promise";
+		m_errorMessage = "Promise was canceled";
 		process.kill();
+		promise.setProgressValueAndText(100, "Promise canceled");
 		promise.finish();
 		return;
 	    }
 	    if (m_timeout > 0) {
 		if(timeTaken > m_timeout) {
-		    qDebug() << "Kill due to timeout";
 		    m_errorMessage = "Process timeout";
+		    promise.setProgressValueAndText(100, "Background process canceled due to timeout");
 		    process.kill();
 		    promise.finish();
 		    return;
 		}
 	    }
 	}
-	qDebug() << "Set progress value";
-	promise.setProgressValue(99);
+	promise.setProgressValueAndText(99, "Background process complete");
 	// SUCCESS
 	if (m_exitCode == 0) {
-	    qDebug() << "copying results";
 	    if(!copyResults(tempDir.path())) {
 		m_errorMessage = "Could not copy out of temp";
 	    }
 	}
-	promise.setProgressValue(100);
-	qDebug() << "m_exitCode" << m_exitCode;
+	promise.setProgressValueAndText(100, "Task complete");
 	promise.finish();
     };
 

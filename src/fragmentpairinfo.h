@@ -28,7 +28,6 @@ public:
                    BillboardRenderer *text) const {
     float currentScale =
         settings::readSetting(settings::keys::ENERGY_FRAMEWORK_SCALE).toFloat();
-    const float epsilon = 0.01f;
     switch (style) {
     case FragmentPairStyle::RoundedLine: {
       std::vector<SphereImpostorVertex> vertices;
