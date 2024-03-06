@@ -1,6 +1,7 @@
 #pragma once
 #include <QObject>
 #include <QtConcurrent>
+#include <QMap>
 
 class Task : public QObject {
     Q_OBJECT
@@ -8,6 +9,12 @@ public:
     explicit Task(QObject * parent) : QObject(parent) {}
     virtual void start() = 0;
     virtual void stop() = 0; // For cancellation
+    
+    void setProperty(const QString &, const QVariant &);
+    QVariant property(const QString &) const;
+    inline const auto &properties() const { return m_properties; }
+    inline const auto &errorMessage() const { return m_errorMessage; }
+    inline void setErrorMessage(const QString &msg) { m_errorMessage = msg; }
 
 protected:
     template<typename Callable>
@@ -16,7 +23,14 @@ protected:
 	Watcher * watcher = new Watcher();
 
 	QObject::connect(
-	    watcher, &Watcher::finished, this, &Task::completed);
+	    watcher, &Watcher::finished, [&]() {
+	    if(m_errorMessage.isEmpty()) {
+		emit completed();
+	    }
+	    else {
+		emit errorOccurred(m_errorMessage);
+	    }
+	});
 	QObject::connect(
 	    watcher, &Watcher::canceled, this, &Task::canceled);
 
@@ -37,6 +51,8 @@ protected:
     }
 
 private:
+    QMap<QString, QVariant> m_properties;
+    QString m_errorMessage;
 
 signals:
     void progress(int percentage);

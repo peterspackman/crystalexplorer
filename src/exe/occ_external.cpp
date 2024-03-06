@@ -1,6 +1,7 @@
 #include "occ_external.h"
 #include "filedependency.h"
 #include <QJsonDocument>
+#include <fmt/core.h>
 
 QString toJson(const exe::wfn::Parameters &params) {
 	QJsonObject root;
@@ -43,21 +44,38 @@ void OccWavefunctionTask::setWavefunctionParameters(const exe::wfn::Parameters &
 }
 
 void OccWavefunctionTask::start() {
-    qDebug() << "Start called";
     QString json = toJson(m_parameters);
+    emit progressText("Generated JSON input");
 
-    QFile file("input.json");
+    QString name = baseName();
+    QString inputName = name + inputSuffix();
+    QString outputName = name + wavefunctionSuffix();
+
+    QFile file(inputName);
     file.open(QIODevice::ReadWrite|QIODevice::Text);
     file.write(json.toUtf8());
     file.close();
+    emit progressText("Wrote input file");
 
-    setArguments({"scf", "input.json"});
-    setRequirements({FileDependency("input.json")});
-    setOutputs({FileDependency("input.owf.json", "test.owf.json")});
+
+    setArguments({"scf", inputName});
+    setRequirements({FileDependency(inputName)});
+    setOutputs({FileDependency(outputName, outputName)});
     auto environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("OCC_BASIS_PATH", "/Users/285699f/git/occ");
+    environment.insert("OCC_BASIS_PATH", "/Users/285699f/git/occ/share");
     setEnvironment(environment);
 
+
+    emit progressText("Starting OCC process");
     ExternalProgramTask::start();
     qDebug() << "Finish occ task start";
+}
+
+
+QString OccWavefunctionTask::inputSuffix() const {
+    return inputSuffixDefault;
+}
+
+QString OccWavefunctionTask::wavefunctionSuffix() const {
+    return wavefunctionSuffixDefault;
 }

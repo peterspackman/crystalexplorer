@@ -1,8 +1,10 @@
 add_library(cx_exe
     "${CMAKE_CURRENT_SOURCE_DIR}/externalprogram.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/mocktask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occ_external.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/task.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanager.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/taskmanagerwidget.cpp"
 )
 
 target_link_libraries(
@@ -10,6 +12,8 @@ target_link_libraries(
     unordered_dense::unordered_dense
     occ_core
     cx_core
+    Qt6::Gui
+    Qt6::Widgets
     Qt6::Core
     Qt6::Concurrent
 )

@@ -2,7 +2,7 @@
 
 TaskManager::TaskManager(QObject *parent) : QObject(parent) {}
 
-TaskID TaskManager::add(Task* task) {
+TaskID TaskManager::add(Task* task, bool start) {
     auto id = TaskID::createUuid();
     m_tasks.insert(id, task);
     task->setParent(this);
@@ -14,6 +14,13 @@ TaskID TaskManager::add(Task* task) {
     connect(task, &Task::errorOccurred, [this, id](QString error) {
 	this->handleTaskError(id, error);
     });
+
+    connect(task, &Task::stopped, [this, id]() {
+	this->handleTaskError(id, "Stopped by user");
+    });
+
+    emit taskAdded(id);
+    if(start) task->start();
     return id;
 }
 
@@ -22,6 +29,7 @@ void TaskManager::remove(TaskID taskId) {
 	Task* task = m_tasks.value(taskId);
 	m_tasks.remove(taskId);
 	task->deleteLater(); // Safely delete the task
+	emit taskRemoved(taskId);
     }
 }
 

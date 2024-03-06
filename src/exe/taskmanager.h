@@ -12,7 +12,7 @@ class TaskManager : public QObject {
 public:
     explicit TaskManager(QObject *parent = nullptr);
 
-    TaskID add(Task* task);
+    TaskID add(Task* task, bool start=true);
     void remove(TaskID taskId);
     Task* get(TaskID taskId) const;
 
@@ -21,6 +21,8 @@ public:
 signals:
     void taskComplete(TaskID);
     void taskError(TaskID, QString);
+    void taskAdded(TaskID);
+    void taskRemoved(TaskID);
 
 private:
 

@@ -10,6 +10,11 @@
 
 namespace exe {
 
+#include <QFile>
+#include <QFileInfo>
+
+bool copyFile(const QString &sourcePath, const QString &targetPath, bool overwrite = false);
+
 QString findProgramInPath(const QString &program);
 
 struct AtomList {
@@ -21,7 +26,7 @@ struct AtomList {
 namespace wfn {
     struct Parameters {
 	QString method{"b3lyp"};
-	QString basis{"def2-qzvp"};
+	QString basis{"def2-svp"};
 	AtomList atoms;
     };
     struct Result {
@@ -132,11 +137,15 @@ public:
     void setOutputs(const FileDependencyList&);
     inline const auto &outputs() const { return m_outputs; }
 
-    inline const auto &errorMessage() const { return m_errorMessage; }
     inline const auto exitCode() const { return m_exitCode; }
 
     virtual void start() override;
     virtual void stop() override;
+
+    virtual QString baseName() const;
+
+    void setOverwrite(bool overwrite=true);
+    bool overwrite() const;
 
 signals:
     void stopProcess();
@@ -149,7 +158,6 @@ private:
     QString m_stdout;
     QString m_stderr;
     int m_exitCode{-1};
-    QString m_errorMessage{""};
     int m_timeout{0};
     int m_timeIncrement{100};
     QProcessEnvironment m_environment;

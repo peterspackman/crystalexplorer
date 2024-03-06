@@ -4,13 +4,16 @@
 class OccWavefunctionTask : public ExternalProgramTask {
 
 public:
+    inline static constexpr char wavefunctionSuffixDefault[] = {".owf.json"};
+    inline static constexpr char inputSuffixDefault[] = {".json"};
+
     explicit OccWavefunctionTask(QObject * parent = nullptr);
 
-    void setBasisSetDirectory(const QString &d);
-
     void setWavefunctionParameters(const exe::wfn::Parameters &);
-
     virtual void start() override;
+
+    QString inputSuffix() const;
+    QString wavefunctionSuffix() const;
 
 private:
     exe::wfn::Parameters m_parameters;

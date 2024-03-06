@@ -1,12 +1,15 @@
 #include "occ_external.h"
 #include "taskmanager.h"
+#include "taskmanagerwidget.h"
+#include "mocktask.h"
+#include <QApplication>
 #include <QDebug>
 
-
 int main(int argc, char *argv[]) {
-    QCoreApplication app(argc, argv);
+    QApplication app(argc, argv);
     
-    TaskManager * manager = new TaskManager();
+    TaskManager* taskManager = new TaskManager();
+    TaskManagerWidget* w = new TaskManagerWidget(taskManager);
 
     qDebug() << "OCC";
 
@@ -21,58 +24,20 @@ int main(int argc, char *argv[]) {
     };
 
     OccWavefunctionTask * task = new OccWavefunctionTask();
+    task->setProperty("name", "Water wavefunction");
+    task->setProperty("basename", "water");
 
     exe::wfn::Parameters params;
     params.atoms = atoms;
     task->setWavefunctionParameters(params);
 
-    auto id = manager->add(task);
+    auto id = taskManager->add(task);
 
-    manager->runBlocking(id);
+    Task* mockTask = new MockTask(taskManager);
+    mockTask->setProperty("name", "startup task");
+    TaskID taskId = taskManager->add(mockTask);
 
-    return 0;
-
+    w->show();
+    return app.exec();
 }
 
-/*
-#include <QCoreApplication>
-#include <QtConcurrent/QtConcurrent>
-#include <QFutureWatcher>
-#include <QDebug>
-
-void asyncTask(QPromise<void>& promise) {
-    for (int i = 0; i <= 5; ++i) {
-        QThread::sleep(1); // Simulate long-running operation
-        qDebug() << "Progress:" << i * 20 << "%";
-        promise.setProgressValue(i * 20);
-        if (promise.isCanceled()) {
-            qDebug() << "Task was canceled";
-            return;
-        }
-    }
-    promise.finish(); // Mark the task as completed
-}
-
-int main(int argc, char *argv[]) {
-    QCoreApplication app(argc, argv);
-
-    QFutureWatcher<void> watcher;
-    QObject::connect(&watcher, &QFutureWatcher<void>::progressValueChanged, [](int progress) {
-        qDebug() << "Watcher reports progress:" << progress << "%";
-    });
-    QObject::connect(&watcher, &QFutureWatcher<void>::finished, []() {
-        qDebug() << "Watcher reports: Task finished";
-        QCoreApplication::quit(); // Exit the event loop once the task is done
-    });
-
-
-    // Run the task asynchronously
-    auto future = QtConcurrent::run([](QPromise<void> &promise) {
-        asyncTask(promise);
-    });
-    // Start watching the future
-    watcher.setFuture(future);
-
-    return app.exec(); // Start the event loop
-}
-*/
