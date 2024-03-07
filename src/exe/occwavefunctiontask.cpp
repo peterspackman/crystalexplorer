@@ -1,5 +1,6 @@
 #include "occwavefunctiontask.h"
 #include "filedependency.h"
+#include "exefileutilities.h"
 #include <QJsonDocument>
 #include <fmt/core.h>
 
@@ -51,11 +52,10 @@ void OccWavefunctionTask::start() {
     QString inputName = name + inputSuffix();
     QString outputName = name + wavefunctionSuffix();
 
-    QFile file(inputName);
-    file.open(QIODevice::ReadWrite|QIODevice::Text);
-    QString inputContents = json.toUtf8();
-    file.write(inputContents.toUtf8());
-    file.close();
+    if(!exe::writeTextFile(inputName, json)) {
+	emit errorOccurred("Could not write input file");
+	return;
+    }
     emit progressText("Wrote input file");
 
 

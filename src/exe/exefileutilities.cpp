@@ -50,7 +50,7 @@ bool copyFile(const QString &sourcePath, const QString &targetPath, bool overwri
         if (!QFile::remove(targetPath)) return false;
     }
 
-    // just use qfile::copy
+    // just use QFile::copy
     return QFile::copy(sourcePath, targetPath);
 }
 
@@ -68,6 +68,14 @@ QString findProgramInPath(const QString &program) {
 	}
     }
     return QString();
+}
+
+bool writeTextFile(const QString &filename, const QString &text) {
+    QFile file(filename);
+    if(!file.open(QIODevice::ReadWrite|QIODevice::Text)) return false;
+    file.write(text.toUtf8());
+    file.close();
+    return true;
 }
 
 }

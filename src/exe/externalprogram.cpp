@@ -8,6 +8,29 @@
 
 namespace exe {
 
+QString errorString(const QProcess::ProcessError &errorType) {
+    switch (errorType) {
+	case QProcess::FailedToStart:
+	    return "Process failed to start";
+	    break;
+	case QProcess::Crashed:
+	    return "Process crashed during execution";
+	    break;
+	case QProcess::Timedout:
+	    return "Process timeout";
+	    break;
+	case QProcess::ReadError:
+	    return "Process read error";
+	    break;
+	case QProcess::WriteError:
+	    return "Process write error";
+	    break;
+	case QProcess::UnknownError:
+	default:
+	    return "Unknown process error";
+	    break;
+    }
+}
 
 ExternalProgram::ExternalProgram(const QString &location) : m_executableLocation(location) {
     m_resolvedExecutableLocation = findProgramInPath(location);
@@ -113,25 +136,11 @@ void ExternalProgramTask::setupProcessConnectionsPrivate(QProcess &process) {
     QObject::connect(&process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
 	// Populate errorMessage based on the type of error
 	switch (error) {
-	    case QProcess::FailedToStart:
-		setErrorMessage("Process failed to start");
-		break;
-	    case QProcess::Crashed:
-		setErrorMessage("Process crashed during execution");
-		break;
 	    case QProcess::Timedout:
 		// timing out is not an error due to the way we're running
-		// m_errorMessage = "Process timeout";
 		break;
-	    case QProcess::ReadError:
-		setErrorMessage("Process read error");
-		break;
-	    case QProcess::WriteError:
-		setErrorMessage("Process write error");
-		break;
-	    case QProcess::UnknownError:
 	    default:
-		setErrorMessage("Unknown process error");
+		setErrorMessage(exe::errorString(error));
 		break;
 	}
     });
@@ -167,8 +176,6 @@ bool ExternalProgramTask::copyResults(const QString &path) {
     }
     return true;
 }
-
-
 
 void ExternalProgramTask::start() {
     QString exe = m_executable;
@@ -208,7 +215,7 @@ void ExternalProgramTask::start() {
 	while (!process.waitForFinished(m_timeIncrement)) {
 	    timeTaken += m_timeIncrement;
 	    updateStdoutStderr(process);
-	    promise.setProgressValueAndText(timeTaken/m_timeIncrement, "test");
+	    promise.setProgressValueAndText(timeTaken/m_timeIncrement, QString("Running %1").arg(m_executable));
 	    if (promise.isCanceled()) {
 		setErrorMessage("Promise was canceled");
 		process.kill();
@@ -224,6 +231,13 @@ void ExternalProgramTask::start() {
 		    promise.finish();
 		    return;
 		}
+	    }
+
+	    if(process.error() != QProcess::Timedout) {
+		promise.setProgressValueAndText(100, "Background process failed: " + exe::errorString(process.error()));
+		process.kill();
+		promise.finish();
+		return;
 	    }
 	}
 	promise.setProgressValueAndText(99, "Background process complete");

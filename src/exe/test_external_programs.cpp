@@ -1,4 +1,5 @@
 #include "occwavefunctiontask.h"
+#include "tonto.h"
 #include "taskmanager.h"
 #include "taskmanagerwidget.h"
 #include "mocktask.h"
@@ -36,6 +37,10 @@ int main(int argc, char *argv[]) {
     Task* mockTask = new MockTask(taskManager);
     mockTask->setProperty("name", "startup task");
     TaskID taskId = taskManager->add(mockTask);
+
+    Task* tontoTask = new TontoCifProcessingTask(taskManager);
+    tontoTask->setProperty("name", "Tonto task");
+    TaskID taskId2 = taskManager->add(tontoTask);
 
     w->show();
     return app.exec();
