@@ -26,7 +26,7 @@ struct AtomList {
 namespace wfn {
     struct Parameters {
 	QString method{"b3lyp"};
-	QString basis{"def2-svp"};
+	QString basis{"def2-qzvp"};
 	AtomList atoms;
     };
     struct Result {
@@ -151,12 +151,11 @@ signals:
     void stopProcess();
 
 private:
+    void updateStdoutStderr(QProcess&);
     bool copyRequirements(const QString &path);
     bool copyResults(const QString &path);
     void setupProcessConnectionsPrivate(QProcess&);
 
-    QString m_stdout;
-    QString m_stderr;
     int m_exitCode{-1};
     int m_timeout{0};
     int m_timeIncrement{100};

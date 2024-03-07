@@ -1,6 +1,7 @@
 #pragma once
 #include <QWidget>
 #include <QTableWidget>
+#include <QTreeWidgetItem>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -33,6 +34,9 @@ private slots:
     void onTaskProgress(TaskID taskId, int percentage);
     void onTaskProgressText(TaskID taskId, const QString &desc);
     void onStopTaskClicked();
+    void contextMenu(const QPoint &pos);
+    void showPropertiesForRow(int row);
+    void onPropertyItemDoubleClicked(QTreeWidgetItem* item, int column);
 
 private:
     TaskManager *m_taskManager{nullptr};

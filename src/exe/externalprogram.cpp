@@ -2,9 +2,43 @@
 #include <QProcess>
 #include <QFileInfo>
 #include <QDebug>
+#include <QTextStream>
+#include <QByteArray>
 
 
 namespace exe {
+
+bool isTextFile(const QString& filePath) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+
+    QByteArray data = file.read(1024);
+    file.close();
+
+    for (unsigned char byte : data) {
+        if (byte == '\0' || (byte < 0x20 && byte != '\n' && byte != '\r' && byte != '\t')) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+QString readFileContents(const QString& filePath, const QString& binaryPlaceholder = "Binary file") {
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return QString("Can't open file"); // Return empty string if file can't be opened
+    
+    if(!isTextFile(filePath))
+	return binaryPlaceholder;
+
+    QTextStream stream(&file);
+    QString contents = stream.readAll();
+
+    file.close();
+    return contents;
+}
 
 bool copyFile(const QString &sourcePath, const QString &targetPath, bool overwrite) {
     // if they're the same file just do nothing.
@@ -121,15 +155,22 @@ void ExternalProgramTask::setArguments(const QStringList& args) {
     m_arguments = args;
 }
 
+void ExternalProgramTask::updateStdoutStderr(QProcess &process) {
+    QString out = properties().value("stdout", "").toString();
+    QString err = properties().value("stderr", "").toString();
+    out += process.readAllStandardOutput();
+    err += process.readAllStandardError();
+    setProperty("stdout", out);
+    setProperty("stderr", err);
+}
+
 void ExternalProgramTask::setupProcessConnectionsPrivate(QProcess &process) {
     QObject::connect(&process, &QProcess::finished, [this, &process](int exitCode, QProcess::ExitStatus exitStatus) {
 	if (exitStatus == QProcess::CrashExit) {
 	    setErrorMessage("Process crashed");
 	} else {
 	    m_exitCode = exitCode;
-	    m_stdout = process.readAllStandardOutput();
-	    m_stderr = process.readAllStandardError();
-	    
+	    updateStdoutStderr(process);
 	}
     });
 
@@ -172,6 +213,7 @@ bool ExternalProgramTask::copyRequirements(const QString &path) {
 	    qDebug() << errorMessage();
 	    return false;
 	}
+	setProperty("file-input:" + input, exe::readFileContents(input));
     }
     return true;
 }
@@ -185,6 +227,7 @@ bool ExternalProgramTask::copyResults(const QString &path) {
 	    qDebug() << errorMessage();
 	    return false;
 	}
+	setProperty("file-output:" + output, exe::readFileContents(output));
     }
     return true;
 }
@@ -228,6 +271,7 @@ void ExternalProgramTask::start() {
 
 	while (!process.waitForFinished(m_timeIncrement)) {
 	    timeTaken += m_timeIncrement;
+	    updateStdoutStderr(process);
 	    promise.setProgressValueAndText(timeTaken/m_timeIncrement, "test");
 	    if (promise.isCanceled()) {
 		setErrorMessage("Promise was canceled");
@@ -247,6 +291,7 @@ void ExternalProgramTask::start() {
 	    }
 	}
 	promise.setProgressValueAndText(99, "Background process complete");
+	updateStdoutStderr(process);
 	// SUCCESS
 	if (m_exitCode == 0) {
 	    if(!copyResults(tempDir.path())) {
@@ -255,8 +300,6 @@ void ExternalProgramTask::start() {
 	}
 	else {
 	    setErrorMessage(QString("Failed with exit code: %1").arg(m_exitCode));
-	    qDebug() << m_stdout;
-	    qDebug() << m_stderr;
 	}
 	promise.setProgressValueAndText(100, "Task complete");
 	promise.finish();

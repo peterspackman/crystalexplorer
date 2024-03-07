@@ -2,6 +2,10 @@
 #include <QMessageBox>
 #include <QHeaderView>
 #include <QProgressBar>
+#include <QTreeWidget>
+#include <QMenu>
+#include <QTextEdit>
+#include <QFontDatabase>
 #include "mocktask.h"
 
 
@@ -34,7 +38,11 @@ void TaskManagerWidget::setupUi() {
     m_failureIcon = style()->standardIcon(QStyle::SP_DialogNoButton);
     auto *layout = new QVBoxLayout(this);
     m_taskTable = new QTableWidget(this);
+    m_taskTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_taskTable, &QWidget::customContextMenuRequested, this, &TaskManagerWidget::contextMenu);
     m_taskTable->setColumnCount(3); // Two columns: task description and progress
+    m_taskTable->setColumnWidth(0, 300); // Adjust as needed
+    m_taskTable->setColumnWidth(1, 300); // Adjust as needed
     m_taskTable->setHorizontalHeaderLabels(QStringList() << "Task ID" << "Description" << "Progress");
     m_taskTable->verticalHeader()->setVisible(false);
     m_taskTable->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -49,6 +57,7 @@ void TaskManagerWidget::setupUi() {
     layout->addWidget(m_startTaskButton);
 
     setLayout(layout);
+    resize(800, 600);
 }
 
 void TaskManagerWidget::connectSignals() {
@@ -173,8 +182,118 @@ void TaskManagerWidget::onStopTaskClicked() {
     }
 }
 
-const QIcon& TaskManagerWidget::successIcon() const { return m_successIcon; }
-void TaskManagerWidget::setSuccessIcon(const QIcon &icon) { m_successIcon = icon; }
-const QIcon& TaskManagerWidget::failureIcon() const { return m_failureIcon; }
-void TaskManagerWidget::setFailureIcon(const QIcon &icon) { m_failureIcon = icon; }
+const QIcon& TaskManagerWidget::successIcon() const {
+    return m_successIcon;
+}
 
+void TaskManagerWidget::setSuccessIcon(const QIcon &icon) {
+    m_successIcon = icon;
+}
+
+const QIcon& TaskManagerWidget::failureIcon() const { 
+    return m_failureIcon;
+}
+
+void TaskManagerWidget::setFailureIcon(const QIcon &icon) {
+    m_failureIcon = icon;
+}
+
+void TaskManagerWidget::contextMenu(const QPoint &pos) {
+    QModelIndex index = m_taskTable->indexAt(pos);
+    if (!index.isValid())
+        return;
+
+    QMenu contextMenu;
+    
+    QAction actionShowProperties("Show Properties", this);
+    connect(&actionShowProperties, &QAction::triggered, [this, index]() {
+        // Implement showing properties for the item in row index.row()
+        showPropertiesForRow(index.row());
+    });
+    
+    contextMenu.addAction(&actionShowProperties);
+    
+    // Show the menu at the position mapped to global from the table view's coordinate system
+    contextMenu.exec(m_taskTable->viewport()->mapToGlobal(pos));
+}
+
+void TaskManagerWidget::showPropertiesForRow(int row) {
+    if (row < 0 || row >= m_rowTasks.size()) return;
+    TaskID taskId = m_rowTasks[row];
+    Task* task = m_taskManager->get(taskId);
+    if(!task) return;
+
+    const auto &properties = task->properties();
+    QDialog* dialog = new QDialog;
+    dialog->setWindowTitle(QString("%1 Properties").arg(taskName(taskId, task)));
+
+    QTreeWidget* treeWidget = new QTreeWidget(dialog);
+    treeWidget->setHeaderLabels(QStringList() << "Property" << "Value");
+    treeWidget->setColumnWidth(0, 300); // Adjust as needed
+    treeWidget->setWordWrap(true);
+
+    // Define a maximum length for display
+    const int maxLength = 72; 
+
+    for (auto it = properties.constBegin(); it != properties.constEnd(); ++it) {
+	QTreeWidgetItem* item = new QTreeWidgetItem(treeWidget);
+	item->setText(0, it.key());
+	QString fullText = it.value().toString();
+	QString displayText = fullText;
+	if (fullText.length() > maxLength) {
+	    displayText = "Double click to show full text...";
+	    // Use setData to store the full text in the item, for retrieval on click
+	    item->setData(1, Qt::UserRole, QVariant(fullText));
+	}
+	item->setText(1, displayText);
+	item->setTextAlignment(1, Qt::AlignTop); // Ensure alignment for multiline text
+    }
+
+
+    QVBoxLayout* layout = new QVBoxLayout(dialog);
+    layout->addWidget(treeWidget);
+
+    // Add a Close button to the dialog
+    QPushButton* closeButton = new QPushButton("Close", dialog);
+    QObject::connect(closeButton, &QPushButton::clicked, dialog, &QDialog::accept);
+    QObject::connect(treeWidget, &QTreeWidget::itemDoubleClicked, this, &TaskManagerWidget::onPropertyItemDoubleClicked);
+    layout->addWidget(closeButton);
+
+    dialog->setLayout(layout);
+    dialog->resize(800, 600);
+    dialog->exec(); // Show the dialog modally
+}
+
+void TaskManagerWidget::onPropertyItemDoubleClicked(QTreeWidgetItem* item, int column) {
+    if (column != 1) return; // Only handle clicks in the "Value" column
+    QVariant fullTextData = item->data(1, Qt::UserRole);
+    if (!fullTextData.isValid()) return; // No full text stored for this item
+
+    QString fullText = fullTextData.toString();
+
+    // Create and show the dialog with the full text
+    QDialog* textDialog = new QDialog(this);
+    textDialog->setWindowTitle(item->text(0)); // Use the property name as the window title
+    QVBoxLayout* layout = new QVBoxLayout(textDialog);
+
+    QTextEdit* textEdit = new QTextEdit;
+    textEdit->setText(fullText);
+    textEdit->setReadOnly(true); // Make sure the text is read-only
+    layout->addWidget(textEdit);
+
+    QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    textEdit->setFont(fixedFont);
+
+    // Calculate width for 100 characters
+    QFontMetrics metrics(fixedFont);
+    int widthFor100Chars = metrics.horizontalAdvance('X') * 100;
+    textEdit->setMinimumWidth(widthFor100Chars);
+
+
+    QPushButton* closeButton = new QPushButton("Close", textDialog);
+    QObject::connect(closeButton, &QPushButton::clicked, textDialog, &QDialog::accept);
+    layout->addWidget(closeButton);
+
+    textDialog->setLayout(layout);
+    textDialog->exec();
+}

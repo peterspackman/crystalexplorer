@@ -53,7 +53,8 @@ void OccWavefunctionTask::start() {
 
     QFile file(inputName);
     file.open(QIODevice::ReadWrite|QIODevice::Text);
-    file.write(json.toUtf8());
+    QString inputContents = json.toUtf8();
+    file.write(inputContents.toUtf8());
     file.close();
     emit progressText("Wrote input file");
 
