@@ -1,4 +1,4 @@
-#include "occ_external.h"
+#include "occwavefunctiontask.h"
 #include "filedependency.h"
 #include <QJsonDocument>
 #include <fmt/core.h>

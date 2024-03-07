@@ -1,4 +1,4 @@
-#include "occ_external.h"
+#include "occwavefunctiontask.h"
 #include "taskmanager.h"
 #include "taskmanagerwidget.h"
 #include "mocktask.h"
