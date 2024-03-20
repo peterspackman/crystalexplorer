@@ -4,6 +4,12 @@
 #include "jobparameters.h"
 #include "scene.h"
 
+namespace crystaldata {
+
+QVector<Scene *> loadCrystalsFromTontoOutput(const QString& filename, const QString &cif);
+
+}
+
 class CrystalData {
 public:
   static QVector<Scene *> getData(const JobParameters &);

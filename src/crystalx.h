@@ -36,6 +36,10 @@
 #include "surfacegenerationdialog.h"
 #include "wavefunctioncalculationdialog.h"
 
+// background tasks
+#include "taskmanager.h"
+#include "taskmanagerwidget.h"
+
 #include "ui_crystalx.h"
 
 const bool ENABLE_EXPERIMENTAL_FEATURES = false;
@@ -65,6 +69,7 @@ public:
 
 public slots:
   void generateSurface(const JobParameters &, std::optional<Wavefunction>);
+  void generateSurfaceNew(SurfaceParameters);
   void getWavefunctionParametersFromUser(QVector<AtomId>, int, int);
   void generateWavefunction(const JobParameters &);
   void calculateMonomerEnergy(const JobParameters &);
@@ -82,6 +87,7 @@ public slots:
   void passCurrentSurfaceVisibilityToSurfaceController();
   void calculateEnergies(const JobParameters &, const QVector<Wavefunction> &);
   void showInfo(InfoType);
+  void showTaskManagerWidget();
   void updateInfo(InfoType);
   void setInfoTabSpecificViewOptions(InfoType);
   void tidyUpAfterInfoViewerClosed();
@@ -162,12 +168,16 @@ private slots:
   void handleTransformationMatrixUpdate();
   void backgroundTaskFinished();
 
+  void taskManagerTaskComplete(TaskID);
+  void taskManagerTaskError(TaskID, QString);
+  void taskManagerTaskAdded(TaskID);
+  void taskManagerTaskRemoved(TaskID);
+
 private:
   void init();
   bool readElementData();
   void initStatusBar();
   void initMainWindow();
-  void initPointers();
   void initMenus();
   void initMoleculeStyles();
   void initGlWindow();
@@ -233,51 +243,56 @@ private:
   bool getCharges(DeprecatedCrystal *);
   bool getChargesFromUser(DeprecatedCrystal *);
 
-  Project *project;
-  GLWindow *glWindow;
+  Project *project{nullptr};
+  GLWindow *glWindow{nullptr};
   JobParameters jobParams;
-  ViewToolbar *viewToolbar;
-  SurfaceController *surfaceController;
-  CrystalController *crystalController;
-  SurfaceGenerationDialog *m_oldSurfaceGenerationDialog;
-  WavefunctionCalculationDialog *wavefunctionCalculationDialog;
-  EnergyCalculationDialog *energyCalculationDialog;
-  FingerprintWindow *fingerprintWindow;
-  PreferencesDialog *preferencesDialog;
-  CloseContactDialog *m_closeContactDialog;
-  DepthFadingAndClippingDialog *depthFadingAndClippingDialog;
-  FrameworkDialog *frameworkDialog;
-  ChargeDialog *chargeDialog;
-  InfoViewer *infoViewer;
+  ViewToolbar *viewToolbar{nullptr};
+  SurfaceController *surfaceController{nullptr};
+  CrystalController *crystalController{nullptr};
+  SurfaceGenerationDialog *m_oldSurfaceGenerationDialog{nullptr};
+  SurfaceGenerationDialog *m_newSurfaceGenerationDialog{nullptr};
+  WavefunctionCalculationDialog *wavefunctionCalculationDialog{nullptr};
+  EnergyCalculationDialog *energyCalculationDialog{nullptr};
+  FingerprintWindow *fingerprintWindow{nullptr};
+  PreferencesDialog *preferencesDialog{nullptr};
+  CloseContactDialog *m_closeContactDialog{nullptr};
+  DepthFadingAndClippingDialog *depthFadingAndClippingDialog{nullptr};
+  FrameworkDialog *frameworkDialog{nullptr};
+  ChargeDialog *chargeDialog{nullptr};
+  InfoViewer *infoViewer{nullptr};
   PlaneGenerationDialog *m_planeGenerationDialog{nullptr};
 
-  TontoInterface *tontoInterface;
-  GaussianInterface *gaussianInterface;
-  NWChemInterface *nwchemInterface;
-  Psi4Interface *psi4Interface;
+  TontoInterface *tontoInterface{nullptr};
+  GaussianInterface *gaussianInterface{nullptr};
+  NWChemInterface *nwchemInterface{nullptr};
+  Psi4Interface *psi4Interface{nullptr};
   OccInterface *m_occInterface{nullptr};
   OrcaInterface *m_orcaInterface{nullptr};
   XTBInterface *m_xtbInterface{nullptr};
 
-  QDockWidget *surfaceControllerDockWidget;
-  QDockWidget *crystalControllerDockWidget;
-  QAction *quitAction;
+  QDockWidget *surfaceControllerDockWidget{nullptr};
+  QDockWidget *crystalControllerDockWidget{nullptr};
+  QAction *quitAction{nullptr};
   QAction *recentFileActions[MAXHISTORYSIZE];
   QVector<QAction *> moleculeStyleActions;
-  QMessageBox *loadingMessageBox;
-  AnimationSettingsDialog *_animationSettingsDialog;
-  QAction *_clearRecentFileAction;
-  QMenu *_thermalEllipsoidMenu;
-  QAction *_drawHEllipsoidsAction;
+  QMessageBox *loadingMessageBox{nullptr};
+  AnimationSettingsDialog *_animationSettingsDialog{nullptr};
+  QAction *_clearRecentFileAction{nullptr};
+  QMenu *_thermalEllipsoidMenu{nullptr};
+  QAction *_drawHEllipsoidsAction{nullptr};
 
-  QProgressBar *_jobProgress;
-  QToolButton *_jobCancel;
+  QProgressBar *_jobProgress{nullptr};
+  QToolButton *_jobCancel{nullptr};
 
-  QWidget *fileWindow;
-  QTextEdit *fileViewer;
-  QVBoxLayout *fileViewerLayout;
+  QWidget *fileWindow{nullptr};
+  QTextEdit *fileViewer{nullptr};
+  QVBoxLayout *fileViewerLayout{nullptr};
 
   QPair<QVector3D, QVector3D> _savedCellLimits;
   QMap<QString, DrawingStyle> m_drawingStyleLabelToDrawingStyle;
   QFutureWatcher<bool> m_futureWatcher;
+
+  TaskManager * m_taskManager{nullptr};
+  TaskManagerWidget * m_taskManagerWidget{nullptr};
+
 };

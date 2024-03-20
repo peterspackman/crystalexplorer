@@ -42,12 +42,15 @@ bool copyFile(const QString &sourcePath, const QString &targetPath, bool overwri
     // if they're the same file just do nothing.
     if(sourcePath == targetPath) return true;
 
-    QFileInfo targetFileInfo(targetPath);
-
     // check if it exists
-    if (targetFileInfo.exists()) {
-        if (!overwrite) return false;
-        if (!QFile::remove(targetPath)) return false;
+    if (QFileInfo(targetPath).exists()) {
+	qDebug() << "File exists, should overwrite: " << overwrite;
+	if (!overwrite) return false;
+	if (!QFile::remove(targetPath)) {
+	    qDebug() << "Could not delete file...";
+	    return false;
+	}
+	qDebug() << "File deleted: " << !QFileInfo(targetPath).exists();
     }
 
     // just use QFile::copy

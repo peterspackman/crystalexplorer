@@ -76,6 +76,7 @@ public:
   Scene(const XYZFile &);
   Scene(ChemicalStructure *);
 
+  inline ChemicalStructure *chemicalStructure() { return m_structure; }
   inline DeprecatedCrystal *crystal() { return m_deprecatedCrystal; }
   inline const DeprecatedCrystal *crystal() const {
     return m_deprecatedCrystal;

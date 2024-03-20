@@ -5,6 +5,7 @@ add_subdirectory(exe)
 add_subdirectory(io)
 add_subdirectory(crystal)
 add_subdirectory(graphics)
+add_subdirectory(volume)
 
 # Source files
 set(CRYSTALEXPLORER_SOURCE_FILES

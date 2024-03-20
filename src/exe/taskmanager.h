@@ -18,6 +18,9 @@ public:
 
     void runBlocking(TaskID);
 
+    int numFinished() const;
+    int numTasks() const;
+
 signals:
     void taskComplete(TaskID);
     void taskError(TaskID, QString);
@@ -31,4 +34,6 @@ private:
 
     QMap<TaskID, Task*> m_tasks;
     int m_currentId{0};
+    int m_completeCount{0};
+    int m_taskCount{0};
 };

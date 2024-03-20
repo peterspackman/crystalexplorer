@@ -7,6 +7,24 @@
 #include "crystaldata.h"
 #include "settings.h"
 
+namespace crystaldata {
+
+QVector<Scene *> loadCrystalsFromTontoOutput(const QString& filename, const QString &cif) {
+    QVector<Scene *> crystalList;
+    QFile file(filename);
+    if (file.open(QIODevice::ReadOnly)) {
+	QTextStream ts(&file);
+	crystalList = CrystalData::getData(ts, cif);
+	if (settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool()) {
+	  file.remove();
+	}
+      }
+
+    return crystalList;
+}
+
+}
+
 QVector<Scene *> CrystalData::getData(const JobParameters &jobParams) {
 
   QVector<Scene *> crystalList;

@@ -52,8 +52,11 @@ void TaskManagerWidget::setupUi() {
     m_stopTaskButton = new QPushButton(tr("Stop Task"), this);
     m_startTaskButton = new QPushButton(tr("Start Task"), this);
 
+    m_removeTaskButton = new QPushButton(tr("Remove task"), this);
+
     layout->addWidget(m_taskTable);
     layout->addWidget(m_stopTaskButton);
+    layout->addWidget(m_removeTaskButton);
     layout->addWidget(m_startTaskButton);
 
     setLayout(layout);
@@ -65,13 +68,14 @@ void TaskManagerWidget::connectSignals() {
     connect(m_taskManager, &TaskManager::taskError, this, &TaskManagerWidget::onTaskError);
 
     connect(m_taskManager, &TaskManager::taskAdded, this, &TaskManagerWidget::onTaskAdded);
-
+    connect(m_taskManager, &TaskManager::taskRemoved, this, &TaskManagerWidget::onTaskRemoved);
 
     connect(m_stopTaskButton, &QPushButton::clicked, this, &TaskManagerWidget::onStopTaskClicked);
     connect(m_startTaskButton, &QPushButton::clicked, this, [&](){
 	Task* mockTask = new MockTask();
 	TaskID taskId = m_taskManager->add(mockTask);
     });
+    connect(m_removeTaskButton, &QPushButton::clicked, this, &TaskManagerWidget::onRemoveTaskClicked);
 }
 
 void TaskManagerWidget::onTaskAdded(TaskID taskId) {
@@ -99,6 +103,37 @@ void TaskManagerWidget::onTaskAdded(TaskID taskId) {
         connect(task, &Task::errorOccurred, this, [this, taskId](const QString &error) { onTaskError(taskId, error); });
     }
 }
+
+void TaskManagerWidget::onTaskRemoved(TaskID taskId) {
+    int row = m_taskItems.value(taskId, -1); // Get the row number for the task ID
+    if (row != -1) {
+        Task* task = m_taskManager->get(taskId);
+        if (task) {
+            // Disconnect all signals from this task to any slots in this object
+            disconnect(task, nullptr, this, nullptr);
+
+            // Now safe to remove the row from the table
+            m_taskTable->removeRow(row);
+
+            // Remove the task ID from the mapping
+            m_taskItems.remove(taskId);
+
+            // Also update m_rowTasks list to keep it consistent
+            m_rowTasks.removeAll(taskId);
+
+            // Update the row numbers in m_taskItems for all tasks below the removed one
+            auto keys = m_taskItems.keys();
+            for (TaskID id : keys) {
+                int currentRow = m_taskItems.value(id);
+                if (currentRow > row) {
+                    m_taskItems[id] = currentRow - 1;
+                }
+            }
+        }
+    }
+}
+
+
 
 void TaskManagerWidget::onTaskComplete(TaskID taskId) {
     int row = m_taskItems.value(taskId, -1);
@@ -179,6 +214,14 @@ void TaskManagerWidget::onStopTaskClicked() {
         if (task) {
             task->stop();
         }
+    }
+}
+
+void TaskManagerWidget::onRemoveTaskClicked() {
+    int row = m_taskTable->currentRow();
+    if (row > -1 && row < m_rowTasks.size()) {
+        TaskID taskId = m_rowTasks[row];
+        m_taskManager->remove(taskId);
     }
 }
 

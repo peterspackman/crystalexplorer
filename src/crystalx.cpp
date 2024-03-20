@@ -21,6 +21,7 @@
 #include "mathconstants.h"
 #include "settings.h"
 #include "tontointerface.h"
+#include "tonto.h"
 
 Crystalx::Crystalx() : QMainWindow() {
   setupUi(this);
@@ -34,9 +35,10 @@ void Crystalx::init() {
 
   project = new Project(this);
 
+  m_taskManager = new TaskManager();
+  m_taskManagerWidget = new TaskManagerWidget(m_taskManager);
   initMainWindow();
   initStatusBar();
-  initPointers();
   initMenus();
   initGlWindow();
   initFingerprintWindow();
@@ -108,21 +110,7 @@ void Crystalx::initInterfaces() {
   m_xtbInterface = new XTBInterface(this);
 }
 
-void Crystalx::initPointers() {
-  m_oldSurfaceGenerationDialog = nullptr;
-  wavefunctionCalculationDialog = nullptr;
-  energyCalculationDialog = nullptr;
-  preferencesDialog = nullptr;
-  _animationSettingsDialog = nullptr;
-  loadingMessageBox = nullptr;
-  m_closeContactDialog = nullptr;
-  depthFadingAndClippingDialog = nullptr;
-  frameworkDialog = nullptr;
-  chargeDialog = nullptr;
 
-  fileWindow = nullptr;
-  infoViewer = nullptr;
-}
 
 void Crystalx::initMenus() {
   createRecentFileActionsAndAddToFileMenu();
@@ -479,6 +467,16 @@ void Crystalx::initConnections() {
           &Crystalx::backgroundTaskFinished);
   connect(&m_futureWatcher, &QFutureWatcher<bool>::started, this,
           [&]() { setBusy(true); });
+
+  connect(m_taskManager, &TaskManager::taskComplete, this,
+	  &Crystalx::taskManagerTaskComplete);
+  connect(m_taskManager, &TaskManager::taskError, this,
+	  &Crystalx::taskManagerTaskError);
+  connect(m_taskManager, &TaskManager::taskAdded, this,
+	  &Crystalx::taskManagerTaskAdded);
+  connect(m_taskManager, &TaskManager::taskRemoved, this,
+	  &Crystalx::taskManagerTaskRemoved);
+
   initActionGroups();
 }
 
@@ -607,6 +605,7 @@ void Crystalx::initMenuConnections() {
   connect(infoAction, &QAction::triggered, this, &Crystalx::showInfoViewer);
   connect(showCrystalPlanesAction, &QAction::triggered, this,
           &Crystalx::showCrystalPlaneDialog);
+  connect(actionShowTaskManager, &QAction::triggered, this, &Crystalx::showTaskManagerWidget);
 }
 
 void Crystalx::initCloseContactsDialog() {
@@ -1056,24 +1055,53 @@ void Crystalx::loadProject(QString filename) {
  */
 void Crystalx::processCif(QString &filename) {
 
-  if (settings::readSetting(settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG)
-          .toBool()) {
-    qDebug() << "Loading CIF file: " << filename;
-    // must be done outside lambda, filename must be copied.
-    showStatusMessage(QString("Loading CIF file from %1").arg(filename));
-    project->loadCrystalStructuresFromCifFile(filename);
-    return;
-  }
-  qDebug() << "Processsing CIF (" << QTime::currentTime().toString() << ") "
-           << filename;
-  jobParams = {};
-  jobParams.jobType = JobType::cifProcessing;
-  jobParams.inputFilename = filename;
-  jobParams.outputFilename =
-      getDataFilenameFromCifFilename(filename, CIFDATA_EXTENSION);
-  jobParams.overrideBondLengths = overrideBondLengths();
+    if (settings::readSetting(settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG)
+	    .toBool()) {
+	qDebug() << "Loading CIF file: " << filename;
+	// must be done outside lambda, filename must be copied.
+	showStatusMessage(QString("Loading CIF file from %1").arg(filename));
+	project->loadCrystalStructuresFromCifFile(filename);
+	return;
+    }
+    else {
 
-  tontoInterface->runJob(jobParams, nullptr);
+	QString cxc = QFileInfo(filename).baseName() + "." + CIFDATA_EXTENSION;
+	auto onCompletion = [&, cxc, filename]() {
+	    if (project->loadCrystalDataTonto(cxc, filename)) {
+		showStatusMessage("CIF data loaded.");
+	    } else {
+		QMessageBox::warning(this, "Error",
+			"Unable to read crystal data from file: " +
+			cxc);
+	    }
+	};
+
+	if (!QFileInfo(cxc).exists()) {
+	    Task* tontoTask = new TontoCifProcessingTask(m_taskManager);
+	    tontoTask->setProperty("name", "Read CIF");
+	    tontoTask->setProperty("cif", filename);
+	    tontoTask->setProperty("cxc", cxc);
+	    tontoTask->setProperty("override_bond_lengths", overrideBondLengths());
+	    TaskID taskId = m_taskManager->add(tontoTask);
+
+	    connect(tontoTask, &Task::completed, onCompletion);
+	}
+	else {
+	    onCompletion();
+	}
+    }
+    /*
+    qDebug() << "Processsing CIF (" << QTime::currentTime().toString() << ") "
+	<< filename;
+    jobParams = {};
+    jobParams.jobType = JobType::cifProcessing;
+    jobParams.inputFilename = filename;
+    jobParams.outputFilename =
+	getDataFilenameFromCifFilename(filename, CIFDATA_EXTENSION);
+    jobParams.overrideBondLengths = overrideBondLengths();
+
+    tontoInterface->runJob(jobParams, nullptr);
+    */
 }
 
 /*!
@@ -1301,6 +1329,10 @@ void Crystalx::generateSurface(const JobParameters &newJobParams,
   }
   tontoInterface->runJob(jobParams, project->currentScene()->crystal(),
                          wavefunctions);
+}
+
+void Crystalx::generateSurfaceNew(SurfaceParameters params) {
+    qDebug() << "Generate surface new not implemented";
 }
 
 void Crystalx::tontoJobFinished(TontoExitStatus exitStatus, JobType type) {
@@ -2668,4 +2700,38 @@ void Crystalx::backgroundTaskFinished() {
   bool success = m_futureWatcher.result();
   showStatusMessage(QString("Job %1").arg(success ? "complete" : "failed"));
   setBusy(false);
+}
+
+void Crystalx::taskManagerTaskComplete(TaskID id) {
+    showStatusMessage(QString("Task %1 complete").arg(id.toString()));
+    int finished = m_taskManager->numFinished();
+    int numTasks = m_taskManager->numTasks();
+    updateProgressBar(finished, numTasks);
+    if(finished == numTasks) setBusy(false);
+}
+
+void Crystalx::taskManagerTaskError(TaskID id, QString errorMessage) {
+    showStatusMessage(QString("Task %1 had error: %2").arg(id.toString()).arg(errorMessage));;
+    int finished = m_taskManager->numFinished();
+    int numTasks = m_taskManager->numTasks();
+    updateProgressBar(finished, numTasks);
+    if(finished == numTasks) setBusy(false);
+}
+
+void Crystalx::taskManagerTaskAdded(TaskID id) {
+    showStatusMessage(QString("Task %1 added").arg(id.toString()));
+    updateProgressBar(m_taskManager->numFinished(), m_taskManager->numTasks());
+    setBusy(true);
+}
+
+void Crystalx::taskManagerTaskRemoved(TaskID id) {
+    showStatusMessage(QString("Task %1 removed").arg(id.toString()));
+    int finished = m_taskManager->numFinished();
+    int numTasks = m_taskManager->numTasks();
+    updateProgressBar(m_taskManager->numFinished(), m_taskManager->numTasks());
+    if(finished == numTasks) setBusy(false);
+}
+
+void Crystalx::showTaskManagerWidget() {
+    m_taskManagerWidget->show();
 }

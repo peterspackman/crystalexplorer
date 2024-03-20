@@ -167,8 +167,9 @@ bool ExternalProgramTask::copyResults(const QString &path) {
     bool force = overwrite();
     for(const auto& [output, output_dest]: m_outputs) {
 	QString tmpOutput = path + QDir::separator() + QFileInfo(output).fileName();
+	qDebug() << "Copying " << tmpOutput << "to" << output_dest;
 	if (!exe::copyFile(tmpOutput, output_dest, force)) {
-	    setErrorMessage(QString("Failed to copy output file from temporary directory. %1 -> %2").arg(output).arg(output_dest));
+	    setErrorMessage(QString("Failed to copy output file from temporary directory. %1 -> %2").arg(tmpOutput).arg(output_dest));
 	    qDebug() << errorMessage();
 	    return false;
 	}
@@ -245,7 +246,7 @@ void ExternalProgramTask::start() {
 	// SUCCESS
 	if (m_exitCode == 0) {
 	    if(!copyResults(tempDir.path())) {
-		setErrorMessage("Could not results out of temporary directory");
+		setErrorMessage("Could not copy results out of temporary directory");
 	    }
 	}
 	else {

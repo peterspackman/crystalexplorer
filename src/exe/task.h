@@ -16,6 +16,8 @@ public:
     inline const auto &errorMessage() const { return m_errorMessage; }
     inline void setErrorMessage(const QString &msg) { m_errorMessage = msg; }
 
+    inline bool isFinished() const { return m_finished; }
+
 protected:
     template<typename Callable>
     void run(Callable &taskCallable) {
@@ -30,7 +32,9 @@ protected:
 	    else {
 		emit errorOccurred(m_errorMessage);
 	    }
+	    m_finished = true;
 	});
+
 	QObject::connect(
 	    watcher, &Watcher::canceled, this, &Task::canceled);
 
@@ -53,6 +57,7 @@ protected:
 private:
     QMap<QString, QVariant> m_properties;
     QString m_errorMessage;
+    bool m_finished{false};
 
 signals:
     void progress(int percentage);

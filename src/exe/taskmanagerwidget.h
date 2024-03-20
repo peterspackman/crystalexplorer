@@ -29,11 +29,13 @@ public:
 
 private slots:
     void onTaskAdded(TaskID taskId);
+    void onTaskRemoved(TaskID taskId);
     void onTaskComplete(TaskID taskId);
     void onTaskError(TaskID taskId, const QString &error);
     void onTaskProgress(TaskID taskId, int percentage);
     void onTaskProgressText(TaskID taskId, const QString &desc);
     void onStopTaskClicked();
+    void onRemoveTaskClicked();
     void contextMenu(const QPoint &pos);
     void showPropertiesForRow(int row);
     void onPropertyItemDoubleClicked(QTreeWidgetItem* item, int column);
@@ -43,6 +45,7 @@ private:
     QTableWidget *m_taskTable{nullptr};
     QPushButton *m_stopTaskButton{nullptr};
     QPushButton *m_startTaskButton{nullptr};
+    QPushButton *m_removeTaskButton{nullptr};
     QMap<TaskID, int> m_taskItems;
     QList<TaskID> m_rowTasks;
     QIcon m_successIcon;

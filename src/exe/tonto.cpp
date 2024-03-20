@@ -32,10 +32,10 @@ void TontoTask::appendCifDataBlock(const QString &dataBlockName, QString &result
 
   if (overrideBondLengths()) {
       // TODO fix settings
-      result.append(QString("        CH_bond_length= %1 angstrom\n").arg(1.0));
-      result.append(QString("        NH_bond_length= %1 angstrom\n").arg(1.0));
-      result.append(QString("        OH_bond_length= %1 angstrom\n").arg(1.0));
-      result.append(QString("        BH_bond_length= %1 angstrom\n").arg(1.0));
+      result.append(QString("        CH_bond_length= %1 angstrom\n").arg(1.083f));
+      result.append(QString("        NH_bond_length= %1 angstrom\n").arg(1.009f));
+      result.append(QString("        OH_bond_length= %1 angstrom\n").arg(0.983f));
+      result.append(QString("        BH_bond_length= %1 angstrom\n").arg(1.180f));
   }
   result.append("    }\n");
 }
@@ -44,8 +44,12 @@ bool TontoTask::overrideBondLengths() const {
     return properties().value("override_bond_lengths", true).toBool();
 }
 
+void TontoTask::setCifFileName(const QString &s) {
+    setProperty("cif", s);
+}
+
 QString TontoTask::cifFileName() const {
-    return properties().value("file_name", "file.cif").toString();
+    return properties().value("cif", "file.cif").toString();
 }
 
 QString TontoTask::basisSetDirectory() const {
@@ -54,6 +58,14 @@ QString TontoTask::basisSetDirectory() const {
 
 QString TontoTask::slaterBasisName() const {
     return properties().value("slaterbasis_name", "").toString();
+}
+
+void TontoTask::setCxcFileName(const QString &s) {
+    setProperty("cxc", s);
+}
+
+QString TontoTask::cxcFileName() const {
+    return properties().value("cxc", "file.cxc").toString();
 }
 
 void TontoTask::start() {
@@ -90,7 +102,7 @@ QString TontoCifProcessingTask::getInputText() {
     appendBasisSetDirectoryBlock(result);
     appendCifDataBlock("", result);
     result.append("    cx_uses_angstrom= true\n");
-    result.append("    CX_file_name= \"file.cxs\"\n");
+    result.append(QString("    CX_file_name= \"%1\"\n").arg(cxcFileName()));
     result.append("    process_CIF_for_CX\n");
     appendFooterBlock(result);
     return result;
@@ -100,11 +112,6 @@ TontoCifProcessingTask::TontoCifProcessingTask(QObject *parent) : TontoTask(pare
 
 void TontoCifProcessingTask::start() {
     setRequirements({FileDependency(cifFileName())});
-    setOutputs({FileDependency("file.cxs")});
+    setOutputs({FileDependency(cxcFileName())});
     TontoTask::start();
-    /*
-  writeCifData(ts, jobParams.inputFilename, jobParams.overrideBondLengths);
-  writeProcessCifForCX(ts, jobParams.outputFilename);
-  writeFooter(ts);
-  */
 }

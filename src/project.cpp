@@ -132,8 +132,22 @@ void Project::removeCurrentCrystal() {
   }
 }
 
+bool Project::loadCrystalDataTonto(const QString &cxs, const QString &cif) {
+  QVector<Scene *> crystalList = crystaldata::loadCrystalsFromTontoOutput(cxs, cif);
+  if (crystalList.size() > 0) {
+    int newCrystalIndex = m_scenes.size();
+    m_scenes.append(crystalList);
+    setUnsavedChangesExists();
+    setCurrentCrystal(newCrystalIndex);
+    return true;
+  }
+  return false;
+}
+
 bool Project::loadCrystalData(const JobParameters &jobParams) {
-  QVector<Scene *> crystalList = CrystalData::getData(jobParams);
+    QString cxs = jobParams.outputFilename;
+    QString cif = jobParams.inputFilename;
+  QVector<Scene *> crystalList = crystaldata::loadCrystalsFromTontoOutput(cxs, cif);
   if (crystalList.size() > 0) {
     int newCrystalIndex = m_scenes.size();
     m_scenes.append(crystalList);

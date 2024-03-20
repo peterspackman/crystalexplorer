@@ -19,6 +19,7 @@ TaskID TaskManager::add(Task* task, bool start) {
 	this->handleTaskError(id, "Stopped by user");
     });
 
+    m_taskCount++;
     emit taskAdded(id);
     if(start) task->start();
     return id;
@@ -26,10 +27,16 @@ TaskID TaskManager::add(Task* task, bool start) {
 
 void TaskManager::remove(TaskID taskId) {
     if (m_tasks.contains(taskId)) {
+	emit taskRemoved(taskId); // emit before we actually remove it
+
 	Task* task = m_tasks.value(taskId);
 	m_tasks.remove(taskId);
 	task->deleteLater(); // Safely delete the task
-	emit taskRemoved(taskId);
+
+	if(task->isFinished()) {
+	    m_completeCount--;
+	}
+	m_taskCount--;
     }
 }
 
@@ -62,9 +69,20 @@ void TaskManager::runBlocking(TaskID id) {
 }
 
 void TaskManager::handleTaskComplete(TaskID id) {
+    m_completeCount++;
     emit taskComplete(id);
 }
 
 void TaskManager::handleTaskError(TaskID id, QString err) {
+    m_completeCount++;
     emit taskError(id, err);
+}
+
+
+int TaskManager::numFinished() const {
+    return m_completeCount;
+}
+
+int TaskManager::numTasks() const {
+    return m_taskCount;
 }

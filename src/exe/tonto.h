@@ -10,7 +10,13 @@ public:
 
     QString basisSetDirectory() const;
     QString slaterBasisName() const;
+
+    void setCifFileName(const QString &);
     QString cifFileName() const;
+
+    void setCxcFileName(const QString &);
+    QString cxcFileName() const;
+
     bool overrideBondLengths() const;
 
     virtual QString getInputText() = 0;

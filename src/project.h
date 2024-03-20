@@ -25,6 +25,7 @@ public:
   ~Project();
   void reset();
   bool loadCrystalData(const JobParameters &);
+  bool loadCrystalDataTonto(const QString &cxs, const QString &cif);
   bool loadSurfaceData(const JobParameters &);
   Scene *currentScene();
   const Scene *currentScene() const;

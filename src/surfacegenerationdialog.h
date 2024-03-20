@@ -24,6 +24,10 @@ static const bool defaultHideSurfaceOptionsBox = true;
 static const Qt::CheckState defaultEditTonto = Qt::Unchecked;
 static const Qt::CheckState defaultShowDescriptions = Qt::Unchecked;
 
+struct SurfaceParameters {
+    IsosurfaceDetails::Type type;
+};
+
 class SurfaceGenerationDialog : public QDialog {
   Q_OBJECT
 
