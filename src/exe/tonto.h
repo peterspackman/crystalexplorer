@@ -11,11 +11,13 @@ public:
     QString basisSetDirectory() const;
     QString slaterBasisName() const;
 
-    void setCifFileName(const QString &);
     QString cifFileName() const;
-
-    void setCxcFileName(const QString &);
     QString cxcFileName() const;
+    QString cxsFileName() const;
+    QString crystalName() const;
+
+    int charge() const;
+    int multiplicity() const;
 
     bool overrideBondLengths() const;
 
@@ -25,6 +27,7 @@ public:
     void appendBasisSetDirectoryBlock(QString &dest);
     void appendCifDataBlock(const QString &dataBlock, QString &dest);
     void appendFooterBlock(QString &dest);
+    void appendChargeMultiplicityBlock(QString &dest);
 };
 
 class TontoCifProcessingTask: public TontoTask {

@@ -40,12 +40,20 @@ void TontoTask::appendCifDataBlock(const QString &dataBlockName, QString &result
   result.append("    }\n");
 }
 
+void TontoTask::appendChargeMultiplicityBlock(QString &dest) {
+    dest.append(QString("\n    charge= %1\n    multiplicity= %2\n").arg(charge()).arg(multiplicity()));
+}
+
 bool TontoTask::overrideBondLengths() const {
     return properties().value("override_bond_lengths", true).toBool();
 }
 
-void TontoTask::setCifFileName(const QString &s) {
-    setProperty("cif", s);
+int TontoTask::charge() const {
+    return properties().value("charge", 0).toInt();
+}
+
+int TontoTask::multiplicity() const {
+    return properties().value("multiplicity", 1).toInt();
 }
 
 QString TontoTask::cifFileName() const {
@@ -60,12 +68,16 @@ QString TontoTask::slaterBasisName() const {
     return properties().value("slaterbasis_name", "").toString();
 }
 
-void TontoTask::setCxcFileName(const QString &s) {
-    setProperty("cxc", s);
-}
-
 QString TontoTask::cxcFileName() const {
     return properties().value("cxc", "file.cxc").toString();
+}
+
+QString TontoTask::cxsFileName() const {
+    return properties().value("cxs", "file.cxs").toString();
+}
+
+QString TontoTask::crystalName() const {
+    return properties().value("crystal_name", "").toString();
 }
 
 void TontoTask::start() {

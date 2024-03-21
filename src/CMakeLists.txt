@@ -203,6 +203,7 @@ target_link_libraries(
     cx PUBLIC 
     cx_core
     cx_exe
+    cx_volume
     cx_io
     cx_crystal
     cx_graphics

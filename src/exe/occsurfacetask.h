@@ -5,17 +5,20 @@ class OccSurfaceTask: public ExternalProgramTask {
 
 public:
     inline static constexpr char wavefunctionSuffixDefault[] = {".owf.json"};
-    inline static constexpr char inputSuffixDefault[] = {".json"};
-    inline static constexpr char surfaceSuffixDefault[] = {".json"};
+    inline static constexpr char surfaceSuffixDefault[] = {".ply"};
 
     explicit OccSurfaceTask(QObject * parent = nullptr);
 
     void setSurfaceParameters(const exe::surface::Parameters &);
     virtual void start() override;
 
-    QString inputSuffix() const;
+    QString inputFileName() const;
+    QString environmentFileName() const;
     QString wavefunctionSuffix() const;
-    QString surfaceSuffix() const;
+    QString outputFileName() const;
+
+    float separation() const;
+    float isovalue() const;
 
 private:
     exe::surface::Parameters m_parameters;

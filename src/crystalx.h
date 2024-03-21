@@ -199,9 +199,7 @@ private:
   void updateWorkingDirectories(const QString &);
   void processCif(QString &);
   void loadXyzFile(const QString &);
-  QString getDataFilenameFromCifFilename(const QString, const QString);
-  QString getDataFilenameFromCifAndCrystalName(const QString, const QString,
-                                               const QString);
+
   void showLoadingMessageBox(QString);
   void hideLoadingMessageBox();
   void processSuccessfulJob();

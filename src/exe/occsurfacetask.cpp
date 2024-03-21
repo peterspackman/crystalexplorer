@@ -3,12 +3,6 @@
 #include "exefileutilities.h"
 
 
-QString toJson(const exe::surface::Parameters &params) {
-	QJsonObject root;
-	root["kind"] = "promolecule";
-	return QJsonDocument(root).toJson();
-}
-
 OccSurfaceTask::OccSurfaceTask(QObject * parent) : ExternalProgramTask(parent) {
     setExecutable(exe::findProgramInPath("occ"));
     qDebug() << "Executable" << executable();
@@ -19,25 +13,23 @@ void OccSurfaceTask::setSurfaceParameters(const exe::surface::Parameters &params
 }
 
 void OccSurfaceTask::start() {
-    QString json = toJson(m_parameters);
     emit progressText("Generated JSON input");
 
     QString name = baseName();
-    QString inputName = name + inputSuffix();
-    QString outputName = name + surfaceSuffix();
-
-    if(!exe::writeTextFile(inputName, json)) {
-	emit errorOccurred("Could not write input file");
-	return;
-    }
-    emit progressText("Wrote input file");
+    QString input = inputFileName();
+    QString env = environmentFileName();
+    QString outputName = outputFileName();
 
 
-    setArguments({"scf", inputName});
-    setRequirements({FileDependency(inputName)});
+    QStringList args{"isosurface", input};
+    if(!env.isEmpty()) args << env;
+    args << "-o" << outputName;
+    args << QString("--separation=%1").arg(separation());
+    setArguments(args);
+    setRequirements({FileDependency(input)});
     setOutputs({FileDependency(outputName, outputName)});
     auto environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("OCC_BASIS_PATH", "/Users/285699f/git/occ/share");
+    environment.insert("OCC_DATA_PATH", "/Users/285699f/git/occ/share");
     setEnvironment(environment);
 
 
@@ -47,12 +39,24 @@ void OccSurfaceTask::start() {
 }
 
 
-QString OccSurfaceTask::inputSuffix() const {
-    return inputSuffixDefault;
+float OccSurfaceTask::separation() const {
+    return properties().value("separation", 0.2).toFloat();
 }
 
-QString OccSurfaceTask::surfaceSuffix() const {
-    return surfaceSuffixDefault;
+float OccSurfaceTask::isovalue() const {
+    return properties().value("isovalue", 0.002).toFloat();
+}
+
+QString OccSurfaceTask::inputFileName() const {
+    return properties().value("inputFile", "file.xyz").toString();
+}
+
+QString OccSurfaceTask::environmentFileName() const {
+    return properties().value("environmentFile", "").toString();
+}
+
+QString OccSurfaceTask::outputFileName() const {
+    return properties().value("outputFile", "surface.ply").toString();
 }
 
 QString OccSurfaceTask::wavefunctionSuffix() const {

@@ -22,6 +22,7 @@
 #include "settings.h"
 #include "tontointerface.h"
 #include "tonto.h"
+#include "isosurface_calculator.h"
 
 Crystalx::Crystalx() : QMainWindow() {
   setupUi(this);
@@ -1090,38 +1091,6 @@ void Crystalx::processCif(QString &filename) {
 	    onCompletion();
 	}
     }
-    /*
-    qDebug() << "Processsing CIF (" << QTime::currentTime().toString() << ") "
-	<< filename;
-    jobParams = {};
-    jobParams.jobType = JobType::cifProcessing;
-    jobParams.inputFilename = filename;
-    jobParams.outputFilename =
-	getDataFilenameFromCifFilename(filename, CIFDATA_EXTENSION);
-    jobParams.overrideBondLengths = overrideBondLengths();
-
-    tontoInterface->runJob(jobParams, nullptr);
-    */
-}
-
-/*!
- \brief Converts filenames from xxx.cif -> xxx.EXTENSION
- where EXTENSION is given by the parameter extension
- Sensible extensions are: CIFDATA_EXTENSION, ATOMDATA_EXTENSION, and
- SURFACEDATA_EXTENSION
- */
-QString Crystalx::getDataFilenameFromCifFilename(const QString cifFilename,
-                                                 const QString extension) {
-  QFileInfo fi(cifFilename);
-  return fi.path() + "/" + fi.baseName() + "." + extension;
-}
-
-QString
-Crystalx::getDataFilenameFromCifAndCrystalName(const QString cifFilename,
-                                               const QString crystalName,
-                                               const QString extension) {
-  QFileInfo fi(cifFilename);
-  return fi.path() + "/" + fi.baseName() + "_" + crystalName + "." + extension;
 }
 
 void Crystalx::jobRunning() { setBusy(true); }
@@ -1221,7 +1190,12 @@ void Crystalx::getSurfaceParametersFromUser() {
   if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
     readSurfaceFile();
   } else if (scene->crystal() == nullptr) {
-    qDebug() << "Clicked generate surface";
+      auto calc = new volume::IsosurfaceCalculator(this);
+      calc->setTaskManager(m_taskManager);
+      volume::IsosurfaceParameters params;
+      params.structure = scene->chemicalStructure();
+      calc->start(params);
+
   } else {
 
     DeprecatedCrystal *crystal = scene->crystal();
@@ -1276,8 +1250,10 @@ void Crystalx::generateSurface(const JobParameters &newJobParams,
   QString crystalName = scene->crystal()->crystalName();
 
   jobParams.inputFilename = cifFilename;
-  jobParams.outputFilename = getDataFilenameFromCifAndCrystalName(
-      cifFilename, crystalName, SURFACEDATA_EXTENSION);
+  {
+      QFileInfo fi (cifFilename);
+      jobParams.outputFilename = fi.path() + "/" + fi.baseName() + "_" + crystalName + "." + SURFACEDATA_EXTENSION;
+  }
   jobParams.overrideBondLengths = overrideBondLengths();
   jobParams.slaterBasisName = getSlaterBasis();
 
@@ -2463,8 +2439,10 @@ void Crystalx::calculateEnergies(const JobParameters &newJobParams,
     QString crystalName = crystal->crystalName();
 
     jobParams.inputFilename = cifFilename;
-    jobParams.outputFilename = getDataFilenameFromCifAndCrystalName(
-        cifFilename, crystalName, ENERGYDATA_EXTENSION);
+    {
+        QFileInfo fi (cifFilename);
+        jobParams.outputFilename = fi.path() + "/" + fi.baseName() + "_" + crystalName + "." + ENERGYDATA_EXTENSION;
+    }
 
     if (jobParams.theory == Method::DLPNO) {
       m_orcaInterface->runJob(jobParams, crystal, {});

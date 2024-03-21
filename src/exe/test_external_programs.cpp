@@ -1,4 +1,5 @@
 #include "occwavefunctiontask.h"
+#include "occsurfacetask.h"
 #include "tonto.h"
 #include "taskmanager.h"
 #include "taskmanagerwidget.h"
@@ -33,6 +34,12 @@ int main(int argc, char *argv[]) {
     task->setWavefunctionParameters(params);
 
     auto id = taskManager->add(task);
+
+    OccSurfaceTask * surface_task = new OccSurfaceTask();
+    surface_task->setProperty("name", "Water promolecule");
+    surface_task->setProperty("inputFile", "water.xyz");
+
+    auto idsurf = taskManager->add(surface_task);
 
     Task* mockTask = new MockTask(taskManager);
     mockTask->setProperty("name", "startup task");
