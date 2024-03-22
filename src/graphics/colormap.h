@@ -1,20 +1,14 @@
 #pragma once
-#include <QString>
+#include <cmath>
+#include <cstdint>
+#include <algorithm>
 #include <QColor>
+#include <occ/core/linear_algebra.h>
 
-
-namespace cx::graphics {
-
-enum class ColorMap{
-    Viridis,
-    Magma,
+enum class ColorMapName
+{
+    Parula, Heat, Jet, Turbo, Hot, Gray, Magma, Inferno, Plasma, Viridis, Cividis, Github, Cubehelix, HSV
 };
 
-struct LinearColorMap {
-    float minValue{0.0};
-    float maxValue{1.0};
-    ColorMap colorMap{ColorMap::Viridis};
-    QColor operator()(float value) const;
-};
-
-}
+QColor linearColorMap(double x, ColorMapName name);
+QColor quantizedLinearColorMap(double x, unsigned int num_levels, ColorMapName name);

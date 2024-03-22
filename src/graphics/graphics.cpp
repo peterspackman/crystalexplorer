@@ -332,12 +332,12 @@ std::vector<PointCloudVertex> makePointCloudVertices(const Mesh &pointCloud, Col
     const auto &pc_vertices = pointCloud.vertices();
     const auto &prop = pointCloud.vertexProperty(colorSettings.property);
     if(prop.size() == 0) {
-	colorSettings.colormap.minValue = 0.0f;
-	colorSettings.colormap.maxValue = 0.0f;
+	colorSettings.minValue = 0.0f;
+	colorSettings.maxValue = 0.0f;
     }
     else if(colorSettings.findRange) {
-	colorSettings.colormap.minValue = prop.minCoeff();
-	colorSettings.colormap.maxValue = prop.maxCoeff();
+	colorSettings.minValue = prop.minCoeff();
+	colorSettings.maxValue = prop.maxCoeff();
     }
 
 
@@ -350,7 +350,8 @@ std::vector<PointCloudVertex> makePointCloudVertices(const Mesh &pointCloud, Col
 	QColor color = Qt::black;
 
 	if(prop.rows() > i) {
-	    color = colorSettings.colormap(static_cast<float>(prop(i)));
+	    float x = (static_cast<float>(prop(i)) - colorSettings.minValue) / (colorSettings.maxValue - colorSettings.minValue);
+	    color = linearColorMap(x, colorSettings.colorMap);
 	}
 
 	col.setX(color.redF());

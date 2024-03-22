@@ -26,6 +26,7 @@ static const Qt::CheckState defaultShowDescriptions = Qt::Unchecked;
 
 struct SurfaceParameters {
     IsosurfaceDetails::Type type;
+    float isovalue{0.002};
 };
 
 class SurfaceGenerationDialog : public QDialog {
@@ -62,6 +63,7 @@ private slots:
 signals:
   void surfaceParametersChosen(const JobParameters &,
                                std::optional<Wavefunction>);
+  void surfaceParametersChosenNew(SurfaceParameters);
   void requireWavefunction(const QVector<AtomId> &, int, int);
 
 private:

@@ -58,6 +58,8 @@ void IsosurfaceCalculator::start(IsosurfaceParameters params) {
   OccSurfaceTask * surface_task = new OccSurfaceTask();
   surface_task->setProperty("name", "Water promolecule");
   surface_task->setProperty("inputFile", filename);
+  qDebug() << "Generating surface with isovalue: " << params.isovalue;
+  surface_task->setProperty("isovalue", params.isovalue);
 
   auto taskId = m_taskManager->add(surface_task);
   connect(surface_task, &Task::completed, this, &IsosurfaceCalculator::onTaskComplete);

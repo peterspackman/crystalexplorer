@@ -131,6 +131,10 @@ void SurfaceGenerationDialog::validate() {
   }
 
   emit surfaceParametersChosen(jobParams, wfn);
+  emit surfaceParametersChosenNew(SurfaceParameters{
+    ui->surfaceComboBox->currentType(),
+    ui->isovalueLineEdit->text().toFloat()
+  });
 }
 
 // Returns the corrsponding wavefunction for a currently selected entry in the

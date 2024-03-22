@@ -1190,12 +1190,15 @@ void Crystalx::getSurfaceParametersFromUser() {
   if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
     readSurfaceFile();
   } else if (scene->crystal() == nullptr) {
-      auto calc = new volume::IsosurfaceCalculator(this);
-      calc->setTaskManager(m_taskManager);
-      volume::IsosurfaceParameters params;
-      params.structure = scene->chemicalStructure();
-      calc->start(params);
-
+	if (m_newSurfaceGenerationDialog == nullptr) {
+	  m_newSurfaceGenerationDialog = new SurfaceGenerationDialog(this);
+	  m_newSurfaceGenerationDialog->setModal(true);
+	  connect(m_newSurfaceGenerationDialog,
+		  &SurfaceGenerationDialog::surfaceParametersChosenNew,
+		  this, &Crystalx::generateSurfaceNew
+	  );
+	}
+	m_newSurfaceGenerationDialog->show();
   } else {
 
     DeprecatedCrystal *crystal = scene->crystal();
@@ -1307,8 +1310,15 @@ void Crystalx::generateSurface(const JobParameters &newJobParams,
                          wavefunctions);
 }
 
-void Crystalx::generateSurfaceNew(SurfaceParameters params) {
-    qDebug() << "Generate surface new not implemented";
+void Crystalx::generateSurfaceNew(SurfaceParameters parameters) {
+    auto calc = new volume::IsosurfaceCalculator(this);
+    calc->setTaskManager(m_taskManager);
+    volume::IsosurfaceParameters params;
+    Scene *scene = project->currentScene();
+    params.isovalue = parameters.isovalue;
+    params.structure = scene->chemicalStructure();
+    calc->start(params);
+
 }
 
 void Crystalx::tontoJobFinished(TontoExitStatus exitStatus, JobType type) {

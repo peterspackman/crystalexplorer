@@ -25,6 +25,7 @@ void OccSurfaceTask::start() {
     if(!env.isEmpty()) args << env;
     args << "-o" << outputName;
     args << QString("--separation=%1").arg(separation());
+    args << QString("--isovalue=%1").arg(isovalue());
     setArguments(args);
     setRequirements({FileDependency(input)});
     setOutputs({FileDependency(outputName, outputName)});

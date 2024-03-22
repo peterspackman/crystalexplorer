@@ -19,7 +19,9 @@ namespace cx::graphics {
 struct ColorSettings {
     QString property{"None"};
     bool findRange{true};
-    LinearColorMap colormap{0.0, 1.0, ColorMap::Viridis};
+    float minValue{0.0};
+    float maxValue{0.0};
+    ColorMapName colorMap{ColorMapName::Viridis};
 };
 
 void addCircleToCircleRenderer(CircleRenderer &c,

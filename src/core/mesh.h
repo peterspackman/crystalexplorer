@@ -10,7 +10,7 @@ Q_OBJECT
 public:
     using VertexList = Eigen::Matrix<double, 3, Eigen::Dynamic>;
     using FaceList = Eigen::Matrix<int, 3, Eigen::Dynamic>;
-    using ScalarPropertyValues = Eigen::Matrix<int, Eigen::Dynamic, 1>;
+    using ScalarPropertyValues = Eigen::Matrix<float, Eigen::Dynamic, 1>;
     using ScalarProperties = ankerl::unordered_dense::map<QString, ScalarPropertyValues>;
 
     enum class NormalSetting{

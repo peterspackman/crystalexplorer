@@ -1,4 +1,5 @@
 #include "chemicalstructurerenderer.h"
+#include "colormap.h"
 #include "graphics.h"
 #include "elementdata.h"
 #include "interactions.h"
@@ -285,6 +286,20 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
 	selectionIdColor = selectionHandler->getColorFromId(selectionId);
     }
 
+    Mesh::ScalarPropertyValues prop;
+    auto availableProperties = mesh->availableVertexProperties();
+    qDebug() << "Available vertex properties: " << availableProperties;
+    if(availableProperties.size() > 1) {
+	prop = mesh->vertexProperty(availableProperties[0]);
+	float l = prop.minCoeff();
+	float u = prop.maxCoeff();
+	prop.array() = (prop.array() - l) / (u - l);
+    }
+    else {
+	prop = Mesh::ScalarPropertyValues(verts.cols());
+	prop.setConstant(0.5);
+    }
+
     for (int i = 0; i < mesh->numberOfVertices(); i++) {
 	quint32 vertex_id = selectionId + i;
 	QVector3D selectionColor;
@@ -293,7 +308,8 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
 	}
 	QVector3D position(verts(0, i), verts(1, i), verts(2, i));
 
-	QVector3D color(0.5f, 0.5f, 0.5f);
+	QColor color = linearColorMap(prop(i), ColorMapName::Cividis);
+	QVector3D colorVec(color.redF(), color.greenF(), color.blueF());
 
 	QVector3D normal(0.0f, 0.0f, 0.0f);
 	if(haveVertexNormals) {
@@ -303,7 +319,7 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
 		vertexNormals(2, i)
 	    );
 	}
-	vertices.emplace_back(position, normal, color, selectionColor);
+	vertices.emplace_back(position, normal, colorVec, selectionColor);
     }
     for (int f = 0; f < mesh->numberOfFaces(); f++) {
 	indices.emplace_back(

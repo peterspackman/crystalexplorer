@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <fstream>
+#include <ankerl/unordered_dense.h>
 
 inline std::vector<uint8_t> read_file_binary(const std::string & pathToFile)
 {
@@ -91,7 +92,19 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 
 	auto normals = file.request_properties_from_element("vertex", {"nx", "ny", "nz"});
 
+	std::vector<std::string> property_names = {"di", "di_norm", "de", "de_norm"};
+	ankerl::unordered_dense::map<std::string, std::shared_ptr<tinyply::PlyData>> properties;
+	for(const auto &prop_name: property_names) {
+	    std::shared_ptr<tinyply::PlyData> prop;
+	    try { prop = file.request_properties_from_element("vertex", {prop_name}); }
+	    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+	    if (!prop) continue;
+	    properties[prop_name] = prop;
+	}
+
+
         file.read(*file_stream);
+
 
         if (vertices) {
             qDebug() << "Read" << vertices->count << "vertices";
@@ -112,15 +125,34 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 
 	vertexMatrix = Eigen::Map<const Eigen::Matrix3Xf>(reinterpret_cast<const float *>(vertices->buffer.get()), 3, vertices->count).cast<double>();
 
-        // Similarly, copy face indices into faceMatrix
-        // This assumes face indices are stored as int32. You might need to adjust the logic based on actual data.
-        std::memcpy(faceMatrix.data(), faces->buffer.get(), faces->buffer.size_bytes());
+	faceMatrix = Eigen::Map<const Eigen::Matrix<uint32_t, 3, Eigen::Dynamic>>(reinterpret_cast<const uint32_t*>(faces->buffer.get()), 3, faces->count).cast<int>();
+
 
 	normalMatrix = Eigen::Map<const Eigen::Matrix3Xf>(reinterpret_cast<const float *>(normals->buffer.get()), 3, normals->count).cast<double>();
 
         // Now, you can create your Mesh object
         Mesh* mesh = new Mesh(vertexMatrix, faceMatrix);
 	mesh->setVertexNormals(normalMatrix);
+
+	for(const auto &[prop_name, prop]: properties) {
+	    qDebug() << QString::fromStdString(prop_name) << "read" << prop->count << "property values";
+	    switch(prop->t) {
+		case tinyply::Type::FLOAT32: {
+		    qDebug() << "count =" << prop->count << prop->buffer.get();
+		    const float * buf = reinterpret_cast<const float *>(prop->buffer.get());
+		    if(!buf) {
+			qDebug() << "Failed reading property values";
+			break;
+		    }
+		    Eigen::VectorXf v = Eigen::Map<const Eigen::VectorXf>(buf, prop->count);
+		    mesh->setVertexProperty(QString::fromStdString(prop_name), v);
+		    break;
+		}
+		default:
+		    break;
+	    }
+	}
+
         return mesh;
 
     } catch (const std::exception& e) {
