@@ -4,7 +4,7 @@
 #include <QJsonDocument>
 #include <fmt/core.h>
 
-QString toJson(const exe::wfn::Parameters &params) {
+QString toJson(const wfn::Parameters &params) {
 	QJsonObject root;
 	QJsonObject topology;
 	QJsonArray positions;
@@ -40,7 +40,7 @@ OccWavefunctionTask::OccWavefunctionTask(QObject * parent) : ExternalProgramTask
     qDebug() << "Executable" << executable();
 }
 
-void OccWavefunctionTask::setWavefunctionParameters(const exe::wfn::Parameters &params) {
+void OccWavefunctionTask::setWavefunctionParameters(const wfn::Parameters &params) {
     m_parameters = params;
 }
 

@@ -3,10 +3,14 @@
 #include <QMap>
 #include <QObject>
 #include <Eigen/Dense>
+#include "isosurface_parameters.h"
 #include <ankerl/unordered_dense.h>
 
+
+
 class Mesh : public QObject {
-Q_OBJECT
+    Q_OBJECT
+
 public:
     using VertexList = Eigen::Matrix<double, 3, Eigen::Dynamic>;
     using FaceList = Eigen::Matrix<int, 3, Eigen::Dynamic>;
@@ -62,7 +66,8 @@ public:
     void setFaceProperty(const QString &name, const ScalarPropertyValues &values);
     [[nodiscard]] const ScalarPropertyValues &faceProperty(const QString &) const;
 
-
+    [[nodiscard]] inline const auto &kind() { return m_kind; }
+    inline void setKind(isosurface::Kind kind) { m_kind = kind; }
 
     static Mesh *newFromJson(const QJsonObject &, QObject *parent=nullptr);
     static Mesh *newFromJsonFile(const QString &, QObject *parent=nullptr);
@@ -85,6 +90,7 @@ private:
 
     QString m_selectedProperty;
     ScalarPropertyValues m_emptyProperty;
+    isosurface::Kind m_kind{isosurface::Kind::Promolecule};
 };
 
 class MeshInstance : public QObject {

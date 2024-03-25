@@ -69,7 +69,7 @@ public:
 
 public slots:
   void generateSurface(const JobParameters &, std::optional<Wavefunction>);
-  void generateSurfaceNew(SurfaceParameters);
+  void generateSurfaceNew(isosurface::Parameters);
   void getWavefunctionParametersFromUser(QVector<AtomId>, int, int);
   void generateWavefunction(const JobParameters &);
   void calculateMonomerEnergy(const JobParameters &);

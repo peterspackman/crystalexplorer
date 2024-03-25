@@ -510,6 +510,33 @@ void ChemicalStructure::expandAtomsWithinRadius(float radius, bool selected) {
   // TODO
 }
 
+
+std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const {
+    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> unique_idxs;
+
+    occ::core::KDTree<double> tree(3, m_atomicPositions, occ::core::max_leaf);
+    tree.index->buildIndex();
+    const double max_dist2 = radius * radius;
+
+    std::vector<std::pair<size_t, double>> idxs_dists;
+    nanoflann::RadiusResultSet results(max_dist2, idxs_dists);
+
+
+    for (int i = 0; i < numberOfAtoms(); i++) {
+	if (m_flags[i] & flags) {
+	    const double *q = m_atomicPositions.col(i).data();
+	    tree.index->findNeighbors(results, q, nanoflann::SearchParams());
+	    for (const auto &result : idxs_dists) {
+		int idx = result.first;
+		unique_idxs.insert({idx});
+	    }
+	}
+    }
+
+    std::vector<GenericAtomIndex> res(unique_idxs.begin(), unique_idxs.end());
+    return res;
+}
+
 void ChemicalStructure::childEvent(QChildEvent *event) {
     // MAKE SURE TO DO THIS
     QObject::childEvent(event);

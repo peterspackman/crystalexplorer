@@ -1,5 +1,6 @@
 #pragma once
 #include "surfacedescription.h"
+#include "isosurface_parameters.h"
 #include <QComboBox>
 
 class SurfaceTypeDropdown : public QComboBox {
@@ -9,6 +10,7 @@ public:
   IsosurfaceDetails::Attributes currentSurfaceAttributes() const;
 
   inline IsosurfaceDetails::Type currentType() const { return m_selectedType; }
+  isosurface::Kind currentKind() const;
 
 signals:
   void surfaceTypeChanged(IsosurfaceDetails::Type);

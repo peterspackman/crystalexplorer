@@ -11,6 +11,39 @@
 #include <occ/core/bondgraph.h>
 #include <occ/core/linear_algebra.h>
 
+
+struct GenericAtomIndex {
+    int unique{0};
+    int x{0};
+    int y{0};
+    int z{0};
+
+    inline bool operator==(const GenericAtomIndex &rhs) const {
+	return std::tie(unique, x, x, z) ==
+	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
+    }
+
+    inline bool operator<(const GenericAtomIndex &rhs) const {
+	return std::tie(unique, x, x, z) <
+	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
+    }
+
+    inline bool operator>(const GenericAtomIndex &rhs) const {
+	return std::tie(unique, x, x, z) >
+	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
+    }
+
+};
+
+struct GenericAtomIndexHash {
+    using is_avalanching = void;
+    [[nodiscard]] auto operator()(GenericAtomIndex const &idx) const noexcept -> uint64_t {
+	static_assert(std::has_unique_object_representations_v<GenericAtomIndex>);
+	return ankerl::unordered_dense::detail::wyhash::hash(&idx, sizeof(idx));
+    }
+};
+
+
 class ChemicalStructure : public QObject {
   Q_OBJECT
 public:
@@ -104,6 +137,8 @@ public:
 
   [[nodiscard]] inline const DimerInteractions * interactions() const { return m_interactions; }
   [[nodiscard]] inline DimerInteractions * interactions() { return m_interactions; }
+
+  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
 
 signals:
   void childAdded(QObject *);

@@ -615,3 +615,29 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
     updateBondGraph();
   }
 }
+
+std::vector<GenericAtomIndex> CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const {
+    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> unique_idxs;
+
+    auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
+
+    for (int i = 0; i < numberOfAtoms(); i++) {
+	if (atomFlagsSet(i, flags)) {
+	    const auto &offset = m_unitCellOffsets[i];
+	    const auto &region = uc_neighbors[offset.unitCellOffset];
+
+	    for(int n = 0; n < region.size(); n++) {
+		int h = static_cast<float>(std::floor(region.frac_pos(0, i))) +
+			  offset.hkl.h;
+		int k = static_cast<float>(std::floor(region.frac_pos(1, i))) +
+			  offset.hkl.k;
+		int l = static_cast<float>(std::floor(region.frac_pos(2, i))) +
+			  offset.hkl.l;
+		unique_idxs.insert({region.uc_idx(n), h, k, l});
+	    }
+	}
+    }
+
+    std::vector<GenericAtomIndex> res(unique_idxs.begin(), unique_idxs.end());
+    return res;
+}

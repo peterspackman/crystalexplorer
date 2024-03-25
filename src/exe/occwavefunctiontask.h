@@ -1,4 +1,5 @@
 #include "externalprogram.h"
+#include "wavefunction_parameters.h"
 
 
 class OccWavefunctionTask : public ExternalProgramTask {
@@ -9,14 +10,14 @@ public:
 
     explicit OccWavefunctionTask(QObject * parent = nullptr);
 
-    void setWavefunctionParameters(const exe::wfn::Parameters &);
+    void setWavefunctionParameters(const wfn::Parameters &);
     virtual void start() override;
 
     QString inputSuffix() const;
     QString wavefunctionSuffix() const;
 
 private:
-    exe::wfn::Parameters m_parameters;
+    wfn::Parameters m_parameters;
     QString m_wavefunctionSuffix{".json"};
     QString m_basisSetDirectory;
 };

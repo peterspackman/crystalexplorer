@@ -88,6 +88,8 @@ public:
 
   virtual void expandAtomsWithinRadius(float radius, bool selected) override;
 
+  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const override;
+
 private:
   void addAtomsByCrystalIndex(std::vector<CrystalIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);

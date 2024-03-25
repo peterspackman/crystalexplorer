@@ -11,6 +11,7 @@
 #include "transformablewavefunction.h"
 #include "ui_surfacegenerationdialog.h"
 #include "wavefunction.h"
+#include "isosurface_parameters.h"
 
 static const char *densityUnits = "e au<sup>-3</sup>";
 static const QStringList surfaceIsovalueUnits =
@@ -23,11 +24,6 @@ static const bool defaultHideWavefunctionBox = true;
 static const bool defaultHideSurfaceOptionsBox = true;
 static const Qt::CheckState defaultEditTonto = Qt::Unchecked;
 static const Qt::CheckState defaultShowDescriptions = Qt::Unchecked;
-
-struct SurfaceParameters {
-    IsosurfaceDetails::Type type;
-    float isovalue{0.002};
-};
 
 class SurfaceGenerationDialog : public QDialog {
   Q_OBJECT
@@ -63,7 +59,7 @@ private slots:
 signals:
   void surfaceParametersChosen(const JobParameters &,
                                std::optional<Wavefunction>);
-  void surfaceParametersChosenNew(SurfaceParameters);
+  void surfaceParametersChosenNew(isosurface::Parameters);
   void requireWavefunction(const QVector<AtomId> &, int, int);
 
 private:

@@ -40,7 +40,7 @@ void IsosurfaceCalculator::setTaskManager(TaskManager *mgr) {
     m_taskManager = mgr;
 }
 
-void IsosurfaceCalculator::start(IsosurfaceParameters params) {
+void IsosurfaceCalculator::start(isosurface::Parameters params) {
   if(!params.structure) {
     qDebug() << "Found nullptr for chemical structure in IsosurfaceCalculator";
     return;

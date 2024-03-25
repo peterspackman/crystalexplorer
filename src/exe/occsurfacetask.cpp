@@ -8,7 +8,7 @@ OccSurfaceTask::OccSurfaceTask(QObject * parent) : ExternalProgramTask(parent) {
     qDebug() << "Executable" << executable();
 }
 
-void OccSurfaceTask::setSurfaceParameters(const exe::surface::Parameters &params) {
+void OccSurfaceTask::setSurfaceParameters(const isosurface::Parameters &params) {
     m_parameters = params;
 }
 
@@ -24,8 +24,12 @@ void OccSurfaceTask::start() {
     QStringList args{"isosurface", input};
     if(!env.isEmpty()) args << env;
     args << "-o" << outputName;
+    args << QString("--kind=%1").arg(kind());
     args << QString("--separation=%1").arg(separation());
     args << QString("--isovalue=%1").arg(isovalue());
+    if(properties().contains("background_density")) {
+	args << QString("--background-density=%1").arg(properties().value("background_density").toFloat());
+    }
     setArguments(args);
     setRequirements({FileDependency(input)});
     setOutputs({FileDependency(outputName, outputName)});
@@ -37,6 +41,10 @@ void OccSurfaceTask::start() {
     emit progressText("Starting OCC process");
     ExternalProgramTask::start();
     qDebug() << "Finish occ task start";
+}
+
+QString OccSurfaceTask::kind() const {
+    return isosurface::kindToString(m_parameters.kind);
 }
 
 

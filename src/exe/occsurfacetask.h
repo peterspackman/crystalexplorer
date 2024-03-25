@@ -1,4 +1,5 @@
 #include "externalprogram.h"
+#include "isosurface_parameters.h"
 
 
 class OccSurfaceTask: public ExternalProgramTask {
@@ -9,7 +10,7 @@ public:
 
     explicit OccSurfaceTask(QObject * parent = nullptr);
 
-    void setSurfaceParameters(const exe::surface::Parameters &);
+    void setSurfaceParameters(const isosurface::Parameters &);
     virtual void start() override;
 
     QString inputFileName() const;
@@ -21,7 +22,8 @@ public:
     float isovalue() const;
 
 private:
-    exe::surface::Parameters m_parameters;
+    QString kind() const;
+    isosurface::Parameters m_parameters;
     QString m_wavefunctionSuffix{".json"};
     QString m_basisSetDirectory;
 };

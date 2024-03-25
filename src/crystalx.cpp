@@ -1310,14 +1310,12 @@ void Crystalx::generateSurface(const JobParameters &newJobParams,
                          wavefunctions);
 }
 
-void Crystalx::generateSurfaceNew(SurfaceParameters parameters) {
+void Crystalx::generateSurfaceNew(isosurface::Parameters parameters) {
     auto calc = new volume::IsosurfaceCalculator(this);
     calc->setTaskManager(m_taskManager);
-    volume::IsosurfaceParameters params;
     Scene *scene = project->currentScene();
-    params.isovalue = parameters.isovalue;
-    params.structure = scene->chemicalStructure();
-    calc->start(params);
+    parameters.structure = scene->chemicalStructure();
+    calc->start(parameters);
 
 }
 

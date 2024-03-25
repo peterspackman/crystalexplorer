@@ -56,6 +56,11 @@ void SurfacePropertyTypeDropdown::onSurfaceTypeChanged(
   }
 }
 
+
+isosurface::Kind SurfaceTypeDropdown::currentKind() const {
+    return isosurface::stringToKind(currentText());
+}
+
 // Function to get the currently selected IsosurfacePropertyDetails::Attributes
 IsosurfacePropertyDetails::Attributes
 SurfacePropertyTypeDropdown::currentSurfacePropertyAttributes() const {

@@ -4,8 +4,10 @@ add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/elementdata.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/interactions.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/isosurface.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/isosurface_parameters.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/volume.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wavefunction_parameters.cpp"
 )
 
 target_link_libraries(
