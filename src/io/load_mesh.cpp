@@ -92,7 +92,7 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 
 	auto normals = file.request_properties_from_element("vertex", {"nx", "ny", "nz"});
 
-	std::vector<std::string> property_names = {"di", "di_norm", "de", "de_norm"};
+	std::vector<std::string> property_names = {"dnorm", "di_idx", "de_idx", "di", "di_norm", "de", "de_norm"};
 	ankerl::unordered_dense::map<std::string, std::shared_ptr<tinyply::PlyData>> properties;
 	for(const auto &prop_name: property_names) {
 	    std::shared_ptr<tinyply::PlyData> prop;

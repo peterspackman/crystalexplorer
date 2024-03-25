@@ -617,27 +617,58 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
 }
 
 std::vector<GenericAtomIndex> CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const {
-    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> unique_idxs;
 
-    auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
+    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> selected_idxs;
 
     for (int i = 0; i < numberOfAtoms(); i++) {
 	if (atomFlagsSet(i, flags)) {
 	    const auto &offset = m_unitCellOffsets[i];
-	    const auto &region = uc_neighbors[offset.unitCellOffset];
+	    selected_idxs.insert({offset.unitCellOffset, offset.hkl.h, offset.hkl.k, offset.hkl.l});
+	}
+    }
 
-	    for(int n = 0; n < region.size(); n++) {
-		int h = static_cast<float>(std::floor(region.frac_pos(0, i))) +
-			  offset.hkl.h;
-		int k = static_cast<float>(std::floor(region.frac_pos(1, i))) +
-			  offset.hkl.k;
-		int l = static_cast<float>(std::floor(region.frac_pos(2, i))) +
-			  offset.hkl.l;
-		unique_idxs.insert({region.uc_idx(n), h, k, l});
+    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> unique_idxs;
+
+    auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
+
+    for (const auto &idx: selected_idxs) {
+	const auto &region = uc_neighbors[idx.unique];
+	for(int n = 0; n < region.size(); n++) {
+	    int h = region.hkl(0, n) + idx.x;
+	    int k = region.hkl(1, n) + idx.y;
+	    int l = region.hkl(2, n) + idx.z;
+
+	    auto candidate = GenericAtomIndex{
+		region.uc_idx(n), h, k, l
+	    };
+	    if(selected_idxs.find(candidate) == selected_idxs.end()) {
+		unique_idxs.insert(candidate);
 	    }
 	}
     }
 
     std::vector<GenericAtomIndex> res(unique_idxs.begin(), unique_idxs.end());
     return res;
+}
+
+
+occ::IVec CrystalStructure::atomicNumbersForIndices(const std::vector<GenericAtomIndex> &idxs) const {
+    const auto &uc_atoms = m_crystal.unit_cell_atoms();
+    occ::IVec result(idxs.size());
+    for(int i = 0; i < idxs.size(); i++) {
+	const auto &idx = idxs[i];
+	result(i) = uc_atoms.atomic_numbers(idx.unique);
+    }
+    return result;
+}
+
+occ::Mat3N CrystalStructure::atomicPositionsForIndices(const std::vector<GenericAtomIndex> &idxs) const {
+    const auto &uc_atoms = m_crystal.unit_cell_atoms();
+    occ::Mat3N result(3, idxs.size());
+    for(int i = 0; i < idxs.size(); i++) {
+	const auto &idx = idxs[i];
+	result.col(i) = uc_atoms.frac_pos.col(idx.unique) + occ::Vec3(idx.x, idx.y, idx.z);
+    }
+    result = m_crystal.to_cartesian(result);
+    return result;
 }

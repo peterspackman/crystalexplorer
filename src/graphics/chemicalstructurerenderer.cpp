@@ -308,7 +308,7 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
 	}
 	QVector3D position(verts(0, i), verts(1, i), verts(2, i));
 
-	QColor color = linearColorMap(prop(i), ColorMapName::Cividis);
+	QColor color = linearColorMap(prop(i), ColorMapName::Viridis);
 	QVector3D colorVec(color.redF(), color.greenF(), color.blueF());
 
 	QVector3D normal(0.0f, 0.0f, 0.0f);
@@ -345,7 +345,6 @@ void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
 			);
 	    }
 	    else {
-		m_meshRenderer->clear();
 		quint32 selectionid = addMeshToMeshRenderer(mesh, m_meshRenderer, m_selectionHandler);
 	    }
 	    return;

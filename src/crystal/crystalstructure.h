@@ -90,6 +90,11 @@ public:
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const override;
 
+
+  [[nodiscard]] virtual occ::IVec atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const override;
+
+  [[nodiscard]] virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const override;
+
 private:
   void addAtomsByCrystalIndex(std::vector<CrystalIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);

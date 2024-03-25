@@ -52,13 +52,24 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   occ::Mat3N pos = params.structure->atomicPositions()(Eigen::all, idx);
 
   QString filename = "ce_surface_inside.xyz";
+  QString filename_outside = "ce_surface_outside.xyz";
 
   write_xyz_file(filename, nums, pos);
+  {
+      auto idxs = params.structure->atomsSurroundingAtomsWithFlags(AtomFlag::Selected, 12.0);
+      qDebug() << "Idxs size: " << idxs.size();
+      auto nums_outside = params.structure->atomicNumbersForIndices(idxs);
+      auto pos_outside = params.structure->atomicPositionsForIndices(idxs);
+      write_xyz_file(filename_outside, nums_outside, pos_outside);
+
+  }
 
   OccSurfaceTask * surface_task = new OccSurfaceTask();
+  surface_task->setSurfaceParameters(params);
   surface_task->setProperty("name", "Water promolecule");
   surface_task->setProperty("inputFile", filename);
-  qDebug() << "Generating surface with isovalue: " << params.isovalue;
+  surface_task->setProperty("environmentFile", filename_outside);
+  qDebug() << "Generating " << isosurface::kindToString(params.kind) << "surface with isovalue: " << params.isovalue;
   surface_task->setProperty("isovalue", params.isovalue);
 
   auto taskId = m_taskManager->add(surface_task);

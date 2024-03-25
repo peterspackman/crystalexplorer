@@ -22,7 +22,15 @@ void OccSurfaceTask::start() {
 
 
     QStringList args{"isosurface", input};
-    if(!env.isEmpty()) args << env;
+
+    QList<FileDependency> reqs{
+	FileDependency(input)
+    };
+
+    if(!env.isEmpty()) {
+	args << env;
+	reqs << env;
+    }
     args << "-o" << outputName;
     args << QString("--kind=%1").arg(kind());
     args << QString("--separation=%1").arg(separation());
@@ -30,8 +38,9 @@ void OccSurfaceTask::start() {
     if(properties().contains("background_density")) {
 	args << QString("--background-density=%1").arg(properties().value("background_density").toFloat());
     }
+    qDebug() << "Arguments:" << args;
     setArguments(args);
-    setRequirements({FileDependency(input)});
+    setRequirements(reqs);
     setOutputs({FileDependency(outputName, outputName)});
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("OCC_DATA_PATH", "/Users/285699f/git/occ/share");
@@ -49,7 +58,7 @@ QString OccSurfaceTask::kind() const {
 
 
 float OccSurfaceTask::separation() const {
-    return properties().value("separation", 0.2).toFloat();
+    return m_parameters.separation;
 }
 
 float OccSurfaceTask::isovalue() const {

@@ -136,6 +136,8 @@ void SurfaceGenerationDialog::validate() {
   isosurface::Parameters parameters;
   parameters.isovalue = ui->isovalueLineEdit->text().toFloat();
   parameters.kind = ui->surfaceComboBox->currentKind();
+  parameters.separation = ResolutionDetails::value(ui->resolutionComboBox->currentLevel());
+  qDebug() << isosurface::kindToString(parameters.kind);
 
   emit surfaceParametersChosenNew(parameters);
 }

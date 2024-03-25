@@ -19,17 +19,17 @@ struct GenericAtomIndex {
     int z{0};
 
     inline bool operator==(const GenericAtomIndex &rhs) const {
-	return std::tie(unique, x, x, z) ==
+	return std::tie(unique, x, y, z) ==
 	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
     }
 
     inline bool operator<(const GenericAtomIndex &rhs) const {
-	return std::tie(unique, x, x, z) <
+	return std::tie(unique, x, y, z) <
 	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
     }
 
     inline bool operator>(const GenericAtomIndex &rhs) const {
-	return std::tie(unique, x, x, z) >
+	return std::tie(unique, x, z, z) >
 	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
     }
 
@@ -85,6 +85,11 @@ public:
     return StructureType::Cluster;
   }
 
+  virtual occ::IVec atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const;
+
+  virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const;
+
+
   // fragments
   virtual void selectFragmentContaining(int);
   virtual void completeFragmentContaining(int);
@@ -114,6 +119,7 @@ public:
   virtual const std::vector<std::pair<int, int>> &hydrogenBonds() const;
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
   virtual const std::vector<std::pair<int, int>> &vdwContacts() const;
+
 
   // flags
   const AtomFlags &atomFlags(int) const;

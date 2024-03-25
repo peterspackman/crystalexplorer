@@ -280,6 +280,7 @@ Crystal::unit_cell_atom_surroundings(double radius) const {
       reg.uc_idx(result_idx) = atom_slab.uc_idx(idx);
       reg.cart_pos.col(result_idx) = atom_slab.cart_pos.col(idx);
       reg.symop(result_idx) = atom_slab.symop(idx);
+      reg.hkl.col(result_idx) = atom_slab.hkl.col(idx);
       result_idx++;
     }
     reg.resize(result_idx);

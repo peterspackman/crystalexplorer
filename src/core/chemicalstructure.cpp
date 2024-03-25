@@ -547,3 +547,19 @@ void ChemicalStructure::childEvent(QChildEvent *event) {
         emit childRemoved(event->child());
     }
 }
+
+occ::IVec ChemicalStructure::atomicNumbersForIndices(const std::vector<GenericAtomIndex> &idxs) const {
+    occ::IVec result(idxs.size());
+    for(int i = 0; i < idxs.size(); i++) {
+	result(i) = m_atomicNumbers(i % m_atomicNumbers.rows());
+    }
+    return result;
+}
+
+occ::Mat3N ChemicalStructure::atomicPositionsForIndices(const std::vector<GenericAtomIndex> &idxs) const {
+    occ::Mat3N result(3, idxs.size());
+    for(int i = 0; i < idxs.size(); i++) {
+	result.col(i) = m_atomicPositions.col(i % m_atomicPositions.cols());
+    }
+    return result;
+}
