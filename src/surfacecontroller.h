@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "surface.h"
+#include "mesh.h"
 #include "ui_surfacecontroller.h"
 
 // The following strings *must* match those in the propertyFromString map (see
@@ -29,7 +30,9 @@ public:
 public slots:
   void resetSurface();
   void setCurrentSurface(Surface *);
+  void setCurrentMesh(Mesh *);
   void setPropertyInfo(const SurfaceProperty *);
+  void setMeshPropertyInfo(const Mesh::ScalarPropertyValues &);
   void setSelectedPropertyValue(float);
 
 protected slots:

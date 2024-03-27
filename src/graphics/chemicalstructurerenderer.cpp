@@ -290,7 +290,7 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
     auto availableProperties = mesh->availableVertexProperties();
     qDebug() << "Available vertex properties: " << availableProperties;
     if(availableProperties.size() > 1) {
-	prop = mesh->vertexProperty(availableProperties[0]);
+	prop = mesh->vertexProperty(availableProperties[mesh->currentVertexPropertyIndex()]);
 	float l = prop.minCoeff();
 	float u = prop.maxCoeff();
 	prop.array() = (prop.array() - l) / (u - l);

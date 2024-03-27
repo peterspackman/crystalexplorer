@@ -66,6 +66,8 @@ void subscribe(Project *project) {
                    &Project::currentSceneChanged);
   QObject::connect(scene, &Scene::atomSelectionChanged, project,
                    &Project::atomSelectionChanged);
+  QObject::connect(scene, &Scene::structureChanged, project,
+                   &Project::structureChanged);
   CrystalNotification::subscribe(project, scene->crystal());
   SurfaceNotification::subscribe(project, scene->surfaceHandler());
 }
@@ -86,6 +88,8 @@ void unsubscribe(Project *project) {
                       &Project::currentSceneChanged);
   QObject::disconnect(scene, &Scene::atomSelectionChanged, project,
                       &Project::atomSelectionChanged);
+  QObject::disconnect(scene, &Scene::structureChanged, project,
+		      &Project::structureChanged);
   CrystalNotification::unsubscribe(project, scene->crystal());
   SurfaceNotification::unsubscribe(project, scene->surfaceHandler());
 }

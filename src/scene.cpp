@@ -82,6 +82,13 @@ void Scene::init() {
     m_atomsNeedUpdate = true;
   }
 
+  if(m_structure) {
+      connect(m_structure, &ChemicalStructure::childAdded, this,
+	      &Scene::structureChanged);
+      connect(m_structure, &ChemicalStructure::childRemoved, this,
+	      &Scene::structureChanged);
+  }
+
   m_selectionHandler = new cx::graphics::RenderSelection(this);
 }
 

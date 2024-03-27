@@ -86,6 +86,20 @@ void SurfaceController::setPropertyInfo(const SurfaceProperty *property) {
   setSelectedPropertyValue(0.0);
 }
 
+void SurfaceController::setMeshPropertyInfo(const Mesh::ScalarPropertyValues &values) {
+  Q_ASSERT(values.size() > 0);
+
+  minPropValue->setValue(values.minCoeff());
+  meanPropValue->setValue(values.mean());
+  maxPropValue->setValue(values.maxCoeff());
+
+  setScale(values.minCoeff(), values.maxCoeff());
+
+  setUnitLabels("units");
+  setSelectedPropertyValue(0.0);
+
+}
+
 void SurfaceController::setUnitLabels(QString units) {
   unitText->setText(units);
   unitsLabel->setText(units);
@@ -139,6 +153,54 @@ void SurfaceController::setCurrentSurface(Surface *surface) {
   } else {
     clearPropertyInfo();
   }
+}
+
+
+void SurfaceController::setCurrentMesh(Mesh *mesh) {
+  bool enableController = false;
+  bool enableControls = false;
+  bool enableFingerprint = false;
+
+  float volume = 0.0;
+  float area = 0.0;
+  float globularity = 0.0;
+  float asphericity = 0.0;
+  bool transparent = false;
+  QStringList propertyNames;
+  _currentPropertyIndex = 0;
+
+  if (mesh) {
+    enableController = true;
+    enableControls = true;
+    enableFingerprint = false; //surface->isFingerprintable();
+
+    volume = 0.0; //surface->volume();
+    area = 0.0; //surface->area();
+    globularity = 0.0; //surface->globularity();
+    asphericity = 0.0; //surface->asphericity();
+    transparent = mesh->isTransparent();
+    propertyNames = mesh->availableVertexProperties();
+    _currentPropertyIndex = mesh->currentVertexPropertyIndex();
+  }
+
+  // Enable widgets
+  setEnabled(enableController);
+  enableSurfaceControls(enableControls);
+  enableFingerprintButton(enableFingerprint);
+  enableTransparencyCheckBox->setChecked(transparent);
+
+  // Update surface info
+  setSurfaceInfo(volume, area, globularity, asphericity);
+
+  // Update properties
+  populatePropertyComboBox(propertyNames, _currentPropertyIndex);
+  if (mesh) {
+    setMeshPropertyInfo(mesh->vertexProperty(propertyNames[_currentPropertyIndex]));
+  } else {
+    clearPropertyInfo();
+  }
+
+
 }
 
 void SurfaceController::populatePropertyComboBox(

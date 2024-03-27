@@ -250,6 +250,9 @@ void Crystalx::initConnections() {
   connect(project, &Project::projectChanged, crystalController,
           &CrystalController::update);
 
+  connect(project, &Project::structureChanged, this,
+	  &Crystalx::handleStructureChange);
+
   // Project connections - current crystal changed in some way
   connect(project, &Project::currentCrystalChanged, crystalController,
           &CrystalController::setCurrentCrystal);
@@ -2482,6 +2485,24 @@ void Crystalx::calculateVoidDomains() {
       clearStatusMessage();
     }
     glWindow->redraw();
+  }
+}
+
+
+void Crystalx::handleStructureChange() {
+  ChemicalStructure * structure = project->currentScene()->chemicalStructure();
+  if(structure) {
+      qDebug() << "Structure changed";
+
+      for(auto * child: structure->children()) {
+	    auto* mesh = qobject_cast<Mesh*>(child);
+	    if (mesh) {
+		surfaceController->setCurrentMesh(mesh);
+		break;
+	    }
+      }
+      // update surface controller
+      // update list of surfaces
   }
 }
 

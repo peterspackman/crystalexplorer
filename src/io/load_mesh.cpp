@@ -92,12 +92,12 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 
 	auto normals = file.request_properties_from_element("vertex", {"nx", "ny", "nz"});
 
-	std::vector<std::string> property_names = {"dnorm", "di_idx", "de_idx", "di", "di_norm", "de", "de_norm"};
+	std::vector<std::string> property_names = {"dnorm", "di_idx", "de_idx", "di", "di_norm", "de", "de_norm", "esp", "electron_density"};
 	ankerl::unordered_dense::map<std::string, std::shared_ptr<tinyply::PlyData>> properties;
 	for(const auto &prop_name: property_names) {
 	    std::shared_ptr<tinyply::PlyData> prop;
 	    try { prop = file.request_properties_from_element("vertex", {prop_name}); }
-	    catch (const std::exception & e) { std::cerr << "tinyply exception: " << e.what() << std::endl; }
+	    catch (const std::exception & e) { qDebug() << "caught exception: " << e.what(); }
 	    if (!prop) continue;
 	    properties[prop_name] = prop;
 	}
@@ -151,6 +151,9 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 		default:
 		    break;
 	    }
+	}
+	if(properties.size() > 0) {
+	    mesh->setCurrentVertexPropertyIndex(0);
 	}
 
         return mesh;

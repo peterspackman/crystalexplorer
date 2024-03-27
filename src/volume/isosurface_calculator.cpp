@@ -47,21 +47,30 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   }
   m_structure = params.structure;
 
-  std::vector<int> idx = params.structure->atomIndicesWithFlags(AtomFlag::Selected);
-  occ::IVec nums = params.structure->atomicNumbers()(idx);
-  occ::Mat3N pos = params.structure->atomicPositions()(Eigen::all, idx);
+  QString filename, filename_outside;
 
-  QString filename = "ce_surface_inside.xyz";
-  QString filename_outside = "ce_surface_outside.xyz";
+  if(params.kind == isosurface::Kind::Void) {
+      filename = "crystal.cif";
+  }
+  else {
+      std::vector<int> idx = params.structure->atomIndicesWithFlags(AtomFlag::Selected);
+      occ::IVec nums = params.structure->atomicNumbers()(idx);
+      occ::Mat3N pos = params.structure->atomicPositions()(Eigen::all, idx);
 
-  write_xyz_file(filename, nums, pos);
-  {
-      auto idxs = params.structure->atomsSurroundingAtomsWithFlags(AtomFlag::Selected, 12.0);
-      qDebug() << "Idxs size: " << idxs.size();
-      auto nums_outside = params.structure->atomicNumbersForIndices(idxs);
-      auto pos_outside = params.structure->atomicPositionsForIndices(idxs);
-      write_xyz_file(filename_outside, nums_outside, pos_outside);
 
+
+      filename = "ce_surface_inside.xyz";
+      filename_outside = "ce_surface_outside.xyz";
+
+      write_xyz_file(filename, nums, pos);
+      {
+	  auto idxs = params.structure->atomsSurroundingAtomsWithFlags(AtomFlag::Selected, 12.0);
+	  qDebug() << "Idxs size: " << idxs.size();
+	  auto nums_outside = params.structure->atomicNumbersForIndices(idxs);
+	  auto pos_outside = params.structure->atomicPositionsForIndices(idxs);
+	  write_xyz_file(filename_outside, nums_outside, pos_outside);
+
+      }
   }
 
   OccSurfaceTask * surface_task = new OccSurfaceTask();

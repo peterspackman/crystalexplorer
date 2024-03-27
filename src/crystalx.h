@@ -173,6 +173,8 @@ private slots:
   void taskManagerTaskAdded(TaskID);
   void taskManagerTaskRemoved(TaskID);
 
+  void handleStructureChange();
+
 private:
   void init();
   bool readElementData();

@@ -357,6 +357,7 @@ signals:
   void viewChanged();
   void sceneContentsChanged();
   void atomSelectionChanged();
+  void structureChanged();
 
 public slots:
   void screenGammaChanged();

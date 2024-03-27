@@ -58,6 +58,8 @@ public:
     [[nodiscard]] bool haveVertexProperty(const QString &) const;
     void setVertexProperty(const QString &name, const ScalarPropertyValues &values);
     [[nodiscard]] const ScalarPropertyValues &vertexProperty(const QString &) const;
+    [[nodiscard]] inline int currentVertexPropertyIndex() const { return m_currentPropertyIndex; }
+    inline void setCurrentVertexPropertyIndex(int idx) { m_currentPropertyIndex = idx; }
 
     //face properties
     [[nodiscard]] QStringList availableFaceProperties() const;
@@ -66,8 +68,9 @@ public:
     void setFaceProperty(const QString &name, const ScalarPropertyValues &values);
     [[nodiscard]] const ScalarPropertyValues &faceProperty(const QString &) const;
 
-    [[nodiscard]] inline const auto &kind() { return m_kind; }
+    [[nodiscard]] inline const auto &kind() const { return m_kind; }
     inline void setKind(isosurface::Kind kind) { m_kind = kind; }
+    [[nodiscard]] inline bool isTransparent() const { return m_transparent; }
 
     static Mesh *newFromJson(const QJsonObject &, QObject *parent=nullptr);
     static Mesh *newFromJsonFile(const QString &, QObject *parent=nullptr);
@@ -87,6 +90,9 @@ private:
 
     ScalarProperties m_vertexProperties;
     ScalarProperties m_faceProperties;
+
+    bool m_transparent{false};
+    int m_currentPropertyIndex{-1};
 
     QString m_selectedProperty;
     ScalarPropertyValues m_emptyProperty;

@@ -129,6 +129,7 @@ signals:
   void currentCrystalReset();
   void currentCrystalViewChanged();
   void newPropertyAddedToCurrentSurface();
+  void structureChanged();
 
 private:
   void init();
