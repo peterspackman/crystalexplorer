@@ -1,50 +1,20 @@
 #pragma once
 #include "atomflags.h"
 #include "interactions.h"
+#include "generic_atom_index.h"
 #include <Eigen/Dense>
+#include <QAbstractItemModel>
+#include <QModelIndex>
+#include <QVariant>
 #include <QColor>
-#include <QObject>
 #include <QStringList>
 #include <QVector3D>
-#include <QVector>
 #include <memory>
 #include <occ/core/bondgraph.h>
 #include <occ/core/linear_algebra.h>
 
 
-struct GenericAtomIndex {
-    int unique{0};
-    int x{0};
-    int y{0};
-    int z{0};
-
-    inline bool operator==(const GenericAtomIndex &rhs) const {
-	return std::tie(unique, x, y, z) ==
-	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
-    }
-
-    inline bool operator<(const GenericAtomIndex &rhs) const {
-	return std::tie(unique, x, y, z) <
-	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
-    }
-
-    inline bool operator>(const GenericAtomIndex &rhs) const {
-	return std::tie(unique, x, z, z) >
-	    std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
-    }
-
-};
-
-struct GenericAtomIndexHash {
-    using is_avalanching = void;
-    [[nodiscard]] auto operator()(GenericAtomIndex const &idx) const noexcept -> uint64_t {
-	static_assert(std::has_unique_object_representations_v<GenericAtomIndex>);
-	return ankerl::unordered_dense::detail::wyhash::hash(&idx, sizeof(idx));
-    }
-};
-
-
-class ChemicalStructure : public QObject {
+class ChemicalStructure : public QAbstractItemModel {
   Q_OBJECT
 public:
   enum class StructureType {
@@ -56,7 +26,7 @@ public:
 
   enum class AtomColoring { Element, Fragment, Index };
 
-  ChemicalStructure(QObject *parent = nullptr);
+  explicit ChemicalStructure(QObject *parent = nullptr);
 
   void setAtoms(const std::vector<QString> &elementSymbols,
                 const std::vector<occ::Vec3> &positions,
@@ -146,6 +116,14 @@ public:
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
 
+
+  // Abstract Item Model methods
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex &index) const override;
+
 signals:
   void childAdded(QObject *);
   void childRemoved(QObject *);
@@ -154,6 +132,7 @@ protected:
   void childEvent(QChildEvent *childEvent) override;
 
 private:
+  int topLevelItemsCount() const;
   void deleteAtoms(const std::vector<int> &atomIndices);
   void deleteAtom(int atomIndex);
   void guessBondsBasedOnDistances();

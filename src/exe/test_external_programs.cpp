@@ -1,55 +1,44 @@
-#include "occwavefunctiontask.h"
-#include "occsurfacetask.h"
-#include "tonto.h"
-#include "taskmanager.h"
-#include "taskmanagerwidget.h"
-#include "mocktask.h"
+#include "chemicalstructure.h"
+#include "mesh.h"
+#include <QTimer>
 #include <QApplication>
+#include <QTreeView>
 #include <QDebug>
+
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
+
+    // Create the main model instance
+    ChemicalStructure* model = new ChemicalStructure();
+
+    // Optionally, populate the model with some test data
+    QObject* mesh1 = new QObject(model); // Child of the model
+    mesh1->setObjectName("Mesh1");
+
+    QObject* wavefunction1 = new QObject(mesh1); // Child of mesh1
+    wavefunction1->setObjectName("Wavefunction1");
+
+    Mesh * mesh2 = new Mesh(model); // Another child of the model
+    mesh2->setObjectName("Mesh2");
+
+    MeshInstance * in = new MeshInstance(mesh2);
+    in->setObjectName("MeshInstance2");
+
+    // Create and set up the view
+    QTreeView* treeView = new QTreeView();
+    treeView->setModel(model);
+    treeView->expandAll(); // Expand all nodes for visibility
     
-    TaskManager* taskManager = new TaskManager();
-    TaskManagerWidget* w = new TaskManagerWidget(taskManager);
+    QTimer* timer = new QTimer(&app);
+    QObject::connect(timer, &QTimer::timeout, [&]() {
+        static int count = 1;
+        QObject *child = new QObject(model);
+    });
 
-    qDebug() << "OCC";
+    timer->start(1000); // Trigger every 1000 milliseconds
 
-    exe::AtomList atoms{
-	{"O", "H", "H"},
-	{
-	    QVector3D(-0.7021961, -0.0560603, 0.0099423),
-	    QVector3D(-1.0221932, 0.8467758, -0.0114887),
-	    QVector3D(0.2575211, 0.0421215, 0.0052190)
-	}
-	
-    };
+    treeView->show();
 
-    OccWavefunctionTask * task = new OccWavefunctionTask();
-    task->setProperty("name", "Water wavefunction");
-    task->setProperty("basename", "water");
-
-    exe::wfn::Parameters params;
-    params.atoms = atoms;
-    task->setWavefunctionParameters(params);
-
-    auto id = taskManager->add(task);
-
-    OccSurfaceTask * surface_task = new OccSurfaceTask();
-    surface_task->setProperty("name", "Water promolecule");
-    surface_task->setProperty("inputFile", "water.xyz");
-
-    auto idsurf = taskManager->add(surface_task);
-
-    Task* mockTask = new MockTask(taskManager);
-    mockTask->setProperty("name", "startup task");
-    TaskID taskId = taskManager->add(mockTask);
-
-    Task* tontoTask = new TontoCifProcessingTask(taskManager);
-    tontoTask->setProperty("name", "Tonto task");
-    TaskID taskId2 = taskManager->add(tontoTask);
-
-    w->show();
     return app.exec();
 }
-

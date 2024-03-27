@@ -4,7 +4,7 @@
 #include "elementdata.h"
 #include <QEvent>
 
-ChemicalStructure::ChemicalStructure(QObject *parent) : QObject(parent), m_interactions(new DimerInteractions(this)) {}
+ChemicalStructure::ChemicalStructure(QObject *parent) : QAbstractItemModel(parent), m_interactions(new DimerInteractions(this)) {}
 
 void ChemicalStructure::updateBondGraph() { guessBondsBasedOnDistances(); }
 
@@ -539,11 +539,21 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtomsWithFlags(
 
 void ChemicalStructure::childEvent(QChildEvent *event) {
     // MAKE SURE TO DO THIS
-    QObject::childEvent(event);
+    QAbstractItemModel::childEvent(event); 
     if (event->type() == QEvent::ChildAdded) {
-	emit childAdded(event->child());
+	QObject* child = event->child();
+	emit childAdded(child);
+
+	// insert the child into the model
+        if (child) {
+            int newRow = this->children().indexOf(child);
+            QModelIndex parentIndex = QModelIndex();
+            beginInsertRows(parentIndex, newRow, newRow);
+            endInsertRows();
+        }
     } else if (event->type() == QEvent::ChildRemoved) {
-        // Emit a custom signal or perform other actions
+	beginResetModel();
+	endResetModel();
         emit childRemoved(event->child());
     }
 }
@@ -562,4 +572,65 @@ occ::Mat3N ChemicalStructure::atomicPositionsForIndices(const std::vector<Generi
 	result.col(i) = m_atomicPositions.col(i % m_atomicPositions.cols());
     }
     return result;
+}
+
+// Abstract Item Model methods
+int ChemicalStructure::topLevelItemsCount() const {
+    // Implement this based on how top-level items are stored or managed within ChemicalStructure
+    return this->children().count(); // Example: directly using QObject's children count
+}
+
+int ChemicalStructure::rowCount(const QModelIndex &parent) const {
+    if (!parent.isValid()) {
+	// Return the count of top-level items when parent is invalid (root case)
+	return topLevelItemsCount();
+    } else {
+	// For a valid parent index, find the QObject and return its children count
+	const QObject* parentObject = static_cast<QObject*>(parent.internalPointer());
+	return parentObject->children().count();
+    }
+}
+
+int ChemicalStructure::columnCount(const QModelIndex &parent) const {
+    // This typically doesn't depend on the parent for hierarchical models
+    return 1; // Or more, depending on the data you wish to display
+}
+
+QVariant ChemicalStructure::data(const QModelIndex &index, int role) const {
+    if (!index.isValid())
+	return QVariant();
+
+    if (role == Qt::DisplayRole) {
+	QObject* itemObject = static_cast<QObject*>(index.internalPointer());
+	// Example: return the object's class name. Adjust as needed for your data
+	return QVariant(itemObject->objectName() + QString("(%1)").arg(itemObject->metaObject()->className()));
+    }
+    return QVariant();
+}
+
+QModelIndex ChemicalStructure::index(int row, int column, const QModelIndex &parent) const {
+    if (!hasIndex(row, column, parent))
+	return QModelIndex();
+
+    const QObject* parentObject = parent.isValid() ? static_cast<const QObject*>(parent.internalPointer()) : this;
+    QObject* childObject = parentObject->children().at(row);
+    if (childObject)
+	return createIndex(row, column, childObject);
+    else
+	return QModelIndex();
+}
+
+QModelIndex ChemicalStructure::parent(const QModelIndex &index) const {
+    if (!index.isValid())
+	return QModelIndex();
+
+    QObject* childObject = static_cast<QObject*>(index.internalPointer());
+    QObject* parentObject = childObject->parent();
+
+    if (parentObject == this || !parentObject)
+	return QModelIndex();
+
+    QObject* grandparentObject = parentObject->parent();
+    const int parentRow = grandparentObject ? grandparentObject->children().indexOf(parentObject) : 0;
+    return createIndex(parentRow, 0, parentObject);
 }

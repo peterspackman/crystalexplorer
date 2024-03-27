@@ -100,6 +100,7 @@ private:
 };
 
 class MeshInstance : public QObject {
+    Q_OBJECT
 public:
     enum class DisplayStyle {
 	NoDisplay,
