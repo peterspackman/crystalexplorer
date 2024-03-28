@@ -10,6 +10,7 @@
 
 class Mesh : public QObject {
     Q_OBJECT
+    Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
 
 public:
     using VertexList = Eigen::Matrix<double, 3, Eigen::Dynamic>;
@@ -75,12 +76,24 @@ public:
     static Mesh *newFromJson(const QJsonObject &, QObject *parent=nullptr);
     static Mesh *newFromJsonFile(const QString &, QObject *parent=nullptr);
 
+    [[nodiscard]] inline bool isVisible() const {
+	return m_visible;
+    }
+
+    inline void setVisible(bool visible) {
+	if (m_visible != visible) {
+	    m_visible = visible;
+	    emit visibilityChanged();
+	}
+    }
+
 signals:
-    void propertyChanged();
+    void visibilityChanged();
 
 private:
     void updateVertexFaceMapping();
 
+    bool m_visible{true};
     QString m_description{"Mesh"};
     VertexList m_vertices;
     FaceList m_faces;

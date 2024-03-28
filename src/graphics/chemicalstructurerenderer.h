@@ -41,6 +41,7 @@ public:
     void updateAtoms();
     void updateBonds();
     void updateInteractions();
+    void updateMeshes();
 
     void beginUpdates();
     void endUpdates();
@@ -51,9 +52,13 @@ public:
     [[nodiscard]] inline EllipsoidRenderer *ellipsoidRenderer() { return m_ellipsoidRenderer; }
     [[nodiscard]] inline LineRenderer *lineRenderer() { return m_lineRenderer; }
 
+signals:
+    void meshesChanged();
+
 public slots:
     void childAddedToStructure(QObject *);
     void childRemovedFromStructure(QObject *);
+    void childVisibilityChanged();
 
 private:
     void initStructureChildren();
@@ -61,11 +66,13 @@ private:
     void handleAtomsUpdate();
     void handleBondsUpdate();
     void handleInteractionsUpdate();
+    void handleMeshesUpdate();
 
     [[nodiscard]] bool shouldSkipAtom(int idx) const;
 
     bool m_atomsNeedsUpdate{true};
     bool m_bondsNeedsUpdate{true};
+    bool m_meshesNeedsUpdate{true};
 
     bool m_showHydrogens{true};
     bool m_showSuppressedAtoms{false};

@@ -36,8 +36,11 @@ protected:
   bool eventFilter(QObject *, QEvent *);
 
 private slots:
+  void structureViewClicked(const QModelIndex &);
+    /*
   void currentSurfaceChanged(QTreeWidgetItem *, QTreeWidgetItem *);
   void columnInSurfaceListClicked(QTreeWidgetItem *, int);
+  */
 
 private:
   void init();
@@ -46,8 +49,10 @@ private:
   void verifyDeleteCurrentCrystal();
   void verifyDeleteCurrentSurface();
   int indexOfSelectedCrystal();
+  /*
   bool itemOfParentSurface(QTreeWidgetItem *);
   void setChildrenEnabled(QTreeWidgetItem *, bool);
+  */
 
   QIcon tickIcon;
   QIcon crossIcon;

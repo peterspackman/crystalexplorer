@@ -16,20 +16,25 @@ void CrystalController::init() {
   m_sceneListIcons[ScenePeriodicity::ThreeDimensions] =
       QIcon(":/images/crystal_icon.png");
 
+  /*
   structureListWidget->installEventFilter(this);
-  surfaceTreeWidget->installEventFilter(this);
+  structureTreeView->installEventFilter(this);
+  */
 }
 
 void CrystalController::initConnections() {
+  connect(structureTreeView, &QTreeView::clicked, this,
+          &CrystalController::structureViewClicked);
+  /*
   connect(structureListWidget, &QListWidget::currentRowChanged, this,
           &CrystalController::structureSelectionChanged);
-  connect(surfaceTreeWidget, &QTreeWidget::itemClicked, this,
-          &CrystalController::columnInSurfaceListClicked);
-  connect(surfaceTreeWidget, &QTreeWidget::currentItemChanged, this,
+  connect(StructureTreeView, &QTreeView::currentItemChanged, this,
           &CrystalController::currentSurfaceChanged);
+	  */
 }
 
 void CrystalController::update(Project *project) {
+    /*
   structureListWidget->clear();
   auto kinds = project->scenePeriodicities();
   auto titles = project->sceneTitles();
@@ -41,9 +46,11 @@ void CrystalController::update(Project *project) {
     }
     structureListWidget->addItem(item);
   }
+  */
 }
 
 void CrystalController::setCurrentCrystal(Project *project) {
+    /*
   int crystalIndex = project->currentCrystalIndex();
   if (crystalIndex == -1) {
     return;
@@ -55,13 +62,15 @@ void CrystalController::setCurrentCrystal(Project *project) {
   }
 
   structureListWidget->setFocus();
+  */
 
   updateSurfaceInfo(project->currentScene());
 }
 
+/*
 void CrystalController::setChildrenEnabled(QTreeWidgetItem *item,
                                            bool enabled) {
-  item = surfaceTreeWidget->itemBelow(item);
+  item = structureTreeView->itemBelow(item);
   while (item) {
     if (!itemOfParentSurface(item)) {
       item->setDisabled(!enabled);
@@ -69,16 +78,18 @@ void CrystalController::setChildrenEnabled(QTreeWidgetItem *item,
     } else {
       break;
     }
-    item = surfaceTreeWidget->itemBelow(item);
+    item = structureTreeView->itemBelow(item);
   }
 }
+*/
 
 void CrystalController::updateVisibilityIconForCurrentSurface(
     Project *project) {
+    /*
   auto surfaceVisibilities =
       project->currentScene()->listOfSurfaceVisibilities();
 
-  QTreeWidgetItem *currentItem = surfaceTreeWidget->currentItem();
+  QTreeWidgetItem *currentItem = structureTreeView->currentItem();
 
   bool visible = surfaceVisibilities[indexOfSelectedCrystal()];
 
@@ -88,19 +99,23 @@ void CrystalController::updateVisibilityIconForCurrentSurface(
   if (itemOfParentSurface(currentItem)) {
     setChildrenEnabled(currentItem, visible);
   }
+  */
 }
 
 int CrystalController::indexOfSelectedCrystal() {
-  QTreeWidgetItem *currentItem = surfaceTreeWidget->currentItem();
+    /*
+  QTreeWidgetItem *currentItem = structureTreeView->currentItem();
 
-  for (int n = 0; n < surfaceTreeWidget->topLevelItemCount(); ++n) {
-    if (surfaceTreeWidget->topLevelItem(n) == currentItem) {
+  for (int n = 0; n < structureTreeView->topLevelItemCount(); ++n) {
+    if (structureTreeView->topLevelItem(n) == currentItem) {
       return n;
     }
   }
   Q_ASSERT(false); // Should always be able to find the tree index
   return -1;       // Suppress compiler warning about reaching end of non-void
                    // function
+*/
+    return -1;
 }
 
 void CrystalController::setSurfaceInfo(Project *project) {
@@ -108,13 +123,15 @@ void CrystalController::setSurfaceInfo(Project *project) {
 }
 
 /*!
- Whenever the surface info is updated the last item in the surfaceTreeWidget is
+ Whenever the surface info is updated the last item in the structureTreeView is
  selected.
  */
 void CrystalController::updateSurfaceInfo(Scene *scene) {
-  surfaceTreeWidget->clear();
+    structureTreeView->setModel(scene->chemicalStructure());
+    /*
+  structureTreeView->clear();
 
-  QTreeWidgetItem *root = surfaceTreeWidget->invisibleRootItem();
+  QTreeWidgetItem *root = structureTreeView->invisibleRootItem();
 
   QStringList surfaceTitles;
   QVector<bool> surfaceVisibilities;
@@ -139,16 +156,18 @@ void CrystalController::updateSurfaceInfo(Scene *scene) {
     root->addChild(item);
 
     if (i == surfaceTitles.size() - 1) {
-      surfaceTreeWidget->setCurrentItem(item);
+      structureTreeView->setCurrentItem(item);
     }
   }
+  */
 }
 
+/*
 void CrystalController::currentSurfaceChanged(QTreeWidgetItem *currentItem,
                                               QTreeWidgetItem *previousItem) {
   Q_UNUSED(previousItem);
 
-  int surfaceIndex = surfaceTreeWidget->indexOfTopLevelItem(currentItem);
+  int surfaceIndex = structureTreeView->indexOfTopLevelItem(currentItem);
   emit surfaceSelectionChanged(surfaceIndex);
 }
 
@@ -156,23 +175,35 @@ bool CrystalController::itemOfParentSurface(QTreeWidgetItem *item) {
   return !(item->text(1).startsWith("+ "));
 }
 
-void CrystalController::columnInSurfaceListClicked(QTreeWidgetItem *currentItem,
-                                                   int column) {
-  if (column == 0) { // Show column
-    if (currentItem->isDisabled())
-      return;
-    int surfaceIndex = surfaceTreeWidget->indexOfTopLevelItem(currentItem);
-    emit toggleVisibilityOfSurface(surfaceIndex);
-  }
+*/
+void CrystalController::structureViewClicked(const QModelIndex &index) {
+    if (index.column() == 0) {
+	// Ensure the view corresponds to a ChemicalStructure
+	ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
+	if (!structure) return;
+
+	QObject* item = static_cast<QObject*>(index.internalPointer());
+	if (item) {
+	    // Toggle the visibility
+	    bool currentVisibility = item->property("visible").toBool();
+	    item->setProperty("visible", !currentVisibility);
+	    qDebug() << "Setting object visibility";
+
+	    // Optionally, emit dataChanged signal if the view does not automatically update
+	    emit structure->dataChanged(index, index, {Qt::DecorationRole});
+	}
+    }
 }
 
 void CrystalController::selectSurface(int surfaceIndex) {
-  QTreeWidgetItem *root = surfaceTreeWidget->invisibleRootItem();
-  surfaceTreeWidget->setCurrentItem(root->child(surfaceIndex));
+    /*
+  QTreeWidgetItem *root = structureTreeView->invisibleRootItem();
+  structureTreeView->setCurrentItem(root->child(surfaceIndex));
+  */
 }
 
 bool CrystalController::eventFilter(QObject *obj, QEvent *event) {
-  if (obj == structureListWidget || obj == surfaceTreeWidget) {
+  if (obj == structureListWidget || obj == structureTreeView) {
     if (event->type() == QEvent::KeyPress) {
       QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
       if (keyEvent->key() == Qt::Key_Delete ||
@@ -191,22 +222,27 @@ bool CrystalController::eventFilter(QObject *obj, QEvent *event) {
 }
 
 void CrystalController::clearAllCrystals() {
+    /*
   if (structureListWidget->count() > 0 &&
       ConfirmationBox::confirmCrystalDeletion(true)) {
     emit deleteAllCrystals();
   }
+  */
 }
 
 void CrystalController::verifyDeleteCurrentCrystal() {
+    /*
   if (structureListWidget->currentItem() &&
       ConfirmationBox::confirmCrystalDeletion(
           false, structureListWidget->currentItem()->text())) {
     emit deleteCurrentCrystal();
   }
+  */
 }
 
 void CrystalController::verifyDeleteCurrentSurface() {
-  QTreeWidgetItem *currentItem = surfaceTreeWidget->currentItem();
+    /*
+  QTreeWidgetItem *currentItem = structureTreeView->currentItem();
   bool isParent = itemOfParentSurface(currentItem);
   QString surfaceDescription = currentItem->text(1);
 
@@ -214,13 +250,15 @@ void CrystalController::verifyDeleteCurrentSurface() {
       ConfirmationBox::confirmSurfaceDeletion(isParent, surfaceDescription)) {
     emit deleteCurrentSurface();
   }
+  */
 }
 
 void CrystalController::updateVisibilityIconsForSurfaces(Project *project) {
+    /*
   auto surfaceVisibilities =
       project->currentScene()->listOfSurfaceVisibilities();
 
-  QTreeWidgetItem *root = surfaceTreeWidget->invisibleRootItem();
+  //QTreeWidgetItem *root = structureTreeView->invisibleRootItem();
 
   for (int i = 0; i < root->childCount(); ++i) {
     if (surfaceVisibilities[i]) {
@@ -229,4 +267,5 @@ void CrystalController::updateVisibilityIconsForSurfaces(Project *project) {
       root->child(i)->setIcon(0, crossIcon);
     }
   }
+  */
 }

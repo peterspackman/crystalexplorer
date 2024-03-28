@@ -89,6 +89,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
 void IsosurfaceCalculator::onTaskComplete() {
     qDebug() << "Task finished in IsosurfaceCalculator";
     Mesh * mesh = io::loadMesh("surface.ply");
+    mesh->setObjectName("Mesh");
     mesh->setParent(m_structure);
 }
 

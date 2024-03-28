@@ -1160,6 +1160,7 @@ void Scene::draw() {
       m_structureRenderer->setSelectionHandler(m_selectionHandler);
       m_structureRenderer->setAtomStyle(atomStyle());
       m_structureRenderer->setBondStyle(bondStyle());
+      connect(m_structureRenderer, &cx::graphics::ChemicalStructureRenderer::meshesChanged, this, &Scene::sceneContentsChanged);
   }
   updateRendererUniforms();
 

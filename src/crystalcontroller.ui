@@ -15,30 +15,20 @@
     <widget class="QListWidget" name="structureListWidget"/>
    </item>
    <item>
-    <widget class="QTreeWidget" name="surfaceTreeWidget">
+    <widget class="QTreeView" name="structureTreeView">
      <attribute name="headerMinimumSectionSize">
-      <number>20</number>
-     </attribute>
-     <attribute name="headerDefaultSectionSize">
       <number>50</number>
      </attribute>
-     <column>
-      <property name="text">
-       <string>Show</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Surface</string>
-      </property>
-     </column>
+     <attribute name="headerStretchLastSection">
+      <bool>true</bool>
+     </attribute>
     </widget>
    </item>
   </layout>
  </widget>
  <tabstops>
   <tabstop>structureListWidget</tabstop>
-  <tabstop>surfaceTreeWidget</tabstop>
+  <tabstop>structureTreeView</tabstop>
  </tabstops>
  <resources/>
  <connections/>

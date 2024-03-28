@@ -2,6 +2,7 @@
 #include <occ/core/element.h>
 #include <occ/core/kdtree.h>
 #include "elementdata.h"
+#include <QIcon>
 #include <QEvent>
 
 ChemicalStructure::ChemicalStructure(QObject *parent) : QAbstractItemModel(parent), m_interactions(new DimerInteractions(this)) {}
@@ -591,19 +592,49 @@ int ChemicalStructure::rowCount(const QModelIndex &parent) const {
     }
 }
 
+QVariant ChemicalStructure::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role != Qt::DisplayRole) {
+        return QVariant();
+    }
+    
+    if (orientation == Qt::Horizontal) {
+        // Assuming column 0 is for "Visibility" and column 1 is for "Name" as an example
+        switch (section) {
+            case 0:
+                return tr("Visibility");
+            case 1:
+                return tr("Name");
+            // Add more cases as needed for additional columns
+            default:
+                return QVariant();
+        }
+    }
+
+    // Optionally handle vertical headers or return QVariant() if not needed
+    return QVariant();
+}
+
+
 int ChemicalStructure::columnCount(const QModelIndex &parent) const {
     // This typically doesn't depend on the parent for hierarchical models
-    return 1; // Or more, depending on the data you wish to display
+    return 2; // Or more, depending on the data you wish to display
 }
 
 QVariant ChemicalStructure::data(const QModelIndex &index, int role) const {
     if (!index.isValid())
 	return QVariant();
 
-    if (role == Qt::DisplayRole) {
-	QObject* itemObject = static_cast<QObject*>(index.internalPointer());
-	// Example: return the object's class name. Adjust as needed for your data
-	return QVariant(itemObject->objectName() + QString("(%1)").arg(itemObject->metaObject()->className()));
+    int col = index.column();
+    QObject* itemObject = static_cast<QObject*>(index.internalPointer());
+    if (role == Qt::DecorationRole && col == 0) { // Visibility column
+        QVariant visibleProperty = itemObject->property("visible");
+        if (!visibleProperty.isNull()) {
+            bool isVisible = visibleProperty.toBool();
+            return QIcon(isVisible ? ":/images/tick.png" : ":/images/cross.png");
+        }
+    }
+    else if (role == Qt::DisplayRole && col == 1) {
+	return QVariant(itemObject->objectName() + QString(" [%1]").arg(itemObject->metaObject()->className()));
     }
     return QVariant();
 }

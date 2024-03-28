@@ -25,11 +25,8 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
 
 
 void ChemicalStructureRenderer::initStructureChildren() {
-    m_meshRenderer->clear();
-    m_pointCloudRenderer->clear();
-    for(auto * child: m_structure->children()) {
-	childAddedToStructure(child);
-    }
+    m_meshesNeedsUpdate = true;
+    handleMeshesUpdate();
 }
 
 
@@ -116,6 +113,11 @@ void ChemicalStructureRenderer::updateAtoms() {
 void ChemicalStructureRenderer::updateBonds() {
     m_bondsNeedsUpdate = true;
     handleBondsUpdate();
+}
+
+void ChemicalStructureRenderer::updateMeshes() {
+    m_meshesNeedsUpdate = true;
+    handleMeshesUpdate();
 }
 
 void ChemicalStructureRenderer::handleAtomsUpdate() {
@@ -334,11 +336,15 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
     return selectionId;
 }
 
-
-void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
-    {
+void ChemicalStructureRenderer::handleMeshesUpdate() {
+    if(!m_meshesNeedsUpdate) return;
+    qDebug() << "HandleMeshes update called (needs update)";
+    m_meshRenderer->clear();
+    m_pointCloudRenderer->clear();
+    for(auto * child: m_structure->children()) {
 	auto* mesh = qobject_cast<Mesh*>(child);
 	if (mesh) {
+	    if(!mesh->isVisible()) continue;
 	    if(mesh->numberOfFaces() == 0) {
 		m_pointCloudRenderer->addPoints(
 			cx::graphics::makePointCloudVertices(*mesh)
@@ -347,14 +353,38 @@ void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
 	    else {
 		quint32 selectionid = addMeshToMeshRenderer(mesh, m_meshRenderer, m_selectionHandler);
 	    }
-	    return;
 	}
     }
+    m_meshesNeedsUpdate = false;
+    emit meshesChanged();
+}
+
+
+void ChemicalStructureRenderer::childVisibilityChanged() {
+    qDebug() << "Child visibility changed";
+    updateMeshes();
+}
+
+
+void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
+    auto* mesh = qobject_cast<Mesh*>(child);
+    if (mesh) {
+	qDebug() << "Added mesh to structure, connected";
+	connect(mesh, &Mesh::visibilityChanged, this, &ChemicalStructureRenderer::childVisibilityChanged);
+	m_meshesNeedsUpdate = true;
+    }
+    handleMeshesUpdate();
 }
 
 void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
     qDebug() << "Child removed @" << child << "TODO, for now bulk reset";
-    initStructureChildren();
+    auto* mesh = qobject_cast<Mesh*>(child);
+    if (mesh) {
+	qDebug() << "Child removed (mesh) from structure, disconnected";
+	disconnect(mesh, &Mesh::visibilityChanged, this, &ChemicalStructureRenderer::childVisibilityChanged);
+	m_meshesNeedsUpdate = true;
+    }
+    handleMeshesUpdate();
 }
 
 }
