@@ -254,28 +254,27 @@ void Crystalx::initConnections() {
 	  &Crystalx::handleStructureChange);
 
   // Project connections - current crystal changed in some way
-  connect(project, &Project::currentCrystalChanged, crystalController,
-          &CrystalController::setCurrentCrystal);
-  connect(project, &Project::currentCrystalChanged, glWindow,
-          &GLWindow::setCurrentCrystal);
+  connect(project, &Project::selectedSceneChanged, crystalController,
+          &CrystalController::handleSceneSelectionChange);
+  connect(project, &Project::selectedSceneChanged, [&](int) {
+	    glWindow->setCurrentCrystal(project);
+	  });
   connect(project, &Project::projectSaved, this, &Crystalx::updateWindowTitle);
   connect(project, &Project::projectChanged, this,
           &Crystalx::updateWindowTitle);
-  connect(project, &Project::currentCrystalChanged, this,
-          &Crystalx::updateWindowTitle);
-  connect(project, &Project::currentCrystalSurfacesChanged, this,
-          &Crystalx::updateWindowTitle);
-  connect(project, &Project::currentCrystalChanged, this,
+  connect(project, &Project::selectedSceneChanged, this,
+	  &Crystalx::updateWindowTitle);
+  connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::allowActionsThatRequireSelectedAtoms);
-  connect(project, &Project::currentCrystalChanged, this,
+  connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::updateMenuOptionsForScene);
-  connect(project, &Project::currentCrystalChanged, this,
+  connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::updateCloseContactOptions);
-  connect(project, &Project::currentCrystalChanged, this,
+  connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::allowCloneSurfaceAction);
-  connect(project, &Project::currentCrystalChanged, this,
+  connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::updateCrystalActions);
-  connect(project, &Project::currentCrystalChanged, infoViewer,
+  connect(project, &Project::selectedSceneChanged, infoViewer,
           &InfoViewer::updateInfoViewerForCrystalChange);
   connect(project, &Project::currentSceneChanged, glWindow, &GLWindow::redraw);
   connect(project, &Project::currentSceneChanged, this,
@@ -288,84 +287,14 @@ void Crystalx::initConnections() {
           &Crystalx::allowActionsThatRequireSelectedAtoms);
   connect(project, &Project::contactAtomsTurnedOff, this,
           &Crystalx::uncheckContactAtomsAction);
-  connect(project, &Project::currentCrystalSurfacesChanged, crystalController,
-          &CrystalController::setSurfaceInfo);
-  connect(project, &Project::currentCrystalSurfacesChanged, glWindow,
-          &GLWindow::redraw);
-  connect(project, &Project::currentCrystalSurfacesChanged, this,
-          &Crystalx::allowCloneSurfaceAction);
-  connect(project, &Project::currentSurfaceVisibilityChanged, crystalController,
-          &CrystalController::updateVisibilityIconForCurrentSurface);
-  connect(project, &Project::currentSurfaceVisibilityChanged, this,
-          &Crystalx::passCurrentSurfaceVisibilityToSurfaceController);
-  connect(project, &Project::currentSurfaceVisibilityChanged, glWindow,
-          &GLWindow::redraw);
-  connect(project, &Project::surfaceSelected, crystalController,
-          &CrystalController::selectSurface);
-
-  // Project Connections - current surface changed in some way
-  connect(project, &Project::currentSurfaceChanged, surfaceController,
-          &SurfaceController::setCurrentSurface);
-  connect(project, &Project::currentSurfaceChanged, this,
-          &Crystalx::passCurrentCrystalToFingerprintWindow);
-  connect(project, &Project::currentSurfaceChanged, this,
-          &Crystalx::updateMenuOptionsForSurface);
-  connect(project, &Project::currentSurfaceChanged, this,
-          &Crystalx::allowCloneSurfaceAction);
-  connect(project, &Project::currentSurfaceChanged, infoViewer,
-          &InfoViewer::updateInfoViewerForSurfaceChange);
-  connect(project, &Project::currentPropertyChanged, glWindow,
-          &GLWindow::surfacePropertyChanged);
-  connect(project, &Project::currentPropertyChanged, glWindow,
-          &GLWindow::redraw);
-  connect(project, &Project::currentPropertyChanged, surfaceController,
-          &SurfaceController::setPropertyInfo);
-  connect(project, &Project::currentSurfaceTransparencyChanged, glWindow,
-          &GLWindow::redraw);
-  connect(project, &Project::currentSurfaceFaceSelected, surfaceController,
-          &SurfaceController::setSelectedPropertyValue);
-  connect(project, &Project::currentCrystalHasNoSurfaces, surfaceController,
-          &SurfaceController::resetSurface);
-  connect(project, &Project::currentCrystalHasNoSurfaces, this,
-          &Crystalx::passCurrentCrystalToFingerprintWindow);
-  connect(project, &Project::currentSurfacePropertyChanged, glWindow,
-          &GLWindow::redraw);
-  connect(project, &Project::currentCrystalViewChanged, glWindow,
-          &GLWindow::resetViewAndRedraw);
-  connect(project, &Project::newPropertyAddedToCurrentSurface, this,
-          &Crystalx::updateSurfaceControllerForNewProperty);
-
-  // Project Connections - all surfaces changed in some way
-  connect(project, &Project::surfaceVisibilitiesChanged, crystalController,
-          &CrystalController::updateVisibilityIconsForSurfaces);
-  connect(project, &Project::surfaceVisibilitiesChanged, glWindow,
-          &GLWindow::redraw);
 
   // Crystal controller connections
-  connect(crystalController, &CrystalController::toggleVisibilityOfSurface,
-          project, &Project::toggleVisibilityOfSurface);
   connect(crystalController, &CrystalController::structureSelectionChanged,
           project, QOverload<int>::of(&Project::setCurrentCrystal));
-  connect(crystalController, &CrystalController::surfaceSelectionChanged,
-          project, &Project::setCurrentSurface);
   connect(crystalController, &CrystalController::deleteCurrentCrystal, project,
           &Project::removeCurrentCrystal);
   connect(crystalController, &CrystalController::deleteAllCrystals, project,
           &Project::removeAllCrystals);
-  connect(crystalController, &CrystalController::deleteCurrentSurface, project,
-          &Project::deleteCurrentSurface);
-
-  // Surface controller connections
-  connect(surfaceController, &SurfaceController::surfacePropertyChosen, project,
-          &Project::setCurrentPropertyForCurrentSurface);
-  connect(surfaceController, &SurfaceController::surfacePropertyRangeChanged,
-          project, &Project::updatePropertyRangeForCurrentSurface);
-  connect(surfaceController, &SurfaceController::updateSurfaceTransparency,
-          project, &Project::setSurfaceTransparency);
-  connect(surfaceController, &SurfaceController::showFingerprint, this,
-          &Crystalx::displayFingerprint);
-  connect(surfaceController, &SurfaceController::exportCurrentSurface, this,
-          &Crystalx::exportSelectedSurface);
 
   // Tonto interface connections
   connect(tontoInterface, &TontoInterface::tontoRunning, this,
@@ -459,10 +388,14 @@ void Crystalx::initConnections() {
           glWindow, &GLWindow::updateSurfacesForFingerprintWindow);
 
   // GLWindow connections (other connections made elsewhere in Crystalx)
+  /*
+   * TODO
   connect(glWindow, &GLWindow::surfaceHideRequest, project,
           &Project::hideSurface);
   connect(glWindow, &GLWindow::surfaceDeleteRequest, project,
           &Project::confirmAndDeleteSurface);
+
+  */
   connect(glWindow, &GLWindow::resetCurrentCrystal, project,
           &Project::resetCurrentCrystal);
 
@@ -527,8 +460,6 @@ void Crystalx::initMenuConnections() {
           &Project::cycleDisorderHighlighting);
   connect(energyFrameworksAction, &QAction::triggered, this,
           &Crystalx::showEnergyFrameworkDialog);
-  connect(showSurfaceCapsAction, &QAction::toggled, project,
-          &Project::toggleSurfaceCaps);
 
   connect(selectAllAtomsAction, &QAction::triggered, project,
           &Project::selectAllAtoms);
@@ -1040,10 +971,6 @@ void Crystalx::loadProject(QString filename) {
   }
 
   if (project->loadFromFile(filename)) {
-    if (project->currentHasSurface()) {
-      surfaceController->setEnabled(true);
-      passCurrentCrystalToFingerprintWindow();
-    }
     setBusy(false);
   } else {
     QMessageBox::information(this, "Unable to open project",
@@ -2143,8 +2070,9 @@ void Crystalx::initPreferencesDialog() {
     connect(preferencesDialog,
             &PreferencesDialog::redrawCrystalForPreferencesChange, project,
             &Project::updateCurrentCrystalContents);
-    connect(preferencesDialog, &PreferencesDialog::nonePropertyColorChanged,
-            project, &Project::updateNonePropertiesForAllCrystals);
+    // TODO fix None property color
+    // connect(preferencesDialog, &PreferencesDialog::nonePropertyColorChanged,
+      //       project, &Project::updateNonePropertiesForAllCrystals);
 
     connect(preferencesDialog,
             &PreferencesDialog::redrawCloseContactsForPreferencesChange,

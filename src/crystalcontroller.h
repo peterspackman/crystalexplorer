@@ -16,7 +16,8 @@ public:
 
 public slots:
   void update(Project *);
-  void setCurrentCrystal(Project *);
+  void handleSceneSelectionChange(int);
+
   void setSurfaceInfo(Project *);
   void updateVisibilityIconForCurrentSurface(Project *);
   void selectSurface(int);

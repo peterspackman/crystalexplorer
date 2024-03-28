@@ -26,38 +26,11 @@ void unsubscribe(Project *project, DeprecatedCrystal *crystal) {
 }
 } // namespace CrystalNotification
 
-namespace SurfaceNotification {
-void subscribe(Project *project, CrystalSurfaceHandler *handler) {
-  if (!handler)
-    return;
-  QObject::connect(handler,
-                   &CrystalSurfaceHandler::newPropertyAddedToCurrentSurface,
-                   project, &Project::newPropertyAddedToCurrentSurface);
-  QObject::connect(handler, &CrystalSurfaceHandler::surfaceVisibilitiesChanged,
-                   project, &Project::reportSurfaceVisibilitiesChanged);
-}
-
-void unsubscribe(Project *project, CrystalSurfaceHandler *handler) {
-  if (!handler)
-    return;
-  QObject::disconnect(handler,
-                      &CrystalSurfaceHandler::newPropertyAddedToCurrentSurface,
-                      project, &Project::newPropertyAddedToCurrentSurface);
-  QObject::disconnect(handler,
-                      &CrystalSurfaceHandler::surfaceVisibilitiesChanged,
-                      project, &Project::reportSurfaceVisibilitiesChanged);
-}
-} // namespace SurfaceNotification
-
 namespace SceneNotification {
 void subscribe(Project *project) {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  QObject::connect(scene, &Scene::surfaceSelected, project,
-                   &Project::surfaceSelected);
-  QObject::connect(scene, &Scene::currentSurfaceFaceSelected, project,
-                   &Project::currentSurfaceFaceSelected);
   QObject::connect(scene, &Scene::contactAtomExpanded, project,
                    &Project::currentSceneChanged);
   QObject::connect(scene, &Scene::viewChanged, project,
@@ -69,17 +42,12 @@ void subscribe(Project *project) {
   QObject::connect(scene, &Scene::structureChanged, project,
                    &Project::structureChanged);
   CrystalNotification::subscribe(project, scene->crystal());
-  SurfaceNotification::subscribe(project, scene->surfaceHandler());
 }
 
 void unsubscribe(Project *project) {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  QObject::disconnect(scene, &Scene::surfaceSelected, project,
-                      &Project::surfaceSelected);
-  QObject::disconnect(scene, &Scene::currentSurfaceFaceSelected, project,
-                      &Project::currentSurfaceFaceSelected);
   QObject::disconnect(scene, &Scene::contactAtomExpanded, project,
                       &Project::currentSceneChanged);
   QObject::disconnect(scene, &Scene::viewChanged, project,
@@ -91,7 +59,6 @@ void unsubscribe(Project *project) {
   QObject::disconnect(scene, &Scene::structureChanged, project,
 		      &Project::structureChanged);
   CrystalNotification::unsubscribe(project, scene->crystal());
-  SurfaceNotification::unsubscribe(project, scene->surfaceHandler());
 }
 } // namespace SceneNotification
 
@@ -103,6 +70,11 @@ Project::Project(QObject *parent) : QAbstractItemModel(parent) {
 Project::~Project() { deleteAllCrystals(); }
 
 void Project::init() {
+  m_sceneKindIcons[ScenePeriodicity::ZeroDimensions] =
+      QIcon(":/images/molecule_icon.png");
+  m_sceneKindIcons[ScenePeriodicity::ThreeDimensions] =
+      QIcon(":/images/crystal_icon.png");
+
   m_currentSceneIndex = -1;
   m_previousSceneIndex = -1;
   _saveFilename = "";
@@ -117,8 +89,7 @@ void Project::removeAllCrystals() {
   init();
   deleteAllCrystals();
   emit projectChanged(this);
-  emit currentCrystalChanged(this);
-  emit currentCrystalSurfacesChanged(this);
+  emit selectedSceneChanged(m_currentSceneIndex);
 }
 
 void Project::removeCurrentCrystal() {
@@ -129,10 +100,7 @@ void Project::removeCurrentCrystal() {
     deleteCurrentCrystal();
     connectUpCurrentScene();
     setUnsavedChangesExists();
-    emit currentCrystalChanged(this);
-    if (currentScene()->numberOfSurfaces() == 0) {
-      emit currentCrystalHasNoSurfaces();
-    }
+    emit selectedSceneChanged(m_currentSceneIndex);
   }
 }
 
@@ -171,7 +139,6 @@ bool Project::loadSurfaceData(const JobParameters &jobParams) {
     currentScene()->setSelectStatusForAllAtoms(
         false); // Now we have a surface, clear the currently selected atoms
     setUnsavedChangesExists();
-    emit currentCrystalSurfacesChanged(this);
     return true;
   }
   return false;
@@ -213,10 +180,7 @@ void Project::setCurrentCrystal(int crystalIndex, bool refresh) {
   }
   setCurrentCrystalUnconditionally(crystalIndex);
   setUnsavedChangesExists();
-  emit currentCrystalChanged(this);
-  if (!currentScene()->hasSurface()) {
-    emit currentCrystalHasNoSurfaces();
-  }
+  emit selectedSceneChanged(m_currentSceneIndex);
 }
 
 void Project::setCurrentCrystalUnconditionally(int crystalIndex) {
@@ -237,12 +201,6 @@ void Project::tidyUpOutgoingScene() {
 
   DeprecatedCrystal *crystal = currentScene()->crystal();
   if (crystal) {
-    // Set current surface index to -1
-    // This means that when we come back to this crystal in the future
-    // the Project::setCurrentSurface will always emit a signal because
-    // 'changed' will always be true.
-    currentScene()->resetCurrentSurface();
-
     // turn off contact atoms when moving to a different crystal
     if (currentScene()->crystal()->hasAnyVdwContactAtoms()) {
       removeContactAtoms();
@@ -267,25 +225,6 @@ QStringList Project::sceneTitles() {
     result.append(scene->title());
   }
   return result;
-}
-
-void Project::toggleShowCurrentSurfaceInterior(bool show) {
-  Surface *surface = currentScene()->surfaceHandler()->currentSurface();
-  if (surface) {
-    surface->setShowInterior(show);
-    setUnsavedChangesExists();
-    currentScene()->setNeedsUpdate();
-    emit currentSurfacePropertyChanged();
-  }
-}
-
-void Project::toggleShowSurfaceInteriors(bool show) {
-  foreach (Scene *scene, m_scenes) {
-    scene->setShowSurfaceInteriors(show);
-  }
-  setUnsavedChangesExists();
-  currentScene()->setNeedsUpdate();
-  emit currentSurfacePropertyChanged();
 }
 
 void Project::cycleDisorderHighlighting() {
@@ -329,52 +268,6 @@ void Project::updateEnergyTheoryForEnergyFramework(EnergyTheory theory) {
   }
 }
 
-void Project::toggleVisibilityOfSurface(int surfaceIndex) {
-  currentScene()->toggleVisibilityOfSurface(surfaceIndex);
-  setUnsavedChangesExists();
-  emit currentSurfaceVisibilityChanged(this);
-}
-
-void Project::hideSurface(int surfaceIndex) {
-  Q_ASSERT(currentScene());
-  currentScene()->hideSurface(surfaceIndex);
-  setUnsavedChangesExists();
-  emit surfaceVisibilitiesChanged(this);
-}
-
-void Project::setCurrentSurface(int surfaceIndex) {
-    auto * scene = currentScene();
-    if(!scene) return;
-  bool changed = scene->setCurrentSurfaceIndex(surfaceIndex);
-  if (changed) {
-    setUnsavedChangesExists();
-    emit currentSurfaceChanged(currentScene()->currentSurface());
-  }
-}
-
-void Project::setCurrentPropertyForCurrentSurface(int property) {
-  Surface *surface = currentScene()->currentSurface();
-
-  bool propertyChanged = surface->setCurrentProperty(property);
-
-  if (propertyChanged) {
-    setUnsavedChangesExists();
-    emit currentPropertyChanged(surface->currentProperty());
-  }
-}
-
-void Project::updatePropertyRangeForCurrentSurface(float minValue,
-                                                   float maxValue) {
-  Surface *currentSurface = currentScene()->currentSurface();
-
-  if (currentSurface) {
-    currentSurface->setCurrentPropertyRange(minValue, maxValue);
-    setUnsavedChangesExists();
-    currentScene()->setNeedsUpdate();
-    emit currentSurfacePropertyChanged();
-  }
-}
-
 void Project::updateCurrentCrystalContents() {
   if (!currentScene())
     return;
@@ -392,14 +285,6 @@ void Project::updateAllCrystalsForChangeInElementData() {
   if (shouldEmit) {
     setUnsavedChangesExists();
     emit currentSceneChanged();
-  }
-}
-
-void Project::setSurfaceTransparency(bool transparency) {
-  if (currentScene()->hasSurface()) {
-    currentScene()->currentSurface()->setTransparent(transparency);
-    setUnsavedChangesExists();
-    emit currentSurfaceTransparencyChanged();
   }
 }
 
@@ -437,27 +322,6 @@ void Project::deleteCurrentCrystal() {
     if (m_currentSceneIndex == m_scenes.size()) {
       --m_currentSceneIndex;
     }
-  }
-}
-
-void Project::deleteCurrentSurface() {
-  currentScene()->deleteCurrentSurface();
-
-  setUnsavedChangesExists();
-
-  emit currentCrystalSurfacesChanged(this);
-  emit currentSurfaceChanged(currentScene()->currentSurface());
-}
-
-void Project::confirmAndDeleteSurface(int) {
-  Q_ASSERT(currentScene());
-
-  QString description =
-      currentScene()->selectedSurface()->symmetryDescription();
-  if (ConfirmationBox::confirmSurfaceDeletion(false, description)) {
-    currentScene()->deleteSelectedSurface();
-    setUnsavedChangesExists();
-    emit currentCrystalSurfacesChanged(this);
   }
 }
 
@@ -517,7 +381,7 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
   if (position > -1) {
     setUnsavedChangesExists();
     setCurrentCrystal(position);
-    emit currentCrystalChanged(this);
+    emit selectedSceneChanged(position);
   }
 
   return true;
@@ -550,12 +414,7 @@ bool Project::loadFromFile(QString filename) {
       // In order to achieve (ii) is simply a matter of emitting the
       // currentCrystalChanged signal
       setCurrentCrystal(m_currentSceneIndex, true);
-      emit currentCrystalChanged(this);
-
-      if (currentScene()->hasSurface()) {
-        emit currentSurfaceChanged(currentScene()->currentSurface());
-      }
-
+      emit selectedSceneChanged(m_currentSceneIndex);
       m_haveUnsavedChanges = false;
       emit projectChanged(this);
 
@@ -620,11 +479,6 @@ bool Project::currentHasSelectedAtoms() const {
   return false;
 }
 
-bool Project::currentHasSurface() const {
-  const Scene *scene = currentScene();
-  return scene->hasSurface();
-}
-
 void Project::toggleCloseContacts(bool state) {
   if (currentScene()) {
     currentScene()->setShowCloseContacts(state);
@@ -639,28 +493,9 @@ void Project::toggleHydrogenBonds(bool state) {
   }
 }
 
-void Project::toggleSurfaceCaps(bool state) {
-  Surface *surface = currentScene()->currentSurface();
-  if (surface != nullptr) {
-    surface->setCapsVisible(state);
-    setUnsavedChangesExists();
-    emit currentSurfaceChanged(surface);
-  }
-}
-
 bool Project::previouslySaved() { return (!_saveFilename.isEmpty()); }
 
 QString Project::saveFilename() { return _saveFilename; }
-
-void Project::updateNonePropertiesForAllCrystals() {
-  foreach (Scene *crystal, m_scenes) {
-    crystal->updateNoneProperties();
-  }
-  setUnsavedChangesExists();
-  currentScene()->setNeedsUpdate();
-  // This may not be true but force a redraw anyway
-  emit currentSurfacePropertyChanged();
-}
 
 void Project::updateHydrogenBondsForCurrent(QString donor, QString acceptor,
                                             double distanceCriteria,
@@ -693,11 +528,6 @@ void Project::updateCloseContactsForCurrent(int contactIndex, QString x,
                                                            distanceCriteria);
     emit currentSceneChanged();
   }
-}
-
-void Project::reportSurfaceVisibilitiesChanged() {
-  setUnsavedChangesExists();
-  emit surfaceVisibilitiesChanged(this);
 }
 
 void Project::removeIncompleteFragmentsForCurrentCrystal() {
@@ -929,6 +759,12 @@ QVariant Project::data(const QModelIndex &index, int role) const {
 
     if (role == Qt::DisplayRole) {
         return scene->title();
+    }
+    else if(role == Qt::DecorationRole) {
+	auto kind = scene->periodicity();
+	if (m_sceneKindIcons.contains(kind)) {
+	    return m_sceneKindIcons[kind];
+	}
     }
 
     return QVariant();

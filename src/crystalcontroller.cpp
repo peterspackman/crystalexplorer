@@ -52,23 +52,25 @@ void CrystalController::update(Project *project) {
   */
 }
 
-void CrystalController::setCurrentCrystal(Project *project) {
-    structureListView->setModel(project);
-    /*
-  int crystalIndex = project->currentCrystalIndex();
-  if (crystalIndex == -1) {
-    return;
-  }
-  Q_ASSERT(crystalIndex < structureListWidget->count());
+void CrystalController::handleSceneSelectionChange(int selection) {
+    if(selection < 0) return;
+    auto * project = qobject_cast<Project *>(structureListView->model());
+    if(!project) return;
 
-  if (crystalIndex != structureListWidget->currentRow()) {
-    structureListWidget->setCurrentRow(crystalIndex);
-  }
+    QModelIndex currentIndex = structureListView->currentIndex();
+    QModelIndex targetIndex = project->index(selection, 0); // Assuming column 0
 
-  structureListWidget->setFocus();
-  */
+    if (currentIndex != targetIndex) {
+        structureListView->setCurrentIndex(targetIndex);
+    }
 
-  updateSurfaceInfo(project->currentScene());
+    structureListView->setFocus();
+
+    // Assuming currentScene() returns a pointer/reference to a scene or similar object
+    // And that updateSurfaceInfo expects such an object
+    if (Scene* currentScene = project->currentScene(); currentScene != nullptr) {
+        updateSurfaceInfo(currentScene);
+    }
 }
 
 /*

@@ -62,16 +62,9 @@ public slots:
   void setCurrentCrystal(int);
   void setCurrentCrystal(int, bool);
   void updateCurrentCrystalContents();
-  void toggleVisibilityOfSurface(int);
-  void setCurrentSurface(int);
-  void setCurrentPropertyForCurrentSurface(int);
-  void updatePropertyRangeForCurrentSurface(float, float);
-  void setSurfaceTransparency(bool);
   void generateCells(QPair<QVector3D, QVector3D>);
   void removeAllCrystals();
   void removeCurrentCrystal();
-  void deleteCurrentSurface();
-  void confirmAndDeleteSurface(int);
   void completeFragmentsForCurrentCrystal();
   void toggleUnitCellAxes(bool);
   void toggleMultipleUnitCellBoxes(bool);
@@ -80,16 +73,12 @@ public slots:
   void toggleSuppressedAtoms(bool);
   void toggleCloseContacts(bool);
   void toggleHydrogenBonds(bool);
-  void toggleSurfaceCaps(bool);
-  void updateNonePropertiesForAllCrystals();
   void updateHydrogenBondsForCurrent(QString, QString, double, bool);
   void cycleDisorderHighlighting();
   void cycleEnergyFramework(bool cycleBackwards = false);
   void updateEnergyFramework();
   void turnOffEnergyFramework();
   void updateEnergyTheoryForEnergyFramework(EnergyTheory);
-  void toggleShowCurrentSurfaceInterior(bool);
-  void toggleShowSurfaceInteriors(bool);
 
   void updateAllCrystalsForChangeInElementData();
 
@@ -98,14 +87,12 @@ public slots:
   void toggleCC3(bool);
   void toggleCloseContact(int, bool);
   void updateCloseContactsForCurrent(int, QString, QString, double);
-  void reportSurfaceVisibilitiesChanged();
   void removeIncompleteFragmentsForCurrentCrystal();
   void removeSelectedAtomsForCurrentCrystal();
   void resetCurrentCrystal();
 
   void showAtomsWithinRadius(float, bool);
 
-  void hideSurface(int);
   void toggleAtomsForFingerprintSelectionFilter(bool);
 
   void suppressSelectedAtoms();
@@ -122,23 +109,13 @@ public slots:
 signals:
   void projectChanged(Project *);
   void projectSaved();
-  void currentCrystalChanged(Project *);
+  void selectedSceneChanged(int);
   void currentSceneChanged();
-  void currentCrystalSurfacesChanged(Project *);
-  void currentSurfaceVisibilityChanged(Project *);
-  void currentSurfaceChanged(Surface *);
-  void currentPropertyChanged(const SurfaceProperty *);
-  void currentSurfacePropertyChanged();
-  void currentSurfaceTransparencyChanged();
-  void surfaceSelected(int);
-  void currentSurfaceFaceSelected(float);
   void atomSelectionChanged();
   void contactAtomsTurnedOff();
-  void currentCrystalHasNoSurfaces();
   void surfaceVisibilitiesChanged(Project *);
   void currentCrystalReset();
   void currentCrystalViewChanged();
-  void newPropertyAddedToCurrentSurface();
   void structureChanged();
 
 private:
@@ -159,6 +136,7 @@ private:
   QString _saveFilename;
 
   bool m_haveUnsavedChanges{false};
+  QMap<ScenePeriodicity, QIcon> m_sceneKindIcons;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
