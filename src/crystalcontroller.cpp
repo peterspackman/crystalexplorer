@@ -34,6 +34,9 @@ void CrystalController::initConnections() {
 }
 
 void CrystalController::update(Project *project) {
+    structureListView->setModel(project);
+    connect(structureListView->selectionModel(), &QItemSelectionModel::selectionChanged, project, &Project::onSelectionChanged);
+
     /*
   structureListWidget->clear();
   auto kinds = project->scenePeriodicities();
@@ -50,6 +53,7 @@ void CrystalController::update(Project *project) {
 }
 
 void CrystalController::setCurrentCrystal(Project *project) {
+    structureListView->setModel(project);
     /*
   int crystalIndex = project->currentCrystalIndex();
   if (crystalIndex == -1) {
@@ -203,12 +207,12 @@ void CrystalController::selectSurface(int surfaceIndex) {
 }
 
 bool CrystalController::eventFilter(QObject *obj, QEvent *event) {
-  if (obj == structureListWidget || obj == structureTreeView) {
+  if (obj == structureListView || obj == structureTreeView) {
     if (event->type() == QEvent::KeyPress) {
       QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
       if (keyEvent->key() == Qt::Key_Delete ||
           keyEvent->key() == Qt::Key_Backspace) {
-        (obj == structureListWidget) ? verifyDeleteCurrentCrystal()
+        (obj == structureListView) ? verifyDeleteCurrentCrystal()
                                      : verifyDeleteCurrentSurface();
       }
       return true;

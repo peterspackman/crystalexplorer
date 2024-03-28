@@ -95,7 +95,7 @@ void unsubscribe(Project *project) {
 }
 } // namespace SceneNotification
 
-Project::Project(QObject *parent) : QObject(parent) {
+Project::Project(QObject *parent) : QAbstractItemModel(parent) {
   init();
   initConnections();
 }
@@ -139,10 +139,12 @@ void Project::removeCurrentCrystal() {
 bool Project::loadCrystalDataTonto(const QString &cxs, const QString &cif) {
   QVector<Scene *> crystalList = crystaldata::loadCrystalsFromTontoOutput(cxs, cif);
   if (crystalList.size() > 0) {
-    int newCrystalIndex = m_scenes.size();
+    int position = m_scenes.size();
+    beginInsertRows(QModelIndex(), position, position);
     m_scenes.append(crystalList);
+    endInsertRows();
     setUnsavedChangesExists();
-    setCurrentCrystal(newCrystalIndex);
+    setCurrentCrystal(position);
     return true;
   }
   return false;
@@ -153,10 +155,12 @@ bool Project::loadCrystalData(const JobParameters &jobParams) {
     QString cif = jobParams.inputFilename;
   QVector<Scene *> crystalList = crystaldata::loadCrystalsFromTontoOutput(cxs, cif);
   if (crystalList.size() > 0) {
-    int newCrystalIndex = m_scenes.size();
+    int position = m_scenes.size();
+    beginInsertRows(QModelIndex(), position, position);
     m_scenes.append(crystalList);
+    endInsertRows();
     setUnsavedChangesExists();
-    setCurrentCrystal(newCrystalIndex);
+    setCurrentCrystal(position);
     return true;
   }
   return false;
@@ -481,10 +485,12 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
 
   Scene *scene = new Scene(xyzReader);
   scene->setTitle(QFileInfo(filename).baseName());
-  int newSceneIndex = m_scenes.size();
+  int position = m_scenes.size();
+  beginInsertRows(QModelIndex(), position, position);
   m_scenes.append(scene);
+  endInsertRows();
   setUnsavedChangesExists();
-  setCurrentCrystal(newSceneIndex);
+  setCurrentCrystal(position);
   return true;
 }
 
@@ -494,21 +500,23 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
   if (!success)
     return false;
 
-  int newSceneIndex = -1;
+  int position = -1;
   for (int i = 0; i < cifReader.numberOfCrystals(); i++) {
     CrystalStructure *tmp = new CrystalStructure();
     tmp->setOccCrystal(cifReader.getCrystalStructure(i));
     Scene *scene = new Scene(tmp);
     scene->setTitle(QFileInfo(filename).baseName());
     if (i == 0) {
-      newSceneIndex = m_scenes.size();
+      position = m_scenes.size();
+      beginInsertRows(QModelIndex(), position, position);
       m_scenes.append(scene);
+      endInsertRows();
     }
   }
 
-  if (newSceneIndex > -1) {
+  if (position > -1) {
     setUnsavedChangesExists();
-    setCurrentCrystal(newSceneIndex);
+    setCurrentCrystal(position);
     emit currentCrystalChanged(this);
   }
 
@@ -889,3 +897,63 @@ QDataStream &operator>>(QDataStream &ds, Project &project) {
   // TODO fix title
   return ds;
 }
+
+int Project::rowCount(const QModelIndex &parent) const {
+    return m_scenes.size();
+}
+
+QVariant Project::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role != Qt::DisplayRole) {
+        return QVariant();
+    }
+    
+    if (orientation == Qt::Horizontal) {
+	return tr("Structure");
+    }
+    // Optionally handle vertical headers or return QVariant() if not needed
+    return QVariant();
+}
+
+
+int Project::columnCount(const QModelIndex &parent) const {
+    return 1;
+}
+
+QVariant Project::data(const QModelIndex &index, int role) const {
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_scenes.size())
+        return QVariant();
+
+    // Retrieve the Scene* directly from the index's internal pointer:
+    Scene* scene = static_cast<Scene*>(index.internalPointer());
+    if (!scene) return QVariant();
+
+    if (role == Qt::DisplayRole) {
+        return scene->title();
+    }
+
+    return QVariant();
+}
+
+
+QModelIndex Project::index(int row, int column, const QModelIndex &parent) const {
+    if (parent.isValid() || row < 0 || row >= m_scenes.size() || column != 0) {
+        return QModelIndex();
+    }
+    return createIndex(row, column, static_cast<void*>(m_scenes.at(row)));
+}
+
+QModelIndex Project::parent(const QModelIndex &index) const {
+    return QModelIndex();
+}
+
+void Project::onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected) {
+    Q_UNUSED(deselected); // If not used
+
+    QModelIndexList indexes = selected.indexes();
+    if (!indexes.isEmpty()) {
+        // Single selection mode assumed, take the first selected index
+        QModelIndex currentIndex = indexes.first();
+	setCurrentCrystal(currentIndex.row());
+    }
+}
+

@@ -18,7 +18,7 @@ signals:
     void calculationComplete(isosurface::Result);
 
 private slots:
-    void onTaskComplete();
+    void surfaceComplete(QString, QString);
 
 private:
     TaskManager * m_taskManager{nullptr};

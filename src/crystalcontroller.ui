@@ -12,7 +12,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QListWidget" name="structureListWidget"/>
+    <widget class="QListView" name="structureListView"/>
    </item>
    <item>
     <widget class="QTreeView" name="structureTreeView">
@@ -27,7 +27,7 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>structureListWidget</tabstop>
+  <tabstop>structureListView</tabstop>
   <tabstop>structureTreeView</tabstop>
  </tabstops>
  <resources/>

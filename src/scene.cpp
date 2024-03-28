@@ -22,10 +22,6 @@ Scene::Scene(const XYZFile &xyz)
   m_periodicity = ScenePeriodicity::ZeroDimensions;
   m_structure->setAtoms(xyz.getAtomSymbols(), xyz.getAtomPositions());
   m_structure->updateBondGraph();
-  //WavefrontObjectFile obj("surface.obj");
-  //Mesh * mesh = obj.getFirstMesh(m_structure);
-  auto * interactions = new DimerInteractions(m_structure);
-  interactions->setValue(DimerPair(0, 1), 10.0, "coulomb");
   init();
 }
 

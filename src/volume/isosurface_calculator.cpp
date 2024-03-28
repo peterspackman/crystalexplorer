@@ -57,8 +57,6 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       occ::IVec nums = params.structure->atomicNumbers()(idx);
       occ::Mat3N pos = params.structure->atomicPositions()(Eigen::all, idx);
 
-
-
       filename = "ce_surface_inside.xyz";
       filename_outside = "ce_surface_outside.xyz";
 
@@ -73,23 +71,26 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       }
   }
 
+  QString surfaceName = isosurface::kindToString(params.kind);
   OccSurfaceTask * surface_task = new OccSurfaceTask();
   surface_task->setSurfaceParameters(params);
-  surface_task->setProperty("name", "Water promolecule");
+  surface_task->setProperty("name", surfaceName);
   surface_task->setProperty("inputFile", filename);
   surface_task->setProperty("environmentFile", filename_outside);
   qDebug() << "Generating " << isosurface::kindToString(params.kind) << "surface with isovalue: " << params.isovalue;
   surface_task->setProperty("isovalue", params.isovalue);
 
   auto taskId = m_taskManager->add(surface_task);
-  connect(surface_task, &Task::completed, this, &IsosurfaceCalculator::onTaskComplete);
+  connect(surface_task, &Task::completed, [&, surfaceName]() {
+	this->surfaceComplete("surface.ply", surfaceName);
+  });
 
 }
 
-void IsosurfaceCalculator::onTaskComplete() {
-    qDebug() << "Task finished in IsosurfaceCalculator";
-    Mesh * mesh = io::loadMesh("surface.ply");
-    mesh->setObjectName("Mesh");
+void IsosurfaceCalculator::surfaceComplete(QString filename, QString name) {
+    qDebug() << "Task" << name << "finished in IsosurfaceCalculator";
+    Mesh * mesh = io::loadMesh(filename);
+    mesh->setObjectName(name);
     mesh->setParent(m_structure);
 }
 

@@ -2,10 +2,11 @@
 #include <occ/core/element.h>
 #include <occ/core/kdtree.h>
 #include "elementdata.h"
+#include "mesh.h"
 #include <QIcon>
 #include <QEvent>
 
-ChemicalStructure::ChemicalStructure(QObject *parent) : QAbstractItemModel(parent), m_interactions(new DimerInteractions(this)) {}
+ChemicalStructure::ChemicalStructure(QObject *parent) : QAbstractItemModel(parent) {}
 
 void ChemicalStructure::updateBondGraph() { guessBondsBasedOnDistances(); }
 
@@ -626,12 +627,20 @@ QVariant ChemicalStructure::data(const QModelIndex &index, int role) const {
 
     int col = index.column();
     QObject* itemObject = static_cast<QObject*>(index.internalPointer());
-    if (role == Qt::DecorationRole && col == 0) { // Visibility column
-        QVariant visibleProperty = itemObject->property("visible");
-        if (!visibleProperty.isNull()) {
-            bool isVisible = visibleProperty.toBool();
-            return QIcon(isVisible ? ":/images/tick.png" : ":/images/cross.png");
+    if (role == Qt::DecorationRole) {
+	if(col == 0) { // Visibility column
+	    QVariant visibleProperty = itemObject->property("visible");
+	    if (!visibleProperty.isNull()) {
+		bool isVisible = visibleProperty.toBool();
+		return QIcon(isVisible ? ":/images/tick.png" : ":/images/cross.png");
+	    }
         }
+	else if(col == 1) {
+	    auto *mesh = qobject_cast<Mesh*>(itemObject);
+	    if(mesh) {
+		return QIcon(":/images/mesh.png");
+	    }
+	}
     }
     else if (role == Qt::DisplayRole && col == 1) {
 	return QVariant(itemObject->objectName() + QString(" [%1]").arg(itemObject->metaObject()->className()));

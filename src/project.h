@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QObject>
 #include <QVector>
+#include <QAbstractItemModel>
 
 #include "jobparameters.h"
 #include "packingdialog.h" // access to enum UnitCellPackingCriteria
@@ -14,7 +15,7 @@
 
  This eventually will allow us to save projects and return to them later
  */
-class Project : public QObject {
+class Project : public QAbstractItemModel {
   Q_OBJECT
 
   friend QDataStream &operator<<(QDataStream &, const Project &);
@@ -48,7 +49,16 @@ public:
   bool currentHasSurface() const;
   void addMonomerEnergyToCurrent(const MonomerEnergy &m);
 
+  // Abstract Item Model methods
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex &index) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+
 public slots:
+  void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
   void setCurrentCrystal(int);
   void setCurrentCrystal(int, bool);
   void updateCurrentCrystalContents();
