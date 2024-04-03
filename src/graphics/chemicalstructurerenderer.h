@@ -3,6 +3,7 @@
 #include "ellipsoidrenderer.h"
 #include "cylinderrenderer.h"
 #include "meshrenderer.h"
+#include "mesh.h"
 #include "pointcloudrenderer.h"
 #include "chemicalstructure.h"
 #include "drawingstyle.h"
@@ -52,6 +53,8 @@ public:
     [[nodiscard]] inline EllipsoidRenderer *ellipsoidRenderer() { return m_ellipsoidRenderer; }
     [[nodiscard]] inline LineRenderer *lineRenderer() { return m_lineRenderer; }
 
+    [[nodiscard]] Mesh * getMesh(size_t index) const;
+
 signals:
     void meshesChanged();
 
@@ -67,6 +70,8 @@ private:
     void handleBondsUpdate();
     void handleInteractionsUpdate();
     void handleMeshesUpdate();
+    // helper method
+    quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSelection * selectionHandler = nullptr);
 
     [[nodiscard]] bool shouldSkipAtom(int idx) const;
 
@@ -77,6 +82,9 @@ private:
     bool m_showHydrogens{true};
     bool m_showSuppressedAtoms{false};
     float m_bondThicknessFactor{0.325};
+
+    // helper for keeping track of mesh selection
+    std::vector<Mesh *> m_meshIndexToMesh;
 
     AtomDrawingStyle m_atomStyle{AtomDrawingStyle::CovalentRadiusSphere};
     BondDrawingStyle m_bondStyle{BondDrawingStyle::Stick};

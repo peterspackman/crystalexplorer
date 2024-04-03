@@ -174,10 +174,10 @@ void SurfaceController::setCurrentMesh(Mesh *mesh) {
     enableControls = true;
     enableFingerprint = false; //surface->isFingerprintable();
 
-    volume = 0.0; //surface->volume();
-    area = 0.0; //surface->area();
-    globularity = 0.0; //surface->globularity();
-    asphericity = 0.0; //surface->asphericity();
+    volume = mesh->volume();
+    area = mesh->surfaceArea();
+    globularity = mesh->globularity();
+    asphericity = mesh->asphericity();
     transparent = mesh->isTransparent();
     propertyNames = mesh->availableVertexProperties();
     _currentPropertyIndex = mesh->currentVertexPropertyIndex();

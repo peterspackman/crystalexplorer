@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>24</height>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -215,6 +215,7 @@
    <addaction name="showAtomsWithinRadiusAction"/>
    <addaction name="generateSurfaceAction"/>
    <addaction name="cloneSurfaceAction"/>
+   <addaction name="generateWavefunctionAction"/>
    <addaction name="calculateEnergiesAction"/>
    <addaction name="showCrystalPlanesAction"/>
    <addaction name="separator"/>
@@ -1077,9 +1078,26 @@
     <enum>QAction::ApplicationSpecificRole</enum>
    </property>
   </action>
+  <action name="generateWavefunctionAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/molecule_icon.png</normaloff>:/images/molecule_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Generate Wavefunction</string>
+   </property>
+   <property name="toolTip">
+    <string>Generate a new wavefunction for the selected atoms</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+G</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
  </widget>
  <resources>
-  <include location="../icons/crystalexplorer.qrc"/>
   <include location="../icons/crystalexplorer.qrc"/>
  </resources>
  <connections/>

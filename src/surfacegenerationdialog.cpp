@@ -87,6 +87,7 @@ bool SurfaceGenerationDialog::mustCalculateWavefunction() {
 }
 
 void SurfaceGenerationDialog::validate() {
+    /*
   if (mustCalculateWavefunction()) {
     Q_ASSERT(_atomsForCalculation.size() > 0);
     _waitingOnWavefunction = true;
@@ -131,6 +132,7 @@ void SurfaceGenerationDialog::validate() {
   }
 
   emit surfaceParametersChosen(jobParams, wfn);
+  */
   // NEW
 
   isosurface::Parameters parameters;
@@ -139,7 +141,14 @@ void SurfaceGenerationDialog::validate() {
   parameters.separation = ResolutionDetails::value(ui->resolutionComboBox->currentLevel());
   qDebug() << isosurface::kindToString(parameters.kind);
 
-  emit surfaceParametersChosenNew(parameters);
+  if(needWavefunction()) {
+      qDebug() << "Needs wavefunction";
+      wfn::Parameters wfn_params;
+      emit surfaceParametersChosenNeedWavefunction(parameters, wfn_params);
+  }
+  else {
+      emit surfaceParametersChosenNew(parameters);
+  }
 }
 
 // Returns the corrsponding wavefunction for a currently selected entry in the
@@ -317,4 +326,9 @@ void SurfaceGenerationDialog::setSignLabel(int option) {
   } else { // LUMO
     ui->signLabel->setText("+");
   }
+}
+
+
+const std::vector<GenericAtomIndex>& SurfaceGenerationDialog::atomIndices() const {
+    return m_atomIndices;
 }

@@ -5,87 +5,98 @@
 #include "nwcheminterface.h"
 #include "wavefunctioncalculationdialog.h"
 
+const QString WavefunctionCalculationDialog::customEntry{"Custom..."};
+
 WavefunctionCalculationDialog::WavefunctionCalculationDialog(QWidget *parent)
     : QDialog(parent) {
-  setupUi(this);
-  init();
-}
+	setupUi(this);
+	init();
+    }
 
 void WavefunctionCalculationDialog::init() {
-  setWindowTitle(DIALOG_TITLE);
-  setModal(true);
+    setWindowTitle("Wavefunction Calculation");
+    setModal(true);
 
-  // Initialize the charge (though this should always be overridden with a call
-  // to setChargeForCalculation)
-  _charge = 0;
-
-  // put available options in the dialog
-  initPrograms();
-  initMethod();
-  initConnections();
-  initBasissets();
-  initExchangePotentials();
-  initCorrelationPotentials();
-  adjustSize();
+    // put available options in the dialog
+    initPrograms();
+    initMethod();
+    initBasis();
+    adjustSize();
 }
 
 void WavefunctionCalculationDialog::initPrograms() {
-  programCombobox->clear();
-  _programs = availableExternalPrograms; // defined in JobParameters
+    programComboBox->clear();
 
-  // Remove options if program unavailable
-  if (!GaussianInterface::executableInstalled()) {
-    _programs.removeOne(ExternalProgram::Gaussian);
-  }
+    QStringList programs{
+	"OCC", "Gaussian", "ORCA"
+    };
 
-  if (!NWChemInterface::executableInstalled()) {
-    _programs.removeOne(ExternalProgram::NWChem);
-  }
-
-  ExternalProgram preferred = JobParameters::prefferedWavefunctionSource();
-  int idx = 0;
-  for (const auto &source : _programs) {
-    programCombobox->addItem(externalProgramLabel(source));
-    if (source == preferred)
-      programCombobox->setCurrentIndex(idx);
-    idx++;
-  }
+    QString preferred = "OCC";
+    for (const auto &source:programs) {
+	programComboBox->addItem(source);
+	if (source == preferred) {
+	    programComboBox->setCurrentText(source);
+	}
+    }
 }
 
 void WavefunctionCalculationDialog::initMethod() {
-  for (const auto &i : includeMethod) {
-    methodCombobox->addItem(methodLabels[static_cast<int>(i)]);
-  }
+    QStringList methods{
+	"HF", "B3LYP", "WB97M-V"
+    };
 
-  setDFTOptionVisibility(currentMethod() == Method::kohnSham);
+
+    for (const auto &method : methods) {
+	methodComboBox->addItem(method);
+    }
+    methodComboBox->addItem(customEntry);
+
+    connect(methodComboBox, QOverload<int>::of(&QComboBox::activated),
+	    [&](int index){
+	if (methodComboBox->itemText(index) == customEntry) {
+	    methodComboBox->setEditable(true);
+	    methodComboBox->clearEditText();
+	    methodComboBox->setFocus();
+	    methodComboBox->showPopup();
+	    methodComboBox->setToolTip(tr("Type here to enter a custom value"));
+	} else {
+	    methodComboBox->setEditable(false);
+	}
+    });
+
 }
 
-void WavefunctionCalculationDialog::initBasissets() {
-  for (const auto &basis : includeBasisset) {
-    basissetCombobox->addItem(basisSetLabel(basis));
-  }
+void WavefunctionCalculationDialog::initBasis() {
+    QStringList basisSets{
+	"def2-svp",
+	"def2-tzvp",
+	"6-31G(d,p)",
+	"DGDZVP",
+	"3-21G",
+	"STO-3G",
+    };
+
+    for (const auto &basis : basisSets) {
+	basisComboBox->addItem(basis);
+    }
+
+    basisComboBox->addItem(customEntry);
+
+    connect(basisComboBox, QOverload<int>::of(&QComboBox::activated),
+	    [&](int index){
+	if (basisComboBox->itemText(index) == customEntry) {
+	    basisComboBox->setEditable(true);
+	    basisComboBox->clearEditText();
+	    basisComboBox->setFocus();
+	    basisComboBox->showPopup();
+	    basisComboBox->setToolTip(tr("Type here to enter a custom value"));
+	} else {
+	    basisComboBox->setEditable(false);
+	}
+    });
+
 }
 
-void WavefunctionCalculationDialog::initExchangePotentials() {
-  QVectorIterator<ExchangePotential> i(includeExchangePotential);
-  while (i.hasNext()) {
-    exchangeCombobox->addItem(
-        exchangePotentialLabels[static_cast<int>(i.next())]);
-  }
-}
-
-void WavefunctionCalculationDialog::initCorrelationPotentials() {
-  QVectorIterator<CorrelationPotential> i(includeCorrelationPotential);
-  while (i.hasNext()) {
-    correlationCombobox->addItem(
-        correlationPotentialLabels[static_cast<int>(i.next())]);
-  }
-}
-
-void WavefunctionCalculationDialog::initConnections() {
-  connect(methodCombobox, SIGNAL(currentIndexChanged(const QString &)), this,
-          SLOT(updatesForMethodChange()));
-}
 
 void WavefunctionCalculationDialog::show() {
   initPrograms(); // wavefunction program availability might have changed so
@@ -94,52 +105,50 @@ void WavefunctionCalculationDialog::show() {
 }
 
 void WavefunctionCalculationDialog::accept() {
-  // Setup jobParameters
-  JobParameters jobParams;
-  jobParams.jobType = JobType::wavefunction;
-  jobParams.program = currentWavefunctionSource();
-  jobParams.theory = currentMethod();
-  jobParams.exchangePotential = currentExchangePotential();
-  jobParams.correlationPotential = currentCorrelationPotential();
-  jobParams.basisset = currentBasisset();
-  jobParams.editInputFile =
-      (editInputFileCheckbox->checkState() == Qt::Checked);
+  wfn::Parameters params;
+  params.charge = charge();
+  params.multiplicity = multiplicity();
+  params.method = method();
+  params.basis = basis();
+  params.atoms = m_atomIndices;
 
-  jobParams.atoms = _atomsForCalculation;
-  jobParams.charge = _charge;
-  jobParams.multiplicity = _multiplicity;
-
-  emit wavefunctionParametersChosen(jobParams);
+  emit wavefunctionParametersChosen(params);
 
   QDialog::accept();
 }
 
-void WavefunctionCalculationDialog::updatesForMethodChange() {
-  setDFTOptionVisibility(currentMethod() == Method::kohnSham);
-  adjustSize();
+QString WavefunctionCalculationDialog::program() const {
+  return programComboBox->currentText();
 }
 
-void WavefunctionCalculationDialog::setDFTOptionVisibility(bool visible) {
-  DFTOptions->setVisible(visible);
+QString WavefunctionCalculationDialog::method() const {
+  return methodComboBox->currentText();
 }
 
-ExternalProgram WavefunctionCalculationDialog::currentWavefunctionSource() {
-  return _programs[programCombobox->currentIndex()];
+QString WavefunctionCalculationDialog::basis() const {
+  return basisComboBox->currentText();
 }
 
-Method WavefunctionCalculationDialog::currentMethod() {
-  return includeMethod[methodCombobox->currentIndex()];
+void WavefunctionCalculationDialog::setAtomIndices(const std::vector<GenericAtomIndex> &idxs) {
+    m_atomIndices = idxs;
 }
 
-BasisSet WavefunctionCalculationDialog::currentBasisset() {
-  return includeBasisset[basissetCombobox->currentIndex()];
+const std::vector<GenericAtomIndex>& WavefunctionCalculationDialog::atomIndices() const {
+    return m_atomIndices;
 }
 
-ExchangePotential WavefunctionCalculationDialog::currentExchangePotential() {
-  return includeExchangePotential[exchangeCombobox->currentIndex()];
+int WavefunctionCalculationDialog::charge() const { 
+    return chargeSpinBox->value();
 }
 
-CorrelationPotential
-WavefunctionCalculationDialog::currentCorrelationPotential() {
-  return includeCorrelationPotential[correlationCombobox->currentIndex()];
+void WavefunctionCalculationDialog::setCharge(int charge) { 
+    chargeSpinBox->setValue(charge);
+}
+
+int WavefunctionCalculationDialog::multiplicity() const { 
+    return multiplicitySpinBox->value();
+}
+
+void WavefunctionCalculationDialog::setMultiplicity(int mult) { 
+    multiplicitySpinBox->setValue(mult);
 }

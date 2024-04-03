@@ -20,6 +20,7 @@ public:
 
     float separation() const;
     float isovalue() const;
+    int threads() const;
 
 private:
     QString kind() const;

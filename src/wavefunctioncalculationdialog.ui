@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>296</width>
-    <height>280</height>
+    <width>345</width>
+    <height>303</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,13 +23,13 @@
    <item>
     <layout class="QGridLayout" name="gridLayout_3">
      <item row="0" column="1">
-      <widget class="QComboBox" name="programCombobox"/>
+      <widget class="QComboBox" name="programComboBox"/>
      </item>
      <item row="2" column="1">
-      <widget class="QComboBox" name="basissetCombobox"/>
+      <widget class="QComboBox" name="basisComboBox"/>
      </item>
      <item row="2" column="0">
-      <widget class="QLabel" name="TextLabel3">
+      <widget class="QLabel" name="basisLabel">
        <property name="text">
         <string>Basis Set</string>
        </property>
@@ -39,62 +39,53 @@
       </widget>
      </item>
      <item row="0" column="0">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="programLabel">
        <property name="text">
         <string>Program</string>
        </property>
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="label_2">
+      <widget class="QLabel" name="methodLabel">
        <property name="text">
         <string>Method</string>
        </property>
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QComboBox" name="methodCombobox"/>
+      <widget class="QComboBox" name="methodComboBox"/>
      </item>
     </layout>
    </item>
    <item>
-    <widget class="QGroupBox" name="DFTOptions">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
+    <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string/>
+      <string>System</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="textLabel2">
-        <property name="text">
-         <string>Exchange Potential</string>
-        </property>
-        <property name="wordWrap">
-         <bool>false</bool>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="chargeSpinBox">
+        <property name="minimum">
+         <number>-99</number>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="exchangeCombobox">
-        <property name="editable">
-         <bool>false</bool>
+      <item row="0" column="0">
+       <widget class="QLabel" name="chargeLabel">
+        <property name="text">
+         <string>Charge</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="textLabel3">
+       <widget class="QLabel" name="multiplicityLabel">
         <property name="text">
-         <string>Correlation Potential</string>
-        </property>
-        <property name="wordWrap">
-         <bool>false</bool>
+         <string>Multiplicity</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QComboBox" name="correlationCombobox"/>
+       <widget class="QSpinBox" name="multiplicitySpinBox"/>
       </item>
      </layout>
     </widget>

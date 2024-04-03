@@ -14,6 +14,8 @@ class CrystalController : public QWidget, public Ui::CrystalController {
 public:
   CrystalController(QWidget *parent = 0);
 
+  Mesh *getChildMesh(int index) const;
+
 public slots:
   void update(Project *);
   void handleSceneSelectionChange(int);
@@ -27,7 +29,7 @@ public slots:
 
 signals:
   void structureSelectionChanged(int);
-  void surfaceSelectionChanged(int);
+  void childSelectionChanged(int);
   void toggleVisibilityOfSurface(int);
   void deleteCurrentCrystal();
   void deleteCurrentSurface();
@@ -38,6 +40,7 @@ protected:
 
 private slots:
   void structureViewClicked(const QModelIndex &);
+  void onStructureViewSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
     /*
   void currentSurfaceChanged(QTreeWidgetItem *, QTreeWidgetItem *);
   void columnInSurfaceListClicked(QTreeWidgetItem *, int);

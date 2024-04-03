@@ -35,6 +35,7 @@ void OccSurfaceTask::start() {
     args << QString("--kind=%1").arg(kind());
     args << QString("--separation=%1").arg(separation());
     args << QString("--isovalue=%1").arg(isovalue());
+    args << QString("--threads=%1").arg(threads());
     if(properties().contains("background_density")) {
 	args << QString("--background-density=%1").arg(properties().value("background_density").toFloat());
     }
@@ -59,6 +60,10 @@ QString OccSurfaceTask::kind() const {
 
 float OccSurfaceTask::separation() const {
     return m_parameters.separation;
+}
+
+int OccSurfaceTask::threads() const {
+    return properties().value("threads", 6).toInt();
 }
 
 float OccSurfaceTask::isovalue() const {

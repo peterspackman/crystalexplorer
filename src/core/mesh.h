@@ -87,17 +87,31 @@ public:
 	}
     }
 
+    [[nodiscard]] double volume() const;
+    [[nodiscard]] double surfaceArea() const;
+    [[nodiscard]] double globularity() const;
+    [[nodiscard]] inline double asphericity() const { return m_asphericity; }
+    
+
 signals:
     void visibilityChanged();
 
 private:
     void updateVertexFaceMapping();
+    void updateFaceProperties();
+    void updateAsphericity();
+
+    double m_volume{0.0}, m_surfaceArea{0.0}, m_asphericity{0.0}, m_globularity{0.0};
 
     bool m_visible{true};
     QString m_description{"Mesh"};
     VertexList m_vertices;
     FaceList m_faces;
     VertexList m_vertexNormals;
+
+    VertexList m_faceNormals;
+    ScalarPropertyValues m_faceAreas;
+    ScalarPropertyValues m_faceVolumeContributions;
 
     std::vector<std::vector<int>> m_facesUsingVertex;
 

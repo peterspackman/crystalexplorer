@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include "generic_atom_index.h"
 #include "atomid.h"
 #include "jobparameters.h"
 #include "surfacedescription.h"
@@ -12,6 +13,7 @@
 #include "ui_surfacegenerationdialog.h"
 #include "wavefunction.h"
 #include "isosurface_parameters.h"
+#include "wavefunction_parameters.h"
 
 static const char *densityUnits = "e au<sup>-3</sup>";
 static const QStringList surfaceIsovalueUnits =
@@ -47,7 +49,10 @@ public:
   const QVector<int> &suppressedAtomsForCalculation() {
     return _suppressedAtomsForCalculation;
   }
+
   bool waitingOnWavefunction() { return _waitingOnWavefunction; }
+
+  [[nodiscard]] const std::vector<GenericAtomIndex> &atomIndices() const;
 
 private slots:
   void surfaceChanged();
@@ -60,6 +65,9 @@ signals:
   void surfaceParametersChosen(const JobParameters &,
                                std::optional<Wavefunction>);
   void surfaceParametersChosenNew(isosurface::Parameters);
+
+  void surfaceParametersChosenNeedWavefunction(isosurface::Parameters, wfn::Parameters);
+
   void requireWavefunction(const QVector<AtomId> &, int, int);
 
 private:
@@ -83,6 +91,8 @@ private:
   void copyWavefunctionParamsIntoSurfaceParams(JobParameters &,
                                                const JobParameters &);
   TransformableWavefunction wavefunctionForCurrentComboboxSelection();
+
+  std::vector<GenericAtomIndex> m_atomIndices;
 
   QVector<TransformableWavefunction> _wavefunctions;
   QVector<AtomId> _atomsForCalculation;

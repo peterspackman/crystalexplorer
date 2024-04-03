@@ -1,4 +1,5 @@
 #include "occwavefunctiontask.h"
+#include <occ/core/element.h>
 #include "filedependency.h"
 #include "exefileutilities.h"
 #include <QJsonDocument>
@@ -7,16 +8,21 @@
 QString toJson(const wfn::Parameters &params) {
 	QJsonObject root;
 	QJsonObject topology;
-	QJsonArray positions;
 
-	for(const auto &pos: params.atoms.positions) {
-	    positions.push_back(pos.x());
-	    positions.push_back(pos.y());
-	    positions.push_back(pos.z());
-	}
+
+	auto nums = params.structure->atomicNumbersForIndices(params.atoms);
+	auto pos = params.structure->atomicPositionsForIndices(params.atoms);
+
+	QJsonArray positions;
 	QJsonArray symbols;
-	for(const auto &sym: params.atoms.symbols) {
-	    symbols.push_back(sym);
+	
+
+	// should be in angstroms
+	for(int i = 0; i < nums.rows(); i++) {
+	    symbols.push_back(QString::fromStdString(occ::core::Element(nums(i)).symbol()));
+	    positions.push_back(pos(0, i));
+	    positions.push_back(pos(1, i));
+	    positions.push_back(pos(2, i));
 	}
 	root["schema_name"] = "qcschema_input";
 	root["scema_version"] = 1;

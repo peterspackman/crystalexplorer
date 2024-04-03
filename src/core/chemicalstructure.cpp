@@ -512,6 +512,13 @@ void ChemicalStructure::expandAtomsWithinRadius(float radius, bool selected) {
   // TODO
 }
 
+std::vector<GenericAtomIndex> ChemicalStructure::atomsWithFlags(const AtomFlags &flags) const {
+    std::vector<GenericAtomIndex> result;
+    for (int i = 0; i < numberOfAtoms(); i++) {
+	if (m_flags[i] & flags) result.push_back({i});
+    }
+    return result;
+}
 
 std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const {
     ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> unique_idxs;

@@ -29,6 +29,7 @@ public:
   bool loadCrystalDataTonto(const QString &cxs, const QString &cif);
   bool loadSurfaceData(const JobParameters &);
   Scene *currentScene();
+  ChemicalStructure *currentStructure();
   const Scene *currentScene() const;
   Scene *previousCrystal();
   QStringList sceneTitles();

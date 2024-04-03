@@ -272,7 +272,7 @@ void ChemicalStructureRenderer::updateRendererUniforms(const RendererUniforms &u
 }
 
 
-quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSelection * selectionHandler = nullptr) {
+quint32 ChemicalStructureRenderer::addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSelection * selectionHandler) {
     std::vector<MeshVertex> vertices;
     std::vector<MeshRenderer::IndexTuple> indices;
     const auto &verts = mesh->vertices();
@@ -284,8 +284,9 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
     quint32 selectionId{0};
     QVector3D selectionIdColor;
     if(selectionHandler) {
-	selectionId = selectionHandler->add(SelectionType::Surface, 0);
+	selectionId = selectionHandler->add(SelectionType::Surface, m_meshIndexToMesh.size());
 	selectionIdColor = selectionHandler->getColorFromId(selectionId);
+	m_meshIndexToMesh.push_back(mesh);
     }
 
     Mesh::ScalarPropertyValues prop;
@@ -339,6 +340,7 @@ quint32 addMeshToMeshRenderer(Mesh *mesh, MeshRenderer *meshRenderer, RenderSele
 void ChemicalStructureRenderer::handleMeshesUpdate() {
     if(!m_meshesNeedsUpdate) return;
     qDebug() << "HandleMeshes update called (needs update)";
+    m_meshIndexToMesh.clear();
     m_meshRenderer->clear();
     m_pointCloudRenderer->clear();
     for(auto * child: m_structure->children()) {
@@ -385,6 +387,12 @@ void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
 	m_meshesNeedsUpdate = true;
     }
     handleMeshesUpdate();
+}
+
+
+Mesh * ChemicalStructureRenderer::getMesh(size_t index) const {
+    if(index >= m_meshIndexToMesh.size()) return nullptr;
+    return m_meshIndexToMesh.at(index);
 }
 
 }

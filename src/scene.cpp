@@ -764,10 +764,18 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
   }
   case SelectionType::Surface: {
     size_t surfaceIndex = m_selection.index;
-    Surface *surface = surfaceHandler()->surfaceFromIndex(surfaceIndex);
-    if (!surface)
-      break;
-    result = QVector4D(surface->vertices()[m_selection.secondaryIndex], surfaceIndex);
+    if(m_structureRenderer) {
+	Mesh * mesh = m_structureRenderer->getMesh(surfaceIndex);
+	qDebug() << "Found mesh:" << mesh;
+	if(!mesh) break;
+    }
+    else {
+	Surface *surface = surfaceHandler()->surfaceFromIndex(surfaceIndex);
+	qDebug() << "Found surface:" << surface;
+	if (!surface)
+	  break;
+	result = QVector4D(surface->vertices()[m_selection.secondaryIndex], surfaceIndex);
+    }
   }
   default:
     break;

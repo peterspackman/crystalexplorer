@@ -115,6 +115,7 @@ public:
   [[nodiscard]] inline DimerInteractions * interactions() { return m_interactions; }
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
+  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const;
 
 
   // Abstract Item Model methods

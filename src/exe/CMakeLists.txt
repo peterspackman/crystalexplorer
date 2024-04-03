@@ -8,6 +8,7 @@ add_library(cx_exe
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanagerwidget.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tonto.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wavefunction_calculator.cpp"
 )
 
 target_link_libraries(

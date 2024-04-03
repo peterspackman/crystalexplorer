@@ -23,6 +23,7 @@
 #include "tontointerface.h"
 #include "tonto.h"
 #include "isosurface_calculator.h"
+#include "wavefunction_calculator.h"
 
 Crystalx::Crystalx() : QMainWindow() {
   setupUi(this);
@@ -229,6 +230,15 @@ void Crystalx::createSurfaceControllerDockWidget() {
   surfaceControllerDockWidget->adjustSize();
   addDockWidget(Qt::RightDockWidgetArea, surfaceControllerDockWidget);
   surfaceController->setEnabled(false);
+  connect(crystalController, &CrystalController::childSelectionChanged,
+	  [&](int row) {
+    auto * mesh = crystalController->getChildMesh(row);
+    if(mesh) {
+	qDebug() << "Setting current mesh to " << mesh;
+	surfaceController->setCurrentMesh(mesh);
+    }
+  });
+
 }
 
 void Crystalx::createCrystalControllerDockWidget() {
@@ -541,6 +551,13 @@ void Crystalx::initMenuConnections() {
   connect(showCrystalPlanesAction, &QAction::triggered, this,
           &Crystalx::showCrystalPlaneDialog);
   connect(actionShowTaskManager, &QAction::triggered, this, &Crystalx::showTaskManagerWidget);
+
+  connect(generateWavefunctionAction, &QAction::triggered, [&]() {
+	  // TODO
+    auto structure = project->currentStructure();
+    if(structure)
+	getWavefunctionParametersFromUser(structure->atomsWithFlags(AtomFlag::Selected), 0, 1);
+  });
 }
 
 void Crystalx::initCloseContactsDialog() {
@@ -1147,14 +1164,16 @@ void Crystalx::getSurfaceParametersFromUser() {
       connect(m_oldSurfaceGenerationDialog,
               &SurfaceGenerationDialog::surfaceParametersChosen, this,
               &Crystalx::generateSurface);
+      /*
       connect(m_oldSurfaceGenerationDialog,
               &SurfaceGenerationDialog::requireWavefunction, this,
               &Crystalx::getWavefunctionParametersFromUser);
+	*/
     }
+
 
     QVector<AtomId> atomsForCalculation = crystal->selectedAtomsAsIds();
     auto cm = crystal->chargeMultiplicityForFragment(atomsForCalculation);
-    m_oldSurfaceGenerationDialog->setAtomsForCalculation(atomsForCalculation);
     m_oldSurfaceGenerationDialog->setChargeForCalculation(cm.charge);
     m_oldSurfaceGenerationDialog->setMultiplicityForCalculation(
         cm.multiplicity);
@@ -1246,6 +1265,10 @@ void Crystalx::generateSurfaceNew(isosurface::Parameters parameters) {
     Scene *scene = project->currentScene();
     parameters.structure = scene->chemicalStructure();
     calc->start(parameters);
+
+}
+
+void Crystalx::generateSurfaceRequiringWavefunction(isosurface::Parameters parameters, wfn::Parameters wfn_parameters) {
 
 }
 
@@ -1551,17 +1574,20 @@ void Crystalx::wavefunctionJobFinished(bool errorFound) {
   }
 }
 
-void Crystalx::getWavefunctionParametersFromUser(
-    QVector<AtomId> atomsForCalculation, int charge, int multiplicity) {
-  if (wavefunctionCalculationDialog == 0) {
+void Crystalx::getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex> &atoms, int charge, int multiplicity) {
+  auto * structure = project->currentStructure();
+  if(!structure) return;
+
+  if (!wavefunctionCalculationDialog) {
     wavefunctionCalculationDialog = new WavefunctionCalculationDialog(this);
     connect(wavefunctionCalculationDialog,
             &WavefunctionCalculationDialog::wavefunctionParametersChosen, this,
             &Crystalx::generateWavefunction);
   }
-  wavefunctionCalculationDialog->setAtomsForCalculation(atomsForCalculation);
-  wavefunctionCalculationDialog->setChargeForCalculation(charge);
-  wavefunctionCalculationDialog->setMultiplicityForCalculation(multiplicity);
+  qDebug() << atoms.size() << "Atoms for wavefunction";
+  wavefunctionCalculationDialog->setAtomIndices(atoms);
+  wavefunctionCalculationDialog->setCharge(charge);
+  wavefunctionCalculationDialog->setMultiplicity(multiplicity);
   wavefunctionCalculationDialog->show();
 }
 
@@ -1570,15 +1596,16 @@ void Crystalx::getWavefunctionParametersFromUser(
  wavefunction calculation
  It works in tandem with Crystal::backToSurfaceGeneration
  */
-void Crystalx::generateWavefunction(const JobParameters &newJobParams) {
-  DeprecatedCrystal *crystal = project->currentScene()->crystal();
-  Q_ASSERT(crystal);
+void Crystalx::generateWavefunction(wfn::Parameters parameters) {
+  auto *structure = project->currentStructure();
+  Q_ASSERT(structure);
 
   // Check if the wavefunction calculation duplicates an existing wavefunction
   // If YES, check with the user whether they want to continue anyway
   // (They may want to do this if they are going to edit the input file and ask
   // for special options.)
   bool generateWavefunction = true;
+  /*
   auto wfn = crystal->wavefunctionMatchingParameters(newJobParams);
   if (wfn) {
     QString wavefunctionDescription = (*wfn).description();
@@ -1592,37 +1619,15 @@ void Crystalx::generateWavefunction(const JobParameters &newJobParams) {
                                   QMessageBox::Yes | QMessageBox::No);
     generateWavefunction = (reply == QMessageBox::Yes);
   }
+  */
 
-  if (generateWavefunction) {
-    jobParams = newJobParams;
-    jobParams.inputFilename = crystal->cifFilename();
+  if (!generateWavefunction) return;
 
-    switch (jobParams.program) {
-    case ExternalProgram::None:
-      Q_ASSERT(false); // Shouldn't ever get here if we are trying to generate a
-                       // wavefunction and the wavefunction source =
-                       // WavefunctionSource::None
-      break;
-    case ExternalProgram::Tonto:
-      tontoInterface->runJob(jobParams, crystal);
-      break;
-    case ExternalProgram::Gaussian:
-      gaussianInterface->runJob(jobParams, crystal);
-      break;
-    case ExternalProgram::Psi4:
-      psi4Interface->runJob(jobParams, crystal);
-      break;
-    case ExternalProgram::NWChem:
-      nwchemInterface->runJob(jobParams, crystal);
-      break;
-    case ExternalProgram::Occ:
-      m_occInterface->runJob(jobParams, crystal);
-      break;
-    default:
-      qWarning("Invalid external program for wavefunction job");
-      break;
-    }
-  }
+  parameters.structure = structure;
+  WavefunctionCalculator * calc = new WavefunctionCalculator();
+  calc->setTaskManager(m_taskManager);
+  calc->start(parameters);
+
 }
 
 void Crystalx::calculateMonomerEnergy(const JobParameters &newJobParams) {
@@ -2283,6 +2288,8 @@ void Crystalx::showEnergyCalculationDialog() {
             &EnergyCalculationDialog::energyParametersChosen, this,
             &Crystalx::calculateEnergies, Qt::UniqueConnection);
 
+    /*
+     * TODO tidy up
     connect(energyCalculationDialog,
             &EnergyCalculationDialog::requireWavefunction, this,
             &Crystalx::getWavefunctionParametersFromUser, Qt::UniqueConnection);
@@ -2292,6 +2299,7 @@ void Crystalx::showEnergyCalculationDialog() {
     connect(energyCalculationDialog,
             &EnergyCalculationDialog::requireMonomerEnergy, this,
             &Crystalx::calculateMonomerEnergy, Qt::UniqueConnection);
+    */
   }
   energyCalculationDialog->setCrystal(crystal);
 

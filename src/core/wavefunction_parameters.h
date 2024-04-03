@@ -1,25 +1,31 @@
 #pragma once
 #include <QString>
-#include <QList>
-#include <QVector3D>
 #include <ankerl/unordered_dense.h>
+#include "chemicalstructure.h"
+#include "generic_atom_index.h"
 
 namespace wfn {
-    struct AtomList {
-	QList<QString> symbols;
-	QList<QVector3D> positions;
-    };
 
-    struct Parameters {
-	QString method{"b3lyp"};
-	QString basis{"def2-qzvp"};
-	AtomList atoms;
-    };
+enum class FileFormat {
+    OccWavefunction,
+    Fchk,
+    Molden
+};
 
-    struct Result {
-	QString filename;
-	QString stdoutContents;
-	ankerl::unordered_dense::map<QString, double> energy;
-	bool success{false};
-    };
+struct Parameters {
+    int charge{0};
+    int multiplicity{1};
+    QString method{"b3lyp"};
+    QString basis{"def2-qzvp"};
+    ChemicalStructure *structure{nullptr};
+    std::vector<GenericAtomIndex> atoms;
+};
+
+struct Result {
+    QString filename;
+    QString stdoutContents;
+    ankerl::unordered_dense::map<QString, double> energy;
+    bool success{false};
+};
+
 }

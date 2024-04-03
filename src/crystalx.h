@@ -70,8 +70,9 @@ public:
 public slots:
   void generateSurface(const JobParameters &, std::optional<Wavefunction>);
   void generateSurfaceNew(isosurface::Parameters);
-  void getWavefunctionParametersFromUser(QVector<AtomId>, int, int);
-  void generateWavefunction(const JobParameters &);
+  void generateSurfaceRequiringWavefunction(isosurface::Parameters, wfn::Parameters);
+  void getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex>&, int, int);
+  void generateWavefunction(wfn::Parameters);
   void calculateMonomerEnergy(const JobParameters &);
   void returnToJobRequiringWavefunction();
   void tontoJobFinished(TontoExitStatus, JobType);

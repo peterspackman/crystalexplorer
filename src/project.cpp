@@ -144,6 +144,14 @@ bool Project::loadSurfaceData(const JobParameters &jobParams) {
   return false;
 }
 
+ChemicalStructure* Project::currentStructure() {
+    auto *scene = currentScene();
+    if(scene) {
+	return scene->chemicalStructure();
+    }
+    return nullptr;
+}
+
 Scene *Project::currentScene() {
   if (m_currentSceneIndex < m_scenes.size() && m_currentSceneIndex > -1) {
     return m_scenes[m_currentSceneIndex];

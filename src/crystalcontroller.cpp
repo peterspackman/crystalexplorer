@@ -15,41 +15,17 @@ void CrystalController::init() {
       QIcon(":/images/molecule_icon.png");
   m_sceneListIcons[ScenePeriodicity::ThreeDimensions] =
       QIcon(":/images/crystal_icon.png");
-
-  /*
-  structureListWidget->installEventFilter(this);
-  structureTreeView->installEventFilter(this);
-  */
 }
 
 void CrystalController::initConnections() {
   connect(structureTreeView, &QTreeView::clicked, this,
           &CrystalController::structureViewClicked);
-  /*
-  connect(structureListWidget, &QListWidget::currentRowChanged, this,
-          &CrystalController::structureSelectionChanged);
-  connect(StructureTreeView, &QTreeView::currentItemChanged, this,
-          &CrystalController::currentSurfaceChanged);
-	  */
 }
 
 void CrystalController::update(Project *project) {
+    // TODO probably disconnect previous project here
     structureListView->setModel(project);
     connect(structureListView->selectionModel(), &QItemSelectionModel::selectionChanged, project, &Project::onSelectionChanged);
-
-    /*
-  structureListWidget->clear();
-  auto kinds = project->scenePeriodicities();
-  auto titles = project->sceneTitles();
-  for (int i = 0; i < kinds.size(); i++) {
-    QListWidgetItem *item = new QListWidgetItem(titles[i]);
-    const auto &kind = kinds[i];
-    if (m_sceneListIcons.contains(kind)) {
-      item->setIcon(m_sceneListIcons[kind]);
-    }
-    structureListWidget->addItem(item);
-  }
-  */
 }
 
 void CrystalController::handleSceneSelectionChange(int selection) {
@@ -134,6 +110,8 @@ void CrystalController::setSurfaceInfo(Project *project) {
  */
 void CrystalController::updateSurfaceInfo(Scene *scene) {
     structureTreeView->setModel(scene->chemicalStructure());
+    connect(structureTreeView->selectionModel(), &QItemSelectionModel::selectionChanged,
+	  this, &CrystalController::onStructureViewSelectionChanged);
     /*
   structureTreeView->clear();
 
@@ -183,22 +161,45 @@ bool CrystalController::itemOfParentSurface(QTreeWidgetItem *item) {
 
 */
 void CrystalController::structureViewClicked(const QModelIndex &index) {
-    if (index.column() == 0) {
-	// Ensure the view corresponds to a ChemicalStructure
-	ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
-	if (!structure) return;
+    if (index.column() != 0) return;
+    // Ensure the view corresponds to a ChemicalStructure
+    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
+    if (!structure) return;
 
-	QObject* item = static_cast<QObject*>(index.internalPointer());
-	if (item) {
-	    // Toggle the visibility
-	    bool currentVisibility = item->property("visible").toBool();
-	    item->setProperty("visible", !currentVisibility);
-	    qDebug() << "Setting object visibility";
+    QObject* item = static_cast<QObject*>(index.internalPointer());
+    if (item) {
+	// Toggle the visibility
+	bool currentVisibility = item->property("visible").toBool();
+	item->setProperty("visible", !currentVisibility);
+	qDebug() << "Setting object visibility";
 
-	    // Optionally, emit dataChanged signal if the view does not automatically update
-	    emit structure->dataChanged(index, index, {Qt::DecorationRole});
-	}
+	// Optionally, emit dataChanged signal if the view does not automatically update
+	emit structure->dataChanged(index, index, {Qt::DecorationRole});
+
     }
+}
+
+
+void CrystalController::onStructureViewSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected) {
+    Q_UNUSED(deselected);
+
+    qDebug() << "structureViewSelectionChanged";
+    if (!selected.indexes().isEmpty()) {
+        int selectedRow = selected.indexes().first().row();
+        emit childSelectionChanged(selectedRow);
+    }
+}
+
+
+Mesh *CrystalController::getChildMesh(int rowIndex) const {
+    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
+    if (!structure) return nullptr;
+
+    QModelIndex index = structure->index(rowIndex, 0);
+    if (!index.isValid()) return nullptr;
+
+    QObject* item = static_cast<QObject*>(index.internalPointer());
+    return qobject_cast<Mesh *>(item);
 }
 
 void CrystalController::selectSurface(int surfaceIndex) {
