@@ -62,6 +62,7 @@ public slots:
     void childAddedToStructure(QObject *);
     void childRemovedFromStructure(QObject *);
     void childVisibilityChanged();
+    void childPropertyChanged();
 
 private:
     void initStructureChildren();

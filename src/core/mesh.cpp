@@ -162,6 +162,7 @@ const ScalarProperties &Mesh::vertexProperties() const {
 
 void Mesh::setVertexProperty(const QString &name, const ScalarPropertyValues &values) {
     m_vertexProperties[name] = values;
+    setSelectedProperty(name);
 }
 
 const ScalarPropertyValues &Mesh::vertexProperty(const QString &name) const {
@@ -211,6 +212,19 @@ QStringList Mesh::availableFaceProperties() const {
 
 bool Mesh::haveFaceProperty(const QString &prop) const {
     return m_faceProperties.find(prop) != m_faceProperties.end();
+}
+
+
+const QString &Mesh::getSelectedProperty() const {
+    return m_selectedProperty;
+}
+
+bool Mesh::setSelectedProperty(const QString &propName) {
+    if(m_selectedProperty == propName) return true;
+    if(m_vertexProperties.find(propName) == m_vertexProperties.end()) return false;
+    m_selectedProperty = propName;
+    emit selectedPropertyChanged();
+    return true;
 }
 
 

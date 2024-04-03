@@ -2,6 +2,7 @@
 #include <QWidget>
 
 #include "project.h"
+#include "molecular_wavefunction.h"
 
 #include "ui_crystalcontroller.h"
 
@@ -15,14 +16,12 @@ public:
   CrystalController(QWidget *parent = 0);
 
   Mesh *getChildMesh(int index) const;
+  MolecularWavefunction *getChildWavefunction(int index) const;
 
 public slots:
   void update(Project *);
   void handleSceneSelectionChange(int);
-
   void setSurfaceInfo(Project *);
-  void updateVisibilityIconForCurrentSurface(Project *);
-  void selectSurface(int);
   void clearCurrentCrystal() { verifyDeleteCurrentCrystal(); }
   void clearAllCrystals();
   void updateVisibilityIconsForSurfaces(Project *);
@@ -41,24 +40,10 @@ protected:
 private slots:
   void structureViewClicked(const QModelIndex &);
   void onStructureViewSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
-    /*
-  void currentSurfaceChanged(QTreeWidgetItem *, QTreeWidgetItem *);
-  void columnInSurfaceListClicked(QTreeWidgetItem *, int);
-  */
 
 private:
-  void init();
   void initConnections();
   void updateSurfaceInfo(Scene *);
   void verifyDeleteCurrentCrystal();
   void verifyDeleteCurrentSurface();
-  int indexOfSelectedCrystal();
-  /*
-  bool itemOfParentSurface(QTreeWidgetItem *);
-  void setChildrenEnabled(QTreeWidgetItem *, bool);
-  */
-
-  QIcon tickIcon;
-  QIcon crossIcon;
-  QMap<ScenePeriodicity, QIcon> m_sceneListIcons;
 };

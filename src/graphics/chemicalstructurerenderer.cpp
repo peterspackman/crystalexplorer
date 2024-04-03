@@ -293,7 +293,7 @@ quint32 ChemicalStructureRenderer::addMeshToMeshRenderer(Mesh *mesh, MeshRendere
     auto availableProperties = mesh->availableVertexProperties();
     qDebug() << "Available vertex properties: " << availableProperties;
     if(availableProperties.size() > 1) {
-	prop = mesh->vertexProperty(availableProperties[mesh->currentVertexPropertyIndex()]);
+	prop = mesh->vertexProperty(mesh->getSelectedProperty());
 	float l = prop.minCoeff();
 	float u = prop.maxCoeff();
 	prop.array() = (prop.array() - l) / (u - l);
@@ -363,7 +363,14 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
 
 
 void ChemicalStructureRenderer::childVisibilityChanged() {
+    // TODO more granularity
     qDebug() << "Child visibility changed";
+    updateMeshes();
+}
+
+void ChemicalStructureRenderer::childPropertyChanged() {
+    // TODO more granularity
+    qDebug() << "Child property changed";
     updateMeshes();
 }
 
@@ -373,6 +380,7 @@ void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
     if (mesh) {
 	qDebug() << "Added mesh to structure, connected";
 	connect(mesh, &Mesh::visibilityChanged, this, &ChemicalStructureRenderer::childVisibilityChanged);
+	connect(mesh, &Mesh::selectedPropertyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
 	m_meshesNeedsUpdate = true;
     }
     handleMeshesUpdate();

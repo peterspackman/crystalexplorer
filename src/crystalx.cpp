@@ -2443,12 +2443,7 @@ void Crystalx::handleStructureChange() {
 }
 
 void Crystalx::updateSurfaceControllerForNewProperty() {
-  Surface *surface = project->currentScene()->currentSurface();
-
-  Q_ASSERT(surface);
-
-  surfaceController->setCurrentSurface(surface);
-  surfaceController->selectLastSurfaceProperty();
+    // TODO delete
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

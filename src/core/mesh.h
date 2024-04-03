@@ -11,6 +11,7 @@
 class Mesh : public QObject {
     Q_OBJECT
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
+    Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE setSelectedProperty NOTIFY selectedPropertyChanged)
 
 public:
     using VertexList = Eigen::Matrix<double, 3, Eigen::Dynamic>;
@@ -91,10 +92,13 @@ public:
     [[nodiscard]] double surfaceArea() const;
     [[nodiscard]] double globularity() const;
     [[nodiscard]] inline double asphericity() const { return m_asphericity; }
-    
+
+    const QString &getSelectedProperty() const;
+    bool setSelectedProperty(const QString &);
 
 signals:
     void visibilityChanged();
+    void selectedPropertyChanged();
 
 private:
     void updateVertexFaceMapping();

@@ -4,20 +4,13 @@
 
 CrystalController::CrystalController(QWidget *parent) : QWidget(parent) {
   setupUi(this);
-  init();
   initConnections();
 }
 
-void CrystalController::init() {
-  tickIcon.addFile(":/images/tick.png");
-  crossIcon.addFile(":/images/cross.png");
-  m_sceneListIcons[ScenePeriodicity::ZeroDimensions] =
-      QIcon(":/images/molecule_icon.png");
-  m_sceneListIcons[ScenePeriodicity::ThreeDimensions] =
-      QIcon(":/images/crystal_icon.png");
-}
-
 void CrystalController::initConnections() {
+  structureListView->installEventFilter(this);
+  structureTreeView->installEventFilter(this);
+
   connect(structureTreeView, &QTreeView::clicked, this,
           &CrystalController::structureViewClicked);
 }
@@ -49,117 +42,16 @@ void CrystalController::handleSceneSelectionChange(int selection) {
     }
 }
 
-/*
-void CrystalController::setChildrenEnabled(QTreeWidgetItem *item,
-                                           bool enabled) {
-  item = structureTreeView->itemBelow(item);
-  while (item) {
-    if (!itemOfParentSurface(item)) {
-      item->setDisabled(!enabled);
-      item->setIcon(0, enabled ? tickIcon : crossIcon);
-    } else {
-      break;
-    }
-    item = structureTreeView->itemBelow(item);
-  }
-}
-*/
-
-void CrystalController::updateVisibilityIconForCurrentSurface(
-    Project *project) {
-    /*
-  auto surfaceVisibilities =
-      project->currentScene()->listOfSurfaceVisibilities();
-
-  QTreeWidgetItem *currentItem = structureTreeView->currentItem();
-
-  bool visible = surfaceVisibilities[indexOfSelectedCrystal()];
-
-  currentItem->setIcon(0, visible ? tickIcon : crossIcon);
-
-  // Enable/disable children if currentItem is a parent surface
-  if (itemOfParentSurface(currentItem)) {
-    setChildrenEnabled(currentItem, visible);
-  }
-  */
-}
-
-int CrystalController::indexOfSelectedCrystal() {
-    /*
-  QTreeWidgetItem *currentItem = structureTreeView->currentItem();
-
-  for (int n = 0; n < structureTreeView->topLevelItemCount(); ++n) {
-    if (structureTreeView->topLevelItem(n) == currentItem) {
-      return n;
-    }
-  }
-  Q_ASSERT(false); // Should always be able to find the tree index
-  return -1;       // Suppress compiler warning about reaching end of non-void
-                   // function
-*/
-    return -1;
-}
-
 void CrystalController::setSurfaceInfo(Project *project) {
   updateSurfaceInfo(project->currentScene());
 }
 
-/*!
- Whenever the surface info is updated the last item in the structureTreeView is
- selected.
- */
 void CrystalController::updateSurfaceInfo(Scene *scene) {
     structureTreeView->setModel(scene->chemicalStructure());
     connect(structureTreeView->selectionModel(), &QItemSelectionModel::selectionChanged,
 	  this, &CrystalController::onStructureViewSelectionChanged);
-    /*
-  structureTreeView->clear();
-
-  QTreeWidgetItem *root = structureTreeView->invisibleRootItem();
-
-  QStringList surfaceTitles;
-  QVector<bool> surfaceVisibilities;
-  if (scene != nullptr) {
-    surfaceTitles = scene->listOfSurfaceTitles();
-    surfaceVisibilities = scene->listOfSurfaceVisibilities();
-  }
-
-  //	QStringList surfaceTitles = crystal->listOfSurfaceTitles();
-  //	QList<bool> surfaceVisibilities = crystal->listOfSurfaceVisibilities();
-
-  Q_ASSERT(surfaceTitles.size() == surfaceVisibilities.size());
-
-  for (int i = 0; i < surfaceTitles.size(); ++i) {
-    QTreeWidgetItem *item = new QTreeWidgetItem();
-    if (surfaceVisibilities[i]) {
-      item->setIcon(0, tickIcon);
-    } else {
-      item->setIcon(0, crossIcon);
-    }
-    item->setText(1, surfaceTitles[i]);
-    root->addChild(item);
-
-    if (i == surfaceTitles.size() - 1) {
-      structureTreeView->setCurrentItem(item);
-    }
-  }
-  */
 }
 
-/*
-void CrystalController::currentSurfaceChanged(QTreeWidgetItem *currentItem,
-                                              QTreeWidgetItem *previousItem) {
-  Q_UNUSED(previousItem);
-
-  int surfaceIndex = structureTreeView->indexOfTopLevelItem(currentItem);
-  emit surfaceSelectionChanged(surfaceIndex);
-}
-
-bool CrystalController::itemOfParentSurface(QTreeWidgetItem *item) {
-  return !(item->text(1).startsWith("+ "));
-}
-
-*/
 void CrystalController::structureViewClicked(const QModelIndex &index) {
     if (index.column() != 0) return;
     // Ensure the view corresponds to a ChemicalStructure
@@ -179,7 +71,6 @@ void CrystalController::structureViewClicked(const QModelIndex &index) {
     }
 }
 
-
 void CrystalController::onStructureViewSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected) {
     Q_UNUSED(deselected);
 
@@ -189,7 +80,6 @@ void CrystalController::onStructureViewSelectionChanged(const QItemSelection& se
         emit childSelectionChanged(selectedRow);
     }
 }
-
 
 Mesh *CrystalController::getChildMesh(int rowIndex) const {
     ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
@@ -202,33 +92,26 @@ Mesh *CrystalController::getChildMesh(int rowIndex) const {
     return qobject_cast<Mesh *>(item);
 }
 
-void CrystalController::selectSurface(int surfaceIndex) {
-    /*
-  QTreeWidgetItem *root = structureTreeView->invisibleRootItem();
-  structureTreeView->setCurrentItem(root->child(surfaceIndex));
-  */
-}
-
 bool CrystalController::eventFilter(QObject *obj, QEvent *event) {
-  if (obj == structureListView || obj == structureTreeView) {
-    if (event->type() == QEvent::KeyPress) {
-      QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-      if (keyEvent->key() == Qt::Key_Delete ||
-          keyEvent->key() == Qt::Key_Backspace) {
-        (obj == structureListView) ? verifyDeleteCurrentCrystal()
-                                     : verifyDeleteCurrentSurface();
-      }
-      return true;
-    } else {
-      return false;
+    if (obj == structureListView || obj == structureTreeView) {
+        if (event->type() == QEvent::KeyPress) {
+            QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+            if (keyEvent->key() == Qt::Key_Delete || keyEvent->key() == Qt::Key_Backspace) {
+                if (obj == structureListView) {
+                    verifyDeleteCurrentCrystal();
+                } else {
+                    verifyDeleteCurrentSurface();
+                }
+                return true; // Event handled, stop its propagation
+            }
+        }
+        return false;
     }
-  } else {
-    return QWidget::eventFilter(obj,
-                                event); // pass the event on to the parent class
-  }
+    return false;
 }
 
 void CrystalController::clearAllCrystals() {
+    qDebug() << "Clear all crystals";
     /*
   if (structureListWidget->count() > 0 &&
       ConfirmationBox::confirmCrystalDeletion(true)) {
@@ -238,6 +121,7 @@ void CrystalController::clearAllCrystals() {
 }
 
 void CrystalController::verifyDeleteCurrentCrystal() {
+    qDebug() << "Delete current crystal";
     /*
   if (structureListWidget->currentItem() &&
       ConfirmationBox::confirmCrystalDeletion(
@@ -248,6 +132,7 @@ void CrystalController::verifyDeleteCurrentCrystal() {
 }
 
 void CrystalController::verifyDeleteCurrentSurface() {
+    qDebug() << "Delete current surface";
     /*
   QTreeWidgetItem *currentItem = structureTreeView->currentItem();
   bool isParent = itemOfParentSurface(currentItem);

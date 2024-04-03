@@ -5,6 +5,7 @@
 
 #include "surface.h"
 #include "mesh.h"
+#include "meshpropertymodel.h"
 #include "ui_surfacecontroller.h"
 
 // The following strings *must* match those in the propertyFromString map (see
@@ -25,18 +26,14 @@ public:
   void setSurfaceInfo(float, float, float, float);
   void enableFingerprintButton(bool);
   void currentSurfaceVisibilityChanged(bool);
-  void selectLastSurfaceProperty();
 
 public slots:
-  void resetSurface();
-  void setCurrentSurface(Surface *);
   void setCurrentMesh(Mesh *);
-  void setPropertyInfo(const SurfaceProperty *);
   void setMeshPropertyInfo(const Mesh::ScalarPropertyValues &);
   void setSelectedPropertyValue(float);
 
 protected slots:
-  void surfacePropertySelected(int);
+  void onPropertySelectionChanged(int);
   void minPropertyChanged();
   void maxPropertyChanged();
   void resetScale();
@@ -51,7 +48,6 @@ signals:
 
 private:
   void setup();
-  void populatePropertyComboBox(const QStringList &, int);
   void setScale(float, float);
   void clampScale(float, float,
                   bool emitUpdateSurfacePropertyRangeSignal = false);
@@ -69,4 +65,5 @@ private:
   bool _updateSurfacePropertyRange;
 
   const SurfaceProperty *_currentSurfaceProperty;
+  MeshPropertyModel *m_meshPropertyModel{nullptr};
 };

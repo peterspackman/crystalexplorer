@@ -6,7 +6,9 @@
 #include "settings.h"
 #include "surfacedescription.h"
 
-SurfaceController::SurfaceController(QWidget *parent) : QWidget(parent) {
+SurfaceController::SurfaceController(QWidget *parent) : QWidget(parent),
+    m_meshPropertyModel(new MeshPropertyModel(this)) {
+
   setupUi(this);
   setup();
 }
@@ -14,15 +16,20 @@ SurfaceController::SurfaceController(QWidget *parent) : QWidget(parent) {
 void SurfaceController::setup() {
   _updateSurfacePropertyRange = true;
 
+  surfacePropertyComboBox->setModel(m_meshPropertyModel);
+  surfacePropertyComboBox2->setModel(m_meshPropertyModel);
+
   tabWidget->setCurrentIndex(OPTIONS_PAGE);
 
   connect(enableTransparencyCheckBox, &QCheckBox::toggled, this,
           &SurfaceController::updateSurfaceTransparency);
-  connect(surfacePropertyComboBox, &QComboBox::activated, this,
-          &SurfaceController::surfacePropertySelected);
 
-  connect(surfacePropertyComboBox2, &QComboBox::activated, this,
-          &SurfaceController::surfacePropertySelected);
+  connect(surfacePropertyComboBox, &QComboBox::currentIndexChanged,
+	  this, &SurfaceController::onPropertySelectionChanged);
+
+  connect(surfacePropertyComboBox2, &QComboBox::currentIndexChanged,
+	  this, &SurfaceController::onPropertySelectionChanged);
+
   connect(showFingerprintButton, &QToolButton::clicked, this,
           &SurfaceController::showFingerprint);
 
@@ -70,22 +77,6 @@ void SurfaceController::setSelectedPropertyValue(float value) {
   selectedPropValue->setValue(value);
 }
 
-void SurfaceController::setPropertyInfo(const SurfaceProperty *property) {
-  Q_ASSERT(property != nullptr);
-
-  _currentSurfaceProperty = property;
-
-  minPropValue->setValue(property->min());
-  meanPropValue->setValue(property->mean());
-  maxPropValue->setValue(property->max());
-
-  setScale(property->rescaledMin(), property->rescaledMax());
-
-  setUnitLabels(property->units());
-
-  setSelectedPropertyValue(0.0);
-}
-
 void SurfaceController::setMeshPropertyInfo(const Mesh::ScalarPropertyValues &values) {
   Q_ASSERT(values.size() > 0);
 
@@ -104,57 +95,6 @@ void SurfaceController::setUnitLabels(QString units) {
   unitText->setText(units);
   unitsLabel->setText(units);
 }
-
-void SurfaceController::resetSurface() {
-  setCurrentSurface(nullptr);
-  setEnabled(false);
-}
-
-void SurfaceController::setCurrentSurface(Surface *surface) {
-  bool enableController = false;
-  bool enableControls = false;
-  bool enableFingerprint = false;
-
-  float volume = 0.0;
-  float area = 0.0;
-  float globularity = 0.0;
-  float asphericity = 0.0;
-  bool transparent = false;
-  QStringList propertyNames;
-  _currentPropertyIndex = 0;
-
-  if (surface) {
-    enableController = true;
-    enableControls = true;
-    enableFingerprint = surface->isFingerprintable();
-
-    volume = surface->volume();
-    area = surface->area();
-    globularity = surface->globularity();
-    asphericity = surface->asphericity();
-    transparent = surface->isTransparent();
-    propertyNames = surface->listOfProperties();
-    _currentPropertyIndex = surface->currentPropertyIndex();
-  }
-
-  // Enable widgets
-  setEnabled(enableController);
-  enableSurfaceControls(enableControls);
-  enableFingerprintButton(enableFingerprint);
-  enableTransparencyCheckBox->setChecked(transparent);
-
-  // Update surface info
-  setSurfaceInfo(volume, area, globularity, asphericity);
-
-  // Update properties
-  populatePropertyComboBox(propertyNames, _currentPropertyIndex);
-  if (surface) {
-    setPropertyInfo(surface->currentProperty());
-  } else {
-    clearPropertyInfo();
-  }
-}
-
 
 void SurfaceController::setCurrentMesh(Mesh *mesh) {
   bool enableController = false;
@@ -181,6 +121,14 @@ void SurfaceController::setCurrentMesh(Mesh *mesh) {
     transparent = mesh->isTransparent();
     propertyNames = mesh->availableVertexProperties();
     _currentPropertyIndex = mesh->currentVertexPropertyIndex();
+    if (!mesh->availableVertexProperties().isEmpty()) {
+        // Optionally, set the first item as selected in your comboBox
+        surfacePropertyComboBox->setCurrentIndex(0);
+
+        // Manually trigger the property info update for the initial selection
+        Mesh::ScalarPropertyValues initialValues = mesh->vertexProperty(mesh->availableVertexProperties().first());
+        setMeshPropertyInfo(initialValues);
+    }
   }
 
   // Enable widgets
@@ -191,39 +139,13 @@ void SurfaceController::setCurrentMesh(Mesh *mesh) {
 
   // Update surface info
   setSurfaceInfo(volume, area, globularity, asphericity);
-
-  // Update properties
-  populatePropertyComboBox(propertyNames, _currentPropertyIndex);
-  if (mesh) {
-    setMeshPropertyInfo(mesh->vertexProperty(propertyNames[_currentPropertyIndex]));
-  } else {
-    clearPropertyInfo();
-  }
-
-
+  m_meshPropertyModel->setMesh(mesh);
 }
 
-void SurfaceController::populatePropertyComboBox(
-    const QStringList &surpropLabelList, int currentPropertyIndex) {
-  surfacePropertyComboBox->clear();
-  surfacePropertyComboBox->insertItems(0, surpropLabelList);
-  surfacePropertyComboBox->setCurrentIndex(currentPropertyIndex);
-
-  surfacePropertyComboBox2->clear();
-  surfacePropertyComboBox2->insertItems(0, surpropLabelList);
-  surfacePropertyComboBox2->setCurrentIndex(currentPropertyIndex);
-}
-
-void SurfaceController::surfacePropertySelected(int propertyIndex) {
-  if (propertyIndex != _currentPropertyIndex) {
-    _currentPropertyIndex = propertyIndex;
-
-    // Make sure both boxes have the same item selected
-    surfacePropertyComboBox->setCurrentIndex(_currentPropertyIndex);
-    surfacePropertyComboBox2->setCurrentIndex(_currentPropertyIndex);
-
-    emit surfacePropertyChosen(_currentPropertyIndex);
-  }
+void SurfaceController::onPropertySelectionChanged(int propertyIndex) {
+    if (propertyIndex < 0) return;
+    m_meshPropertyModel->setSelectedProperty(propertyIndex);
+    setMeshPropertyInfo(m_meshPropertyModel->getPropertyValuesAtIndex(propertyIndex));
 }
 
 void SurfaceController::enableFingerprintButton(bool enable) {
@@ -334,11 +256,6 @@ void SurfaceController::updateSurfacePropertyRange() {
 
 void SurfaceController::currentSurfaceVisibilityChanged(bool visible) {
   enableSurfaceControls(visible);
-}
-
-void SurfaceController::selectLastSurfaceProperty() {
-  int indexOfLastProperty = surfacePropertyComboBox->count() - 1;
-  surfacePropertySelected(indexOfLastProperty);
 }
 
 void SurfaceController::exportButtonClicked() { emit exportCurrentSurface(); }
