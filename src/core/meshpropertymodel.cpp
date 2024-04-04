@@ -49,3 +49,13 @@ void MeshPropertyModel::setSelectedProperty(int row) const {
     QString propertyName = data(index(row, 0), Qt::DisplayRole).toString();
     m_mesh->setSelectedProperty(propertyName);
 }
+
+bool MeshPropertyModel::isTransparent() const {
+    if (!m_mesh) return false;
+    return m_mesh->isTransparent();
+}
+
+void MeshPropertyModel::setTransparent(bool transparent) const {
+    if (!m_mesh) return;
+    m_mesh->setTransparent(transparent);
+}

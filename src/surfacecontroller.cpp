@@ -19,10 +19,11 @@ void SurfaceController::setup() {
   surfacePropertyComboBox->setModel(m_meshPropertyModel);
   surfacePropertyComboBox2->setModel(m_meshPropertyModel);
 
-  tabWidget->setCurrentIndex(OPTIONS_PAGE);
+  // Options page = 0
+  tabWidget->setCurrentIndex(0);
 
   connect(enableTransparencyCheckBox, &QCheckBox::toggled, this,
-          &SurfaceController::updateSurfaceTransparency);
+          &SurfaceController::onSurfaceTransparencyChange);
 
   connect(surfacePropertyComboBox, &QComboBox::currentIndexChanged,
 	  this, &SurfaceController::onPropertySelectionChanged);
@@ -106,8 +107,6 @@ void SurfaceController::setCurrentMesh(Mesh *mesh) {
   float globularity = 0.0;
   float asphericity = 0.0;
   bool transparent = false;
-  QStringList propertyNames;
-  _currentPropertyIndex = 0;
 
   if (mesh) {
     enableController = true;
@@ -119,9 +118,8 @@ void SurfaceController::setCurrentMesh(Mesh *mesh) {
     globularity = mesh->globularity();
     asphericity = mesh->asphericity();
     transparent = mesh->isTransparent();
-    propertyNames = mesh->availableVertexProperties();
-    _currentPropertyIndex = mesh->currentVertexPropertyIndex();
     if (!mesh->availableVertexProperties().isEmpty()) {
+	// TODO change default property based on surface type
         // Optionally, set the first item as selected in your comboBox
         surfacePropertyComboBox->setCurrentIndex(0);
 
@@ -140,6 +138,10 @@ void SurfaceController::setCurrentMesh(Mesh *mesh) {
   // Update surface info
   setSurfaceInfo(volume, area, globularity, asphericity);
   m_meshPropertyModel->setMesh(mesh);
+}
+
+void SurfaceController::onSurfaceTransparencyChange(bool transparent) {
+    m_meshPropertyModel->setTransparent(transparent);
 }
 
 void SurfaceController::onPropertySelectionChanged(int propertyIndex) {
@@ -195,7 +197,7 @@ void SurfaceController::clampScale(float minScale, float maxScale,
     QString clampedProperty =
         convertToNaturalPropertyName(clampedProperties[i]);
     QString currentProperty =
-        surfacePropertyComboBox->itemText(_currentPropertyIndex);
+        surfacePropertyComboBox->currentText();
     if (clampedProperty == currentProperty) {
       setMinAndMaxSpinBoxes(clampedMinimumScaleValues[i],
                             clampedMaximumScaleValues[i]);

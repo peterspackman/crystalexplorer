@@ -215,6 +215,27 @@ bool Mesh::haveFaceProperty(const QString &prop) const {
 }
 
 
+bool Mesh::isTransparent() const {
+    return m_transparent;
+}
+
+void Mesh::setTransparent(bool transparent) {
+    if(transparent == m_transparent) return;
+    m_transparent = transparent;
+    emit transparencyChanged();
+}
+
+bool Mesh::isVisible() const {
+    return m_visible;
+}
+
+void Mesh::setVisible(bool visible) {
+    if (m_visible != visible) {
+	m_visible = visible;
+	emit visibilityChanged();
+    }
+}
+
 const QString &Mesh::getSelectedProperty() const {
     return m_selectedProperty;
 }
@@ -272,9 +293,5 @@ Mesh *Mesh::newFromJson(const QJsonObject &object, QObject *parent) {
   }
 
   return pointCloud;
-}
-
-MeshInstance::MeshInstance(Mesh *parent, const Eigen::Affine3d &transform)
-    : QObject(parent), m_mesh(parent), m_transform(transform) {
 }
 

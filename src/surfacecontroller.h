@@ -3,7 +3,6 @@
 #include <QTextDocument>
 #include <QWidget>
 
-#include "surface.h"
 #include "mesh.h"
 #include "meshpropertymodel.h"
 #include "ui_surfacecontroller.h"
@@ -33,6 +32,7 @@ public slots:
   void setSelectedPropertyValue(float);
 
 protected slots:
+  void onSurfaceTransparencyChange(bool);
   void onPropertySelectionChanged(int);
   void minPropertyChanged();
   void maxPropertyChanged();
@@ -40,7 +40,6 @@ protected slots:
   void exportButtonClicked();
 
 signals:
-  void updateSurfaceTransparency(bool);
   void surfacePropertyChosen(int);
   void showFingerprint();
   void surfacePropertyRangeChanged(float, float);
@@ -58,12 +57,7 @@ private:
   QString convertToNaturalPropertyName(QString);
   void enableSurfaceControls(bool);
 
-  enum { OPTIONS_PAGE, SURFACEINFO_PAGE, PROPERTYINFO_PAGE };
-
-  int _currentPropertyIndex;
-
   bool _updateSurfacePropertyRange;
 
-  const SurfaceProperty *_currentSurfaceProperty;
   MeshPropertyModel *m_meshPropertyModel{nullptr};
 };

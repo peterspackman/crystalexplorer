@@ -1,5 +1,4 @@
 #include "chemicalstructurerenderer.h"
-#include "colormap.h"
 #include "graphics.h"
 #include "elementdata.h"
 #include "interactions.h"
@@ -15,12 +14,23 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
     m_cylinderRenderer = new CylinderRenderer();
     m_lineRenderer = new LineRenderer();
     m_meshRenderer = new MeshRenderer();
+    m_transparentMeshRenderer = new MeshRenderer();
+    m_transparentMeshRenderer->setAlpha(0.8);
     m_pointCloudRenderer = new PointCloudRenderer();
     connect(m_structure, &ChemicalStructure::childAdded,
 	    this, &ChemicalStructureRenderer::childAddedToStructure);
     connect(m_structure, &ChemicalStructure::childRemoved,
 	    this, &ChemicalStructureRenderer::childRemovedFromStructure);
     initStructureChildren();
+
+    m_propertyColorMaps = {
+	{"None", ColorMapName::CE_None},
+	{"dnorm", ColorMapName::CE_bwr},
+	{"di", ColorMapName::CE_rgb},
+	{"de", ColorMapName::CE_rgb},
+	{"di_norm", ColorMapName::CE_bwr},
+	{"de_norm", ColorMapName::CE_bwr},
+    };
 }
 
 
@@ -215,6 +225,7 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
 
 void ChemicalStructureRenderer::beginUpdates() {
     m_meshRenderer->beginUpdates();
+    m_transparentMeshRenderer->beginUpdates();
     m_lineRenderer->beginUpdates();
     m_cylinderRenderer->beginUpdates();
     m_ellipsoidRenderer->beginUpdates();
@@ -222,6 +233,7 @@ void ChemicalStructureRenderer::beginUpdates() {
 
 void ChemicalStructureRenderer::endUpdates() {
     m_meshRenderer->endUpdates();
+    m_transparentMeshRenderer->endUpdates();
     m_lineRenderer->endUpdates();
     m_cylinderRenderer->endUpdates();
     m_ellipsoidRenderer->endUpdates();
@@ -261,6 +273,11 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_pointCloudRenderer->draw();
     m_pointCloudRenderer->release();
 
+    m_transparentMeshRenderer->bind();
+    m_uniforms.apply(m_transparentMeshRenderer);
+    m_transparentMeshRenderer->draw();
+    m_transparentMeshRenderer->release();
+
     if(forPicking) {
 	m_uniforms.u_renderMode = storedRenderMode;
 	m_uniforms.u_selectionMode = false;
@@ -290,18 +307,21 @@ quint32 ChemicalStructureRenderer::addMeshToMeshRenderer(Mesh *mesh, MeshRendere
     }
 
     Mesh::ScalarPropertyValues prop;
+    QString propertyName = mesh->getSelectedProperty();
     auto availableProperties = mesh->availableVertexProperties();
     qDebug() << "Available vertex properties: " << availableProperties;
+    float l{0.0}, u{1.0};
     if(availableProperties.size() > 1) {
-	prop = mesh->vertexProperty(mesh->getSelectedProperty());
-	float l = prop.minCoeff();
-	float u = prop.maxCoeff();
-	prop.array() = (prop.array() - l) / (u - l);
+	prop = mesh->vertexProperty(propertyName);
+	l = prop.minCoeff();
+	u = prop.maxCoeff();
     }
     else {
 	prop = Mesh::ScalarPropertyValues(verts.cols());
 	prop.setConstant(0.5);
     }
+
+    ColorMapFunc cmap(m_propertyColorMaps.value(propertyName, ColorMapName::Viridis), l, u);
 
     for (int i = 0; i < mesh->numberOfVertices(); i++) {
 	quint32 vertex_id = selectionId + i;
@@ -311,7 +331,7 @@ quint32 ChemicalStructureRenderer::addMeshToMeshRenderer(Mesh *mesh, MeshRendere
 	}
 	QVector3D position(verts(0, i), verts(1, i), verts(2, i));
 
-	QColor color = linearColorMap(prop(i), ColorMapName::Viridis);
+	QColor color = cmap(prop(i));
 	QVector3D colorVec(color.redF(), color.greenF(), color.blueF());
 
 	QVector3D normal(0.0f, 0.0f, 0.0f);
@@ -353,7 +373,8 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
 			);
 	    }
 	    else {
-		quint32 selectionid = addMeshToMeshRenderer(mesh, m_meshRenderer, m_selectionHandler);
+		auto * renderer = mesh->isTransparent() ? m_transparentMeshRenderer : m_meshRenderer;
+		quint32 selectionid = addMeshToMeshRenderer(mesh, renderer, m_selectionHandler);
 	    }
 	}
     }
@@ -381,6 +402,8 @@ void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
 	qDebug() << "Added mesh to structure, connected";
 	connect(mesh, &Mesh::visibilityChanged, this, &ChemicalStructureRenderer::childVisibilityChanged);
 	connect(mesh, &Mesh::selectedPropertyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
+	connect(mesh, &Mesh::transparencyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
+
 	m_meshesNeedsUpdate = true;
     }
     handleMeshesUpdate();

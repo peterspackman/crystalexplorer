@@ -1,4 +1,5 @@
 #include "load_mesh.h"
+#include "meshinstance.h"
 #include "tinyply.h"
 #include <vector>
 #include <iostream>
@@ -134,6 +135,7 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
         Mesh* mesh = new Mesh(vertexMatrix, faceMatrix);
 	mesh->setVertexNormals(normalMatrix);
 
+	mesh->setVertexProperty("None", Eigen::VectorXf::Zero(vertexMatrix.cols()));
 	for(const auto &[prop_name, prop]: properties) {
 	    qDebug() << QString::fromStdString(prop_name) << "read" << prop->count << "property values";
 	    switch(prop->t) {
@@ -152,10 +154,9 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 		    break;
 	    }
 	}
-	if(properties.size() > 0) {
-	    mesh->setCurrentVertexPropertyIndex(0);
-	}
 
+	// TODO sort out instances and surface cloning
+	// MeshInstance * instance = new MeshInstance(mesh);
         return mesh;
 
     } catch (const std::exception& e) {

@@ -11,6 +11,7 @@
 class Mesh : public QObject {
     Q_OBJECT
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
+    Q_PROPERTY(bool transparent READ isTransparent WRITE setTransparent NOTIFY transparencyChanged)
     Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE setSelectedProperty NOTIFY selectedPropertyChanged)
 
 public:
@@ -60,8 +61,6 @@ public:
     [[nodiscard]] bool haveVertexProperty(const QString &) const;
     void setVertexProperty(const QString &name, const ScalarPropertyValues &values);
     [[nodiscard]] const ScalarPropertyValues &vertexProperty(const QString &) const;
-    [[nodiscard]] inline int currentVertexPropertyIndex() const { return m_currentPropertyIndex; }
-    inline void setCurrentVertexPropertyIndex(int idx) { m_currentPropertyIndex = idx; }
 
     //face properties
     [[nodiscard]] QStringList availableFaceProperties() const;
@@ -72,21 +71,12 @@ public:
 
     [[nodiscard]] inline const auto &kind() const { return m_kind; }
     inline void setKind(isosurface::Kind kind) { m_kind = kind; }
-    [[nodiscard]] inline bool isTransparent() const { return m_transparent; }
 
     static Mesh *newFromJson(const QJsonObject &, QObject *parent=nullptr);
     static Mesh *newFromJsonFile(const QString &, QObject *parent=nullptr);
 
-    [[nodiscard]] inline bool isVisible() const {
-	return m_visible;
-    }
-
-    inline void setVisible(bool visible) {
-	if (m_visible != visible) {
-	    m_visible = visible;
-	    emit visibilityChanged();
-	}
-    }
+    [[nodiscard]] bool isVisible() const;
+    void setVisible(bool visible);
 
     [[nodiscard]] double volume() const;
     [[nodiscard]] double surfaceArea() const;
@@ -96,8 +86,12 @@ public:
     const QString &getSelectedProperty() const;
     bool setSelectedProperty(const QString &);
 
+    [[nodiscard]] bool isTransparent() const;
+    void setTransparent(bool);
+
 signals:
     void visibilityChanged();
+    void transparencyChanged();
     void selectedPropertyChanged();
 
 private:
@@ -123,47 +117,8 @@ private:
     ScalarProperties m_faceProperties;
 
     bool m_transparent{false};
-    int m_currentPropertyIndex{-1};
 
     QString m_selectedProperty;
     ScalarPropertyValues m_emptyProperty;
     isosurface::Kind m_kind{isosurface::Kind::Promolecule};
-};
-
-class MeshInstance : public QObject {
-    Q_OBJECT
-public:
-    enum class DisplayStyle {
-	NoDisplay,
-	Mesh,
-	PointCloud,
-    };
-
-    MeshInstance(Mesh *parent,
-	    const Eigen::Affine3d &transform = Eigen::Affine3d::Identity());
-
-    inline void setDisplayStyle(DisplayStyle style) { m_displayStyle = style; }
-
-    [[nodiscard]] inline const DisplayStyle &displayStyle() const { return m_displayStyle; }
-
-    [[nodiscard]] inline const Mesh *mesh() const { return m_mesh; }
-    inline Mesh *mesh() { return m_mesh; }
-
-    [[nodiscard]] inline Mesh::VertexList vertices() const {
-	if (!m_mesh)
-	    return {};
-	return m_transform * m_mesh->vertices();
-    }
-
-    [[nodiscard]] inline const auto &transform() const {
-	return m_transform; 
-    }
-    inline void setTransform(const Eigen::Affine3d &transform) {
-	m_transform = transform;
-    }
-
-private:
-    Mesh *m_mesh{nullptr};
-    DisplayStyle m_displayStyle{DisplayStyle::NoDisplay};
-    Eigen::Affine3d m_transform;
 };

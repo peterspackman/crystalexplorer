@@ -2406,6 +2406,55 @@ inline const std::vector<QColor> HSV {
 }
 
 
+QColor triColorMap(double x, double minValue, double maxValue,
+	const QColor& startColor,
+	const QColor& midColor,
+	const QColor& endColor) {
+
+    // Because the midColor is tied to 0 when using a "color mapped from color
+    // range"
+    // we can't allow minValue to become positive nor the maxValue to become
+    // negative
+    constexpr double LIMIT = 0.0001;
+    minValue = (minValue > 0.0) ? -LIMIT : minValue;
+    maxValue = (maxValue < 0.0) ? LIMIT : maxValue;
+
+    QColor color = (x < 0.0) ? startColor : endColor;
+    double denom = (x < 0.0) ? minValue : maxValue;
+    double factor = 1.0 - x / denom;
+
+    if (factor > 0.0) {
+	return QColor::fromRgbF(
+		(color.redF() + (midColor.redF() - color.redF()) * factor),
+		(color.greenF() + (midColor.greenF() - color.greenF()) * factor),
+		(color.blueF() + (midColor.blueF() - color.blueF()) * factor)
+		);
+    }
+    return color;
+}
+
+QColor colorMappedFromHueRange(double value, double minValue,
+                               double maxValue, bool reverse,
+                               double minHue, double maxHue) {
+  
+  QColor color;
+
+  double newValue = std::max(std::min(value, maxValue), value);
+  double range = maxValue - minValue;
+  double rangeRatio = (range > 1e-6) ? (maxHue - minHue) / range : 0.0;
+
+  double h;
+  if (reverse) {
+    h = std::max(minHue, (maxHue - rangeRatio * (newValue - minValue)));
+    h = std::min(h, maxHue);
+  } else {
+    h = std::min(maxHue, (minHue + rangeRatio * (newValue - minValue)));
+    h = std::max(h, minHue);
+  }
+  return QColor::fromHsvF(h, 1.0, 1.0).toRgb();
+}
+
+
 QColor linearColorMap(double x, ColorMapName name) {
     switch (name)
     {
@@ -2445,3 +2494,26 @@ QColor quantizedLinearColorMap(double x, unsigned int num_levels, ColorMapName n
 
 
 
+ColorMapFunc::ColorMapFunc(ColorMapName n) : name(n) {}
+ColorMapFunc::ColorMapFunc(ColorMapName n, double minValue, double maxValue) : name(n), lower(minValue), upper(maxValue) {}
+
+QColor ColorMapFunc::operator()(double x) const {
+    switch(name) {
+	case ColorMapName::CE_None:
+	    // TODO fetch color from settings
+	    return Qt::white;
+	    break;
+	case ColorMapName::CE_bwr:
+	    return triColorMap(x, lower, upper, Qt::red, Qt::white, Qt::blue);
+	    break;
+	case ColorMapName::CE_rgb: {
+	    const double minHue = 0.0;
+	    const double maxHue = 2.0 / 3.0;
+	    return colorMappedFromHueRange(x, lower, upper, reverse, minHue, maxHue);
+	    break;
+        }
+	default:
+	    return linearColorMap((x - lower )/ (upper - lower), name);
+	    break;
+    }
+}

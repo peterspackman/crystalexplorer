@@ -13,9 +13,12 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     const Mesh::ScalarPropertyValues & getPropertyValuesAtIndex(int index) const;
 
+    bool isTransparent() const;
+
 
 public slots:
     void setSelectedProperty(int index) const;
+    void setTransparent(bool) const;
 
 private:
     Mesh* m_mesh = nullptr;

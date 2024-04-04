@@ -9,6 +9,7 @@
 #include "drawingstyle.h"
 #include "renderselection.h"
 #include "rendereruniforms.h"
+#include "colormap.h"
 
 
 namespace cx::graphics {
@@ -94,10 +95,13 @@ private:
     LineRenderer * m_lineRenderer{nullptr};
     EllipsoidRenderer * m_ellipsoidRenderer{nullptr};
     CylinderRenderer * m_cylinderRenderer{nullptr};
+    MeshRenderer *m_transparentMeshRenderer{nullptr};
     MeshRenderer *m_meshRenderer{nullptr};
     PointCloudRenderer *m_pointCloudRenderer{nullptr};
 
     ChemicalStructure * m_structure{nullptr};
+
+    QMap<QString, ColorMapName> m_propertyColorMaps;
 
     RendererUniforms m_uniforms;
 };
