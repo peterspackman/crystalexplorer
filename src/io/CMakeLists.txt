@@ -1,8 +1,9 @@
 add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/genericxyzfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/wavefrontobjfile.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/load_wavefunction.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyply.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/wavefrontobjfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/xyzfile.cpp"
 )
 

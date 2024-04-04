@@ -12,7 +12,7 @@
 #include "glwindow.h"
 #include "jobparameters.h"
 #include "project.h"
-#include "surfacecontroller.h"
+#include "childpropertycontroller.h"
 #include "viewtoolbar.h"
 
 #include "gaussianinterface.h"
@@ -191,7 +191,7 @@ private:
   void addExitOptionToFileMenu();
   void createToolbars();
   void createDockWidgets();
-  void createSurfaceControllerDockWidget();
+  void createChildPropertyControllerDockWidget();
   void createCrystalControllerDockWidget();
   void initConnections();
   void initMenuConnections();
@@ -248,7 +248,7 @@ private:
   GLWindow *glWindow{nullptr};
   JobParameters jobParams;
   ViewToolbar *viewToolbar{nullptr};
-  SurfaceController *surfaceController{nullptr};
+  ChildPropertyController *childPropertyController{nullptr};
   CrystalController *crystalController{nullptr};
   SurfaceGenerationDialog *m_oldSurfaceGenerationDialog{nullptr};
   SurfaceGenerationDialog *m_newSurfaceGenerationDialog{nullptr};
@@ -271,7 +271,7 @@ private:
   OrcaInterface *m_orcaInterface{nullptr};
   XTBInterface *m_xtbInterface{nullptr};
 
-  QDockWidget *surfaceControllerDockWidget{nullptr};
+  QDockWidget *childPropertyControllerDockWidget{nullptr};
   QDockWidget *crystalControllerDockWidget{nullptr};
   QAction *quitAction{nullptr};
   QAction *recentFileActions[MAXHISTORYSIZE];

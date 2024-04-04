@@ -16,7 +16,7 @@ signals:
     void calculationComplete(wfn::Result);
 
 private slots:
-    void wavefunctionComplete(QString);
+    void wavefunctionComplete(wfn::Parameters, QString filename, QString name);
 
 private:
     TaskManager * m_taskManager{nullptr};

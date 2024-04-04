@@ -10,11 +10,13 @@ public:
 
     explicit OccWavefunctionTask(QObject * parent = nullptr);
 
-    void setWavefunctionParameters(const wfn::Parameters &);
+    void setParameters(const wfn::Parameters &);
+    const wfn::Parameters& getParameters() const;
     virtual void start() override;
 
     QString inputSuffix() const;
     QString wavefunctionSuffix() const;
+    QString wavefunctionFilename() const;
 
 private:
     wfn::Parameters m_parameters;

@@ -46,8 +46,12 @@ OccWavefunctionTask::OccWavefunctionTask(QObject * parent) : ExternalProgramTask
     qDebug() << "Executable" << executable();
 }
 
-void OccWavefunctionTask::setWavefunctionParameters(const wfn::Parameters &params) {
+void OccWavefunctionTask::setParameters(const wfn::Parameters &params) {
     m_parameters = params;
+}
+
+const wfn::Parameters& OccWavefunctionTask::getParameters() const {
+    return m_parameters;
 }
 
 void OccWavefunctionTask::start() {
@@ -56,7 +60,7 @@ void OccWavefunctionTask::start() {
 
     QString name = baseName();
     QString inputName = name + inputSuffix();
-    QString outputName = name + wavefunctionSuffix();
+    QString outputName = wavefunctionFilename();
 
     if(!exe::writeTextFile(inputName, json)) {
 	emit errorOccurred("Could not write input file");
@@ -85,4 +89,8 @@ QString OccWavefunctionTask::inputSuffix() const {
 
 QString OccWavefunctionTask::wavefunctionSuffix() const {
     return wavefunctionSuffixDefault;
+}
+
+QString OccWavefunctionTask::wavefunctionFilename() const {
+    return baseName() + wavefunctionSuffix();
 }

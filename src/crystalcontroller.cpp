@@ -92,6 +92,18 @@ Mesh *CrystalController::getChildMesh(int rowIndex) const {
     return qobject_cast<Mesh *>(item);
 }
 
+MolecularWavefunction *CrystalController::getChildWavefunction(int rowIndex) const {
+    // TODO refactor getChild methods for common code
+    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
+    if (!structure) return nullptr;
+
+    QModelIndex index = structure->index(rowIndex, 0);
+    if (!index.isValid()) return nullptr;
+
+    QObject* item = static_cast<QObject*>(index.internalPointer());
+    return qobject_cast<MolecularWavefunction *>(item);
+}
+
 bool CrystalController::eventFilter(QObject *obj, QEvent *event) {
     if (obj == structureListView || obj == structureTreeView) {
         if (event->type() == QEvent::KeyPress) {

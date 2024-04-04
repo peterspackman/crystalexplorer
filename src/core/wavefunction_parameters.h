@@ -28,4 +28,7 @@ struct Result {
     bool success{false};
 };
 
+
+QString fileFormatString(FileFormat);
+
 }

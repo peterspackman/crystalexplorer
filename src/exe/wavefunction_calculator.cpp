@@ -1,5 +1,6 @@
 #include "wavefunction_calculator.h"
 #include "molecular_wavefunction.h"
+#include "load_wavefunction.h"
 #include "occwavefunctiontask.h"
 #include <occ/core/element.h>
 #include <QFile>
@@ -26,18 +27,23 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
 
   QString wavefunctionName = QString("%1/%2").arg(params.method).arg(params.basis);
   auto * task = new OccWavefunctionTask();
-  task->setWavefunctionParameters(params);
+  task->setParameters(params);
   task->setProperty("name", wavefunctionName);
+  QString wavefunctionFilename = task->wavefunctionFilename();
 
   auto taskId = m_taskManager->add(task);
-  connect(task, &Task::completed, [&, wavefunctionName]() {
-	this->wavefunctionComplete(wavefunctionName);
+  connect(task, &Task::completed, [&, params, wavefunctionName, wavefunctionFilename]() {
+	this->wavefunctionComplete(params, wavefunctionFilename, wavefunctionName);
   });
 
 }
 
-void WavefunctionCalculator::wavefunctionComplete(QString name) {
+void WavefunctionCalculator::wavefunctionComplete(wfn::Parameters params, QString filename, QString name) {
     qDebug() << "Task" << name << "finished in WavefunctionCalculator";
-    MolecularWavefunction * wfn = new MolecularWavefunction();
-    wfn->setParent(m_structure);
+    auto * wfn = io::loadWavefunction(filename);
+    if(wfn) {
+	wfn->setParameters(params);
+	wfn->setObjectName(name);
+	wfn->setParent(m_structure);
+    }
 }

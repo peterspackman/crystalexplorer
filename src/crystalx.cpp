@@ -217,25 +217,30 @@ void Crystalx::initInfoViewer() {
 
 void Crystalx::createDockWidgets() {
   createCrystalControllerDockWidget();
-  createSurfaceControllerDockWidget();
+    createChildPropertyControllerDockWidget();
 }
 
-void Crystalx::createSurfaceControllerDockWidget() {
-  surfaceController = new SurfaceController();
-  surfaceControllerDockWidget = new QDockWidget(tr("Surface"));
-  surfaceControllerDockWidget->setObjectName("surfaceControllerDockWidget");
-  surfaceControllerDockWidget->setWidget(surfaceController);
-  surfaceControllerDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
-  surfaceControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
-  surfaceControllerDockWidget->adjustSize();
-  addDockWidget(Qt::RightDockWidgetArea, surfaceControllerDockWidget);
-  surfaceController->setEnabled(false);
+void Crystalx::createChildPropertyControllerDockWidget() {
+    childPropertyController = new ChildPropertyController();
+    childPropertyControllerDockWidget = new QDockWidget(tr("Properties"));
+    childPropertyControllerDockWidget->setObjectName("childPropertyControllerDockWidget");
+    childPropertyControllerDockWidget->setWidget(childPropertyController);
+    childPropertyControllerDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
+    childPropertyControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
+    childPropertyControllerDockWidget->adjustSize();
+    addDockWidget(Qt::RightDockWidgetArea, childPropertyControllerDockWidget);
+  childPropertyController->setEnabled(false);
   connect(crystalController, &CrystalController::childSelectionChanged,
 	  [&](int row) {
     auto * mesh = crystalController->getChildMesh(row);
+    auto * wfn = crystalController->getChildWavefunction(row);
     if(mesh) {
 	qDebug() << "Setting current mesh to " << mesh;
-	surfaceController->setCurrentMesh(mesh);
+        childPropertyController->setCurrentMesh(mesh);
+    }
+    else if(wfn) {
+	qDebug() << "Setting current wfn to " << wfn;
+        childPropertyController->setCurrentWavefunction(wfn);
     }
   });
 
@@ -1904,7 +1909,7 @@ void Crystalx::passCurrentCrystalToFingerprintWindow() {
 }
 
 void Crystalx::passCurrentSurfaceVisibilityToSurfaceController() {
-  surfaceController->currentSurfaceVisibilityChanged(
+    childPropertyController->currentSurfaceVisibilityChanged(
       project->currentScene()->currentSurface()->isVisible());
 }
 
@@ -2433,7 +2438,7 @@ void Crystalx::handleStructureChange() {
       for(auto * child: structure->children()) {
 	    auto* mesh = qobject_cast<Mesh*>(child);
 	    if (mesh) {
-		surfaceController->setCurrentMesh(mesh);
+            childPropertyController->setCurrentMesh(mesh);
 		break;
 	    }
       }

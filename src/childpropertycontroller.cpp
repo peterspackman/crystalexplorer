@@ -1,19 +1,20 @@
-#include "surfacecontroller.h"
+#include "childpropertycontroller.h"
 
 #include <QCheckBox>
 #include <QDebug>
+#include <QLocale>
 
 #include "settings.h"
 #include "surfacedescription.h"
 
-SurfaceController::SurfaceController(QWidget *parent) : QWidget(parent),
+ChildPropertyController::ChildPropertyController(QWidget *parent) : QWidget(parent),
     m_meshPropertyModel(new MeshPropertyModel(this)) {
 
   setupUi(this);
   setup();
 }
 
-void SurfaceController::setup() {
+void ChildPropertyController::setup() {
   _updateSurfacePropertyRange = true;
 
   surfacePropertyComboBox->setModel(m_meshPropertyModel);
@@ -23,16 +24,16 @@ void SurfaceController::setup() {
   tabWidget->setCurrentIndex(0);
 
   connect(enableTransparencyCheckBox, &QCheckBox::toggled, this,
-          &SurfaceController::onSurfaceTransparencyChange);
+          &ChildPropertyController::onSurfaceTransparencyChange);
 
   connect(surfacePropertyComboBox, &QComboBox::currentIndexChanged,
-	  this, &SurfaceController::onPropertySelectionChanged);
+          this, &ChildPropertyController::onPropertySelectionChanged);
 
   connect(surfacePropertyComboBox2, &QComboBox::currentIndexChanged,
-	  this, &SurfaceController::onPropertySelectionChanged);
+          this, &ChildPropertyController::onPropertySelectionChanged);
 
   connect(showFingerprintButton, &QToolButton::clicked, this,
-          &SurfaceController::showFingerprint);
+          &ChildPropertyController::showFingerprint);
 
   connect(minPropSpinBox, &QDoubleSpinBox::valueChanged, this,
           [&](double x) { minPropertyChanged(); });
@@ -40,15 +41,18 @@ void SurfaceController::setup() {
           [&](double x) { maxPropertyChanged(); });
 
   connect(resetPropScaleButton, &QPushButton::clicked, this,
-	  &SurfaceController::resetScale);
+          &ChildPropertyController::resetScale);
   connect(exportSurfaceButton, &QPushButton::clicked, this,
-          &SurfaceController::exportButtonClicked);
+          &ChildPropertyController::exportButtonClicked);
+
+  showSurfaceTabs(false);
+  showWavefunctionTabs(false);
 
   enableFingerprintButton(false);
 }
 
 // Doesn't apply to fingerprint button
-void SurfaceController::enableSurfaceControls(bool enable) {
+void ChildPropertyController::enableSurfaceControls(bool enable) {
   enableTransparencyCheckBox->setEnabled(enable);
   surfacePropertyComboBox->setEnabled(enable);
   surfacePropertyComboBox2->setEnabled(enable);
@@ -57,7 +61,7 @@ void SurfaceController::enableSurfaceControls(bool enable) {
   resetPropScaleButton->setEnabled(enable);
 }
 
-void SurfaceController::setSurfaceInfo(float volume, float area,
+void ChildPropertyController::setSurfaceInfo(float volume, float area,
                                        float globularity, float asphericity) {
   volumeValue->setValue(volume);
   areaValue->setValue(area);
@@ -66,7 +70,7 @@ void SurfaceController::setSurfaceInfo(float volume, float area,
   asphericityValue->setValue(asphericity);
 }
 
-void SurfaceController::clearPropertyInfo() {
+void ChildPropertyController::clearPropertyInfo() {
   selectedPropValue->setValue(0.0);
   minPropValue->setValue(0.0);
   meanPropValue->setValue(0.0);
@@ -74,11 +78,11 @@ void SurfaceController::clearPropertyInfo() {
   setScale(0.0, 0.0);
 }
 
-void SurfaceController::setSelectedPropertyValue(float value) {
+void ChildPropertyController::setSelectedPropertyValue(float value) {
   selectedPropValue->setValue(value);
 }
 
-void SurfaceController::setMeshPropertyInfo(const Mesh::ScalarPropertyValues &values) {
+void ChildPropertyController::setMeshPropertyInfo(const Mesh::ScalarPropertyValues &values) {
   Q_ASSERT(values.size() > 0);
 
   minPropValue->setValue(values.minCoeff());
@@ -92,65 +96,110 @@ void SurfaceController::setMeshPropertyInfo(const Mesh::ScalarPropertyValues &va
 
 }
 
-void SurfaceController::setUnitLabels(QString units) {
+void ChildPropertyController::showTab(QWidget *tab, bool show, QString title) {
+    if(show) {
+	tabWidget->insertTab(0, tab, title);
+    }
+    else {
+	int index = tabWidget->indexOf(tab);
+	if (index > -1) { // If the widget is found within the tab widget
+	    tabWidget->removeTab(index);
+	}
+    }
+}
+
+void ChildPropertyController::showSurfaceTabs(bool show) {
+    // inserted at 0, so show them in reverse order
+    showTab(surfacePropertyTab, show, "Property");
+    showTab(surfaceInformationTab, show, "Info");
+    showTab(surfaceOptionsTab, show, "Options");
+    tabWidget->setCurrentIndex(0);
+}
+
+void ChildPropertyController::showWavefunctionTabs(bool show) {
+    // inserted at 0, so show them in reverse order
+    showTab(wavefunctionTab, show, "Wavefunction");
+    tabWidget->setCurrentIndex(0);
+}
+
+void ChildPropertyController::setUnitLabels(QString units) {
   unitText->setText(units);
   unitsLabel->setText(units);
 }
 
-void SurfaceController::setCurrentMesh(Mesh *mesh) {
-  bool enableController = false;
-  bool enableControls = false;
-  bool enableFingerprint = false;
+void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
+    showSurfaceTabs(true);
+    showWavefunctionTabs(false);
+    bool enableController = false;
+    bool enableControls = false;
+    bool enableFingerprint = false;
 
-  float volume = 0.0;
-  float area = 0.0;
-  float globularity = 0.0;
-  float asphericity = 0.0;
-  bool transparent = false;
+    float volume = 0.0;
+    float area = 0.0;
+    float globularity = 0.0;
+    float asphericity = 0.0;
+    bool transparent = false;
 
-  if (mesh) {
-    enableController = true;
-    enableControls = true;
-    enableFingerprint = false; //surface->isFingerprintable();
+    if (mesh) {
+	enableController = true;
+	enableControls = true;
+	enableFingerprint = false; //surface->isFingerprintable();
 
-    volume = mesh->volume();
-    area = mesh->surfaceArea();
-    globularity = mesh->globularity();
-    asphericity = mesh->asphericity();
-    transparent = mesh->isTransparent();
-    if (!mesh->availableVertexProperties().isEmpty()) {
-	// TODO change default property based on surface type
-        // Optionally, set the first item as selected in your comboBox
-        surfacePropertyComboBox->setCurrentIndex(0);
+	volume = mesh->volume();
+	area = mesh->surfaceArea();
+	globularity = mesh->globularity();
+	asphericity = mesh->asphericity();
+	transparent = mesh->isTransparent();
+	if (!mesh->availableVertexProperties().isEmpty()) {
+	    // TODO change default property based on surface type
+	    // Optionally, set the first item as selected in your comboBox
+	    surfacePropertyComboBox->setCurrentIndex(0);
 
-        // Manually trigger the property info update for the initial selection
-        Mesh::ScalarPropertyValues initialValues = mesh->vertexProperty(mesh->availableVertexProperties().first());
-        setMeshPropertyInfo(initialValues);
+	    // Manually trigger the property info update for the initial selection
+	    Mesh::ScalarPropertyValues initialValues = mesh->vertexProperty(mesh->availableVertexProperties().first());
+	    setMeshPropertyInfo(initialValues);
+	}
     }
-  }
 
-  // Enable widgets
-  setEnabled(enableController);
-  enableSurfaceControls(enableControls);
-  enableFingerprintButton(enableFingerprint);
-  enableTransparencyCheckBox->setChecked(transparent);
+    // Enable widgets
+    setEnabled(enableController);
+    enableSurfaceControls(enableControls);
+    enableFingerprintButton(enableFingerprint);
+    enableTransparencyCheckBox->setChecked(transparent);
 
-  // Update surface info
-  setSurfaceInfo(volume, area, globularity, asphericity);
-  m_meshPropertyModel->setMesh(mesh);
+    // Update surface info
+    setSurfaceInfo(volume, area, globularity, asphericity);
+    m_meshPropertyModel->setMesh(mesh);
 }
 
-void SurfaceController::onSurfaceTransparencyChange(bool transparent) {
+void ChildPropertyController::setCurrentWavefunction(MolecularWavefunction *wfn) {
+    showWavefunctionTabs(true);
+    bool valid = wfn != nullptr;
+    if(valid) {
+	QLocale locale;
+	chargeValue->setValue(wfn->charge());
+	multiplicityValue->setValue(wfn->multiplicity());
+	methodValue->setText(wfn->method());
+	basisValue->setText(wfn->basis());
+	fileSizeValue->setText(locale.formattedDataSize(wfn->fileSize()));
+	numBasisValue->setValue(wfn->numberOfBasisFunctions());
+	scfValue->setValue(wfn->totalEnergy());
+	fileFormatValue->setText(wfn::fileFormatString(wfn->fileFormat()));
+    }
+    setEnabled(valid);
+}
+
+void ChildPropertyController::onSurfaceTransparencyChange(bool transparent) {
     m_meshPropertyModel->setTransparent(transparent);
 }
 
-void SurfaceController::onPropertySelectionChanged(int propertyIndex) {
+void ChildPropertyController::onPropertySelectionChanged(int propertyIndex) {
     if (propertyIndex < 0) return;
     m_meshPropertyModel->setSelectedProperty(propertyIndex);
     setMeshPropertyInfo(m_meshPropertyModel->getPropertyValuesAtIndex(propertyIndex));
 }
 
-void SurfaceController::enableFingerprintButton(bool enable) {
+void ChildPropertyController::enableFingerprintButton(bool enable) {
   showFingerprintButton->setEnabled(enable);
 }
 
@@ -158,7 +207,7 @@ void SurfaceController::enableFingerprintButton(bool enable) {
 // Warning, if called at other times it might not do what you expect since
 // (i) auto color scale always gets turned on (ii) scale range values get
 // clamped
-void SurfaceController::setScale(float minScale, float maxScale) {
+void ChildPropertyController::setScale(float minScale, float maxScale) {
   clampScale(minScale, maxScale);
 }
 
@@ -167,13 +216,13 @@ void SurfaceController::setScale(float minScale, float maxScale) {
  'propertyFromString'
  defined in surfacedescription.h
  */
-QString SurfaceController::convertToNaturalPropertyName(QString encodedName) {
+QString ChildPropertyController::convertToNaturalPropertyName(QString encodedName) {
   auto prop = IsosurfacePropertyDetails::typeFromTontoName(encodedName);
   Q_ASSERT(prop != IsosurfacePropertyDetails::Type::Unknown);
   return IsosurfacePropertyDetails::getAttributes(prop).name;
 }
 
-void SurfaceController::resetScale() {
+void ChildPropertyController::resetScale() {
   // Complete hack
   // when resetting I want to go back to the min and max property values
   // I don't have directly but I can copy them from the
@@ -182,7 +231,7 @@ void SurfaceController::resetScale() {
   clampScale(minPropValue->value(), maxPropValue->value(), true);
 }
 
-void SurfaceController::clampScale(float minScale, float maxScale,
+void ChildPropertyController::clampScale(float minScale, float maxScale,
                                    bool emitUpdateSurfacePropertyRangeSignal) {
   // Stop the SpinBoxes firing signals and so redrawing the surface.
   _updateSurfacePropertyRange = false;
@@ -217,7 +266,7 @@ void SurfaceController::clampScale(float minScale, float maxScale,
   }
 }
 
-void SurfaceController::setMinAndMaxSpinBoxes(float min, float max) {
+void ChildPropertyController::setMinAndMaxSpinBoxes(float min, float max) {
   const float DEFAULT_MIN_SCALE = -99.99f;
   minPropSpinBox->setValue(
       DEFAULT_MIN_SCALE);        // workaround to prevent issues with min >= max
@@ -225,7 +274,7 @@ void SurfaceController::setMinAndMaxSpinBoxes(float min, float max) {
   minPropSpinBox->setValue(min);
 }
 
-void SurfaceController::minPropertyChanged() {
+void ChildPropertyController::minPropertyChanged() {
   double minValue = minPropSpinBox->value();
   double maxValue = maxPropSpinBox->value();
 
@@ -238,7 +287,7 @@ void SurfaceController::minPropertyChanged() {
   }
 }
 
-void SurfaceController::maxPropertyChanged() {
+void ChildPropertyController::maxPropertyChanged() {
   double minValue = minPropSpinBox->value();
   double maxValue = maxPropSpinBox->value();
 
@@ -251,13 +300,13 @@ void SurfaceController::maxPropertyChanged() {
   }
 }
 
-void SurfaceController::updateSurfacePropertyRange() {
+void ChildPropertyController::updateSurfacePropertyRange() {
   emit surfacePropertyRangeChanged(minPropSpinBox->value(),
                                    maxPropSpinBox->value());
 }
 
-void SurfaceController::currentSurfaceVisibilityChanged(bool visible) {
+void ChildPropertyController::currentSurfaceVisibilityChanged(bool visible) {
   enableSurfaceControls(visible);
 }
 
-void SurfaceController::exportButtonClicked() { emit exportCurrentSurface(); }
+void ChildPropertyController::exportButtonClicked() { emit exportCurrentSurface(); }

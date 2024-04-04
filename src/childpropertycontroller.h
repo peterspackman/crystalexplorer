@@ -4,8 +4,9 @@
 #include <QWidget>
 
 #include "mesh.h"
+#include "molecular_wavefunction.h"
 #include "meshpropertymodel.h"
-#include "ui_surfacecontroller.h"
+#include "ui_childpropertycontroller.h"
 
 // The following strings *must* match those in the propertyFromString map (see
 // surfacedescription.h)
@@ -17,17 +18,18 @@ const QVector<float> clampedMinimumScaleValues = QVector<float>()
 const QVector<float> clampedMaximumScaleValues = QVector<float>()
                                                  << +1.0f << +0.4f << 0.0f;
 
-class SurfaceController : public QWidget, public Ui::SurfaceController {
+class ChildPropertyController : public QWidget, public Ui::ChildPropertyController {
   Q_OBJECT
 
 public:
-  SurfaceController(QWidget *parent = 0);
+  ChildPropertyController(QWidget *parent = 0);
   void setSurfaceInfo(float, float, float, float);
   void enableFingerprintButton(bool);
   void currentSurfaceVisibilityChanged(bool);
 
 public slots:
   void setCurrentMesh(Mesh *);
+  void setCurrentWavefunction(MolecularWavefunction *);
   void setMeshPropertyInfo(const Mesh::ScalarPropertyValues &);
   void setSelectedPropertyValue(float);
 
@@ -46,6 +48,10 @@ signals:
   void exportCurrentSurface();
 
 private:
+  void showSurfaceTabs(bool);
+  void showWavefunctionTabs(bool);
+  void showTab(QWidget *, bool, QString);
+
   void setup();
   void setScale(float, float);
   void clampScale(float, float,

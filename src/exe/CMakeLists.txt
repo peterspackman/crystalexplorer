@@ -16,6 +16,7 @@ target_link_libraries(
     unordered_dense::unordered_dense
     occ_core
     cx_core
+    cx_io
     Qt6::Gui
     Qt6::Widgets
     Qt6::Core

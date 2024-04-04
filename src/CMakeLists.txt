@@ -14,6 +14,7 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     atom.cpp
     celllimitsdialog.cpp
     chargedialog.cpp
+    childpropertycontroller.cpp
     ciffile.cpp
     closecontactsdialog.cpp
     colordelegate.cpp
@@ -59,7 +60,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     settings.cpp
     spacegroup.cpp
     surface.cpp
-    surfacecontroller.cpp
     surfacedata.cpp
     surfacedescription.cpp
     surfacedropdown.cpp
@@ -83,6 +83,7 @@ set(CRYSTALEXPLORER_HEADER_FILES
     celllimitsdialog.h
     chargedialog.h
     chargemultiplicitypair.h
+    childpropertycontroller.h
     ciffile.h
     closecontactsdialog.h
     colordelegate.h
@@ -134,7 +135,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     spacegroup.h
     stldatastream.h
     surface.h
-    surfacecontroller.h
     surfacedata.h
     surfacedescription.h
     surfacedropdown.h
@@ -157,6 +157,7 @@ set(CRYSTALEXPLORER_UI_FILES
     animationsettingsdialog.ui
     celllimitsdialog.ui
     chargedialog.ui
+    childpropertycontroller.ui
     closecontactsdialog.ui
     crystalcontroller.ui
     crystalx.ui
@@ -172,7 +173,6 @@ set(CRYSTALEXPLORER_UI_FILES
     periodictabledialog.ui
     planegenerationdialog.ui
     preferencesdialog.ui
-    surfacecontroller.ui
     surfacegenerationdialog.ui
     wavefunctioncalculationdialog.ui
 )
