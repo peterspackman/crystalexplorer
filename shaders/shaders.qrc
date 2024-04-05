@@ -11,6 +11,8 @@
         <file>triangle.vert</file>
         <file>mesh.frag</file>
         <file>mesh.vert</file>
+        <file>meshinstance.frag</file>
+        <file>meshinstance.vert</file>
         <file>line.frag</file>
         <file>line.vert</file>
         <file>ellipse.vert</file>

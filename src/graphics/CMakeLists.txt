@@ -10,6 +10,7 @@ add_library(cx_graphics
     "${CMAKE_CURRENT_SOURCE_DIR}/graphics.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/linerenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/meshrenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/meshinstancerenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pointcloudrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/renderselection.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaderloader.cpp"
