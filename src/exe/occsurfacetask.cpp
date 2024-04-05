@@ -44,7 +44,7 @@ void OccSurfaceTask::start() {
     setRequirements(reqs);
     setOutputs({FileDependency(outputName, outputName)});
     auto environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("OCC_DATA_PATH", "/Users/285699f/git/occ/share");
+    environment.insert("OCC_DATA_PATH", "/home/prs/git/occ/share");
     setEnvironment(environment);
 
 

@@ -60,13 +60,13 @@ void WavefrontObjectFile::load(const std::string& filename) {
 
     if (!reader.ParseFromFile(filename, reader_config)) {
       if (!reader.Error().empty()) {
-	  qWarning() << "TinyObjReader: " << reader.Error();
+	  qWarning() << "TinyObjReader: " << QString::fromStdString(reader.Error());
       }
       return;
     }
 
     if (!reader.Warning().empty()) {
-      qWarning() << "TinyObjReader: " << reader.Warning();
+      qWarning() << "TinyObjReader: " << QString::fromStdString(reader.Warning());
     }
 
     if(!reader.Valid()) return;

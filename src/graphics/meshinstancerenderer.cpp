@@ -38,8 +38,8 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) : QOpenGLExtraFunctions(
   m_object.bind();
   m_program->enableAttributeArray(0);
   m_program->enableAttributeArray(1);
-  m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 2 * sizeof(QVector3D));
-  m_program->setAttributeBuffer(1, GL_FLOAT, 3, 3, 2 * sizeof(QVector3D));
+  m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 6 * sizeof(float));
+  m_program->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(float), 3, 6 * sizeof(float));
   m_vertex.release();
 
   m_object.release();
@@ -56,10 +56,19 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) : QOpenGLExtraFunctions(
       2, GL_FLOAT, MeshInstanceVertex::translationOffset(),
       MeshInstanceVertex::TranslationTupleSize, MeshInstanceVertex::stride());
   this->glVertexAttribDivisor(2, 1);
-  m_program->setAttributeBuffer(3, GL_FLOAT, MeshInstanceVertex::rotationOffset(),
+  m_program->setAttributeBuffer(3, GL_FLOAT, MeshInstanceVertex::rotation1Offset(),
                                 MeshInstanceVertex::RotationTupleSize,
                                 MeshInstanceVertex::stride());
   this->glVertexAttribDivisor(3, 1);
+  m_program->setAttributeBuffer(4, GL_FLOAT, MeshInstanceVertex::rotation2Offset(),
+                                MeshInstanceVertex::RotationTupleSize,
+                                MeshInstanceVertex::stride());
+  this->glVertexAttribDivisor(4, 1);
+  m_program->setAttributeBuffer(5, GL_FLOAT, MeshInstanceVertex::rotation3Offset(),
+                                MeshInstanceVertex::RotationTupleSize,
+                                MeshInstanceVertex::stride());
+  this->glVertexAttribDivisor(5, 1);
+
   // matrix takes up 3 attribute locations
   m_program->setAttributeBuffer(6, GL_FLOAT, MeshInstanceVertex::selectionIdOffset(),
                                 MeshInstanceVertex::SelectionIdSize,
@@ -138,14 +147,7 @@ void MeshInstanceRenderer::clear() {
 }
 
 void MeshInstanceRenderer::draw() {
-  qDebug() << "Num indices: " << m_numIndices;
-  qDebug() << "Num instances: " << m_instances.size();
   this->glDrawElementsInstanced(DrawType, m_numIndices, IndexType, 0, static_cast<int>(m_instances.size()));
-  GLenum err;
-  while ((err = glGetError()) != GL_NO_ERROR) {
-    // Log or handle the error
-    qDebug() << "OpenGL error:" << err;
- }
 }
 
 void MeshInstanceRenderer::beginUpdates() { Renderer::beginUpdates(); }

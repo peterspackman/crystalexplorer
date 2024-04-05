@@ -19,9 +19,9 @@ uniform mat4 u_modelViewProjectionMat;
 void main()
 {
   v_selected = 0;
-  v_normal = normal;
-  v_position = position;
-  v_color = vec4(0.5, 0.5, 0.5, alpha);
+  v_normal = rotation * normal;
+  v_position = rotation * position + translation;
+  v_color = vec4(selection_id, alpha);
   v_selection_id = vec4(selection_id, 1.0);
-  gl_Position = u_modelViewProjectionMat * vec4(position, 1.0);
+  gl_Position = u_modelViewProjectionMat * vec4(v_position, 1.0);
 }

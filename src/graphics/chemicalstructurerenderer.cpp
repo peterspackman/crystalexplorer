@@ -270,15 +270,10 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     */
 
     handleMeshesUpdate();
-    qDebug() << "Will bind";
     m_instanceRenderer->bind();
-    qDebug() << "Bound";
     m_uniforms.apply(m_instanceRenderer);
-    qDebug() << "Uniforms applied";
     m_instanceRenderer->draw();
-    qDebug() << "draw";
     m_instanceRenderer->release();
-    qDebug() << "Release";
 
     m_pointCloudRenderer->bind();
     m_uniforms.apply(m_pointCloudRenderer);

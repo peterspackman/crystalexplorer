@@ -159,7 +159,6 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 	MeshInstance * instance = new MeshInstance(mesh);
 	instance->setObjectName("+ {x,y,z} [0,0,0]");
 
-	/*
 	Eigen::Quaterniond q = Eigen::Quaterniond::UnitRandom();
 	MeshTransform transform = MeshTransform::Identity();
 	transform.rotate(q);
@@ -167,7 +166,6 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 
 	MeshInstance * instance2 = new MeshInstance(mesh, transform);
 	instance2->setObjectName("+ {x,y,z} [10.0,0,0]");
-	*/
 
         return mesh;
 
