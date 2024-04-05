@@ -3,6 +3,13 @@
 MeshPropertyModel::MeshPropertyModel(QObject* parent)
     : QAbstractListModel(parent), m_mesh(nullptr) {}
 
+void MeshPropertyModel::setMeshInstance(MeshInstance *meshInstance) {
+    beginResetModel();
+    m_mesh = meshInstance->mesh();
+    m_meshInstance = meshInstance;
+    endResetModel();
+}
+
 void MeshPropertyModel::setMesh(Mesh* mesh) {
     beginResetModel();
     m_mesh = mesh;
@@ -47,15 +54,22 @@ void MeshPropertyModel::setSelectedProperty(int row) const {
     if (!m_mesh || row < 0) return;
 
     QString propertyName = data(index(row, 0), Qt::DisplayRole).toString();
-    m_mesh->setSelectedProperty(propertyName);
+    if(m_meshInstance) {
+	m_meshInstance->setSelectedProperty(propertyName);
+    }
+    else {
+	m_mesh->setSelectedProperty(propertyName);
+    }
 }
 
 bool MeshPropertyModel::isTransparent() const {
     if (!m_mesh) return false;
+    if(m_meshInstance) return m_meshInstance->isTransparent();
     return m_mesh->isTransparent();
 }
 
 void MeshPropertyModel::setTransparent(bool transparent) const {
     if (!m_mesh) return;
-    m_mesh->setTransparent(transparent);
+    if(m_meshInstance) m_meshInstance->setTransparent(transparent);
+    else m_mesh->setTransparent(transparent);
 }

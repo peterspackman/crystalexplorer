@@ -2,6 +2,7 @@
 #include <QWidget>
 
 #include "project.h"
+#include "meshinstance.h"
 #include "molecular_wavefunction.h"
 
 #include "ui_crystalcontroller.h"
@@ -16,6 +17,7 @@ public:
   CrystalController(QWidget *parent = 0);
 
   Mesh *getChildMesh(int index) const;
+  MeshInstance *getChildMeshInstance(int index) const;
   MolecularWavefunction *getChildWavefunction(int index) const;
 
 public slots:

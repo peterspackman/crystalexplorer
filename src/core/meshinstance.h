@@ -1,6 +1,7 @@
+#pragma once
 #include "mesh.h"
 
-using MeshTransform = Eigen::Affine3d;
+using MeshTransform = Eigen::Isometry3d;
 
 class MeshInstance : public QObject {
     Q_OBJECT
@@ -8,7 +9,6 @@ class MeshInstance : public QObject {
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
     Q_PROPERTY(bool transparent READ isTransparent WRITE setTransparent NOTIFY transparencyChanged)
     Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE setSelectedProperty NOTIFY selectedPropertyChanged)
-
 
 public:
     MeshInstance(Mesh *parent,
@@ -18,6 +18,7 @@ public:
     [[nodiscard]] Mesh *mesh();
 
     [[nodiscard]] Mesh::VertexList vertices() const;
+    [[nodiscard]] Mesh::VertexList vertexNormals() const;
 
     [[nodiscard]] const MeshTransform &transform() const;
     void setTransform(const MeshTransform &transform);
@@ -33,6 +34,7 @@ public:
     bool setSelectedProperty(const QString &);
 
 signals:
+    // TODO connect these per mesh instance, for now
     void visibilityChanged();
     void transparencyChanged();
     void selectedPropertyChanged();

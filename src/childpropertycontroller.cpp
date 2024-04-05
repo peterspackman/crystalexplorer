@@ -172,8 +172,55 @@ void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
     m_meshPropertyModel->setMesh(mesh);
 }
 
+void ChildPropertyController::setCurrentMeshInstance(MeshInstance *mi) {
+    showSurfaceTabs(true);
+    showWavefunctionTabs(false);
+    bool enableController = false;
+    bool enableControls = false;
+    bool enableFingerprint = false;
+
+    float volume = 0.0;
+    float area = 0.0;
+    float globularity = 0.0;
+    float asphericity = 0.0;
+    bool transparent = false;
+
+    if (mi && mi->mesh()) {
+	auto * mesh = mi->mesh();
+	enableController = true;
+	enableControls = true;
+	enableFingerprint = false; //surface->isFingerprintable();
+
+	volume = mesh->volume();
+	area = mesh->surfaceArea();
+	globularity = mesh->globularity();
+	asphericity = mesh->asphericity();
+	transparent = mesh->isTransparent();
+	if (!mesh->availableVertexProperties().isEmpty()) {
+	    // TODO change default property based on surface type
+	    // Optionally, set the first item as selected in your comboBox
+	    surfacePropertyComboBox->setCurrentIndex(0);
+
+	    // Manually trigger the property info update for the initial selection
+	    Mesh::ScalarPropertyValues initialValues = mesh->vertexProperty(mesh->availableVertexProperties().first());
+	    setMeshPropertyInfo(initialValues);
+	}
+    }
+
+    // Enable widgets
+    setEnabled(enableController);
+    enableSurfaceControls(enableControls);
+    enableFingerprintButton(enableFingerprint);
+    enableTransparencyCheckBox->setChecked(transparent);
+
+    // Update surface info
+    setSurfaceInfo(volume, area, globularity, asphericity);
+    m_meshPropertyModel->setMeshInstance(mi);
+}
+
 void ChildPropertyController::setCurrentWavefunction(MolecularWavefunction *wfn) {
     showWavefunctionTabs(true);
+    showSurfaceTabs(false);
     bool valid = wfn != nullptr;
     if(valid) {
 	QLocale locale;

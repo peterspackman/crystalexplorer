@@ -1,7 +1,17 @@
 #include "meshinstance.h"
 
-MeshInstance::MeshInstance(Mesh *parent, const Eigen::Affine3d &transform)
+MeshInstance::MeshInstance(Mesh *parent, const MeshTransform &transform)
     : QObject(parent), m_mesh(parent), m_transform(transform) {
+    if(m_mesh) {
+	m_selectedProperty = m_mesh->getSelectedProperty();
+	// TODO remove these connections
+	connect(this, &MeshInstance::visibilityChanged,
+		m_mesh, &Mesh::visibilityChanged);
+	connect(this, &MeshInstance::transparencyChanged,
+		m_mesh, &Mesh::transparencyChanged);
+	connect(this, &MeshInstance::selectedPropertyChanged,
+		m_mesh, &Mesh::selectedPropertyChanged);
+    }
 }
 
 const Mesh* MeshInstance::mesh() const { return m_mesh; }
@@ -9,14 +19,21 @@ Mesh* MeshInstance::mesh() { return m_mesh; }
 
 Mesh::VertexList MeshInstance::vertices() const {
     if (!m_mesh) return {};
-    return m_transform * m_mesh->vertices();
+    return (m_transform.rotation() * m_mesh->vertices()).colwise() + m_transform.translation();
 }
+
+Mesh::VertexList MeshInstance::vertexNormals() const {
+    if (!m_mesh) return {};
+    return m_transform.rotation() * m_mesh->vertexNormals();
+}
+
+
 
 const MeshTransform& MeshInstance::transform() const {
     return m_transform; 
 }
 
-void MeshInstance::setTransform(const Eigen::Affine3d &transform) {
+void MeshInstance::setTransform(const MeshTransform &transform) {
     m_transform = transform;
 }
 
@@ -38,7 +55,7 @@ bool MeshInstance::isVisible() const {
 void MeshInstance::setVisible(bool visible) {
     if (m_visible != visible) {
 	m_visible = visible;
-	emit visibilityChanged();
+	emit m_mesh->visibilityChanged();
     }
 }
 

@@ -765,7 +765,7 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
   case SelectionType::Surface: {
     size_t surfaceIndex = m_selection.index;
     if(m_structureRenderer) {
-	Mesh * mesh = m_structureRenderer->getMesh(surfaceIndex);
+	auto * mesh = m_structureRenderer->getMesh(surfaceIndex);
 	qDebug() << "Found mesh:" << mesh;
 	if(!mesh) break;
     }

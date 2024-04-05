@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "mesh.h"
+#include "meshinstance.h"
 #include "molecular_wavefunction.h"
 #include "meshpropertymodel.h"
 #include "ui_childpropertycontroller.h"
@@ -29,6 +30,7 @@ public:
 
 public slots:
   void setCurrentMesh(Mesh *);
+  void setCurrentMeshInstance(MeshInstance *);
   void setCurrentWavefunction(MolecularWavefunction *);
   void setMeshPropertyInfo(const Mesh::ScalarPropertyValues &);
   void setSelectedPropertyValue(float);

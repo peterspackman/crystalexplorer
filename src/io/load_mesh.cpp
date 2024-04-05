@@ -155,8 +155,20 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 	    }
 	}
 
-	// TODO sort out instances and surface cloning
-	// MeshInstance * instance = new MeshInstance(mesh);
+	// create a mesh instance
+	MeshInstance * instance = new MeshInstance(mesh);
+	instance->setObjectName("+ {x,y,z} [0,0,0]");
+
+	/*
+	Eigen::Quaterniond q = Eigen::Quaterniond::UnitRandom();
+	MeshTransform transform = MeshTransform::Identity();
+	transform.rotate(q);
+	transform.translate(Eigen::Vector3d(10.0, 0.0, 0.0));
+
+	MeshInstance * instance2 = new MeshInstance(mesh, transform);
+	instance2->setObjectName("+ {x,y,z} [10.0,0,0]");
+	*/
+
         return mesh;
 
     } catch (const std::exception& e) {

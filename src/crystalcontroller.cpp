@@ -81,27 +81,28 @@ void CrystalController::onStructureViewSelectionChanged(const QItemSelection& se
     }
 }
 
-Mesh *CrystalController::getChildMesh(int rowIndex) const {
-    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
+template<typename T>
+T* maybeCastChild(int rowIndex, QAbstractItemModel *model) {
+    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(model);
     if (!structure) return nullptr;
 
     QModelIndex index = structure->index(rowIndex, 0);
     if (!index.isValid()) return nullptr;
 
     QObject* item = static_cast<QObject*>(index.internalPointer());
-    return qobject_cast<Mesh *>(item);
+    return qobject_cast<T*>(item);
 }
 
-MolecularWavefunction *CrystalController::getChildWavefunction(int rowIndex) const {
-    // TODO refactor getChild methods for common code
-    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
-    if (!structure) return nullptr;
+Mesh* CrystalController::getChildMesh(int rowIndex) const {
+    return maybeCastChild<Mesh>(rowIndex, structureTreeView->model());
+}
 
-    QModelIndex index = structure->index(rowIndex, 0);
-    if (!index.isValid()) return nullptr;
+MolecularWavefunction* CrystalController::getChildWavefunction(int rowIndex) const {
+    return maybeCastChild<MolecularWavefunction>(rowIndex, structureTreeView->model());
+}
 
-    QObject* item = static_cast<QObject*>(index.internalPointer());
-    return qobject_cast<MolecularWavefunction *>(item);
+MeshInstance* CrystalController::getChildMeshInstance(int rowIndex) const {
+    return maybeCastChild<MeshInstance>(rowIndex, structureTreeView->model());
 }
 
 bool CrystalController::eventFilter(QObject *obj, QEvent *event) {

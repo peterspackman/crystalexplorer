@@ -233,10 +233,15 @@ void Crystalx::createChildPropertyControllerDockWidget() {
   connect(crystalController, &CrystalController::childSelectionChanged,
 	  [&](int row) {
     auto * mesh = crystalController->getChildMesh(row);
+    auto * meshinstance = crystalController->getChildMeshInstance(row);
     auto * wfn = crystalController->getChildWavefunction(row);
     if(mesh) {
 	qDebug() << "Setting current mesh to " << mesh;
         childPropertyController->setCurrentMesh(mesh);
+    }
+    else if(meshinstance) {
+	qDebug() << "Setting current mesh instance to " << wfn;
+        childPropertyController->setCurrentMeshInstance(meshinstance);
     }
     else if(wfn) {
 	qDebug() << "Setting current wfn to " << wfn;
