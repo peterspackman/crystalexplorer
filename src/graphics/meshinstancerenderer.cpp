@@ -2,13 +2,8 @@
 #include "shaderloader.h"
 
 #include <QOpenGLShaderProgram>
-#include <QUuid>
-#include <QOpenGLExtraFunctions>
-#include <QOpenGLShaderProgram>
 
-MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) {
-
-  QOpenGLExtraFunctions f(QOpenGLContext::currentContext());
+MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) : QOpenGLExtraFunctions(QOpenGLContext::currentContext()) {
   m_program = new QOpenGLShaderProgram();
   m_program->addCacheableShaderFromSourceCode(
 	  QOpenGLShader::Vertex,
@@ -18,7 +13,9 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) {
   m_program->addCacheableShaderFromSourceCode(
       QOpenGLShader::Fragment,
       cx::shader::loadShaderFile(":/shaders/meshinstance.frag"));
-  m_program->link();
+  if (!m_program->link()) {
+    qDebug() << "Shader link error:" << m_program->log();
+  }
   m_program->bind();
 
   // Create MeshInstanceVertex Buffer (Do not release until VAO is created)
@@ -48,29 +45,30 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) {
   m_object.release();
   m_instance.bind();
   m_object.bind();
-  m_program->enableAttributeArray(1);
   m_program->enableAttributeArray(2);
   m_program->enableAttributeArray(3);
   m_program->enableAttributeArray(4);
   m_program->enableAttributeArray(5);
   m_program->enableAttributeArray(6);
+  m_program->enableAttributeArray(7);
 
   m_program->setAttributeBuffer(
-      1, GL_FLOAT, MeshInstanceVertex::translationOffset(),
+      2, GL_FLOAT, MeshInstanceVertex::translationOffset(),
       MeshInstanceVertex::TranslationTupleSize, MeshInstanceVertex::stride());
-  f.glVertexAttribDivisor(1, 1);
-  m_program->setAttributeBuffer(2, GL_FLOAT, MeshInstanceVertex::rotationOffset(),
+  this->glVertexAttribDivisor(2, 1);
+  m_program->setAttributeBuffer(3, GL_FLOAT, MeshInstanceVertex::rotationOffset(),
                                 MeshInstanceVertex::RotationTupleSize,
                                 MeshInstanceVertex::stride());
-  f.glVertexAttribDivisor(2, 1);
-  m_program->setAttributeBuffer(3, GL_FLOAT, MeshInstanceVertex::selectionIdOffset(),
+  this->glVertexAttribDivisor(3, 1);
+  // matrix takes up 3 attribute locations
+  m_program->setAttributeBuffer(6, GL_FLOAT, MeshInstanceVertex::selectionIdOffset(),
                                 MeshInstanceVertex::SelectionIdSize,
                                 MeshInstanceVertex::stride());
-  f.glVertexAttribDivisor(3, 1);
+  this->glVertexAttribDivisor(6, 1);
   m_program->setAttributeBuffer(
-      4, GL_FLOAT, MeshInstanceVertex::alphaOffset(),
+      7, GL_FLOAT, MeshInstanceVertex::alphaOffset(),
       MeshInstanceVertex::AlphaSize, MeshInstanceVertex::stride());
-  f.glVertexAttribDivisor(4, 1);
+  this->glVertexAttribDivisor(7, 1);
   // Release (unbind) all
   m_instance.release();
   m_index.release();
@@ -82,6 +80,7 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) {
 void MeshInstanceRenderer::setMesh(Mesh * mesh) {
   m_vertex.bind();
   m_index.bind();
+  if(!mesh) return;
 
   const auto &vertices = mesh->vertices();
   const auto &normals = mesh->vertexNormals();
@@ -98,10 +97,24 @@ void MeshInstanceRenderer::setMesh(Mesh * mesh) {
       temp.push_back(normals(2, i));
   }
 
+  std::vector<GLuint> temp_faces;
+  temp_faces.reserve(faces.size());
+  for(int i = 0; i < faces.cols(); i++) {
+      temp_faces.push_back(static_cast<GLuint>(faces(0, i)));
+      temp_faces.push_back(static_cast<GLuint>(faces(1, i)));
+      temp_faces.push_back(static_cast<GLuint>(faces(2, i)));
+  }
+
   m_vertex.allocate(temp.data(),
-                    static_cast<int>(temp.size()));
-  m_numFaces = faces.size();
-  m_index.allocate(faces.data(), m_numFaces);
+                    static_cast<int>(sizeof(float) * temp.size()));
+  m_numIndices = temp_faces.size();
+  m_index.allocate(temp_faces.data(), static_cast<int>(sizeof(GLuint) * m_numIndices));
+
+  GLenum err;
+  while ((err = glGetError()) != GL_NO_ERROR) {
+    // Log or handle the error
+    qDebug() << "OpenGL error (setMesh):" << err;
+ }
 }
 
 void MeshInstanceRenderer::addInstances(
@@ -125,9 +138,14 @@ void MeshInstanceRenderer::clear() {
 }
 
 void MeshInstanceRenderer::draw() {
-  QOpenGLExtraFunctions f(QOpenGLContext::currentContext());
-  f.glDrawElementsInstanced(DrawType, m_numFaces, GL_INT, 0,
-                            m_instances.size());
+  qDebug() << "Num indices: " << m_numIndices;
+  qDebug() << "Num instances: " << m_instances.size();
+  this->glDrawElementsInstanced(DrawType, m_numIndices, IndexType, 0, static_cast<int>(m_instances.size()));
+  GLenum err;
+  while ((err = glGetError()) != GL_NO_ERROR) {
+    // Log or handle the error
+    qDebug() << "OpenGL error:" << err;
+ }
 }
 
 void MeshInstanceRenderer::beginUpdates() { Renderer::beginUpdates(); }

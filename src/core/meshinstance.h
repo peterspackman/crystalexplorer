@@ -1,5 +1,7 @@
 #pragma once
 #include "mesh.h"
+#include <QVector3D>
+#include <QMatrix3x3>
 
 using MeshTransform = Eigen::Isometry3d;
 
@@ -22,6 +24,9 @@ public:
 
     [[nodiscard]] const MeshTransform &transform() const;
     void setTransform(const MeshTransform &transform);
+
+    [[nodiscard]] QMatrix3x3 rotationMatrix() const;
+    [[nodiscard]] QVector3D translationVector() const;
 
 
     [[nodiscard]] bool isVisible() const;

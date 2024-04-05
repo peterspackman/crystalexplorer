@@ -28,9 +28,24 @@ Mesh::VertexList MeshInstance::vertexNormals() const {
 }
 
 
-
 const MeshTransform& MeshInstance::transform() const {
     return m_transform; 
+}
+
+QMatrix3x3 MeshInstance::rotationMatrix() const {
+    auto r = m_transform.rotation();
+    QMatrix3x3 result;
+    for(int i = 0; i < 3; i++) {
+	for(int j = 0; j < 3; j++) {
+	    result(i, j) = r(i, j);
+	}
+    }
+    return result;
+}
+
+QVector3D MeshInstance::translationVector() const {
+    auto t = m_transform.translation();
+    return QVector3D(t(0), t(1), t(2));
 }
 
 void MeshInstance::setTransform(const MeshTransform &transform) {

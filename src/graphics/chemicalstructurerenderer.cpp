@@ -14,6 +14,7 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
     m_cylinderRenderer = new CylinderRenderer();
     m_lineRenderer = new LineRenderer();
     m_meshRenderer = new MeshRenderer();
+    m_instanceRenderer = new MeshInstanceRenderer();
     m_transparentMeshRenderer = new MeshRenderer();
     m_transparentMeshRenderer->setAlpha(0.8);
     m_pointCloudRenderer = new PointCloudRenderer();
@@ -36,7 +37,6 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
 
 void ChemicalStructureRenderer::initStructureChildren() {
     m_meshesNeedsUpdate = true;
-    handleMeshesUpdate();
 }
 
 
@@ -127,7 +127,6 @@ void ChemicalStructureRenderer::updateBonds() {
 
 void ChemicalStructureRenderer::updateMeshes() {
     m_meshesNeedsUpdate = true;
-    handleMeshesUpdate();
 }
 
 void ChemicalStructureRenderer::handleAtomsUpdate() {
@@ -263,10 +262,23 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_lineRenderer->draw();
     m_lineRenderer->release();
 
+    /*
     m_meshRenderer->bind();
     m_uniforms.apply(m_meshRenderer);
     m_meshRenderer->draw();
     m_meshRenderer->release();
+    */
+
+    handleMeshesUpdate();
+    qDebug() << "Will bind";
+    m_instanceRenderer->bind();
+    qDebug() << "Bound";
+    m_uniforms.apply(m_instanceRenderer);
+    qDebug() << "Uniforms applied";
+    m_instanceRenderer->draw();
+    qDebug() << "draw";
+    m_instanceRenderer->release();
+    qDebug() << "Release";
 
     m_pointCloudRenderer->bind();
     m_uniforms.apply(m_pointCloudRenderer);
@@ -373,6 +385,8 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
     for(auto * child: m_structure->children()) {
 	auto* mesh = qobject_cast<Mesh*>(child);
 	if(!mesh || !mesh->isVisible()) continue;
+	m_instanceRenderer->beginUpdates();
+	m_instanceRenderer->setMesh(mesh);
 	if(mesh->numberOfFaces() == 0) {
 	    m_pointCloudRenderer->addPoints(
 		    cx::graphics::makePointCloudVertices(*mesh)
@@ -382,10 +396,16 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
 	    for(auto * meshChild: child->children()) {
 		auto* meshInstance = qobject_cast<MeshInstance*>(meshChild);
 		if(!meshInstance || !meshInstance->isVisible()) continue;
+		MeshInstanceVertex v(
+		    meshInstance->translationVector(), meshInstance->rotationMatrix(),
+		    QVector3D()
+		);
+		m_instanceRenderer->addInstance(v);
 		auto * renderer = meshInstance->isTransparent() ? m_transparentMeshRenderer : m_meshRenderer;
 		quint32 selectionid = addMeshInstanceToMeshRenderer(meshInstance, renderer, m_selectionHandler);
 	    }
 	}
+	m_instanceRenderer->endUpdates();
     }
     m_meshesNeedsUpdate = false;
     emit meshesChanged();
@@ -414,7 +434,6 @@ void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
 	connect(mesh, &Mesh::transparencyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
 	m_meshesNeedsUpdate = true;
     }
-    handleMeshesUpdate();
 }
 
 void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
@@ -425,7 +444,6 @@ void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
 	disconnect(mesh, &Mesh::visibilityChanged, this, &ChemicalStructureRenderer::childVisibilityChanged);
 	m_meshesNeedsUpdate = true;
     }
-    handleMeshesUpdate();
 }
 
 

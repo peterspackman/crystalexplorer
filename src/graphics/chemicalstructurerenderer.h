@@ -5,6 +5,7 @@
 #include "meshrenderer.h"
 #include "mesh.h"
 #include "meshinstance.h"
+#include "meshinstancerenderer.h"
 #include "pointcloudrenderer.h"
 #include "chemicalstructure.h"
 #include "drawingstyle.h"
@@ -96,6 +97,7 @@ private:
     LineRenderer * m_lineRenderer{nullptr};
     EllipsoidRenderer * m_ellipsoidRenderer{nullptr};
     CylinderRenderer * m_cylinderRenderer{nullptr};
+    MeshInstanceRenderer *m_instanceRenderer{nullptr};
     MeshRenderer *m_transparentMeshRenderer{nullptr};
     MeshRenderer *m_meshRenderer{nullptr};
     PointCloudRenderer *m_pointCloudRenderer{nullptr};
