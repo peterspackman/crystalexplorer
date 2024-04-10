@@ -169,7 +169,12 @@ void Mesh::setVertexProperty(const QString &name, const ScalarPropertyValues &va
     Mesh::ScalarPropertyRange range;
     range.lower = values.minCoeff();
     range.upper = values.maxCoeff();
-    setVertexPropertyRange(name, range);
+
+    // only send a signal once
+    {
+	QSignalBlocker blocker(this); 
+	setVertexPropertyRange(name, range);
+    }
 
     setSelectedProperty(name);
 }
@@ -183,7 +188,9 @@ const ScalarPropertyValues &Mesh::vertexProperty(const QString &name) const {
 }
 
 void Mesh::setVertexPropertyRange(const QString &name, Mesh::ScalarPropertyRange range) {
+    qDebug() << "Called mesh.setVertexPropertyRange" << name;
     m_vertexPropertyRanges[name] = range;
+    emit selectedPropertyChanged();
 }
 
 Mesh::ScalarPropertyRange Mesh::vertexPropertyRange(const QString &name) const {

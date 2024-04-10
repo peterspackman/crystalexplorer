@@ -11,6 +11,12 @@ ChildPropertyController::ChildPropertyController(QWidget *parent) : QWidget(pare
     m_meshPropertyModel(new MeshPropertyModel(this)) {
 
   setupUi(this);
+
+  m_clampedProperties = {
+      {"shape_index", {-1.0f, 1.0f}},
+      {"curvedness", {-4.0f, 0.4f}},
+      {"None", {0.0f, 0.0f}}
+  };
   setup();
 }
 
@@ -43,9 +49,9 @@ void ChildPropertyController::setup() {
           &ChildPropertyController::showFingerprint);
 
   connect(minPropSpinBox, &QDoubleSpinBox::valueChanged, this,
-          [&](double x) { minPropertyChanged(); });
+          [&](double x) { propertyRangeChanged(); });
   connect(maxPropSpinBox, &QDoubleSpinBox::valueChanged, this,
-          [&](double x) { maxPropertyChanged(); });
+          [&](double x) { propertyRangeChanged(); });
 
   connect(resetPropScaleButton, &QPushButton::clicked, this,
           &ChildPropertyController::resetScale);
@@ -73,7 +79,6 @@ void ChildPropertyController::setSelectedPropertyValue(float value) {
 }
 
 void ChildPropertyController::onMeshModelUpdate() {
-    qDebug() << "Called onMeshModelUpdate";
     bool valid = m_meshPropertyModel->isValid();
     // Enable widgets
     setEnabled(valid);
@@ -87,7 +92,6 @@ void ChildPropertyController::onMeshModelUpdate() {
 
     enableFingerprintButton(m_meshPropertyModel->isFingerprintable());
     enableTransparencyCheckBox->setChecked(m_meshPropertyModel->isTransparent());
-    qDebug() << "Finished onMeshModelUpdate";
 
 }
 
@@ -176,7 +180,7 @@ void ChildPropertyController::onModelPropertySelectionChanged(QString property) 
     minPropValue->setValue(stats.lower);
     meanPropValue->setValue(stats.mean);
     maxPropValue->setValue(stats.upper);
-    setScale(range.lower, range.upper);
+    setScale(range);
 
     setUnitLabels("units");
     setSelectedPropertyValue(0.0);
@@ -191,102 +195,49 @@ void ChildPropertyController::enableFingerprintButton(bool enable) {
 // Warning, if called at other times it might not do what you expect since
 // (i) auto color scale always gets turned on (ii) scale range values get
 // clamped
-void ChildPropertyController::setScale(float minScale, float maxScale) {
-  clampScale(minScale, maxScale);
-}
+void ChildPropertyController::setScale(Mesh::ScalarPropertyRange range) {
+    QString currentProperty =
+        surfacePropertyComboBox->currentText();
+    if(m_clampedProperties.contains(currentProperty)) {
+	Mesh::ScalarPropertyRange clampValues = m_clampedProperties[currentProperty];
+	range.lower = std::max(clampValues.lower, range.lower);
+	range.upper = std::min(clampValues.upper, range.upper);
+    }
 
-/*!
- Converts the encoded name to a natural name via the surface propertymap,
- 'propertyFromString'
- defined in surfacedescription.h
- */
-QString ChildPropertyController::convertToNaturalPropertyName(QString encodedName) {
-  auto prop = IsosurfacePropertyDetails::typeFromTontoName(encodedName);
-  Q_ASSERT(prop != IsosurfacePropertyDetails::Type::Unknown);
-  return IsosurfacePropertyDetails::getAttributes(prop).name;
+    setMinAndMaxSpinBoxes(range.lower, range.upper);
+
 }
 
 void ChildPropertyController::resetScale() {
-  // Complete hack
-  // when resetting I want to go back to the min and max property values
-  // I don't have directly but I can copy them from the
-  // 3rd tab of surface controller which contains values
-  // (including min and max) for the current property
-  clampScale(minPropValue->value(), maxPropValue->value(), true);
-}
-
-void ChildPropertyController::clampScale(float minScale, float maxScale,
-                                   bool emitUpdateSurfacePropertyRangeSignal) {
-  // Stop the SpinBoxes firing signals and so redrawing the surface.
-  _updateSurfacePropertyRange = false;
-
-  // Certain properties have fixed ranges for the values they can take
-  // These properties are stored in the clampedProperties list as *encoded*
-  // names
-  // since these are invariant (the natural names may change so we don't want to
-  // compare against them).
-  bool appliedClamp = false;
-  for (int i = 0; i < clampedProperties.count(); i++) {
-    QString clampedProperty =
-        convertToNaturalPropertyName(clampedProperties[i]);
-    QString currentProperty =
-        surfacePropertyComboBox->currentText();
-    if (clampedProperty == currentProperty) {
-      setMinAndMaxSpinBoxes(clampedMinimumScaleValues[i],
-                            clampedMaximumScaleValues[i]);
-      appliedClamp = true;
-    }
-  }
-  // If we didn't find a default clamp then we resort to clamping the scale
-  // range
-  // to the original scale range. This was saved when the property was first
-  // selected.
-  if (!appliedClamp) {
-    setMinAndMaxSpinBoxes(minScale, maxScale);
-  }
-  _updateSurfacePropertyRange = true;
-  if (emitUpdateSurfacePropertyRangeSignal) {
-    updateSurfacePropertyRange();
-  }
+    // TODO
+    qDebug() << "Scale reset";
 }
 
 void ChildPropertyController::setMinAndMaxSpinBoxes(float min, float max) {
-  const float DEFAULT_MIN_SCALE = -99.99f;
-  minPropSpinBox->setValue(
-      DEFAULT_MIN_SCALE);        // workaround to prevent issues with min >= max
-  maxPropSpinBox->setValue(max); // maxValue need to be set before minValue
-  minPropSpinBox->setValue(min);
+    minPropSpinBox->blockSignals(true);
+    maxPropSpinBox->blockSignals(true);
+
+    maxPropSpinBox->setValue(max); 
+    minPropSpinBox->setValue(min);
+
+    minPropSpinBox->blockSignals(false);
+    maxPropSpinBox->blockSignals(false);
 }
 
-void ChildPropertyController::minPropertyChanged() {
+void ChildPropertyController::propertyRangeChanged() {
   double minValue = minPropSpinBox->value();
   double maxValue = maxPropSpinBox->value();
 
   // Prevent min value from exceeding the max value.
   if (minValue >= maxValue) {
+    minPropSpinBox->blockSignals(true);
     minPropSpinBox->setValue(maxValue - minPropSpinBox->singleStep());
+    minPropSpinBox->blockSignals(false);
   }
-  if (_updateSurfacePropertyRange) {
-    updateSurfacePropertyRange();
-  }
-}
-
-void ChildPropertyController::maxPropertyChanged() {
-  double minValue = minPropSpinBox->value();
-  double maxValue = maxPropSpinBox->value();
-
-  // Prevent max value from being smaller than the min value.
-  if (maxValue <= minValue) {
-    maxPropSpinBox->setValue(minValue + maxPropSpinBox->singleStep());
-  }
-  if (_updateSurfacePropertyRange) {
-    updateSurfacePropertyRange();
-  }
-}
-
-void ChildPropertyController::updateSurfacePropertyRange() {
-  emit surfacePropertyRangeChanged(minPropSpinBox->value(),
-                                   maxPropSpinBox->value());
+  m_meshPropertyModel->setSelectedPropertyRange({
+      static_cast<float>(minPropSpinBox->value()),
+      static_cast<float>(maxPropSpinBox->value())
+  });
 }
 
 void ChildPropertyController::currentSurfaceVisibilityChanged(bool visible) {

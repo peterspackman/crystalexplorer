@@ -1,6 +1,7 @@
 #pragma once
 #include <QTableWidget>
 #include <QTextDocument>
+#include <QMap>
 #include <QWidget>
 
 #include "mesh.h"
@@ -8,16 +9,6 @@
 #include "molecular_wavefunction.h"
 #include "meshpropertymodel.h"
 #include "ui_childpropertycontroller.h"
-
-// The following strings *must* match those in the propertyFromString map (see
-// surfacedescription.h)
-const QStringList clampedProperties = QStringList() << "shape_index"
-                                                    << "curvedness"
-                                                    << "none";
-const QVector<float> clampedMinimumScaleValues = QVector<float>()
-                                                 << -1.0f << -4.0f << 0.0f;
-const QVector<float> clampedMaximumScaleValues = QVector<float>()
-                                                 << +1.0f << +0.4f << 0.0f;
 
 class ChildPropertyController : public QWidget, public Ui::ChildPropertyController {
   Q_OBJECT
@@ -37,8 +28,7 @@ protected slots:
   void onSurfaceTransparencyChange(bool);
   void onModelPropertySelectionChanged(QString);
   void onComboBoxPropertySelectionChanged(QString);
-  void minPropertyChanged();
-  void maxPropertyChanged();
+  void propertyRangeChanged();
   void resetScale();
   void exportButtonClicked();
   void onMeshModelUpdate();
@@ -46,7 +36,6 @@ protected slots:
 signals:
   void surfacePropertyChosen(int);
   void showFingerprint();
-  void surfacePropertyRangeChanged(float, float);
   void exportCurrentSurface();
 
 private:
@@ -55,17 +44,16 @@ private:
   void showTab(QWidget *, bool, QString);
 
   void setup();
-  void setScale(float, float);
-  void clampScale(float, float,
-                  bool emitUpdateSurfacePropertyRangeSignal = false);
+  void setScale(Mesh::ScalarPropertyRange);
+
   void setMinAndMaxSpinBoxes(float, float);
   void setUnitLabels(QString);
-  void updateSurfacePropertyRange();
+
   void clearPropertyInfo();
-  QString convertToNaturalPropertyName(QString);
   void enableSurfaceControls(bool);
 
   bool _updateSurfacePropertyRange;
 
   MeshPropertyModel *m_meshPropertyModel{nullptr};
+  QMap<QString, Mesh::ScalarPropertyRange> m_clampedProperties;
 };

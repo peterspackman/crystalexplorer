@@ -121,7 +121,6 @@ Mesh::ScalarPropertyRange MeshPropertyModel::getSelectedPropertyRange() const {
 void MeshPropertyModel::setSelectedPropertyRange(Mesh::ScalarPropertyRange range) {
     if(!m_mesh) return;
 
-    beginResetModel();
     QString propertyName;
     if(m_meshInstance) {
 	propertyName = m_meshInstance->getSelectedProperty();
@@ -130,7 +129,7 @@ void MeshPropertyModel::setSelectedPropertyRange(Mesh::ScalarPropertyRange range
 	propertyName = m_mesh->getSelectedProperty();
     }
     m_mesh->setVertexPropertyRange(propertyName, range);
-    endResetModel();
+    emit propertySelectionChanged(propertyName);
 }
 
 void MeshPropertyModel::setSelectedProperty(QString propertyName) {
