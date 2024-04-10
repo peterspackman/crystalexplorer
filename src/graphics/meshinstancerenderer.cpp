@@ -4,6 +4,16 @@
 #include <QOpenGLShaderProgram>
 
 MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) : QOpenGLExtraFunctions(QOpenGLContext::currentContext()) {
+
+  m_propertyColorMaps = {
+    {"None", ColorMapName::CE_None},
+    {"dnorm", ColorMapName::CE_bwr},
+    {"di", ColorMapName::CE_rgb},
+    {"de", ColorMapName::CE_rgb},
+    {"di_norm", ColorMapName::CE_bwr},
+    {"de_norm", ColorMapName::CE_bwr},
+  };
+
   m_program = new QOpenGLShaderProgram();
   m_program->addCacheableShaderFromSourceCode(
 	  QOpenGLShader::Vertex,
@@ -26,6 +36,13 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) : QOpenGLExtraFunctions(
   m_index.create();
   m_index.bind();
   m_index.setUsagePattern(QOpenGLBuffer::StaticDraw);
+
+  // vertex properties are stored in a buffer
+  m_vertexPropertyBuffer.create();
+
+  m_vertexPropertyTexture = new QOpenGLTexture(QOpenGLTexture::TargetBuffer);
+  m_vertexPropertyTexture->create();
+
   setMesh(mesh);
 
   m_instance.create();
@@ -119,6 +136,36 @@ void MeshInstanceRenderer::setMesh(Mesh * mesh) {
   m_numIndices = temp_faces.size();
   m_index.allocate(temp_faces.data(), static_cast<int>(sizeof(GLuint) * m_numIndices));
 
+  {
+      m_vertexPropertyBuffer.bind();
+      std::vector<float> propertyData;
+      auto availableProperties = mesh->availableVertexProperties();
+      qDebug() << "Available properties: " << availableProperties;
+      for(const auto &prop: availableProperties) {
+	  if(prop == "None") continue;
+
+	  const auto &vals = mesh->vertexProperty(prop);
+          auto range = mesh->vertexPropertyRange(prop);
+
+	  ColorMapFunc cmap(m_propertyColorMaps.value(prop, ColorMapName::Viridis), range.lower, range.upper);
+
+	  for(size_t i = 0; i < vals.rows(); i++) {
+	      QColor color = cmap(vals(i));
+	      propertyData.push_back(color.redF());
+	      propertyData.push_back(color.greenF());
+	      propertyData.push_back(color.blueF());
+	      propertyData.push_back(color.alphaF());
+	  }
+      }
+      m_vertexPropertyBuffer.allocate(propertyData.data(), static_cast<int>(sizeof(float) * propertyData.size()));
+      m_vertexPropertyBuffer.release();
+
+      m_vertexPropertyTexture->bind();
+      glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, m_vertexPropertyBuffer.bufferId());
+      m_vertexPropertyTexture->release();
+
+  }
+
   GLenum err;
   while ((err = glGetError()) != GL_NO_ERROR) {
     // Log or handle the error
@@ -147,7 +194,13 @@ void MeshInstanceRenderer::clear() {
 }
 
 void MeshInstanceRenderer::draw() {
+  // After linking the program and before rendering
+  m_program->setUniformValue("u_propertyBuffer", 0);
+  m_vertexPropertyTexture->bind();
+ 
   this->glDrawElementsInstanced(DrawType, m_numIndices, IndexType, 0, static_cast<int>(m_instances.size()));
+
+  m_vertexPropertyTexture->release();
 }
 
 void MeshInstanceRenderer::beginUpdates() { Renderer::beginUpdates(); }

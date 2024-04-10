@@ -164,6 +164,13 @@ const ScalarProperties &Mesh::vertexProperties() const {
 
 void Mesh::setVertexProperty(const QString &name, const ScalarPropertyValues &values) {
     m_vertexProperties[name] = values;
+
+    // update to default property range
+    Mesh::ScalarPropertyRange range;
+    range.lower = values.minCoeff();
+    range.upper = values.maxCoeff();
+    setVertexPropertyRange(name, range);
+
     setSelectedProperty(name);
 }
 
@@ -173,6 +180,18 @@ const ScalarPropertyValues &Mesh::vertexProperty(const QString &name) const {
 	return loc->second;
     }
     return m_emptyProperty;
+}
+
+void Mesh::setVertexPropertyRange(const QString &name, Mesh::ScalarPropertyRange range) {
+    m_vertexPropertyRanges[name] = range;
+}
+
+Mesh::ScalarPropertyRange Mesh::vertexPropertyRange(const QString &name) const {
+    const auto loc = m_vertexPropertyRanges.find(name);
+    if(loc != m_vertexPropertyRanges.end()) {
+	return loc->second;
+    }
+    return {};
 }
 
 QStringList Mesh::availableVertexProperties() const {

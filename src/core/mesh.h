@@ -7,7 +7,6 @@
 #include <ankerl/unordered_dense.h>
 
 
-
 class Mesh : public QObject {
     Q_OBJECT
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
@@ -15,15 +14,23 @@ class Mesh : public QObject {
     Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE setSelectedProperty NOTIFY selectedPropertyChanged)
 
 public:
+    struct ScalarPropertyRange {
+	float lower{0.0};
+	float upper{1.0};
+	float middle{0.0}; // will only be used for some property color schemes
+    };
+
     using VertexList = Eigen::Matrix<double, 3, Eigen::Dynamic>;
     using FaceList = Eigen::Matrix<int, 3, Eigen::Dynamic>;
     using ScalarPropertyValues = Eigen::Matrix<float, Eigen::Dynamic, 1>;
     using ScalarProperties = ankerl::unordered_dense::map<QString, ScalarPropertyValues>;
+    using ScalarPropertyRanges = ankerl::unordered_dense::map<QString, ScalarPropertyRange>;
 
     enum class NormalSetting{
 	Flat,
 	Average
     };
+
 
     Mesh(QObject *parent = nullptr);
 
@@ -62,12 +69,16 @@ public:
     void setVertexProperty(const QString &name, const ScalarPropertyValues &values);
     [[nodiscard]] const ScalarPropertyValues &vertexProperty(const QString &) const;
 
+    [[nodiscard]] ScalarPropertyRange vertexPropertyRange(const QString &) const;
+    void setVertexPropertyRange(const QString &, ScalarPropertyRange);
+
     //face properties
     [[nodiscard]] QStringList availableFaceProperties() const;
     [[nodiscard]] const ScalarProperties &faceProperties() const;
     [[nodiscard]] bool haveFaceProperty(const QString &) const;
     void setFaceProperty(const QString &name, const ScalarPropertyValues &values);
     [[nodiscard]] const ScalarPropertyValues &faceProperty(const QString &) const;
+
 
     [[nodiscard]] inline const auto &kind() const { return m_kind; }
     inline void setKind(isosurface::Kind kind) { m_kind = kind; }
@@ -114,6 +125,7 @@ private:
     std::vector<std::vector<int>> m_facesUsingVertex;
 
     ScalarProperties m_vertexProperties;
+    ScalarPropertyRanges m_vertexPropertyRanges;
     ScalarProperties m_faceProperties;
 
     bool m_transparent{false};

@@ -15,6 +15,7 @@
 
 
 namespace cx::graphics {
+
 class ChemicalStructureRenderer : public QObject {
     Q_OBJECT
 public:

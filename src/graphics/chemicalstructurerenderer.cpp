@@ -323,18 +323,16 @@ quint32 ChemicalStructureRenderer::addMeshInstanceToMeshRenderer(MeshInstance *m
     QString propertyName = meshInstance->getSelectedProperty();
     auto availableProperties = mesh->availableVertexProperties();
     qDebug() << "Available vertex properties: " << availableProperties;
-    float l{0.0}, u{1.0};
+    Mesh::ScalarPropertyRange range;
     if(availableProperties.size() > 1) {
 	prop = mesh->vertexProperty(propertyName);
-	l = prop.minCoeff();
-	u = prop.maxCoeff();
+	range = mesh->vertexPropertyRange(propertyName);
     }
     else {
-	prop = Mesh::ScalarPropertyValues(verts.cols());
-	prop.setConstant(0.5);
+	prop = Mesh::ScalarPropertyValues::Zero(verts.cols());
     }
 
-    ColorMapFunc cmap(m_propertyColorMaps.value(propertyName, ColorMapName::Viridis), l, u);
+    ColorMapFunc cmap(m_propertyColorMaps.value(propertyName, ColorMapName::Viridis), range.lower, range.upper);
 
     for (int i = 0; i < mesh->numberOfVertices(); i++) {
 	quint32 vertex_id = selectionId + i;

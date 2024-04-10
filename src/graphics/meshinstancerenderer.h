@@ -1,6 +1,7 @@
 #pragma once
 #include "mesh.h"
 #include "meshinstancevertex.h"
+#include "colormap.h"
 #include "renderer.h"
 #include <QOpenGLBuffer>
 #include <QOpenGLExtraFunctions>
@@ -40,6 +41,7 @@ private:
 
   QOpenGLBuffer m_vertexPropertyBuffer;
   QOpenGLTexture *m_vertexPropertyTexture{nullptr}; 
+  QMap<QString, ColorMapName> m_propertyColorMaps;
   int m_numIndices{0};
 
 protected:
