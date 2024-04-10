@@ -57,8 +57,7 @@ bool MeshInstance::isTransparent() const {
 }
 
 void MeshInstance::setTransparent(bool transparent) {
-    if(transparent == m_transparent) return;
-
+    if(transparent == m_transparent) return; 
     m_transparent = transparent;
     emit transparencyChanged();
 }
@@ -68,10 +67,9 @@ bool MeshInstance::isVisible() const {
 }
 
 void MeshInstance::setVisible(bool visible) {
-    if (m_visible != visible) {
-	m_visible = visible;
-	emit m_mesh->visibilityChanged();
-    }
+    if (m_visible == visible) return;
+    m_visible = visible;
+    emit visibilityChanged();
 }
 
 const QString &MeshInstance::getSelectedProperty() const {
@@ -81,6 +79,7 @@ const QString &MeshInstance::getSelectedProperty() const {
 bool MeshInstance::setSelectedProperty(const QString &propName) {
     if(!m_mesh) return false;
     if(m_selectedProperty == propName) return true;
+    qDebug() << "Called MeshInstance.setSelectedProperty" << propName;
     const auto &props = m_mesh->vertexProperties();
     if(props.find(propName) == props.end()) return false;
     m_selectedProperty = propName;

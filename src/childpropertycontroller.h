@@ -24,7 +24,6 @@ class ChildPropertyController : public QWidget, public Ui::ChildPropertyControll
 
 public:
   ChildPropertyController(QWidget *parent = 0);
-  void setSurfaceInfo(float, float, float, float);
   void enableFingerprintButton(bool);
   void currentSurfaceVisibilityChanged(bool);
 
@@ -32,16 +31,17 @@ public slots:
   void setCurrentMesh(Mesh *);
   void setCurrentMeshInstance(MeshInstance *);
   void setCurrentWavefunction(MolecularWavefunction *);
-  void setMeshPropertyInfo(const Mesh::ScalarPropertyValues &);
   void setSelectedPropertyValue(float);
 
 protected slots:
   void onSurfaceTransparencyChange(bool);
-  void onPropertySelectionChanged(int);
+  void onModelPropertySelectionChanged(QString);
+  void onComboBoxPropertySelectionChanged(QString);
   void minPropertyChanged();
   void maxPropertyChanged();
   void resetScale();
   void exportButtonClicked();
+  void onMeshModelUpdate();
 
 signals:
   void surfacePropertyChosen(int);

@@ -16,9 +16,9 @@ class CrystalController : public QWidget, public Ui::CrystalController {
 public:
   CrystalController(QWidget *parent = 0);
 
-  Mesh *getChildMesh(int index) const;
-  MeshInstance *getChildMeshInstance(int index) const;
-  MolecularWavefunction *getChildWavefunction(int index) const;
+  Mesh *getChildMesh(const QModelIndex &index) const;
+  MeshInstance *getChildMeshInstance(const QModelIndex &index) const;
+  MolecularWavefunction *getChildWavefunction(const QModelIndex &index) const;
 
 public slots:
   void update(Project *);
@@ -30,8 +30,7 @@ public slots:
 
 signals:
   void structureSelectionChanged(int);
-  void childSelectionChanged(int);
-  void toggleVisibilityOfSurface(int);
+  void childSelectionChanged(QModelIndex);
   void deleteCurrentCrystal();
   void deleteCurrentSurface();
   void deleteAllCrystals();

@@ -231,16 +231,18 @@ void Crystalx::createChildPropertyControllerDockWidget() {
     addDockWidget(Qt::RightDockWidgetArea, childPropertyControllerDockWidget);
   childPropertyController->setEnabled(false);
   connect(crystalController, &CrystalController::childSelectionChanged,
-	  [&](int row) {
-    auto * mesh = crystalController->getChildMesh(row);
-    auto * meshinstance = crystalController->getChildMeshInstance(row);
-    auto * wfn = crystalController->getChildWavefunction(row);
+	  [&](QModelIndex index) {
+    auto * mesh = crystalController->getChildMesh(index);
+    auto * meshinstance = crystalController->getChildMeshInstance(index);
+    auto * wfn = crystalController->getChildWavefunction(index);
+
+    // check for mesh instance first
     if(mesh) {
 	qDebug() << "Setting current mesh to " << mesh;
         childPropertyController->setCurrentMesh(mesh);
     }
     else if(meshinstance) {
-	qDebug() << "Setting current mesh instance to " << wfn;
+	qDebug() << "Setting current mesh instance to " << meshinstance;
         childPropertyController->setCurrentMeshInstance(meshinstance);
     }
     else if(wfn) {

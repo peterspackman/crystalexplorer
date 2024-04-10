@@ -31,6 +31,13 @@ public:
   [[nodiscard]] inline auto &instances() { return m_instances; }
   void setMesh(Mesh *);
 
+  inline const auto &availableProperties() const { return m_availableProperties; }
+
+  inline const auto &colorMaps() const { return m_propertyColorMaps; }
+  inline void setColorMaps(const QMap<QString, ColorMapName> val) {
+      m_propertyColorMaps = val;
+  }
+
 private:
   void updateBuffers();
   QOpenGLBuffer m_vertex;
@@ -42,7 +49,10 @@ private:
   QOpenGLBuffer m_vertexPropertyBuffer;
   QOpenGLTexture *m_vertexPropertyTexture{nullptr}; 
   QMap<QString, ColorMapName> m_propertyColorMaps;
+
+  QStringList m_availableProperties;
   int m_numIndices{0};
+  int m_numVertices{0};
 
 protected:
   bool m_impostor = false;

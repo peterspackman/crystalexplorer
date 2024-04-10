@@ -20,17 +20,24 @@ void ChildPropertyController::setup() {
   surfacePropertyComboBox->setModel(m_meshPropertyModel);
   surfacePropertyComboBox2->setModel(m_meshPropertyModel);
 
+  connect(m_meshPropertyModel, &QAbstractItemModel::modelReset, this, &ChildPropertyController::onMeshModelUpdate);
+  connect(m_meshPropertyModel, &QAbstractItemModel::dataChanged, this, &ChildPropertyController::onMeshModelUpdate);
+
   // Options page = 0
   tabWidget->setCurrentIndex(0);
 
   connect(enableTransparencyCheckBox, &QCheckBox::toggled, this,
           &ChildPropertyController::onSurfaceTransparencyChange);
 
-  connect(surfacePropertyComboBox, &QComboBox::currentIndexChanged,
-          this, &ChildPropertyController::onPropertySelectionChanged);
+  connect(surfacePropertyComboBox, &QComboBox::currentTextChanged,
+          this, &ChildPropertyController::onComboBoxPropertySelectionChanged);
 
-  connect(surfacePropertyComboBox2, &QComboBox::currentIndexChanged,
-          this, &ChildPropertyController::onPropertySelectionChanged);
+  connect(surfacePropertyComboBox2, &QComboBox::currentTextChanged,
+          this, &ChildPropertyController::onComboBoxPropertySelectionChanged);
+
+  // Assuming your model emits a signal when the current selection changes
+  connect(m_meshPropertyModel, &MeshPropertyModel::propertySelectionChanged,
+            this, &ChildPropertyController::onModelPropertySelectionChanged);
 
   connect(showFingerprintButton, &QToolButton::clicked, this,
           &ChildPropertyController::showFingerprint);
@@ -61,38 +68,26 @@ void ChildPropertyController::enableSurfaceControls(bool enable) {
   resetPropScaleButton->setEnabled(enable);
 }
 
-void ChildPropertyController::setSurfaceInfo(float volume, float area,
-                                       float globularity, float asphericity) {
-  volumeValue->setValue(volume);
-  areaValue->setValue(area);
-
-  globularityValue->setValue(globularity);
-  asphericityValue->setValue(asphericity);
-}
-
-void ChildPropertyController::clearPropertyInfo() {
-  selectedPropValue->setValue(0.0);
-  minPropValue->setValue(0.0);
-  meanPropValue->setValue(0.0);
-  maxPropValue->setValue(0.0);
-  setScale(0.0, 0.0);
-}
-
 void ChildPropertyController::setSelectedPropertyValue(float value) {
-  selectedPropValue->setValue(value);
+    selectedPropValue->setValue(value);
 }
 
-void ChildPropertyController::setMeshPropertyInfo(const Mesh::ScalarPropertyValues &values) {
-  Q_ASSERT(values.size() > 0);
+void ChildPropertyController::onMeshModelUpdate() {
+    qDebug() << "Called onMeshModelUpdate";
+    bool valid = m_meshPropertyModel->isValid();
+    // Enable widgets
+    setEnabled(valid);
+    enableSurfaceControls(valid);
 
-  minPropValue->setValue(values.minCoeff());
-  meanPropValue->setValue(values.mean());
-  maxPropValue->setValue(values.maxCoeff());
+    volumeValue->setValue(m_meshPropertyModel->volume());
+    areaValue->setValue(m_meshPropertyModel->area());
 
-  setScale(values.minCoeff(), values.maxCoeff());
+    globularityValue->setValue(m_meshPropertyModel->globularity());
+    asphericityValue->setValue(m_meshPropertyModel->asphericity());
 
-  setUnitLabels("units");
-  setSelectedPropertyValue(0.0);
+    enableFingerprintButton(m_meshPropertyModel->isFingerprintable());
+    enableTransparencyCheckBox->setChecked(m_meshPropertyModel->isTransparent());
+    qDebug() << "Finished onMeshModelUpdate";
 
 }
 
@@ -130,91 +125,13 @@ void ChildPropertyController::setUnitLabels(QString units) {
 void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
     showSurfaceTabs(true);
     showWavefunctionTabs(false);
-    bool enableController = false;
-    bool enableControls = false;
-    bool enableFingerprint = false;
 
-    float volume = 0.0;
-    float area = 0.0;
-    float globularity = 0.0;
-    float asphericity = 0.0;
-    bool transparent = false;
-
-    if (mesh) {
-	enableController = true;
-	enableControls = true;
-	enableFingerprint = false; //surface->isFingerprintable();
-
-	volume = mesh->volume();
-	area = mesh->surfaceArea();
-	globularity = mesh->globularity();
-	asphericity = mesh->asphericity();
-	transparent = mesh->isTransparent();
-	if (!mesh->availableVertexProperties().isEmpty()) {
-	    // TODO change default property based on surface type
-	    // Optionally, set the first item as selected in your comboBox
-	    surfacePropertyComboBox->setCurrentIndex(0);
-
-	    // Manually trigger the property info update for the initial selection
-	    Mesh::ScalarPropertyValues initialValues = mesh->vertexProperty(mesh->availableVertexProperties().first());
-	    setMeshPropertyInfo(initialValues);
-	}
-    }
-
-    // Enable widgets
-    setEnabled(enableController);
-    enableSurfaceControls(enableControls);
-    enableFingerprintButton(enableFingerprint);
-    enableTransparencyCheckBox->setChecked(transparent);
-
-    // Update surface info
-    setSurfaceInfo(volume, area, globularity, asphericity);
     m_meshPropertyModel->setMesh(mesh);
 }
 
 void ChildPropertyController::setCurrentMeshInstance(MeshInstance *mi) {
     showSurfaceTabs(true);
     showWavefunctionTabs(false);
-    bool enableController = false;
-    bool enableControls = false;
-    bool enableFingerprint = false;
-
-    float volume = 0.0;
-    float area = 0.0;
-    float globularity = 0.0;
-    float asphericity = 0.0;
-    bool transparent = false;
-
-    if (mi && mi->mesh()) {
-	auto * mesh = mi->mesh();
-	enableController = true;
-	enableControls = true;
-	enableFingerprint = false; //surface->isFingerprintable();
-
-	volume = mesh->volume();
-	area = mesh->surfaceArea();
-	globularity = mesh->globularity();
-	asphericity = mesh->asphericity();
-	transparent = mesh->isTransparent();
-	if (!mesh->availableVertexProperties().isEmpty()) {
-	    // TODO change default property based on surface type
-	    // Optionally, set the first item as selected in your comboBox
-	    surfacePropertyComboBox->setCurrentIndex(0);
-
-	    // Manually trigger the property info update for the initial selection
-	    Mesh::ScalarPropertyValues initialValues = mesh->vertexProperty(mesh->availableVertexProperties().first());
-	    setMeshPropertyInfo(initialValues);
-	}
-    }
-
-    // Enable widgets
-    setEnabled(enableController);
-    enableSurfaceControls(enableControls);
-    enableFingerprintButton(enableFingerprint);
-    enableTransparencyCheckBox->setChecked(transparent);
-
-    // Update surface info
-    setSurfaceInfo(volume, area, globularity, asphericity);
     m_meshPropertyModel->setMeshInstance(mi);
 }
 
@@ -240,10 +157,30 @@ void ChildPropertyController::onSurfaceTransparencyChange(bool transparent) {
     m_meshPropertyModel->setTransparent(transparent);
 }
 
-void ChildPropertyController::onPropertySelectionChanged(int propertyIndex) {
-    if (propertyIndex < 0) return;
-    m_meshPropertyModel->setSelectedProperty(propertyIndex);
-    setMeshPropertyInfo(m_meshPropertyModel->getPropertyValuesAtIndex(propertyIndex));
+void ChildPropertyController::onComboBoxPropertySelectionChanged(QString property) {
+    m_meshPropertyModel->setSelectedProperty(property);
+}
+
+void ChildPropertyController::onModelPropertySelectionChanged(QString property) {
+    surfacePropertyComboBox->blockSignals(true);
+    surfacePropertyComboBox->setCurrentText(property);
+    surfacePropertyComboBox->blockSignals(false);
+
+    surfacePropertyComboBox2->blockSignals(true);
+    surfacePropertyComboBox2->setCurrentText(property);
+    surfacePropertyComboBox2->blockSignals(false);
+
+    const auto &stats = m_meshPropertyModel->getSelectedPropertyStatistics();
+    const auto &range = m_meshPropertyModel->getSelectedPropertyRange();
+
+    minPropValue->setValue(stats.lower);
+    meanPropValue->setValue(stats.mean);
+    maxPropValue->setValue(stats.upper);
+    setScale(range.lower, range.upper);
+
+    setUnitLabels("units");
+    setSelectedPropertyValue(0.0);
+
 }
 
 void ChildPropertyController::enableFingerprintButton(bool enable) {

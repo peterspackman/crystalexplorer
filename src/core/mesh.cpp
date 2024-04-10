@@ -243,12 +243,9 @@ bool Mesh::isTransparent() const {
 void Mesh::setTransparent(bool transparent) {
     if(transparent == m_transparent) return;
     m_transparent = transparent;
-    {
-	QSignalBlocker blocker(this);
-	for(auto * child: children()) {
-	    auto * instance = qobject_cast<MeshInstance *>(child);
-	    if(instance) instance->setTransparent(m_visible);
-	}
+    for(auto * child: children()) {
+	auto * instance = qobject_cast<MeshInstance *>(child);
+	if(instance) instance->setTransparent(m_transparent);
     }
 
     emit transparencyChanged();
@@ -259,17 +256,15 @@ bool Mesh::isVisible() const {
 }
 
 void Mesh::setVisible(bool visible) {
-    if (m_visible != visible) {
-	m_visible = visible;
-	{
-	    QSignalBlocker blocker(this);
-	    for(auto * child: children()) {
-		auto * instance = qobject_cast<MeshInstance *>(child);
-		if(instance) instance->setVisible(m_visible);
-	    }
+    if (m_visible == visible) return;
+    m_visible = visible;
+    {
+	for(auto * child: children()) {
+	    auto * instance = qobject_cast<MeshInstance *>(child);
+	    if(instance) instance->setVisible(m_visible);
 	}
-	emit visibilityChanged();
     }
+    emit visibilityChanged();
 }
 
 const QString &Mesh::getSelectedProperty() const {
@@ -280,9 +275,10 @@ bool Mesh::setSelectedProperty(const QString &propName) {
     if(m_selectedProperty == propName) return true;
     if(m_vertexProperties.find(propName) == m_vertexProperties.end()) return false;
 
+    qDebug() << "Called mesh.setSelectedProperty" << propName;
+
     m_selectedProperty = propName;
     {
-	QSignalBlocker blocker(this);
 	for(auto * child: children()) {
 	    auto * instance = qobject_cast<MeshInstance *>(child);
 	    if(instance) instance->setSelectedProperty(m_selectedProperty);

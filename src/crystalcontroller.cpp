@@ -74,35 +74,34 @@ void CrystalController::structureViewClicked(const QModelIndex &index) {
 void CrystalController::onStructureViewSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected) {
     Q_UNUSED(deselected);
 
-    qDebug() << "structureViewSelectionChanged";
-    if (!selected.indexes().isEmpty()) {
-        int selectedRow = selected.indexes().first().row();
-        emit childSelectionChanged(selectedRow);
+    QModelIndex currentIndex = structureTreeView->selectionModel()->currentIndex();
+    if (currentIndex.isValid()) {
+	// You now have the selected index. You can emit a signal or perform actions based on this.
+	emit childSelectionChanged(currentIndex);
     }
 }
 
 template<typename T>
-T* maybeCastChild(int rowIndex, QAbstractItemModel *model) {
+T* maybeCastChild(const QModelIndex &index, QAbstractItemModel *model) {
+    if (!index.isValid()) return nullptr;
+
     ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(model);
     if (!structure) return nullptr;
-
-    QModelIndex index = structure->index(rowIndex, 0);
-    if (!index.isValid()) return nullptr;
 
     QObject* item = static_cast<QObject*>(index.internalPointer());
     return qobject_cast<T*>(item);
 }
 
-Mesh* CrystalController::getChildMesh(int rowIndex) const {
-    return maybeCastChild<Mesh>(rowIndex, structureTreeView->model());
+Mesh* CrystalController::getChildMesh(const QModelIndex &index) const {
+    return maybeCastChild<Mesh>(index, structureTreeView->model());
 }
 
-MolecularWavefunction* CrystalController::getChildWavefunction(int rowIndex) const {
-    return maybeCastChild<MolecularWavefunction>(rowIndex, structureTreeView->model());
+MolecularWavefunction* CrystalController::getChildWavefunction(const QModelIndex &index) const {
+    return maybeCastChild<MolecularWavefunction>(index, structureTreeView->model());
 }
 
-MeshInstance* CrystalController::getChildMeshInstance(int rowIndex) const {
-    return maybeCastChild<MeshInstance>(rowIndex, structureTreeView->model());
+MeshInstance* CrystalController::getChildMeshInstance(const QModelIndex &index) const {
+    return maybeCastChild<MeshInstance>(index, structureTreeView->model());
 }
 
 bool CrystalController::eventFilter(QObject *obj, QEvent *event) {

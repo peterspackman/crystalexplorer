@@ -127,6 +127,7 @@ void ChemicalStructureRenderer::updateBonds() {
 
 void ChemicalStructureRenderer::updateMeshes() {
     m_meshesNeedsUpdate = true;
+    emit meshesChanged();
 }
 
 void ChemicalStructureRenderer::handleAtomsUpdate() {
@@ -372,13 +373,14 @@ quint32 ChemicalStructureRenderer::addMeshInstanceToMeshRenderer(MeshInstance *m
 void ChemicalStructureRenderer::handleMeshesUpdate() {
     if(!m_meshesNeedsUpdate) return;
     qDebug() << "HandleMeshes update called (needs update)";
+    m_instanceRenderer->beginUpdates();
+    m_instanceRenderer->clear();
     m_meshIndexToMesh.clear();
     m_meshRenderer->clear();
     m_pointCloudRenderer->clear();
     for(auto * child: m_structure->children()) {
 	auto* mesh = qobject_cast<Mesh*>(child);
-	if(!mesh || !mesh->isVisible()) continue;
-	m_instanceRenderer->beginUpdates();
+	if(!mesh) continue;
 	m_instanceRenderer->setMesh(mesh);
 	if(mesh->numberOfFaces() == 0) {
 	    m_pointCloudRenderer->addPoints(
@@ -386,22 +388,26 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
 		    );
 	}
 	else {
+	    const auto &availableProperties = m_instanceRenderer->availableProperties();
 	    for(auto * meshChild: child->children()) {
 		auto* meshInstance = qobject_cast<MeshInstance*>(meshChild);
 		if(!meshInstance || !meshInstance->isVisible()) continue;
+
+		int propertyIndex = availableProperties.indexOf(meshInstance->getSelectedProperty());
+		float alpha = meshInstance->isTransparent() ? 0.9 : 1.0;
+		qDebug() << "Property index:" << propertyIndex;
+		qDebug() << "alpha:" << alpha;
+
 		MeshInstanceVertex v(
 		    meshInstance->translationVector(), meshInstance->rotationMatrix(),
-		    QVector3D()
+		    QVector3D(), propertyIndex, alpha
 		);
 		m_instanceRenderer->addInstance(v);
-		auto * renderer = meshInstance->isTransparent() ? m_transparentMeshRenderer : m_meshRenderer;
-		quint32 selectionid = addMeshInstanceToMeshRenderer(meshInstance, renderer, m_selectionHandler);
 	    }
 	}
-	m_instanceRenderer->endUpdates();
     }
+    m_instanceRenderer->endUpdates();
     m_meshesNeedsUpdate = false;
-    emit meshesChanged();
 }
 
 

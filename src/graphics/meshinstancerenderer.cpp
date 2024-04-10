@@ -68,6 +68,7 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) : QOpenGLExtraFunctions(
   m_program->enableAttributeArray(5);
   m_program->enableAttributeArray(6);
   m_program->enableAttributeArray(7);
+  m_program->enableAttributeArray(8);
 
   m_program->setAttributeBuffer(
       2, GL_FLOAT, MeshInstanceVertex::translationOffset(),
@@ -86,15 +87,21 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh * mesh) : QOpenGLExtraFunctions(
                                 MeshInstanceVertex::stride());
   this->glVertexAttribDivisor(5, 1);
 
-  // matrix takes up 3 attribute locations
   m_program->setAttributeBuffer(6, GL_FLOAT, MeshInstanceVertex::selectionIdOffset(),
                                 MeshInstanceVertex::SelectionIdSize,
                                 MeshInstanceVertex::stride());
   this->glVertexAttribDivisor(6, 1);
+
   m_program->setAttributeBuffer(
-      7, GL_FLOAT, MeshInstanceVertex::alphaOffset(),
-      MeshInstanceVertex::AlphaSize, MeshInstanceVertex::stride());
+      7, GL_INT, MeshInstanceVertex::propertyIndexOffset(),
+      MeshInstanceVertex::PropertyIndexSize, MeshInstanceVertex::stride());
   this->glVertexAttribDivisor(7, 1);
+
+  m_program->setAttributeBuffer(
+      8, GL_FLOAT, MeshInstanceVertex::alphaOffset(),
+      MeshInstanceVertex::AlphaSize, MeshInstanceVertex::stride());
+  this->glVertexAttribDivisor(8, 1);
+
   // Release (unbind) all
   m_instance.release();
   m_index.release();
@@ -122,6 +129,7 @@ void MeshInstanceRenderer::setMesh(Mesh * mesh) {
       temp.push_back(normals(1, i));
       temp.push_back(normals(2, i));
   }
+  m_numVertices = vertices.cols();
 
   std::vector<GLuint> temp_faces;
   temp_faces.reserve(faces.size());
@@ -139,10 +147,8 @@ void MeshInstanceRenderer::setMesh(Mesh * mesh) {
   {
       m_vertexPropertyBuffer.bind();
       std::vector<float> propertyData;
-      auto availableProperties = mesh->availableVertexProperties();
-      qDebug() << "Available properties: " << availableProperties;
-      for(const auto &prop: availableProperties) {
-	  if(prop == "None") continue;
+      m_availableProperties = mesh->availableVertexProperties();
+      for(const auto &prop: m_availableProperties) {
 
 	  const auto &vals = mesh->vertexProperty(prop);
           auto range = mesh->vertexPropertyRange(prop);
@@ -196,6 +202,7 @@ void MeshInstanceRenderer::clear() {
 void MeshInstanceRenderer::draw() {
   // After linking the program and before rendering
   m_program->setUniformValue("u_propertyBuffer", 0);
+  m_program->setUniformValue("u_numVertices", m_numVertices);
   m_vertexPropertyTexture->bind();
  
   this->glDrawElementsInstanced(DrawType, m_numIndices, IndexType, 0, static_cast<int>(m_instances.size()));
