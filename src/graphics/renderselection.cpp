@@ -34,6 +34,7 @@ generate_random_id(SelectionType selectionType = SelectionType::Atom) {
 inline quint32 getBaseMeshIdentifier(quint32 id) {
   return id & 0xFFFF0000; // set right 16 bits to 0;
 }
+
 inline QString id_type_string(IdentifierType t) {
     switch(t) {
 	case IdentifierType::Atom:

@@ -13,10 +13,6 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
     m_ellipsoidRenderer = new EllipsoidRenderer();
     m_cylinderRenderer = new CylinderRenderer();
     m_lineRenderer = new LineRenderer();
-    m_meshRenderer = new MeshRenderer();
-    m_instanceRenderer = new MeshInstanceRenderer();
-    m_transparentMeshRenderer = new MeshRenderer();
-    m_transparentMeshRenderer->setAlpha(0.8);
     m_pointCloudRenderer = new PointCloudRenderer();
     connect(m_structure, &ChemicalStructure::childAdded,
 	    this, &ChemicalStructureRenderer::childAddedToStructure);
@@ -224,16 +220,12 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
 
 
 void ChemicalStructureRenderer::beginUpdates() {
-    m_meshRenderer->beginUpdates();
-    m_transparentMeshRenderer->beginUpdates();
     m_lineRenderer->beginUpdates();
     m_cylinderRenderer->beginUpdates();
     m_ellipsoidRenderer->beginUpdates();
 }
 
 void ChemicalStructureRenderer::endUpdates() {
-    m_meshRenderer->endUpdates();
-    m_transparentMeshRenderer->endUpdates();
     m_lineRenderer->endUpdates();
     m_cylinderRenderer->endUpdates();
     m_ellipsoidRenderer->endUpdates();
@@ -263,28 +255,18 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_lineRenderer->draw();
     m_lineRenderer->release();
 
-    /*
-    m_meshRenderer->bind();
-    m_uniforms.apply(m_meshRenderer);
-    m_meshRenderer->draw();
-    m_meshRenderer->release();
-    */
-
     handleMeshesUpdate();
-    m_instanceRenderer->bind();
-    m_uniforms.apply(m_instanceRenderer);
-    m_instanceRenderer->draw();
-    m_instanceRenderer->release();
+    for(auto * meshRenderer: m_meshRenderers) {
+	meshRenderer->bind();
+	m_uniforms.apply(meshRenderer);
+	meshRenderer->draw();
+	meshRenderer->release();
+    }
 
     m_pointCloudRenderer->bind();
     m_uniforms.apply(m_pointCloudRenderer);
     m_pointCloudRenderer->draw();
     m_pointCloudRenderer->release();
-
-    m_transparentMeshRenderer->bind();
-    m_uniforms.apply(m_transparentMeshRenderer);
-    m_transparentMeshRenderer->draw();
-    m_transparentMeshRenderer->release();
 
     if(forPicking) {
 	m_uniforms.u_renderMode = storedRenderMode;
@@ -296,117 +278,58 @@ void ChemicalStructureRenderer::updateRendererUniforms(const RendererUniforms &u
     m_uniforms = uniforms;
 }
 
-
-quint32 ChemicalStructureRenderer::addMeshInstanceToMeshRenderer(MeshInstance *meshInstance, MeshRenderer *meshRenderer, RenderSelection * selectionHandler) {
-    auto *mesh = meshInstance->mesh();
-    if(!mesh) return 0;
-    std::vector<MeshVertex> vertices;
-    std::vector<MeshRenderer::IndexTuple> indices;
-    auto verts = meshInstance->vertices();
-    auto vertexNormals = meshInstance->vertexNormals();
-    qDebug() << "Verts.size:" << verts.cols();
-    Eigen::Vector3d centroid = verts.rowwise().mean();
-    qDebug() << "Centroid:" << centroid(0) << centroid(1) << centroid(2);
-    qDebug() << "normals.size:" << vertexNormals.cols();
-    const auto &faces = mesh->faces();
-    bool haveVertexNormals = mesh->haveVertexNormals();
-    qDebug() << "Have vertex normals" << haveVertexNormals;
-
-    quint32 selectionId{0};
-    QVector3D selectionIdColor;
-    if(selectionHandler) {
-	selectionId = selectionHandler->add(SelectionType::Surface, m_meshIndexToMesh.size());
-	selectionIdColor = selectionHandler->getColorFromId(selectionId);
-	m_meshIndexToMesh.push_back(meshInstance);
+void ChemicalStructureRenderer::clearMeshRenderers() {
+    for(auto * r : m_meshRenderers) {
+	delete r;
     }
-
-    Mesh::ScalarPropertyValues prop;
-    QString propertyName = meshInstance->getSelectedProperty();
-    auto availableProperties = mesh->availableVertexProperties();
-    qDebug() << "Available vertex properties: " << availableProperties;
-    Mesh::ScalarPropertyRange range;
-    if(availableProperties.size() > 1) {
-	prop = mesh->vertexProperty(propertyName);
-	range = mesh->vertexPropertyRange(propertyName);
-    }
-    else {
-	prop = Mesh::ScalarPropertyValues::Zero(verts.cols());
-    }
-
-    ColorMapFunc cmap(m_propertyColorMaps.value(propertyName, ColorMapName::Viridis), range.lower, range.upper);
-
-    for (int i = 0; i < mesh->numberOfVertices(); i++) {
-	quint32 vertex_id = selectionId + i;
-	QVector3D selectionColor;
-	if(selectionHandler) {
-	    selectionColor = selectionHandler->getColorFromId(vertex_id);
-	}
-	QVector3D position(verts(0, i), verts(1, i), verts(2, i));
-
-	QColor color = cmap(prop(i));
-	QVector3D colorVec(color.redF(), color.greenF(), color.blueF());
-
-	QVector3D normal(0.0f, 0.0f, 0.0f);
-	if(haveVertexNormals) {
-	    normal = QVector3D(
-		vertexNormals(0, i),
-		vertexNormals(1, i),
-		vertexNormals(2, i)
-	    );
-	}
-	vertices.emplace_back(position, normal, colorVec, selectionColor);
-    }
-    for (int f = 0; f < mesh->numberOfFaces(); f++) {
-	indices.emplace_back(
-	    MeshRenderer::IndexTuple{
-		static_cast<GLuint>(faces(0, f)),
-		static_cast<GLuint>(faces(1, f)),
-		static_cast<GLuint>(faces(2, f))
-	    }
-	);
-    }
-    meshRenderer->addMesh(vertices, indices);
-    qDebug() << "Added mesh" << selectionId;
-    return selectionId;
+    m_meshRenderers.clear();
 }
 
 void ChemicalStructureRenderer::handleMeshesUpdate() {
     if(!m_meshesNeedsUpdate) return;
     qDebug() << "HandleMeshes update called (needs update)";
-    m_instanceRenderer->beginUpdates();
-    m_instanceRenderer->clear();
+    m_meshRenderers.clear();
     m_meshIndexToMesh.clear();
-    m_meshRenderer->clear();
     m_pointCloudRenderer->clear();
     for(auto * child: m_structure->children()) {
 	auto* mesh = qobject_cast<Mesh*>(child);
 	if(!mesh) continue;
-	m_instanceRenderer->setMesh(mesh);
 	if(mesh->numberOfFaces() == 0) {
 	    m_pointCloudRenderer->addPoints(
 		    cx::graphics::makePointCloudVertices(*mesh)
 		    );
 	}
 	else {
-	    const auto &availableProperties = m_instanceRenderer->availableProperties();
+	    MeshInstanceRenderer * instanceRenderer = new MeshInstanceRenderer(mesh);
+	    instanceRenderer->beginUpdates();
+	    const auto &availableProperties = instanceRenderer->availableProperties();
 	    for(auto * meshChild: child->children()) {
 		auto* meshInstance = qobject_cast<MeshInstance*>(meshChild);
 		if(!meshInstance || !meshInstance->isVisible()) continue;
 
 		int propertyIndex = availableProperties.indexOf(meshInstance->getSelectedProperty());
-		float alpha = meshInstance->isTransparent() ? 0.9 : 1.0;
-		qDebug() << "Property index:" << propertyIndex;
-		qDebug() << "alpha:" << alpha;
+		// TODO transparency
+		float alpha = meshInstance->isTransparent() ? 0.8 : 1.0;
+
+		QVector3D selectionColor;
+
+		if(m_selectionHandler) {
+		    auto selectionId = m_selectionHandler->add(SelectionType::Surface, m_meshIndexToMesh.size());
+		    m_meshIndexToMesh.push_back(meshInstance);
+		    selectionColor = m_selectionHandler->getColorFromId(selectionId);
+		}
 
 		MeshInstanceVertex v(
 		    meshInstance->translationVector(), meshInstance->rotationMatrix(),
-		    QVector3D(), propertyIndex, alpha
+		    selectionColor, propertyIndex, alpha
 		);
-		m_instanceRenderer->addInstance(v);
+		instanceRenderer->addInstance(v);
 	    }
+	    instanceRenderer->endUpdates();
+	    mesh->setRendererIndex(m_meshRenderers.size());
+	    m_meshRenderers.push_back(instanceRenderer);
 	}
     }
-    m_instanceRenderer->endUpdates();
     m_meshesNeedsUpdate = false;
 }
 

@@ -135,8 +135,6 @@ void MeshPropertyModel::setSelectedPropertyRange(Mesh::ScalarPropertyRange range
 void MeshPropertyModel::setSelectedProperty(QString propertyName) {
     if (!(m_mesh || m_meshInstance)) return;
 
-    qDebug() << "mesh:" << m_mesh << "meshInstance:" << m_meshInstance;
-
     if(m_meshInstance) {
 	m_meshInstance->setSelectedProperty(propertyName);
     }
@@ -155,11 +153,9 @@ bool MeshPropertyModel::isTransparent() const {
 void MeshPropertyModel::setTransparent(bool transparent) {
     if (!m_mesh) return;
     if(m_meshInstance) {
-	qDebug() << "Setting mesh instance to transparent:" << transparent;
 	m_meshInstance->setTransparent(transparent);
     }
     else {
-	qDebug() << "Setting mesh to transparent" << transparent;
 	m_mesh->setTransparent(transparent);
     }
 }

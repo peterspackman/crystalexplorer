@@ -75,8 +75,8 @@ private:
     void handleBondsUpdate();
     void handleInteractionsUpdate();
     void handleMeshesUpdate();
-    // helper method
-    quint32 addMeshInstanceToMeshRenderer(MeshInstance *mesh, MeshRenderer *meshRenderer, RenderSelection * selectionHandler = nullptr);
+
+    void clearMeshRenderers();
 
     [[nodiscard]] bool shouldSkipAtom(int idx) const;
 
@@ -98,9 +98,7 @@ private:
     LineRenderer * m_lineRenderer{nullptr};
     EllipsoidRenderer * m_ellipsoidRenderer{nullptr};
     CylinderRenderer * m_cylinderRenderer{nullptr};
-    MeshInstanceRenderer *m_instanceRenderer{nullptr};
-    MeshRenderer *m_transparentMeshRenderer{nullptr};
-    MeshRenderer *m_meshRenderer{nullptr};
+    std::vector<MeshInstanceRenderer *> m_meshRenderers;
     PointCloudRenderer *m_pointCloudRenderer{nullptr};
 
     ChemicalStructure * m_structure{nullptr};

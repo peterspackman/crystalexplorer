@@ -108,7 +108,6 @@ void Mesh::updateAsphericity() {
     const int N = numberOfVertices();
 
     Eigen::Vector3d centroid = m_vertices.rowwise().mean();
-    fmt::print("Centroid\n{} {} {}\n", centroid(0), centroid(1), centroid(2));
 
     double xx, xy, xz, yy, yz, zz;
     xx = xy = xz = yy = yz = zz = 0.0;
@@ -142,7 +141,6 @@ void Mesh::updateAsphericity() {
 	second_term += e(i);
     }
     m_asphericity = (0.25 * first_term) / (second_term * second_term);
-    qDebug() << "asphericity" << m_asphericity;
 }
 
 double Mesh::surfaceArea() const {
@@ -188,7 +186,6 @@ const ScalarPropertyValues &Mesh::vertexProperty(const QString &name) const {
 }
 
 void Mesh::setVertexPropertyRange(const QString &name, Mesh::ScalarPropertyRange range) {
-    qDebug() << "Called mesh.setVertexPropertyRange" << name;
     m_vertexPropertyRanges[name] = range;
     emit selectedPropertyChanged();
 }
@@ -282,8 +279,6 @@ bool Mesh::setSelectedProperty(const QString &propName) {
     if(m_selectedProperty == propName) return true;
     if(m_vertexProperties.find(propName) == m_vertexProperties.end()) return false;
 
-    qDebug() << "Called mesh.setSelectedProperty" << propName;
-
     m_selectedProperty = propName;
     {
 	for(auto * child: children()) {
@@ -340,5 +335,14 @@ Mesh *Mesh::newFromJson(const QJsonObject &object, QObject *parent) {
   }
 
   return pointCloud;
+}
+
+
+size_t Mesh::rendererIndex() const {
+    return m_rendererIndex;
+}
+
+void Mesh::setRendererIndex(size_t idx) {
+    m_rendererIndex = idx;
 }
 

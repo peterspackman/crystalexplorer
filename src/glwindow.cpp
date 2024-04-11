@@ -1352,6 +1352,7 @@ QColor GLWindow::pickObjectAt(QPoint pos) {
                   1.0f); // Nothing to select if we haven't got a crystal
   }
   m_pickingImage = renderToImage(1, true);
+  m_pickingImage.save("picking.png");
 
   const bool needDevicePixelRatio{false};
   int factor = 1;

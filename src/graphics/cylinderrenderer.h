@@ -35,7 +35,7 @@ public:
   constexpr inline const auto &colorA() const { return m_colorA; }
   constexpr inline const auto &colorB() const { return m_colorB; }
   constexpr inline const auto &selectionIdA() const { return m_selection_idA; }
-  constexpr inline const auto &selectionIdB() const { return m_selection_idA; }
+  constexpr inline const auto &selectionIdB() const { return m_selection_idB; }
 
   constexpr inline void setRadius(float radius) { m_radius = radius; }
   constexpr inline void setA(const QVector3D &a) { m_a = a; }

@@ -100,6 +100,9 @@ public:
     [[nodiscard]] bool isTransparent() const;
     void setTransparent(bool);
 
+    size_t rendererIndex() const;
+    void setRendererIndex(size_t idx);
+
 signals:
     void visibilityChanged();
     void transparencyChanged();
@@ -129,6 +132,7 @@ private:
     ScalarProperties m_faceProperties;
 
     bool m_transparent{false};
+    size_t m_rendererIndex{0};
 
     QString m_selectedProperty;
     ScalarPropertyValues m_emptyProperty;

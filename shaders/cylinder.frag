@@ -6,7 +6,8 @@ in vec4 v_colorB;
 in vec3 v_normal;
 in vec3 v_position;
 in vec3 v_cylinderPosition;
-flat in vec4 v_selection_id;
+flat in vec4 v_selection_idA;
+flat in vec4 v_selection_idB;
 flat in int v_selectedA;
 flat in int v_selectedB;
 out vec4 f_color;
@@ -48,7 +49,12 @@ float sphOcclusion( in vec3 pos, in vec3 nor, in vec4 sph )
 void main()
 {
     if(u_renderMode == 0) {
-        f_color = v_selection_id;
+        if(v_cylinderPosition.z < 0) {
+            f_color = v_selection_idA;
+        }
+        else {
+            f_color = v_selection_idB;
+        }
     }
     else if(u_renderMode == 1) {
         vec4 color;

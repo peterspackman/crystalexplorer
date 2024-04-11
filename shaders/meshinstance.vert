@@ -1,5 +1,4 @@
 #version 330
-
 layout(location = 0) in highp vec3 position;
 layout(location = 1) in highp vec3 normal;
 layout(location = 2) in highp vec3 translation;
@@ -19,16 +18,22 @@ uniform mat4 u_modelViewProjectionMat;
 uniform int u_numVertices;
 uniform samplerBuffer u_propertyBuffer;
 
+// for id_to_color etc.
+#include "selection.glsl"
+
 void main()
 {
   v_selected = 0;
   v_normal = rotation * normal;
   v_position = rotation * position + translation;
 
+  uint mesh_id = color_to_id(selection_id);
+  uint vertex_id = mesh_id + uint(gl_VertexID);
+
   int offset = u_numVertices * property_index + gl_VertexID;
   vec4 color = texelFetch(u_propertyBuffer, offset);
 
   v_color = vec4(color.rgb, alpha);
-  v_selection_id = vec4(selection_id, 1.0);
+  v_selection_id = vec4(id_to_color(vertex_id), 1.0);
   gl_Position = u_modelViewProjectionMat * vec4(v_position, 1.0);
 }
