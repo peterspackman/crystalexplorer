@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 #include "isosurface_parameters.h"
 #include <ankerl/unordered_dense.h>
+#include "generic_atom_index.h"
 
 
 class Mesh : public QObject {
@@ -103,6 +104,9 @@ public:
     size_t rendererIndex() const;
     void setRendererIndex(size_t idx);
 
+    void setAtoms(const std::vector<GenericAtomIndex> &idxs);
+    [[nodiscard]] const std::vector<GenericAtomIndex> & atoms() const;
+
 signals:
     void visibilityChanged();
     void transparencyChanged();
@@ -126,6 +130,8 @@ private:
     ScalarPropertyValues m_faceVolumeContributions;
 
     std::vector<std::vector<int>> m_facesUsingVertex;
+
+    std::vector<GenericAtomIndex> m_atoms;
 
     ScalarProperties m_vertexProperties;
     ScalarPropertyRanges m_vertexPropertyRanges;

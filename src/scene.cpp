@@ -523,9 +523,11 @@ bool Scene::processSelectionForInformation(const QColor &color) {
 
 bool Scene::processSelectionSingleClick(const QColor &color) {
     m_selection = m_selectionHandler->getSelectionFromColor(color);
+    qDebug() << "Process selection single click:" << color;
 
     switch (m_selection.type) {
     case SelectionType::Atom: {
+    qDebug() << "Selection type: Atom";
     size_t atom_idx = m_selection.index;
     if (m_periodicity == ScenePeriodicity::ThreeDimensions) {
       auto &atoms = crystal()->atoms();
@@ -551,8 +553,10 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
       }
     }
     return true;
+    break;
     }
   case SelectionType::Bond: {
+    qDebug() << "Selection type: Bond";
     size_t bond_idx = m_selection.index;
     if (m_periodicity == ScenePeriodicity::ThreeDimensions) {
       auto &atoms = crystal()->atoms();
@@ -583,27 +587,30 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
       emit atomSelectionChanged();
       m_atomsNeedUpdate = true;
     }
-    return true ;
+    return true;
+    break;
   }
   case SelectionType::Surface: {
+    qDebug() << "Selection type: Surface";
     size_t surfaceIndex = m_selection.index;
-    emit surfaceSelected(surfaceIndex);
+    qDebug() << "Surface index clicked:" << surfaceIndex;
+    MeshInstance * meshInstance = m_structureRenderer->getMeshInstance(m_selection.index);
 
-    Surface *surface = surfaceHandler()->surfaceFromIndex(surfaceIndex);
-    if (!surface)
+    if (!meshInstance)
       break;
-    // update the selection value for the surface property
-    float propertyValueAtVertex =
-        surface->valueForCurrentPropertyAtVertex(m_selection.secondaryIndex);
-    emit currentSurfaceFaceSelected(propertyValueAtVertex);
 
-    // unmask faces of surfaces if necessary
-    if (surface->hasMaskedFaces()) {
-      surface->resetMaskedFaces();
-    }
+    emit clickedSurface(m_structure->indexFromObject(meshInstance));
+
+    float propertyValue = meshInstance->valueForSelectedPropertyAt(m_selection.secondaryIndex);
+    emit clickedSurfacePropertyValue(propertyValue);
+
     return true;
+    break;
   }
-  default: break;
+  default: {
+    qDebug() << "Selection type: None";
+    break;
+  }
   }
   return false;
 }
@@ -761,21 +768,23 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
                             positions.col(atomsForBond.second));
       result = QVector4D(pos.x(), pos.y(), pos.z(), bond_idx);
     }
+    break;
   }
   case SelectionType::Surface: {
     size_t surfaceIndex = m_selection.index;
     if(m_structureRenderer) {
-	auto * mesh = m_structureRenderer->getMesh(surfaceIndex);
-	qDebug() << "Found mesh:" << mesh;
-	if(!mesh) break;
+	auto * meshInstance = m_structureRenderer->getMeshInstance(surfaceIndex);
+	qDebug() << "Found meshInstance:" << meshInstance;
+	if(!meshInstance) break;
     }
     else {
 	Surface *surface = surfaceHandler()->surfaceFromIndex(surfaceIndex);
 	qDebug() << "Found surface:" << surface;
 	if (!surface)
-	  break;
 	result = QVector4D(surface->vertices()[m_selection.secondaryIndex], surfaceIndex);
+	break;
     }
+    break;
   }
   default:
     break;
@@ -1900,7 +1909,6 @@ void Scene::updateAtomsForDrawing() {
     m_renderers["spheres"] = new SphereImpostorRenderer();
   } else {
     m_renderers["spheres"]->clear();
-    m_selectionHandler->clear(SelectionType::Atom);
   }
   m_ellipsoidRenderer->beginUpdates();
   m_renderers["spheres"]->beginUpdates();
@@ -1973,7 +1981,6 @@ void Scene::updateBondsForDrawing() {
     m_cylinderImpostorRenderer = new CylinderImpostorRenderer();
     m_meshCylinderRenderer = new CylinderRenderer();
   } else {
-    m_selectionHandler->clear(SelectionType::Bond);
     m_cylinderImpostorRenderer->clear();
     m_meshCylinderRenderer->clear();
   }
@@ -2001,7 +2008,6 @@ void Scene::updateBondsForDrawing() {
 void Scene::updateMeshesForDrawing() {
   if (!m_surfacesNeedUpdate)
     return;
-  m_selectionHandler->clear(SelectionType::Surface);
 
   if (m_faceHighlights == nullptr) {
     m_faceHighlights = new LineRenderer();

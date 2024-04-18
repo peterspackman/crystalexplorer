@@ -1,11 +1,11 @@
 #version 330
-layout(location = 0) in highp vec3 position;
-layout(location = 1) in highp vec3 normal;
-layout(location = 2) in highp vec3 translation;
-layout(location = 3) in highp mat3 rotation;
-layout(location = 6) in highp vec3 selection_id;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec3 translation;
+layout(location = 3) in mat3 rotation;
+layout(location = 6) in vec3 selection_id;
 layout(location = 7) in int property_index;
-layout(location = 8) in highp float alpha;
+layout(location = 8) in float alpha;
 
 out highp vec4 v_color;
 out highp vec3 v_normal;
@@ -27,13 +27,15 @@ void main()
   v_normal = rotation * normal;
   v_position = rotation * position + translation;
 
-  uint mesh_id = color_to_id(selection_id);
-  uint vertex_id = mesh_id + uint(gl_VertexID);
+  uint mesh_id, vertex_id, type_id;
+  decodeVec3ToId(selection_id, type_id, mesh_id, vertex_id);
 
   int offset = u_numVertices * property_index + gl_VertexID;
   vec4 color = texelFetch(u_propertyBuffer, offset);
 
   v_color = vec4(color.rgb, alpha);
-  v_selection_id = vec4(id_to_color(vertex_id), 1.0);
+
+  v_selection_id = vec4(encodeIdToVec3(type_id, mesh_id, uint(gl_VertexID)), 1.0);
+
   gl_Position = u_modelViewProjectionMat * vec4(v_position, 1.0);
 }

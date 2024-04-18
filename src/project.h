@@ -118,6 +118,8 @@ signals:
   void currentCrystalReset();
   void currentCrystalViewChanged();
   void structureChanged();
+  void clickedSurface(QModelIndex);
+  void clickedSurfacePropertyValue(float);
 
 private:
   void init();

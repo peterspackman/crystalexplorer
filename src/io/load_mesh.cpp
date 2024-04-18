@@ -81,7 +81,8 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
         if (!file_stream || file_stream->fail()) throw std::runtime_error("file_stream failed to open " + filepathStd);
 
         file_stream->seekg(0, std::ios::end);
-        const float size_mb = file_stream->tellg() * float(1e-6);
+        const size_t file_size = file_stream->tellg();
+	qDebug() << "Read" << file_size << "bytes";
         file_stream->seekg(0, std::ios::beg);
 
         tinyply::PlyFile file;
@@ -158,15 +159,6 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 	// create a mesh instance
 	MeshInstance * instance = new MeshInstance(mesh);
 	instance->setObjectName("+ {x,y,z} [0,0,0]");
-
-	Eigen::Quaterniond q = Eigen::Quaterniond::UnitRandom();
-	MeshTransform transform = MeshTransform::Identity();
-	transform.rotate(q);
-	transform.translate(Eigen::Vector3d(10.0, 0.0, 0.0));
-
-	MeshInstance * instance2 = new MeshInstance(mesh, transform);
-	instance2->setObjectName("+ {x,y,z} [10.0,0,0]");
-
         return mesh;
 
     } catch (const std::exception& e) {

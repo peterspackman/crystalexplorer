@@ -2,6 +2,7 @@
 #include <QMatrix4x4>
 #include <QPair>
 #include <QtOpenGL>
+#include <QModelIndex>
 
 #include "deprecatedcrystal.h"
 #include "frameworkdescription.h"
@@ -350,8 +351,9 @@ public:
   void generateCells(QPair<QVector3D, QVector3D>);
 
 signals:
-  void surfaceSelected(int);
-  void currentSurfaceFaceSelected(float);
+  void clickedSurface(QModelIndex);
+  void clickedSurfacePropertyValue(float);
+
   void contactAtomExpanded();
   void surfaceVisibilityChanged();
   void viewChanged();

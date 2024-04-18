@@ -48,14 +48,15 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   m_structure = params.structure;
 
   QString filename, filename_outside;
+  m_atoms = {};
 
   if(params.kind == isosurface::Kind::Void) {
       filename = "crystal.cif";
   }
   else {
-      std::vector<int> idx = params.structure->atomIndicesWithFlags(AtomFlag::Selected);
-      occ::IVec nums = params.structure->atomicNumbers()(idx);
-      occ::Mat3N pos = params.structure->atomicPositions()(Eigen::all, idx);
+      m_atoms = params.structure->atomsWithFlags(AtomFlag::Selected);
+      occ::IVec nums = params.structure->atomicNumbersForIndices(m_atoms);
+      occ::Mat3N pos = params.structure->atomicPositionsForIndices(m_atoms);
 
       filename = "ce_surface_inside.xyz";
       filename_outside = "ce_surface_outside.xyz";
@@ -81,16 +82,17 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   surface_task->setProperty("isovalue", params.isovalue);
 
   auto taskId = m_taskManager->add(surface_task);
-  connect(surface_task, &Task::completed, [&, surfaceName]() {
-	this->surfaceComplete("surface.ply", surfaceName);
-  });
+  m_name = surfaceName;
+  m_filename = "surface.ply";
 
+  connect(surface_task, &Task::completed, this, &IsosurfaceCalculator::surfaceComplete);
 }
 
-void IsosurfaceCalculator::surfaceComplete(QString filename, QString name) {
-    qDebug() << "Task" << name << "finished in IsosurfaceCalculator";
-    Mesh * mesh = io::loadMesh(filename);
-    mesh->setObjectName(name);
+void IsosurfaceCalculator::surfaceComplete() {
+    qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
+    Mesh * mesh = io::loadMesh(m_filename);
+    mesh->setObjectName(m_name);
+    mesh->setAtoms(m_atoms);
     mesh->setParent(m_structure);
 }
 

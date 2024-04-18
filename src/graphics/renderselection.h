@@ -24,6 +24,7 @@ class RenderSelection: public QObject {
     Q_OBJECT
 public:
     using IdentifierIndexMap = ankerl::unordered_dense::map<quint32, int>;
+    using IndexIdentifierMap = ankerl::unordered_dense::map<int, quint32>;
 
     RenderSelection(QObject *parent = nullptr);
 
@@ -37,8 +38,13 @@ public:
 
 private:
     IdentifierIndexMap m_sphereToAtomIndex;
+    IndexIdentifierMap m_atomToSphereIndex;
+
     IdentifierIndexMap m_cylinderToBondIndex;
+    IndexIdentifierMap m_bondToCylinderIndex;
+
     IdentifierIndexMap m_meshToSurfaceIndex;
+    IndexIdentifierMap m_surfaceToMeshIndex;
 };
 
 }

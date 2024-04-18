@@ -20,22 +20,26 @@ QString MeshPropertyModel::getSelectedProperty() const {
 
 void MeshPropertyModel::setMeshInstance(MeshInstance *meshInstance) {
     if(m_meshInstance == meshInstance) return;
+    m_blockedWhileResetting = true;
     beginResetModel();
     m_mesh = meshInstance->mesh();
     m_meshInstance = meshInstance;
     QString prop = meshInstance->getSelectedProperty();
     endResetModel();
     setSelectedProperty(prop);
+    m_blockedWhileResetting = false;
 }
 
 void MeshPropertyModel::setMesh(Mesh* mesh) {
     if((m_mesh == mesh) && (!m_meshInstance)) return;
+    m_blockedWhileResetting = true;
     beginResetModel();
     m_mesh = mesh;
     m_meshInstance = nullptr; // not associated with a mesh instance
     QString prop = mesh->getSelectedProperty();
     endResetModel();
     setSelectedProperty(prop);
+    m_blockedWhileResetting = false;
 }
 
 int MeshPropertyModel::rowCount(const QModelIndex &parent) const {
@@ -134,6 +138,10 @@ void MeshPropertyModel::setSelectedPropertyRange(Mesh::ScalarPropertyRange range
 
 void MeshPropertyModel::setSelectedProperty(QString propertyName) {
     if (!(m_mesh || m_meshInstance)) return;
+    if (m_blockedWhileResetting) {
+	emit propertySelectionChanged(propertyName);
+	return;
+    }
 
     if(m_meshInstance) {
 	m_meshInstance->setSelectedProperty(propertyName);

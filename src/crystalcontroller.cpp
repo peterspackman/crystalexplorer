@@ -42,6 +42,21 @@ void CrystalController::handleSceneSelectionChange(int selection) {
     }
 }
 
+void CrystalController::handleChildSelectionChange(QModelIndex targetIndex) {
+
+    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
+    if (!structure) return;
+
+
+    QModelIndex currentIndex = structureTreeView->currentIndex();
+    qDebug() << "target:" << targetIndex << "Current:" << currentIndex;
+
+    if (currentIndex != targetIndex) {
+        structureTreeView->setCurrentIndex(targetIndex);
+	structureTreeView->setFocus();
+    }
+}
+
 void CrystalController::setSurfaceInfo(Project *project) {
   updateSurfaceInfo(project->currentScene());
 }
@@ -49,7 +64,7 @@ void CrystalController::setSurfaceInfo(Project *project) {
 void CrystalController::updateSurfaceInfo(Scene *scene) {
     structureTreeView->setModel(scene->chemicalStructure());
     connect(structureTreeView->selectionModel(), &QItemSelectionModel::selectionChanged,
-	  this, &CrystalController::onStructureViewSelectionChanged);
+	  this, &CrystalController::onStructureViewSelectionChanged, Qt::UniqueConnection);
 }
 
 void CrystalController::structureViewClicked(const QModelIndex &index) {
@@ -78,6 +93,7 @@ void CrystalController::onStructureViewSelectionChanged(const QItemSelection& se
     if (currentIndex.isValid()) {
 	// You now have the selected index. You can emit a signal or perform actions based on this.
 	emit childSelectionChanged(currentIndex);
+	qDebug() << "Emit child selection changed";
     }
 }
 

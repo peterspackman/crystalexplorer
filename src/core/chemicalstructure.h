@@ -125,6 +125,7 @@ public:
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
   QModelIndex parent(const QModelIndex &index) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+  QModelIndex indexFromObject(QObject* object, const QModelIndex& parent = QModelIndex()); 
 
 signals:
   void childAdded(QObject *);

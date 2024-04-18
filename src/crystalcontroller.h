@@ -23,6 +23,8 @@ public:
 public slots:
   void update(Project *);
   void handleSceneSelectionChange(int);
+  void handleChildSelectionChange(QModelIndex);
+
   void setSurfaceInfo(Project *);
   void clearCurrentCrystal() { verifyDeleteCurrentCrystal(); }
   void clearAllCrystals();

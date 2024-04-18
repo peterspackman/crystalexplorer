@@ -68,6 +68,8 @@ public:
   virtual void deleteFragmentContainingAtomIndex(int atomIndex) override;
   virtual void deleteIncompleteFragments() override;
 
+
+
   virtual const std::vector<int> &atomsForFragment(int) const override;
   virtual const std::pair<int, int> &atomsForBond(int) const override;
   virtual const std::vector<std::pair<int, int>> &
@@ -88,6 +90,7 @@ public:
 
   virtual void expandAtomsWithinRadius(float radius, bool selected) override;
 
+  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const override;
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const override;
 
 

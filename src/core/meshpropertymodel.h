@@ -55,6 +55,7 @@ public slots:
 private:
     MeshInstance * m_meshInstance{nullptr};
     Mesh* m_mesh{nullptr};
+    bool m_blockedWhileResetting{false};
 
 
 protected:

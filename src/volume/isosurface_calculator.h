@@ -18,11 +18,14 @@ signals:
     void calculationComplete(isosurface::Result);
 
 private slots:
-    void surfaceComplete(QString, QString);
+    void surfaceComplete();
 
 private:
     TaskManager * m_taskManager{nullptr};
     ChemicalStructure * m_structure{nullptr};
+    QString m_name;
+    QString m_filename;
+    std::vector<GenericAtomIndex> m_atoms;
 };
 
 }

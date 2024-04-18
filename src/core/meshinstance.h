@@ -38,6 +38,8 @@ public:
     [[nodiscard]] const QString &getSelectedProperty() const;
     bool setSelectedProperty(const QString &);
 
+    float valueForSelectedPropertyAt(size_t index) const;
+
 signals:
     // TODO connect these per mesh instance, for now
     void visibilityChanged();

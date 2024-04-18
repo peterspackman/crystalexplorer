@@ -681,3 +681,41 @@ QModelIndex ChemicalStructure::parent(const QModelIndex &index) const {
     const int parentRow = grandparentObject ? grandparentObject->children().indexOf(parentObject) : 0;
     return createIndex(parentRow, 0, parentObject);
 }
+
+QModelIndex genericIndexFromObject(const QAbstractItemModel* model, QObject* object, const QModelIndex& parent = QModelIndex()) {
+    if (!model || !object) return QModelIndex();
+    qDebug() << "Querying for object:" << object;
+
+    int rowCount = model->rowCount(parent);
+    int columnCount = model->columnCount(parent);
+
+    for (int row = 0; row < rowCount; ++row) {
+        for (int column = 0; column < columnCount; ++column) {
+            QModelIndex index = model->index(row, column, parent);
+	    if(!index.isValid()) continue;
+
+	    const QObject* indexObj = static_cast<const QObject*>(index.internalPointer());
+
+            if (indexObj == object) {
+		qDebug() << "Found matching index at " << index;
+                // Found the matching index
+                return index;
+            }
+
+            // Recursively search in children
+            QModelIndex foundIndex = genericIndexFromObject(model, object, index);
+            if (foundIndex.isValid()) {
+                return foundIndex;
+            }
+        }
+    }
+
+    // Not found
+    return QModelIndex();
+}
+
+QModelIndex ChemicalStructure::indexFromObject(QObject* object, const QModelIndex& parent) {
+    qDebug() << "Initial query object:" << object;
+    return genericIndexFromObject(this, object, parent);
+}
+

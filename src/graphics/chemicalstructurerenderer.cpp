@@ -129,9 +129,14 @@ void ChemicalStructureRenderer::updateMeshes() {
 void ChemicalStructureRenderer::handleAtomsUpdate() {
     if(!m_structure) return;
     if(!m_atomsNeedsUpdate) return;
+
+    if(m_selectionHandler) {
+	m_selectionHandler->clear(SelectionType::Atom);
+    }
+    qDebug() << "Atoms update triggered";
+
     m_ellipsoidRenderer->clear();
 
-    const auto &atomicNumbers = m_structure->atomicNumbers();
     const auto &positions = m_structure->atomicPositions();
 
     const auto covRadii = m_structure->covalentRadii();
@@ -167,13 +172,17 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
 void ChemicalStructureRenderer::handleBondsUpdate() {
     if(!m_structure) return;
     if(!m_bondsNeedsUpdate) return;
+    if(m_selectionHandler) {
+	m_selectionHandler->clear(SelectionType::Bond);
+    }
+    qDebug() << "Bonds update triggered";
+
 
     m_lineRenderer->clear();
     m_cylinderRenderer->clear();
 
     float radius = bondThickness();
     const auto &atomPositions = m_structure->atomicPositions();
-    const auto &atomicNumbers = m_structure->atomicNumbers();
     const auto &covalentBonds = m_structure->covalentBonds();
 
     for (int bondIndex = 0; bondIndex < covalentBonds.size(); bondIndex++) {
@@ -287,10 +296,14 @@ void ChemicalStructureRenderer::clearMeshRenderers() {
 
 void ChemicalStructureRenderer::handleMeshesUpdate() {
     if(!m_meshesNeedsUpdate) return;
-    qDebug() << "HandleMeshes update called (needs update)";
+    qDebug() << "Mesh update triggered";
+    // TODO re-use mesh renderers
     m_meshRenderers.clear();
     m_meshIndexToMesh.clear();
     m_pointCloudRenderer->clear();
+    if(m_selectionHandler) {
+	m_selectionHandler->clear(SelectionType::Surface);
+    }
     for(auto * child: m_structure->children()) {
 	auto* mesh = qobject_cast<Mesh*>(child);
 	if(!mesh) continue;
@@ -336,13 +349,11 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
 
 void ChemicalStructureRenderer::childVisibilityChanged() {
     // TODO more granularity
-    qDebug() << "Child visibility changed";
     updateMeshes();
 }
 
 void ChemicalStructureRenderer::childPropertyChanged() {
     // TODO more granularity
-    qDebug() << "Child property changed";
     updateMeshes();
 }
 
@@ -350,7 +361,6 @@ void ChemicalStructureRenderer::childPropertyChanged() {
 void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
     auto* mesh = qobject_cast<Mesh*>(child);
     if (mesh) {
-	qDebug() << "Added mesh to structure, connected";
 	connect(mesh, &Mesh::visibilityChanged, this, &ChemicalStructureRenderer::childVisibilityChanged);
 	connect(mesh, &Mesh::selectedPropertyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
 	connect(mesh, &Mesh::transparencyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
@@ -369,7 +379,7 @@ void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
 }
 
 
-MeshInstance * ChemicalStructureRenderer::getMesh(size_t index) const {
+MeshInstance * ChemicalStructureRenderer::getMeshInstance(size_t index) const {
     if(index >= m_meshIndexToMesh.size()) return nullptr;
     return m_meshIndexToMesh.at(index);
 }

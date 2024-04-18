@@ -229,27 +229,31 @@ void Crystalx::createChildPropertyControllerDockWidget() {
     childPropertyControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
     childPropertyControllerDockWidget->adjustSize();
     addDockWidget(Qt::RightDockWidgetArea, childPropertyControllerDockWidget);
-  childPropertyController->setEnabled(false);
-  connect(crystalController, &CrystalController::childSelectionChanged,
-	  [&](QModelIndex index) {
-    auto * mesh = crystalController->getChildMesh(index);
-    auto * meshinstance = crystalController->getChildMeshInstance(index);
-    auto * wfn = crystalController->getChildWavefunction(index);
+    childPropertyController->setEnabled(false);
 
-    // check for mesh instance first
-    if(mesh) {
-	qDebug() << "Setting current mesh to " << mesh;
-        childPropertyController->setCurrentMesh(mesh);
-    }
-    else if(meshinstance) {
-	qDebug() << "Setting current mesh instance to " << meshinstance;
-        childPropertyController->setCurrentMeshInstance(meshinstance);
-    }
-    else if(wfn) {
-	qDebug() << "Setting current wfn to " << wfn;
-        childPropertyController->setCurrentWavefunction(wfn);
-    }
-  });
+    connect(project, &Project::clickedSurfacePropertyValue,
+	    childPropertyController, &ChildPropertyController::setSelectedPropertyValue);
+
+    connect(crystalController, &CrystalController::childSelectionChanged,
+	    [&](QModelIndex index) {
+	auto * mesh = crystalController->getChildMesh(index);
+	auto * meshinstance = crystalController->getChildMeshInstance(index);
+	auto * wfn = crystalController->getChildWavefunction(index);
+
+	// check for mesh instance first
+	if(mesh) {
+	    qDebug() << "Setting current mesh to " << mesh;
+	    childPropertyController->setCurrentMesh(mesh);
+	}
+	else if(meshinstance) {
+	    qDebug() << "Setting current mesh instance to " << meshinstance;
+	    childPropertyController->setCurrentMeshInstance(meshinstance);
+	}
+	else if(wfn) {
+	    qDebug() << "Setting current wfn to " << wfn;
+	    childPropertyController->setCurrentWavefunction(wfn);
+	}
+    });
 
 }
 
@@ -262,6 +266,10 @@ void Crystalx::createCrystalControllerDockWidget() {
   crystalControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
   crystalControllerDockWidget->adjustSize();
   // crystalControllerDockWidget->setFocus();
+  
+  connect(project, &Project::clickedSurface,
+	  crystalController, &CrystalController::handleChildSelectionChange);
+
   addDockWidget(Qt::RightDockWidgetArea, crystalControllerDockWidget);
 }
 

@@ -44,7 +44,6 @@ private:
   QOpenGLBuffer m_instance;
 
   std::vector<MeshInstanceVertex> m_instances;
-  bool meshNeedsUpdate{false};
 
   QOpenGLBuffer m_vertexPropertyBuffer;
   QOpenGLTexture *m_vertexPropertyTexture{nullptr}; 

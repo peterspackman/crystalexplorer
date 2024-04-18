@@ -616,6 +616,21 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
   }
 }
 
+std::vector<GenericAtomIndex> CrystalStructure::atomsWithFlags(const AtomFlags &flags) const {
+
+    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> selected_idxs;
+
+    for (int i = 0; i < numberOfAtoms(); i++) {
+	if (atomFlagsSet(i, flags)) {
+	    const auto &offset = m_unitCellOffsets[i];
+	    selected_idxs.insert({offset.unitCellOffset, offset.hkl.h, offset.hkl.k, offset.hkl.l});
+	}
+    }
+
+    std::vector<GenericAtomIndex> res(selected_idxs.begin(), selected_idxs.end());
+    return res;
+}
+
 std::vector<GenericAtomIndex> CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const {
 
     ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> selected_idxs;

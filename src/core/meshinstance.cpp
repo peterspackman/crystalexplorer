@@ -88,3 +88,11 @@ bool MeshInstance::setSelectedProperty(const QString &propName) {
 }
 
 
+float MeshInstance::valueForSelectedPropertyAt(size_t index) const {
+    if(!m_mesh) return 0.0f;
+    const auto prop = m_mesh->vertexProperty(m_selectedProperty);
+    if(index > prop.rows()) return 0.0f;
+    return prop(index);
+}
+
+

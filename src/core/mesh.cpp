@@ -346,3 +346,12 @@ void Mesh::setRendererIndex(size_t idx) {
     m_rendererIndex = idx;
 }
 
+
+void Mesh::setAtoms(const std::vector<GenericAtomIndex> &idxs) {
+    m_atoms = idxs;
+}
+
+const std::vector<GenericAtomIndex>& Mesh::atoms() const {
+    return m_atoms;
+}
+

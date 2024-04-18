@@ -57,7 +57,7 @@ public:
     [[nodiscard]] inline EllipsoidRenderer *ellipsoidRenderer() { return m_ellipsoidRenderer; }
     [[nodiscard]] inline LineRenderer *lineRenderer() { return m_lineRenderer; }
 
-    [[nodiscard]] MeshInstance * getMesh(size_t index) const;
+    [[nodiscard]] MeshInstance * getMeshInstance(size_t index) const;
 
 signals:
     void meshesChanged();
