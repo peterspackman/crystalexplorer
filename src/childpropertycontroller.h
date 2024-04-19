@@ -17,6 +17,7 @@ public:
   ChildPropertyController(QWidget *parent = 0);
   void enableFingerprintButton(bool);
   void currentSurfaceVisibilityChanged(bool);
+  Mesh *getCurrentMesh();
 
 public slots:
   void setCurrentMesh(Mesh *);
@@ -39,6 +40,13 @@ signals:
   void exportCurrentSurface();
 
 private:
+
+  enum class DisplayState {
+      None,
+      Mesh,
+      Wavefunction,
+  };
+
   void showSurfaceTabs(bool);
   void showWavefunctionTabs(bool);
   void showTab(QWidget *, bool, QString);
@@ -53,6 +61,8 @@ private:
   void enableSurfaceControls(bool);
 
   bool _updateSurfacePropertyRange;
+
+  DisplayState m_state{DisplayState::None};
 
   MeshPropertyModel *m_meshPropertyModel{nullptr};
   QMap<QString, Mesh::ScalarPropertyRange> m_clampedProperties;

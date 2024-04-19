@@ -129,6 +129,7 @@ void ChildPropertyController::setUnitLabels(QString units) {
 void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
     showSurfaceTabs(true);
     showWavefunctionTabs(false);
+    m_state = ChildPropertyController::DisplayState::Mesh;
 
     m_meshPropertyModel->setMesh(mesh);
 }
@@ -136,12 +137,17 @@ void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
 void ChildPropertyController::setCurrentMeshInstance(MeshInstance *mi) {
     showSurfaceTabs(true);
     showWavefunctionTabs(false);
+
+    m_state = ChildPropertyController::DisplayState::Mesh;
     m_meshPropertyModel->setMeshInstance(mi);
 }
 
 void ChildPropertyController::setCurrentWavefunction(MolecularWavefunction *wfn) {
     showWavefunctionTabs(true);
     showSurfaceTabs(false);
+
+    m_state = ChildPropertyController::DisplayState::Wavefunction;
+
     bool valid = wfn != nullptr;
     if(valid) {
 	QLocale locale;
@@ -245,3 +251,9 @@ void ChildPropertyController::currentSurfaceVisibilityChanged(bool visible) {
 }
 
 void ChildPropertyController::exportButtonClicked() { emit exportCurrentSurface(); }
+
+
+Mesh *ChildPropertyController::getCurrentMesh() {
+    if(m_state != ChildPropertyController::DisplayState::Mesh) return nullptr;
+    return m_meshPropertyModel->getMesh();
+}

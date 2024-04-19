@@ -281,7 +281,7 @@ void Crystalx::initConnections() {
           &CrystalController::update);
 
   connect(project, &Project::structureChanged, this,
-	  &Crystalx::handleStructureChange);
+	  &Crystalx::handleStructureChange, Qt::QueuedConnection);
 
   // Project connections - current crystal changed in some way
   connect(project, &Project::selectedSceneChanged, crystalController,
@@ -1860,14 +1860,10 @@ void Crystalx::allowCloneSurfaceAction() {
 void Crystalx::enableCloneSurfaceAction(bool enable) {
   if (!project->currentScene())
     return;
-  if (!project->currentScene()->crystal())
+  if (!project->currentScene()->chemicalStructure())
     return;
-
-  Scene *scene = project->currentScene();
-  Surface *surface = project->currentScene()->currentSurface();
-  bool surfaceClonable = surface && (surface->isVoidSurface() ||
-                                     scene->hasFragmentsWithoutClones(surface));
-  bool reallyEnable = enable && surfaceClonable;
+  Mesh * mesh = childPropertyController->getCurrentMesh();
+  bool reallyEnable = enable && (mesh != nullptr);
   cloneSurfaceAction->setEnabled(reallyEnable);
 }
 
@@ -2244,19 +2240,38 @@ void Crystalx::cloneGeneralSurface(Scene *scene) {
 }
 
 void Crystalx::cloneSurface() {
-  Scene *scene = project->currentScene();
+    Scene *scene = project->currentScene();
+    if(!scene) {
+	qDebug() << "Clone surface called with no current scene";
+	return;
+    }
 
-  Q_ASSERT(scene);
-  Q_ASSERT(scene->currentSurface());
+    Mesh *mesh = childPropertyController->getCurrentMesh();
+    if(!mesh) {
+	qDebug() << "Clone surface called with no current mesh";
+	return;
+    }
 
-  if (scene->currentSurface()->isVoidSurface()) {
-    cloneVoidSurface(scene);
-  } else {
-    cloneGeneralSurface(scene);
-  }
+    auto * structure = scene->chemicalStructure();
+    if(!structure) {
+	qDebug() << "Clone surface called with no current structure";
+	return;
+    }
 
-  glWindow->redraw();
-  crystalController->setSurfaceInfo(project);
+    auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
+    if (selectedAtoms.size() > 0) {
+	auto * instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, selectedAtoms);
+	qDebug() << "Cloned surface: " << instance;
+
+    } else {
+	for(int i = 0; i < structure->numberOfFragments(); i++) {
+	    auto idxs = structure->atomIndicesForFragment(i);
+	    auto * instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, idxs);
+	    qDebug() << "Cloned surface: " << instance;
+	    
+	}
+    }
+    crystalController->setSurfaceInfo(project);
 }
 
 void Crystalx::showEnergyCalculationDialog() {
@@ -2457,6 +2472,7 @@ void Crystalx::handleStructureChange() {
 		break;
 	    }
       }
+      glWindow->redraw();
       // update surface controller
       // update list of surfaces
   }

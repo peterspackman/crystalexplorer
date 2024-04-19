@@ -71,6 +71,8 @@ public:
 
 
   virtual const std::vector<int> &atomsForFragment(int) const override;
+  virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const override;
+
   virtual const std::pair<int, int> &atomsForBond(int) const override;
   virtual const std::vector<std::pair<int, int>> &
   hydrogenBonds() const override;

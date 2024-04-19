@@ -27,6 +27,8 @@ public:
     void setMesh(Mesh*);
     void setMeshInstance(MeshInstance*);
 
+    Mesh *getMesh();
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     PropertyStatistics getSelectedPropertyStatistics() const;

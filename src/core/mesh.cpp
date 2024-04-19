@@ -355,3 +355,19 @@ const std::vector<GenericAtomIndex>& Mesh::atoms() const {
     return m_atoms;
 }
 
+
+
+bool Mesh::haveChildMatchingTransform(const Eigen::Isometry3d &transform) const {
+    auto check = [](const Eigen::Isometry3d& a, const Eigen::Isometry3d& b, double tolerance = 1e-6) {
+	bool r = a.linear().isApprox(b.linear(), tolerance);
+	bool t = a.translation().isApprox(b.translation(), tolerance);
+	return r && t;
+    };
+
+    for(auto * child: children()) {
+	auto * instance = qobject_cast<MeshInstance *>(child);
+	if(!instance) continue;
+	if(check(instance->transform(), transform)) return true;
+    }
+    return false;
+}

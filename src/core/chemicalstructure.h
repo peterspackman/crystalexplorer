@@ -13,6 +13,7 @@
 #include <occ/core/bondgraph.h>
 #include <occ/core/linear_algebra.h>
 
+using Transform = Eigen::Isometry3d;
 
 class ChemicalStructure : public QAbstractItemModel {
   Q_OBJECT
@@ -59,6 +60,8 @@ public:
 
   virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const;
 
+  virtual bool getTransformation(const std::vector<GenericAtomIndex> &from, const std::vector<GenericAtomIndex> &to,
+				 Eigen::Isometry3d &result) const;
 
   // fragments
   virtual void selectFragmentContaining(int);
@@ -80,11 +83,13 @@ public:
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
 
+  virtual inline size_t numberOfFragments() const { return m_fragments.size(); }
   virtual int fragmentIndexForAtom(int) const;
   virtual void deleteFragmentContainingAtomIndex(int atomIndex);
   virtual void deleteIncompleteFragments();
   virtual bool hasIncompleteFragments() const;
   virtual const std::vector<int> &atomsForFragment(int) const;
+  virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
   virtual const std::vector<std::pair<int, int>> &hydrogenBonds() const;
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
@@ -132,7 +137,8 @@ signals:
   void childRemoved(QObject *);
 
 protected:
-  void childEvent(QChildEvent *childEvent) override;
+  void connectChildSignals(QObject *child);
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
   int topLevelItemsCount() const;

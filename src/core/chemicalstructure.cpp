@@ -1,12 +1,15 @@
 #include "chemicalstructure.h"
 #include <occ/core/element.h>
 #include <occ/core/kdtree.h>
+#include <occ/core/kabsch.h>
 #include "elementdata.h"
 #include "mesh.h"
 #include <QIcon>
 #include <QEvent>
 
-ChemicalStructure::ChemicalStructure(QObject *parent) : QAbstractItemModel(parent) {}
+ChemicalStructure::ChemicalStructure(QObject *parent) : QAbstractItemModel(parent) {
+    this->installEventFilter(this);
+}
 
 void ChemicalStructure::updateBondGraph() { guessBondsBasedOnDistances(); }
 
@@ -455,6 +458,15 @@ ChemicalStructure::atomsForFragment(int fragIndex) const {
   return m_fragments.at(fragIndex);
 }
 
+std::vector<GenericAtomIndex> ChemicalStructure::atomIndicesForFragment(int fragmentIndex) const {
+    std::vector<GenericAtomIndex> result;
+    if(fragmentIndex < 0 || fragmentIndex > m_fragments.size()) return result;
+    for(int i : m_fragments[fragmentIndex]) {
+	result.push_back(GenericAtomIndex{i});
+    }
+    return result;
+}
+
 QColor ChemicalStructure::atomColor(int atomIndex) const {
   const auto loc = m_atomColorOverrides.find(atomIndex);
   if (loc != m_atomColorOverrides.end())
@@ -546,24 +558,39 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtomsWithFlags(
     return res;
 }
 
-void ChemicalStructure::childEvent(QChildEvent *event) {
-    // MAKE SURE TO DO THIS
-    QAbstractItemModel::childEvent(event); 
+bool ChemicalStructure::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::ChildAdded) {
-	QObject* child = event->child();
-	emit childAdded(child);
-
-	// insert the child into the model
-        if (child) {
-            int newRow = this->children().indexOf(child);
-            QModelIndex parentIndex = QModelIndex();
-            beginInsertRows(parentIndex, newRow, newRow);
-            endInsertRows();
-        }
+	qDebug() << "Child added event";
+	QChildEvent *childEvent = static_cast<QChildEvent*>(event);
+	QObject *newChild = childEvent->child();
+	if (newChild) {
+	    newChild->installEventFilter(this);  // Monitor the new child
+	    qDebug() << "Emit new child Added";
+	    emit childAdded(newChild);
+	    // Include the child in the model
+	    int newRow = this->children().indexOf(newChild);
+	    QModelIndex parentIndex = QModelIndex();
+	    beginInsertRows(parentIndex, newRow, newRow);
+	    endInsertRows();
+	}
     } else if (event->type() == QEvent::ChildRemoved) {
-	beginResetModel();
-	endResetModel();
-        emit childRemoved(event->child());
+	QChildEvent *childEvent = static_cast<QChildEvent*>(event);
+	QObject *removedChild = childEvent->child();
+	if (removedChild) {
+	    beginResetModel();
+	    removedChild->removeEventFilter(this);  // Stop monitoring the removed child
+	    emit childRemoved(removedChild);
+	    endResetModel();
+	}
+    }
+    return QObject::eventFilter(obj, event);
+}
+
+void ChemicalStructure::connectChildSignals(QObject *child) {
+    child->installEventFilter(this);  // Monitor the new child
+
+    for (QObject *grandChild : child->children()) {
+        connectChildSignals(grandChild);
     }
 }
 
@@ -717,5 +744,49 @@ QModelIndex genericIndexFromObject(const QAbstractItemModel* model, QObject* obj
 QModelIndex ChemicalStructure::indexFromObject(QObject* object, const QModelIndex& parent) {
     qDebug() << "Initial query object:" << object;
     return genericIndexFromObject(this, object, parent);
+}
+
+
+bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &from_orig,
+				          const std::vector<GenericAtomIndex> &to_orig,
+				          Eigen::Isometry3d &result) const {
+
+    if(from_orig.size() != to_orig.size()) return false;
+    auto from = from_orig;
+    auto to = to_orig;
+    std::sort(from.begin(), from.end());
+    std::sort(to.begin(), to.end());
+    auto nums_a = atomicNumbersForIndices(from);
+    auto nums_b = atomicNumbersForIndices(to);
+
+    // first check if they're the same elements
+    if(!(nums_a.array() == nums_b.array()).all()) return false;
+
+    auto pos_a = atomicPositionsForIndices(from);
+    occ::Vec3 centroid_a = pos_a.rowwise().mean();
+    auto pos_b = atomicPositionsForIndices(to);
+    occ::Vec3 centroid_b = pos_b.rowwise().mean();
+    pos_a.array().colwise() -= centroid_a.array();
+    pos_b.array().colwise() -= centroid_b.array();
+
+    auto rot = occ::core::linalg::kabsch_rotation_matrix(pos_a, pos_b, true); // allow inversions
+
+    // Apply rotation
+    pos_a = (rot * pos_a).eval();
+
+    double rmsd = (pos_a - pos_b).norm();
+    qDebug() << "RMSD: " << rmsd;
+    // tolerance
+    //if(rmsd > 1e-3) return false;
+
+    // Compute the translation
+    occ::Vec3 translation = centroid_b - (rot * centroid_a);
+
+    // Construct the final transformation
+    result = Eigen::Isometry3d::Identity();
+    result.linear() = rot;
+    result.translation() = translation;
+
+    return true;
 }
 

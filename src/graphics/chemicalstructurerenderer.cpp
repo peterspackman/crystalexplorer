@@ -359,13 +359,20 @@ void ChemicalStructureRenderer::childPropertyChanged() {
 
 
 void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
+    qDebug() << "Child added to structure called" << child;
+    qDebug() << "Class Name:" << child->metaObject()->className();
+    qDebug() << "Is MeshInstance:" << (dynamic_cast<MeshInstance*>(child) != nullptr);
     auto* mesh = qobject_cast<Mesh*>(child);
+    auto* meshInstance = qobject_cast<MeshInstance*>(child);
     if (mesh) {
 	connect(mesh, &Mesh::visibilityChanged, this, &ChemicalStructureRenderer::childVisibilityChanged);
 	connect(mesh, &Mesh::selectedPropertyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
 	connect(mesh, &Mesh::transparencyChanged, this, &ChemicalStructureRenderer::childPropertyChanged);
-	m_meshesNeedsUpdate = true;
     }
+    else if (meshInstance) {
+	qDebug() << "Mesh instance added";
+    }
+    updateMeshes();
 }
 
 void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {

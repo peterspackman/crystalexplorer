@@ -1,6 +1,7 @@
 #pragma once
 #include <QString>
 #include "chemicalstructure.h"
+#include "molecular_wavefunction.h"
 
 namespace isosurface {
 
@@ -20,6 +21,7 @@ struct Parameters {
     float isovalue{0.0};
     float separation{0.2};
     ChemicalStructure *structure{nullptr};
+    MolecularWavefunction *wfn{nullptr};
 };
 
 struct Result {

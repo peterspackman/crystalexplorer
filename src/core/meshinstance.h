@@ -1,5 +1,6 @@
 #pragma once
 #include "mesh.h"
+#include "generic_atom_index.h"
 #include <QVector3D>
 #include <QMatrix3x3>
 
@@ -13,8 +14,7 @@ class MeshInstance : public QObject {
     Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE setSelectedProperty NOTIFY selectedPropertyChanged)
 
 public:
-    MeshInstance(Mesh *parent,
-	    const MeshTransform &transform = MeshTransform::Identity());
+    explicit MeshInstance(Mesh *parent, const MeshTransform &transform = MeshTransform::Identity());
 
     [[nodiscard]] const Mesh *mesh() const;
     [[nodiscard]] Mesh *mesh();
@@ -39,6 +39,8 @@ public:
     bool setSelectedProperty(const QString &);
 
     float valueForSelectedPropertyAt(size_t index) const;
+
+    static MeshInstance * newInstanceFromSelectedAtoms(Mesh *, const std::vector<GenericAtomIndex> &);
 
 signals:
     // TODO connect these per mesh instance, for now

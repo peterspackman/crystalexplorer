@@ -216,6 +216,16 @@ CrystalStructure::atomsForFragment(int fragIndex) const {
   return m_fragments.at(fragIndex);
 }
 
+std::vector<GenericAtomIndex> CrystalStructure::atomIndicesForFragment(int fragmentIndex) const {
+    std::vector<GenericAtomIndex> result;
+    if(fragmentIndex < 0 || fragmentIndex > m_fragments.size()) return result;
+    for(int i : m_fragments[fragmentIndex]) {
+	auto offset = m_unitCellOffsets[i];
+	result.push_back(GenericAtomIndex{offset.unitCellOffset, offset.hkl.h, offset.hkl.k, offset.hkl.l});
+    }
+    return result;
+}
+
 void CrystalStructure::addAtomsByCrystalIndex(
     std::vector<CrystalIndex> &indices, const AtomFlags &flags) {
   const auto &uc_atoms = m_crystal.unit_cell_atoms();

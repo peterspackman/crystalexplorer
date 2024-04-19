@@ -178,3 +178,7 @@ QHash<int, QByteArray> MeshPropertyModel::roleNames() const {
     roles[FingerprintableRole] = "fingerprintable";
     return roles;
 }
+
+Mesh * MeshPropertyModel::getMesh() {
+    return m_mesh;
+}

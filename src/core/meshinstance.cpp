@@ -1,4 +1,6 @@
 #include "meshinstance.h"
+#include "chemicalstructure.h"
+#include <fmt/core.h>
 
 MeshInstance::MeshInstance(Mesh *parent, const MeshTransform &transform)
     : QObject(parent), m_mesh(parent), m_transform(transform) {
@@ -93,6 +95,25 @@ float MeshInstance::valueForSelectedPropertyAt(size_t index) const {
     const auto prop = m_mesh->vertexProperty(m_selectedProperty);
     if(index > prop.rows()) return 0.0f;
     return prop(index);
+}
+
+
+MeshInstance * MeshInstance::newInstanceFromSelectedAtoms(Mesh *mesh, const std::vector<GenericAtomIndex> &atoms) {
+    if(!mesh) return nullptr;
+    const auto &meshAtoms = mesh->atoms();
+    if(meshAtoms.size() < 1) return nullptr;
+    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(mesh->parent());
+
+    if(!structure) return nullptr;
+
+    MeshTransform transform;
+    if(!structure->getTransformation(meshAtoms, atoms, transform)) return nullptr;
+    if(mesh->haveChildMatchingTransform(transform)) return nullptr;
+    Eigen::AngleAxisd aa(transform.rotation());
+    auto instance = new MeshInstance(mesh, transform);
+    std::string desc = fmt::format("+ {{{:.3f},{:.3f},{:.3f}}}, [0,0,0]", aa.axis()(0), aa.axis()(1), aa.axis()(2));
+    instance->setObjectName(QString::fromStdString(desc));
+    return instance;
 }
 
 

@@ -106,6 +106,7 @@ public:
 
     void setAtoms(const std::vector<GenericAtomIndex> &idxs);
     [[nodiscard]] const std::vector<GenericAtomIndex> & atoms() const;
+    bool haveChildMatchingTransform(const Eigen::Isometry3d &transform) const;
 
 signals:
     void visibilityChanged();

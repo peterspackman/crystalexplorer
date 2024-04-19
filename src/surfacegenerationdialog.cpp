@@ -144,6 +144,9 @@ void SurfaceGenerationDialog::validate() {
   if(needWavefunction()) {
       qDebug() << "Needs wavefunction";
       wfn::Parameters wfn_params;
+      wfn_params.charge = _charge;
+      wfn_params.multiplicity = _multiplicity;
+
       emit surfaceParametersChosenNeedWavefunction(parameters, wfn_params);
   }
   else {
