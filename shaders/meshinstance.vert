@@ -24,7 +24,8 @@ uniform samplerBuffer u_propertyBuffer;
 void main()
 {
   v_selected = 0;
-  v_normal = rotation * normal;
+  mat3 normalMat = inverse(transpose(rotation));
+  v_normal = normalMat * normal;
   v_position = rotation * position + translation;
 
   uint mesh_id, vertex_id, type_id;

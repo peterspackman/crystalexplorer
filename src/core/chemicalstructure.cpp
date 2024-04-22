@@ -769,7 +769,7 @@ bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &f
     pos_a.array().colwise() -= centroid_a.array();
     pos_b.array().colwise() -= centroid_b.array();
 
-    auto rot = occ::core::linalg::kabsch_rotation_matrix(pos_a, pos_b, true); // allow inversions
+    auto rot = occ::core::linalg::kabsch_rotation_matrix(pos_a, pos_b, false); // allow inversions
 
     // Apply rotation
     pos_a = (rot * pos_a).eval();
@@ -777,7 +777,7 @@ bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &f
     double rmsd = (pos_a - pos_b).norm();
     qDebug() << "RMSD: " << rmsd;
     // tolerance
-    //if(rmsd > 1e-3) return false;
+    if(rmsd > 1e-3) return false;
 
     // Compute the translation
     occ::Vec3 translation = centroid_b - (rot * centroid_a);
