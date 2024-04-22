@@ -204,8 +204,10 @@ void MeshInstanceRenderer::draw() {
   m_program->setUniformValue("u_propertyBuffer", 0);
   m_program->setUniformValue("u_numVertices", m_numVertices);
   m_vertexPropertyTexture->bind();
+
+  // Since we have inversion operators for the mesh transforms need to disable cull face in order to 
+  // keep the same winding.
   this->glDisable(GL_CULL_FACE);
- 
   this->glDrawElementsInstanced(DrawType, m_numIndices, IndexType, 0, static_cast<int>(m_instances.size()));
   this->glEnable(GL_CULL_FACE);
 

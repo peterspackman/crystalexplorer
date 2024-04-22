@@ -80,8 +80,15 @@ void CrystalController::structureViewClicked(const QModelIndex &index) {
 	item->setProperty("visible", !currentVisibility);
 	qDebug() << "Setting object visibility";
 
-	// Optionally, emit dataChanged signal if the view does not automatically update
-	emit structure->dataChanged(index, index, {Qt::DecorationRole});
+	//emit structure->dataChanged(index, index, {Qt::DecorationRole});
+
+	// Update all visibility decorations as they may have changed
+	// TODO make this more efficient
+	QModelIndex topLeft = structure->index(0, 0);
+	QModelIndex bottomRight = structure->index(structure->rowCount() - 1, structure->columnCount() - 1);
+
+	emit structure->dataChanged(topLeft, bottomRight, {Qt::DecorationRole});
+	structureTreeView->viewport()->update();
 
     }
 }
