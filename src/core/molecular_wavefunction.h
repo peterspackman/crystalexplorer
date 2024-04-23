@@ -1,6 +1,7 @@
 #pragma once
 #include "wavefunction_parameters.h"
 #include "generic_atom_index.h"
+#include <Eigen/Dense>
 #include <QObject>
 #include <vector>
 
@@ -40,6 +41,8 @@ public:
     [[nodiscard]] double totalEnergy() const;
     void setTotalEnergy(double);
 
+    QString description() const;
+
 private:
     int m_nbf{0};
     double m_totalEnergy{0.0};
@@ -47,4 +50,9 @@ private:
     std::vector<GenericAtomIndex> m_atomIndices;
     QByteArray m_rawContents;
     wfn::Parameters m_parameters;
+};
+
+struct WavefunctionAndTransform {
+    MolecularWavefunction *wavefunction{nullptr};
+    Eigen::Isometry3d transform;
 };

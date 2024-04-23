@@ -460,7 +460,7 @@ ChemicalStructure::atomsForFragment(int fragIndex) const {
 
 std::vector<GenericAtomIndex> ChemicalStructure::atomIndicesForFragment(int fragmentIndex) const {
     std::vector<GenericAtomIndex> result;
-    if(fragmentIndex < 0 || fragmentIndex > m_fragments.size()) return result;
+    if(fragmentIndex < 0 || fragmentIndex >= m_fragments.size()) return result;
     for(int i : m_fragments[fragmentIndex]) {
 	result.push_back(GenericAtomIndex{i});
     }
@@ -788,5 +788,23 @@ bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &f
     result.translation() = translation;
 
     return true;
+}
+
+
+std::vector<WavefunctionAndTransform> ChemicalStructure::wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &idxs) {
+    std::vector<WavefunctionAndTransform> result;
+    for(auto * child: children()) {
+	MolecularWavefunction *wfn = qobject_cast<MolecularWavefunction *>(child);
+	if(wfn) {
+	    WavefunctionAndTransform t{wfn};
+	    bool valid = getTransformation(idxs, wfn->atomIndices(), t.transform);
+	    if(valid) {
+		qDebug() << "Found valid wavefunction";
+		result.push_back(t);
+	    }
+
+	}
+    }
+    return result;
 }
 

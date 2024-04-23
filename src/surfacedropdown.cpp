@@ -1,75 +1,89 @@
 #include "surfacedropdown.h"
 
-/// Surface
-SurfaceTypeDropdown::SurfaceTypeDropdown(QWidget *parent) : QComboBox(parent) {
-  connect(this, QOverload<int>::of(&SurfaceTypeDropdown::currentIndexChanged), this, &SurfaceTypeDropdown::onCurrentIndexChanged);
-  populateDropdown();
+SurfaceTypeDropdown::SurfaceTypeDropdown(QWidget *parent)
+    : QComboBox(parent) {
+    connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SurfaceTypeDropdown::onCurrentIndexChanged);
 }
 
-IsosurfaceDetails::Attributes
-SurfaceTypeDropdown::currentSurfaceAttributes() const {
-  return IsosurfaceDetails::getAttributes(m_selectedType);
+QString SurfaceTypeDropdown::current() const {
+    return currentData().toString();
+}
+
+void SurfaceTypeDropdown::setCurrent(QString val) {
+
+    int index = findData(val);
+    if (index != -1) {
+        setCurrentIndex(index);
+    } else {
+        setCurrentIndex(-1);
+    }
+}
+
+isosurface::SurfaceDescription SurfaceTypeDropdown::currentSurfaceDescription() const {
+    return m_surfaceDescriptions.value(current());
+}
+
+void SurfaceTypeDropdown::setDescriptions(const SurfaceDescriptionMap &surfaceDescriptions) {
+    m_surfaceDescriptions = surfaceDescriptions;
+
+    clear();
+    for (auto it = m_surfaceDescriptions.constBegin(); it != m_surfaceDescriptions.constEnd(); ++it) {
+        addItem(it.value().displayName, it.key());
+    }
 }
 
 void SurfaceTypeDropdown::onCurrentIndexChanged(int index) {
-  m_selectedType =
-      static_cast<IsosurfaceDetails::Type>(currentData().value<int>());
-  qDebug() << "Emitting surface type changed" << static_cast<int>(m_selectedType);
-  emit surfaceTypeChanged(m_selectedType);
+    QString key = itemData(index).toString();
+    emit selectionChanged(key);
+    emit descriptionChanged(itemText(index));
 }
-
-void SurfaceTypeDropdown::populateDropdown() {
-  const auto &types = IsosurfaceDetails::getAvailableTypes();
-  for (auto kv = types.constKeyValueBegin(); kv != types.constKeyValueEnd();
-       kv++) {
-    addItem(kv->second.label, static_cast<int>(kv->first));
-    if(kv->first == IsosurfaceDetails::defaultType()) {
-        qDebug() << "Setting current index to " << count() - 1;
-        setCurrentIndex(count() - 1);
-    }
-  }
-}
-
-
-/// Properties
 
 SurfacePropertyTypeDropdown::SurfacePropertyTypeDropdown(QWidget *parent)
     : QComboBox(parent) {
-    connect(this, QOverload<int>::of(&SurfacePropertyTypeDropdown::currentIndexChanged), this, &SurfacePropertyTypeDropdown::onCurrentIndexChanged);
+    connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SurfacePropertyTypeDropdown::onCurrentIndexChanged);
 }
 
-void SurfacePropertyTypeDropdown::onCurrentIndexChanged(int index) {
-  m_selectedType =
-      static_cast<IsosurfacePropertyDetails::Type>(currentData().value<int>());
+QString SurfacePropertyTypeDropdown::current() const {
+    return currentData().toString();
 }
 
-void SurfacePropertyTypeDropdown::onSurfaceTypeChanged(
-    IsosurfaceDetails::Type selectedSurfaceType) {
-  clear(); // Clear current items
-  auto properties =
-      IsosurfaceDetails::getRequestableProperties(selectedSurfaceType);
-
-  qDebug() << "Surface type changed" << static_cast<int>(selectedSurfaceType) << "has " <<  properties.size();
-  for (const auto &property : std::as_const(properties)) {
-    const auto &attributes = IsosurfacePropertyDetails::getAttributes(property);
-    addItem(attributes.name, static_cast<int>(property));
-  }
+isosurface::SurfacePropertyDescription SurfacePropertyTypeDropdown::currentSurfacePropertyDescription() const {
+    return m_surfacePropertyDescriptions.value(current());
 }
 
-
-isosurface::Kind SurfaceTypeDropdown::currentKind() const {
-    return isosurface::stringToKind(currentText());
+void SurfacePropertyTypeDropdown::setDescriptions(const SurfaceDescriptionMap &surfaceDescriptions,
+                                                  const SurfacePropertyDescriptionMap &surfacePropertyDescriptions) {
+    m_surfaceDescriptions = surfaceDescriptions;
+    m_surfacePropertyDescriptions = surfacePropertyDescriptions;
 }
 
-// Function to get the currently selected IsosurfacePropertyDetails::Attributes
-IsosurfacePropertyDetails::Attributes
-SurfacePropertyTypeDropdown::currentSurfacePropertyAttributes() const {
-  auto prop =
-      static_cast<IsosurfacePropertyDetails::Type>(currentData().value<int>());
-  return IsosurfacePropertyDetails::getAttributes(prop);
+void SurfacePropertyTypeDropdown::onCurrentIndexChanged(int index)
+{
+    emit selectionChanged(itemData(index).toString());
 }
 
 
+
+void SurfacePropertyTypeDropdown::onSurfaceSelectionChanged(QString selectedSurfaceKey) {
+    clear();
+
+    isosurface::SurfaceDescription selectedSurface = getSurfaceDescription(selectedSurfaceKey);
+
+    for (const QString &property : selectedSurface.requestableProperties) {
+        isosurface::SurfacePropertyDescription propertyDescription = getSurfacePropertyDescription(property);
+        addItem(propertyDescription.displayName, property);
+    }
+}
+
+isosurface::SurfaceDescription SurfacePropertyTypeDropdown::getSurfaceDescription(const QString &surfaceKey) const {
+    return m_surfaceDescriptions.value(surfaceKey);
+}
+
+isosurface::SurfacePropertyDescription SurfacePropertyTypeDropdown::getSurfacePropertyDescription(const QString &propertyKey) const {
+    return m_surfacePropertyDescriptions.value(propertyKey);
+}
 
 /// Resolution Combo box
 

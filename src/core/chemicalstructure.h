@@ -2,6 +2,7 @@
 #include "atomflags.h"
 #include "interactions.h"
 #include "generic_atom_index.h"
+#include "molecular_wavefunction.h"
 #include <Eigen/Dense>
 #include <QAbstractItemModel>
 #include <QModelIndex>
@@ -121,6 +122,8 @@ public:
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const;
+
+  [[nodiscard]] virtual std::vector<WavefunctionAndTransform> wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &);
 
 
   // Abstract Item Model methods

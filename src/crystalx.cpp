@@ -2266,6 +2266,7 @@ void Crystalx::cloneSurface() {
     } else {
 	for(int i = 0; i < structure->numberOfFragments(); i++) {
 	    auto idxs = structure->atomIndicesForFragment(i);
+	    if(idxs.size() < 1) continue;
 	    auto * instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, idxs);
 	    qDebug() << "Cloned surface: " << instance;
 	    

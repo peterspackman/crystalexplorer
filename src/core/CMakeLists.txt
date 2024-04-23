@@ -2,6 +2,7 @@ add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/chemicalstructure.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/element.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/elementdata.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/globalconfiguration.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/interactions.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/isosurface.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/isosurface_parameters.cpp"

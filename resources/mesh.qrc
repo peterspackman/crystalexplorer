@@ -7,5 +7,6 @@
         <file>elementdata.json</file>
         <file>elementdata.txt</file>
         <file>jmol_colours.json</file>
+        <file>surface_description.json</file>
     </qresource>
 </RCC>

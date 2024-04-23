@@ -1,8 +1,9 @@
 #pragma once
 #include <QString>
 #include <ankerl/unordered_dense.h>
-#include "chemicalstructure.h"
 #include "generic_atom_index.h"
+
+class ChemicalStructure;
 
 namespace wfn {
 
@@ -11,6 +12,7 @@ enum class FileFormat {
     Fchk,
     Molden
 };
+
 
 struct Parameters {
     int charge{0};

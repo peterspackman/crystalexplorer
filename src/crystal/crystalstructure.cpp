@@ -218,7 +218,7 @@ CrystalStructure::atomsForFragment(int fragIndex) const {
 
 std::vector<GenericAtomIndex> CrystalStructure::atomIndicesForFragment(int fragmentIndex) const {
     std::vector<GenericAtomIndex> result;
-    if(fragmentIndex < 0 || fragmentIndex > m_fragments.size()) return result;
+    if(fragmentIndex < 0 || fragmentIndex >= m_fragments.size()) return result;
     for(int i : m_fragments[fragmentIndex]) {
 	auto offset = m_unitCellOffsets[i];
 	result.push_back(GenericAtomIndex{offset.unitCellOffset, offset.hkl.h, offset.hkl.k, offset.hkl.l});

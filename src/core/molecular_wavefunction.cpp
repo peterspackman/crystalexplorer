@@ -89,3 +89,8 @@ double MolecularWavefunction::totalEnergy() const {
 void MolecularWavefunction::setTotalEnergy(double e) {
     m_totalEnergy = e;
 }
+
+
+QString MolecularWavefunction::description() const {
+    return QString("%1/%2").arg(m_parameters.method).arg(m_parameters.basis);
+}

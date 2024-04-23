@@ -11,6 +11,7 @@
 
 #include "crystalx.h"
 #include "settings.h"
+#include "globalconfiguration.h"
 
 void copySettingFromPreviousToCurrent(QString key) {
   QVariant currentValue = settings::readSetting(key);
@@ -121,6 +122,8 @@ int main(int argc, char *argv[]) {
   } else {
     writePathsToResourcesInSettings(getPathToResources());
   }
+  auto * config = GlobalConfiguration::getInstance();
+  config->load();
 
   Crystalx *cx = new Crystalx();
   cx->show();
