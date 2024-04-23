@@ -33,27 +33,11 @@ class SurfaceGenerationDialog : public QDialog {
 
 public:
   SurfaceGenerationDialog(QWidget *parent = 0);
-  void setWavefunction(Wavefunction *);
-  void setAtomsForCalculation(const QVector<AtomId> &atoms) {
-    _atomsForCalculation = atoms;
-  }
-  void setChargeForCalculation(int charge) { _charge = charge; }
-  void setMultiplicityForCalculation(int multiplicity) {
-    _multiplicity = multiplicity;
-  }
-  void setSuppressedAtomsForCalculation(QVector<int> atomsIndices) {
-    _suppressedAtomsForCalculation = atomsIndices;
-  }
-  void setSuitableWavefunctions(QVector<TransformableWavefunction>);
+  void setChargeForCalculation(int charge);
+  void setMultiplicityForCalculation(int multiplicity);
   void setSuitableWavefunctions(const std::vector<WavefunctionAndTransform> &);
-  void setWavefunctionDone(TransformableWavefunction);
-  const QVector<AtomId> &atomsForCalculation() { return _atomsForCalculation; }
-  const QVector<int> &suppressedAtomsForCalculation() {
-    return _suppressedAtomsForCalculation;
-  }
 
-  bool waitingOnWavefunction() { return _waitingOnWavefunction; }
-
+  void setAtomIndices(const std::vector<GenericAtomIndex> &atoms);
   [[nodiscard]] const std::vector<GenericAtomIndex> &atomIndices() const;
 
 private slots:
@@ -64,13 +48,8 @@ private slots:
   void setSignLabel(int);
 
 signals:
-  void surfaceParametersChosen(const JobParameters &,
-                               std::optional<Wavefunction>);
   void surfaceParametersChosenNew(isosurface::Parameters);
-
   void surfaceParametersChosenNeedWavefunction(isosurface::Parameters, wfn::Parameters);
-
-  void requireWavefunction(const QVector<AtomId> &, int, int);
 
 private:
   void init();
@@ -87,28 +66,19 @@ private:
   bool needClusterOptions();
   bool needOrbitalBox();
   bool needWavefunction();
-  bool wavefunctionIsValid(Wavefunction *, const QVector<AtomId> &) const;
   bool mustCalculateWavefunction();
   bool needWavefunctionCalc();
-  void copyWavefunctionParamsIntoSurfaceParams(JobParameters &,
-                                               const JobParameters &);
-  TransformableWavefunction wavefunctionForCurrentComboboxSelection();
+
+  wfn::Parameters getCurrentWavefunctionParameters();
 
   std::vector<GenericAtomIndex> m_atomIndices;
   QString m_currentSurfaceType{"hirshfeld"};
 
-  QVector<TransformableWavefunction> _wavefunctions;
   std::vector<WavefunctionAndTransform> m_availableWavefunctions;
-
-  QVector<AtomId> _atomsForCalculation;
-  QVector<int> _suppressedAtomsForCalculation;
-  QVector<IsosurfaceDetails::Type> m_indexToSurfaceType;
 
   QMap<QString, isosurface::SurfaceDescription> m_surfaceDescriptions;
   QMap<QString, isosurface::SurfacePropertyDescription> m_surfacePropertyDescriptions;
-
-  bool _waitingOnWavefunction;
-  int _charge, _multiplicity;
+  int m_charge{0}, m_multiplicity{1};
 
   Ui::SurfaceGenerationDialog *ui;
 };

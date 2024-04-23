@@ -21,6 +21,7 @@ struct Parameters {
     QString basis{"def2-qzvp"};
     ChemicalStructure *structure{nullptr};
     std::vector<GenericAtomIndex> atoms;
+    bool accepted{false};
 
     inline bool operator==(const Parameters &rhs) const {
 	if(structure != rhs.structure) return false;

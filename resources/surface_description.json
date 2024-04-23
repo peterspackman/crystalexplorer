@@ -13,26 +13,40 @@
 	"di": {
 	    "cmap": "RedGreenBlue",
 	    "occName": "di",
-	    "displayName": "d<sub>i</sub>",
+	    "displayName": "D_i",
 	    "units": "Å",
 	    "description": "<p>d<sub>i</sub></p>"
+	},
+	"di_norm": {
+	    "cmap": "RedGreenBlue",
+	    "occName": "di_norm",
+	    "displayName": "D_i (normalized)",
+	    "units": "",
+	    "description": "<p>d<sub>i</sub> (norm)</p>"
 	},
 	"de": {
 	    "cmap": "RedGreenBlue",
 	    "occName": "de",
-	    "displayName": "d<sub>e</sub>",
+	    "displayName": "D_e",
 	    "description": "<p>d<sub>e</sub></p>"
+	},
+	"de_norm": {
+	    "cmap": "RedGreenBlue",
+	    "occName": "de_norm",
+	    "displayName": "D_e (normalized)",
+	    "units": "",
+	    "description": "<p>d<sub>e</sub> (norm)</p>"
 	},
 	"dnorm": {
 	    "cmap": "RedWhiteBlue",
 	    "occName": "dnorm",
-	    "displayName": "d<sub>norm</sub>",
+	    "displayName": "D_norm",
 	    "description": "<p>d<sub>norm</sub></p>"
 	},
 	"shape_index": {
 	    "cmap": "RedGreenBlue",
 	    "occName": "shape_index",
-	    "displayName": "Shape index",
+	    "displayName": "Shape Index",
 	    "description": "<p>Shape Index</p>"
 	},
 	"curvedness": {

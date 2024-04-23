@@ -59,6 +59,7 @@ struct SurfaceDescription {
 };
 
 SurfaceDescription getSurfaceDescription(Kind);
+QString getDisplayName(QString);
 
 bool loadSurfaceDescriptionConfiguration(
     QMap<QString, SurfacePropertyDescription> &,

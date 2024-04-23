@@ -122,4 +122,11 @@ SurfaceDescription getSurfaceDescription(Kind kind) {
     return {};
 }
 
+QString getDisplayName(QString s) {
+    const auto &descriptions = GlobalConfiguration::getInstance()->getSurfaceDescriptions();
+    auto loc = descriptions.find(s);
+    if(loc != descriptions.end()) return (*loc).displayName;
+    return s;
+}
+
 }

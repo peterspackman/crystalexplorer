@@ -1,8 +1,6 @@
 #include <QDialog>
 #include <QtDebug>
 
-#include "gaussianinterface.h"
-#include "nwcheminterface.h"
 #include "wavefunctioncalculationdialog.h"
 
 const QString WavefunctionCalculationDialog::customEntry{"Custom..."};
@@ -104,17 +102,20 @@ void WavefunctionCalculationDialog::show() {
   QWidget::show();
 }
 
+
+const wfn::Parameters& WavefunctionCalculationDialog::getParameters() const {
+    return m_parameters;
+}
+
 void WavefunctionCalculationDialog::accept() {
-  wfn::Parameters params;
-  params.charge = charge();
-  params.multiplicity = multiplicity();
-  params.method = method();
-  params.basis = basis();
-  params.atoms = m_atomIndices;
+    m_parameters.charge = charge();
+    m_parameters.multiplicity = multiplicity();
+    m_parameters.method = method();
+    m_parameters.basis = basis();
 
-  emit wavefunctionParametersChosen(params);
+    emit wavefunctionParametersChosen(m_parameters);
 
-  QDialog::accept();
+    QDialog::accept();
 }
 
 QString WavefunctionCalculationDialog::program() const {
@@ -130,11 +131,11 @@ QString WavefunctionCalculationDialog::basis() const {
 }
 
 void WavefunctionCalculationDialog::setAtomIndices(const std::vector<GenericAtomIndex> &idxs) {
-    m_atomIndices = idxs;
+    m_parameters.atoms = idxs;
 }
 
 const std::vector<GenericAtomIndex>& WavefunctionCalculationDialog::atomIndices() const {
-    return m_atomIndices;
+    return m_parameters.atoms;
 }
 
 int WavefunctionCalculationDialog::charge() const { 
@@ -143,6 +144,7 @@ int WavefunctionCalculationDialog::charge() const {
 
 void WavefunctionCalculationDialog::setCharge(int charge) { 
     chargeSpinBox->setValue(charge);
+    m_parameters.charge = charge;
 }
 
 int WavefunctionCalculationDialog::multiplicity() const { 
@@ -151,4 +153,5 @@ int WavefunctionCalculationDialog::multiplicity() const {
 
 void WavefunctionCalculationDialog::setMultiplicity(int mult) { 
     multiplicitySpinBox->setValue(mult);
+    m_parameters.multiplicity = mult;
 }

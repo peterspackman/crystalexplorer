@@ -1,15 +1,9 @@
 #pragma once
 #include <QDialog>
 
-#include "atomid.h"
-#include "jobparameters.h"
 #include "wavefunction_parameters.h"
 #include "generic_atom_index.h"
 #include "ui_wavefunctioncalculationdialog.h"
-
-const QString GAUSSIAN_TAB_TOOLTIP =
-    "This tab is not available because the Gaussian program could not be found";
-const ExternalProgram DEFAULT_WAVEFUNCTION_SOURCE = ExternalProgram::Gaussian;
 
 class WavefunctionCalculationDialog : public QDialog,
                                       public Ui::WavefunctionCalculationDialog {
@@ -33,6 +27,8 @@ public:
   QString basis() const;
 
 
+  const wfn::Parameters& getParameters() const;
+
 public slots:
   void show();
 
@@ -49,5 +45,6 @@ private:
   void initMethod();
   void initBasis();
 
-  std::vector<GenericAtomIndex> m_atomIndices;
+  wfn::Parameters m_parameters;
+
 };

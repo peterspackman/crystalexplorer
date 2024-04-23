@@ -7,6 +7,7 @@
 #include <vector>
 #include <fstream>
 #include <ankerl/unordered_dense.h>
+#include "isosurface_parameters.h"
 
 inline std::vector<uint8_t> read_file_binary(const std::string & pathToFile)
 {
@@ -148,7 +149,8 @@ Mesh* read_ply_file(const QString& filepath, bool preload_into_memory = true) {
 			break;
 		    }
 		    Eigen::VectorXf v = Eigen::Map<const Eigen::VectorXf>(buf, prop->count);
-		    mesh->setVertexProperty(QString::fromStdString(prop_name), v);
+		    QString displayName = isosurface::getDisplayName(QString::fromStdString(prop_name));
+		    mesh->setVertexProperty(displayName, v);
 		    break;
 		}
 		default:

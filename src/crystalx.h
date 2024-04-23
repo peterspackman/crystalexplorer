@@ -15,14 +15,6 @@
 #include "childpropertycontroller.h"
 #include "viewtoolbar.h"
 
-#include "gaussianinterface.h"
-#include "nwcheminterface.h"
-#include "occinterface.h"
-#include "orcainterface.h"
-#include "psi4interface.h"
-#include "tontointerface.h"
-#include "xtbinterface.h"
-
 #include "animationsettingsdialog.h"
 #include "celllimitsdialog.h"
 #include "chargedialog.h"
@@ -68,18 +60,10 @@ public:
   void loadExternalFileData(QString);
 
 public slots:
-  void generateSurface(const JobParameters &, std::optional<Wavefunction>);
-  void generateSurfaceNew(isosurface::Parameters);
+  void generateSurface(isosurface::Parameters);
   void generateSurfaceRequiringWavefunction(isosurface::Parameters, wfn::Parameters);
-  void getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex>&, int, int);
+  wfn::Parameters getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex>&, int, int);
   void generateWavefunction(wfn::Parameters);
-  void calculateMonomerEnergy(const JobParameters &);
-  void returnToJobRequiringWavefunction();
-  void tontoJobFinished(TontoExitStatus, JobType);
-  void occJobFinished(bool, JobType);
-  void orcaJobFinished(bool, JobType);
-  void xtbJobFinished(bool, JobType);
-  void wavefunctionJobFinished(bool);
   void jobRunning();
   void jobCancelled(QString);
   void uncheckContactAtomsAction();
@@ -111,12 +95,6 @@ private slots:
   void removeFileFromHistory(const QString &);
   void updateWindowTitle();
   void quit();
-  void showTontoStdin();
-  void showTontoStdout();
-  void showGaussianStdout();
-  void showNWChemStdout();
-  void showPsi4Output();
-  void showOccOutput();
   void getSurfaceParametersFromUser();
   void updateCloseContactOptions();
   void setMoleculeStyleForCurrent();
@@ -175,6 +153,7 @@ private slots:
   void taskManagerTaskRemoved(TaskID);
 
   void handleStructureChange();
+  void handleGenerateWavefunctionAction();
 
 private:
   void init();
@@ -186,7 +165,6 @@ private:
   void initGlWindow();
   void initFingerprintWindow();
   void initInfoViewer();
-  void initInterfaces();
   void createRecentFileActionsAndAddToFileMenu();
   void addExitOptionToFileMenu();
   void createToolbars();
@@ -262,14 +240,6 @@ private:
   ChargeDialog *chargeDialog{nullptr};
   InfoViewer *infoViewer{nullptr};
   PlaneGenerationDialog *m_planeGenerationDialog{nullptr};
-
-  TontoInterface *tontoInterface{nullptr};
-  GaussianInterface *gaussianInterface{nullptr};
-  NWChemInterface *nwchemInterface{nullptr};
-  Psi4Interface *psi4Interface{nullptr};
-  OccInterface *m_occInterface{nullptr};
-  OrcaInterface *m_orcaInterface{nullptr};
-  XTBInterface *m_xtbInterface{nullptr};
 
   QDockWidget *childPropertyControllerDockWidget{nullptr};
   QDockWidget *crystalControllerDockWidget{nullptr};

@@ -29,10 +29,10 @@ void SurfaceGenerationDialog::init() {
   ui->comboBoxHL->insertItems(0, orbitalLabels);
 
   surfaceChanged(m_currentSurfaceType);
-  _waitingOnWavefunction = false;
 
-  _charge = 0; // default value but should be set with setChargeForCalculation
-  _multiplicity = 1;
+  m_charge = 0; // default value but should be set with setChargeForCalculation
+  m_multiplicity = 1;
+
   updateSettings();
 }
 
@@ -49,26 +49,38 @@ void SurfaceGenerationDialog::initConnections() {
   connect(ui->surfaceComboBox, &SurfaceTypeDropdown::selectionChanged,
 	  this, &SurfaceGenerationDialog::surfaceChanged);
 
-  connect(this, SIGNAL(accepted()), this, SLOT(validate()));
-  connect(ui->comboBoxHL, SIGNAL(activated(int)), this, SLOT(setSignLabel(int)));
-  connect(ui->useUserDefinedCluster, SIGNAL(toggled(bool)),
-          ui->voidClusterPaddingSpinBox, SLOT(setEnabled(bool)));
+  connect(this, &SurfaceGenerationDialog::accepted,
+	  this, &SurfaceGenerationDialog::validate);
+  connect(ui->comboBoxHL, QOverload<int>::of(&QComboBox::activated),
+	  this, &SurfaceGenerationDialog::setSignLabel);
+  connect(ui->useUserDefinedCluster, &QCheckBox::toggled,
+          ui->voidClusterPaddingSpinBox, &QDoubleSpinBox::setEnabled);
 }
+
+
+void SurfaceGenerationDialog::setAtomIndices(const std::vector<GenericAtomIndex> &atoms) {
+    m_atomIndices = atoms;
+}
+
+void SurfaceGenerationDialog::setChargeForCalculation(int charge) { 
+    m_charge = charge; 
+}
+
+void SurfaceGenerationDialog::setMultiplicityForCalculation(int multiplicity) {
+    m_multiplicity = multiplicity;
+}
+
 
 void SurfaceGenerationDialog::connectPropertyComboBox(bool makeConnection) {
   if (makeConnection) {
-    connect(ui->propertyComboBox, SIGNAL(currentIndexChanged(int)), this,
-            SLOT(propertyChanged()));
+    connect(ui->propertyComboBox,
+	    &QComboBox::currentIndexChanged, this,
+            &SurfaceGenerationDialog::propertyChanged);
   } else {
-    disconnect(ui->propertyComboBox, SIGNAL(currentIndexChanged(int)), this,
-               SLOT(propertyChanged()));
+    disconnect(ui->propertyComboBox,
+	       &QComboBox::currentIndexChanged, this,
+               &SurfaceGenerationDialog::propertyChanged);
   }
-}
-
-void SurfaceGenerationDialog::setSuitableWavefunctions(
-    QVector<TransformableWavefunction> wavefunctions) {
-  _wavefunctions = wavefunctions;
-  updateWavefunctionComboBox(true);
 }
 
 void SurfaceGenerationDialog::setSuitableWavefunctions(const std::vector<WavefunctionAndTransform> &wfns) {
@@ -76,34 +88,11 @@ void SurfaceGenerationDialog::setSuitableWavefunctions(const std::vector<Wavefun
     updateWavefunctionComboBox(true);
 }
 
-void SurfaceGenerationDialog::setWavefunctionDone(
-    TransformableWavefunction wavefunction) {
-  _wavefunctions.append(wavefunction);
-  _waitingOnWavefunction = false;
-  updateWavefunctionComboBox(true);
-  validate();
-}
-
-bool SurfaceGenerationDialog::wavefunctionIsValid(
-    Wavefunction *wavefunction, const QVector<AtomId> &atoms) const {
-  bool result = false;
-  if (wavefunction) {
-    result = wavefunction->isValid(atoms);
-  }
-  return result;
-}
-
-bool SurfaceGenerationDialog::mustCalculateWavefunction() {
-  return needWavefunction() &&
-         (ui->wavefunctionCombobox->currentText() == NEW_WAVEFUNCTION_ITEM);
-}
-
 void SurfaceGenerationDialog::validate() {
     /*
   if (mustCalculateWavefunction()) {
     Q_ASSERT(_atomsForCalculation.size() > 0);
-    _waitingOnWavefunction = true;
-    emit requireWavefunction(_atomsForCalculation, _charge, _multiplicity);
+    emit requireWavefunction(_atomsForCalculation, m_charge, m_multiplicity);
     return;
   }
 
@@ -128,8 +117,8 @@ void SurfaceGenerationDialog::validate() {
   jobParams.program = ExternalProgram::None;
   jobParams.atoms = _atomsForCalculation;
   jobParams.atomsToSuppress = _suppressedAtomsForCalculation;
-  jobParams.charge = _charge;
-  jobParams.multiplicity = _multiplicity;
+  jobParams.charge = m_charge;
+  jobParams.multiplicity = m_multiplicity;
 
   std::optional<Wavefunction> wfn = {};
 
@@ -156,48 +145,14 @@ void SurfaceGenerationDialog::validate() {
   if(needWavefunction()) {
       qDebug() << "Needs wavefunction";
       wfn::Parameters wfn_params;
-      wfn_params.charge = _charge;
-      wfn_params.multiplicity = _multiplicity;
+      wfn_params.charge = m_charge;
+      wfn_params.multiplicity = m_multiplicity;
 
       emit surfaceParametersChosenNeedWavefunction(parameters, wfn_params);
   }
   else {
       emit surfaceParametersChosenNew(parameters);
   }
-}
-
-// Returns the corrsponding wavefunction for a currently selected entry in the
-// wavefunction combobox
-// The only tricky part is we have the entry NEW_WAVEFUNCTION_ITEM which doesn't
-// correspond
-// to a wavefunction. If this entries index is lower than the current index then
-// we need to
-// substract one to get the proper index into _wavefunctions.
-TransformableWavefunction
-SurfaceGenerationDialog::wavefunctionForCurrentComboboxSelection() {
-  int newWavefunctionEntry =
-      ui->wavefunctionCombobox->findText(NEW_WAVEFUNCTION_ITEM);
-
-  int index = ui->wavefunctionCombobox->currentIndex();
-
-  if (newWavefunctionEntry < index) {
-    index--;
-  }
-
-  return _wavefunctions[index];
-}
-
-void SurfaceGenerationDialog::copyWavefunctionParamsIntoSurfaceParams(
-    JobParameters &jobParams, const JobParameters &jobParamsForWavefunction) {
-  if (jobParamsForWavefunction.program == ExternalProgram::None)
-    return;
-  // Did we have to generate a wavefunction for this surface?
-  jobParams.program = jobParamsForWavefunction.program;
-  jobParams.theory = jobParamsForWavefunction.theory;
-  jobParams.basisset = jobParamsForWavefunction.basisset;
-  jobParams.charge = jobParamsForWavefunction.charge;
-  jobParams.multiplicity = jobParamsForWavefunction.multiplicity;
-  jobParams.atoms = jobParamsForWavefunction.atoms;
 }
 
 void SurfaceGenerationDialog::updateSettings() {
