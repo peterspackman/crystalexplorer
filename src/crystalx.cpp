@@ -1024,7 +1024,9 @@ void Crystalx::readSurfaceFile() {
 
 void Crystalx::getSurfaceParametersFromUser() {
   Scene *scene = project->currentScene();
-  Q_ASSERT(scene != nullptr);
+  if(!scene) return;
+  auto * structure = scene->chemicalStructure();
+  if(!structure) return;
 
   // Secret option to allow the reading of surface files
   // In general this is a bad idea because the surface file
@@ -1041,7 +1043,10 @@ void Crystalx::getSurfaceParametersFromUser() {
 		  &SurfaceGenerationDialog::surfaceParametersChosenNew,
 		  this, &Crystalx::generateSurface
 	  );
+	  connect(m_newSurfaceGenerationDialog, &SurfaceGenerationDialog::surfaceParametersChosenNeedWavefunction,
+		  this, &Crystalx::generateSurfaceRequiringWavefunction);
 	}
+	m_newSurfaceGenerationDialog->setAtomIndices(structure->atomsWithFlags(AtomFlag::Selected));
 	m_newSurfaceGenerationDialog->show();
   }
 }
@@ -1062,7 +1067,36 @@ void Crystalx::generateSurface(isosurface::Parameters parameters) {
 }
 
 void Crystalx::generateSurfaceRequiringWavefunction(isosurface::Parameters parameters, wfn::Parameters wfn_parameters) {
+    Scene *scene = project->currentScene();
+    if (!scene) return;
+    auto *structure = scene->chemicalStructure();
+    if (!structure) return;
+    qDebug() << "In generateSurfaceRequiringWavefunction";
 
+    if(!wfn_parameters.accepted) {
+
+	qDebug() << "Generate new wavefunction";
+	// NEW Wavefunction
+	wfn_parameters = Crystalx::getWavefunctionParametersFromUser(m_newSurfaceGenerationDialog->atomIndices(), wfn_parameters.charge, wfn_parameters.multiplicity);
+	wfn_parameters.structure = structure;
+	// Still not valid
+	if(!wfn_parameters.accepted) return;
+    }
+
+
+    qDebug() << "Make calculator";
+    WavefunctionCalculator *wavefunctionCalc = new WavefunctionCalculator();
+    wavefunctionCalc->setTaskManager(m_taskManager);
+
+    connect(wavefunctionCalc, &WavefunctionCalculator::calculationComplete, this, [parameters, this, wavefunctionCalc]() {
+	auto params_tmp = parameters;
+        params_tmp.wfn = wavefunctionCalc->getWavefunction();
+
+        generateSurface(params_tmp);
+        wavefunctionCalc->deleteLater();
+    });
+
+    wavefunctionCalc->start(wfn_parameters);
 }
 
 void Crystalx::showLoadingMessageBox(QString msg) {

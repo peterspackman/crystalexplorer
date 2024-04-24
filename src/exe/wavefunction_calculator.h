@@ -11,9 +11,10 @@ public:
     
     void setTaskManager(TaskManager *);
     void start(wfn::Parameters);
+    MolecularWavefunction *getWavefunction() const;
 
 signals:
-    void calculationComplete(wfn::Result);
+    void calculationComplete();
 
 private slots:
     void wavefunctionComplete(wfn::Parameters, QString filename, QString name);
@@ -21,4 +22,5 @@ private slots:
 private:
     TaskManager * m_taskManager{nullptr};
     ChemicalStructure * m_structure{nullptr};
+    MolecularWavefunction * m_wavefunction{nullptr};
 };

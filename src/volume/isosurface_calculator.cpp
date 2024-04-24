@@ -32,6 +32,19 @@ void write_xyz_file(const QString &filename, const occ::IVec &nums, const occ::M
     qDebug() << "Wrote xyz file to" << QFileInfo(file).absolutePath() << filename;
 }
 
+void write_wavefunction_file(const QString &filename, MolecularWavefunction *wfn) {
+    if(!wfn) return;
+    QFile file(filename);
+    if (file.open(QIODevice::WriteOnly)) {
+	file.write(wfn->rawContents());
+	file.close();
+    }
+    else {
+	qDebug() << "Could not open file for writing in write_wavefunction_file";
+    }
+
+}
+
 namespace volume {
 
 IsosurfaceCalculator::IsosurfaceCalculator(QObject * parent) : QObject(parent) {}
@@ -58,17 +71,22 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       occ::IVec nums = params.structure->atomicNumbersForIndices(m_atoms);
       occ::Mat3N pos = params.structure->atomicPositionsForIndices(m_atoms);
 
-      filename = "ce_surface_inside.xyz";
+      if(params.wfn) {
+	filename = "ce_surface_inside.owf.json";
+	write_wavefunction_file(filename, params.wfn);
+      }
+      else {
+	filename = "ce_surface_inside.xyz";
+	write_xyz_file(filename, nums, pos);
+      }
       filename_outside = "ce_surface_outside.xyz";
 
-      write_xyz_file(filename, nums, pos);
       {
 	  auto idxs = params.structure->atomsSurroundingAtomsWithFlags(AtomFlag::Selected, 12.0);
 	  qDebug() << "Idxs size: " << idxs.size();
 	  auto nums_outside = params.structure->atomicNumbersForIndices(idxs);
 	  auto pos_outside = params.structure->atomicPositionsForIndices(idxs);
 	  write_xyz_file(filename_outside, nums_outside, pos_outside);
-
       }
   }
 

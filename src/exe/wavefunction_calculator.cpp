@@ -40,10 +40,15 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
 
 void WavefunctionCalculator::wavefunctionComplete(wfn::Parameters params, QString filename, QString name) {
     qDebug() << "Task" << name << "finished in WavefunctionCalculator";
-    auto * wfn = io::loadWavefunction(filename);
-    if(wfn) {
-	wfn->setParameters(params);
-	wfn->setObjectName(name);
-	wfn->setParent(m_structure);
+    m_wavefunction = io::loadWavefunction(filename);
+    if(m_wavefunction) {
+	m_wavefunction->setParameters(params);
+	m_wavefunction->setObjectName(name);
+	m_wavefunction->setParent(m_structure);
+	emit calculationComplete();
     }
+}
+
+MolecularWavefunction * WavefunctionCalculator::getWavefunction() const {
+    return m_wavefunction;
 }
