@@ -206,8 +206,8 @@ void ChildPropertyController::setScale(Mesh::ScalarPropertyRange range) {
         surfacePropertyComboBox->currentText();
     if(m_clampedProperties.contains(currentProperty)) {
 	Mesh::ScalarPropertyRange clampValues = m_clampedProperties[currentProperty];
-	range.lower = std::max(clampValues.lower, range.lower);
-	range.upper = std::min(clampValues.upper, range.upper);
+	range.lower = clampValues.lower;
+	range.upper = clampValues.upper;
     }
 
     setMinAndMaxSpinBoxes(range.lower, range.upper);

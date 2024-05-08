@@ -11,7 +11,7 @@ namespace isosurface {
 QString kindToString(Kind kind) {
     switch(kind) {
 	case Kind::Promolecule:
-	    return "promolecule";
+	    return "promolecule_density";
 	case Kind::Hirshfeld:
 	    return "hirshfeld";
 	case Kind::Void:
@@ -19,9 +19,9 @@ QString kindToString(Kind kind) {
 	case Kind::ESP:
 	    return "esp";
 	case Kind::ElectronDensity:
-	    return "rho";
+	    return "electron_density";
 	case Kind::DeformationDensity:
-	    return "def";
+	    return "deformation_density";
 	default:
 	    return "unknown";
     };
@@ -29,9 +29,9 @@ QString kindToString(Kind kind) {
 
 Kind stringToKind(const QString &s) {
     qDebug() << "stringToKind called with:" << s;
-    if(s == "promolecule" || s == "Promolecule Density") return Kind::Promolecule;
+    if(s == "promolecule" || s == "Promolecule Density" || s == "promolecule_density") return Kind::Promolecule;
     else if(s == "hirshfeld" || s == "Hirshfeld") return Kind::Hirshfeld;
-    else if(s == "void" || s == "Void" || s == "Crystal Voids") return Kind::Void;
+    else if(s == "void" || s == "Void" || s == "Crystal Voids" || s == "crystal_void" || s == "Crystal Void") return Kind::Void;
     else if(s == "esp" || s == "electric_potential") return Kind::ESP;
     else if(s == "rho" || s == "electron_density") return Kind::ElectronDensity;
     else if(s == "def") return Kind::DeformationDensity;

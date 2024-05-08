@@ -1,4 +1,6 @@
 #include "molecular_wavefunction.h"
+#include <QFile>
+#include <QDebug>
 
 
 MolecularWavefunction::MolecularWavefunction(QObject *parent) : QObject(parent) {
@@ -35,8 +37,15 @@ void  MolecularWavefunction::setAtomIndices(const std::vector<GenericAtomIndex> 
     m_atomIndices = idxs;
 }
 
-void MolecularWavefunction::writeToFile(const QString &dest) {
-
+void MolecularWavefunction::writeToFile(const QString &filename) {
+    QFile file(filename);
+    if (file.open(QIODevice::WriteOnly)) {
+	file.write(this->rawContents());
+	file.close();
+    }
+    else {
+	qDebug() << "Could not open file for writing in MolecularWavefunction::writeToFile";
+    }
 }
 
 bool MolecularWavefunction::haveContents() const {
@@ -93,4 +102,12 @@ void MolecularWavefunction::setTotalEnergy(double e) {
 
 QString MolecularWavefunction::description() const {
     return QString("%1/%2").arg(m_parameters.method).arg(m_parameters.basis);
+}
+
+QString MolecularWavefunction::fileSuffix() const {
+    switch(m_fileFormat) {
+	case wfn::FileFormat::OccWavefunction: return ".owf.json";
+	case wfn::FileFormat::Fchk: return ".fchk";
+	case wfn::FileFormat::Molden: return ".molden";
+    }
 }

@@ -5,6 +5,7 @@ add_subdirectory(exe)
 add_subdirectory(io)
 add_subdirectory(crystal)
 add_subdirectory(graphics)
+add_subdirectory(pair_energy)
 add_subdirectory(volume)
 
 # Source files
@@ -207,6 +208,7 @@ target_link_libraries(
     cx_io
     cx_crystal
     cx_graphics
+    cx_pair_energy
     Qt6::Widgets Qt6::Concurrent
     Qt6::OpenGLWidgets Qt6::DBus
 )

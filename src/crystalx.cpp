@@ -899,42 +899,10 @@ void Crystalx::loadProject(QString filename) {
  When Tonto is finished the slot tontoJobFinished slot is called.
  */
 void Crystalx::processCif(QString &filename) {
-
-    if (settings::readSetting(settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG)
-	    .toBool()) {
-	qDebug() << "Loading CIF file: " << filename;
-	// must be done outside lambda, filename must be copied.
-	showStatusMessage(QString("Loading CIF file from %1").arg(filename));
-	project->loadCrystalStructuresFromCifFile(filename);
-	return;
-    }
-    else {
-
-	QString cxc = QFileInfo(filename).baseName() + "." + CIFDATA_EXTENSION;
-	auto onCompletion = [&, cxc, filename]() {
-	    if (project->loadCrystalDataTonto(cxc, filename)) {
-		showStatusMessage("CIF data loaded.");
-	    } else {
-		QMessageBox::warning(this, "Error",
-			"Unable to read crystal data from file: " +
-			cxc);
-	    }
-	};
-
-	if (!QFileInfo(cxc).exists()) {
-	    Task* tontoTask = new TontoCifProcessingTask(m_taskManager);
-	    tontoTask->setProperty("name", "Read CIF");
-	    tontoTask->setProperty("cif", filename);
-	    tontoTask->setProperty("cxc", cxc);
-	    tontoTask->setProperty("override_bond_lengths", overrideBondLengths());
-	    TaskID taskId = m_taskManager->add(tontoTask);
-
-	    connect(tontoTask, &Task::completed, onCompletion);
-	}
-	else {
-	    onCompletion();
-	}
-    }
+    qDebug() << "Loading CIF file: " << filename;
+    // must be done outside lambda, filename must be copied.
+    showStatusMessage(QString("Loading CIF file from %1").arg(filename));
+    project->loadCrystalStructuresFromCifFile(filename);
 }
 
 void Crystalx::jobRunning() { setBusy(true); }

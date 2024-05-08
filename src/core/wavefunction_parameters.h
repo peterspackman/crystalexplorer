@@ -23,7 +23,7 @@ struct Parameters {
     std::vector<GenericAtomIndex> atoms;
     bool accepted{false};
 
-    inline bool operator==(const Parameters &rhs) const {
+    bool operator==(const Parameters &rhs) const {
 	if(structure != rhs.structure) return false;
 	if(charge != rhs.charge) return false;
 	if(multiplicity != rhs.multiplicity) return false;

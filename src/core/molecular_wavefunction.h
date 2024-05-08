@@ -43,6 +43,8 @@ public:
 
     QString description() const;
 
+    QString fileSuffix() const;
+
 private:
     int m_nbf{0};
     double m_totalEnergy{0.0};

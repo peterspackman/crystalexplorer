@@ -26,7 +26,8 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
 	{"di", ColorMapName::CE_rgb},
 	{"de", ColorMapName::CE_rgb},
 	{"di_norm", ColorMapName::CE_bwr},
-	{"de_norm", ColorMapName::CE_bwr},
+	{"shape_index", ColorMapName::CE_rgb},
+	{"curvedness", ColorMapName::CE_rgb},
     };
 }
 

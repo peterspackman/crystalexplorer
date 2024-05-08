@@ -2,6 +2,7 @@ add_library(cx_exe
     "${CMAKE_CURRENT_SOURCE_DIR}/exefileutilities.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/externalprogram.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/mocktask.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/occpairtask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occsurfacetask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occwavefunctiontask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/task.cpp"
