@@ -1,6 +1,6 @@
 #pragma once
 
-#include "chargemultiplicitypair.h"
+#include "chemicalstructure.h"
 #include <QDialog>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -20,11 +20,13 @@ public:
   explicit ChargeDialog(QWidget *parent = 0);
   ~ChargeDialog();
 
-  void setChargeMultiplicityInfo(const QStringList &,
-                                 const std::vector<ChargeMultiplicityPair> &,
-                                 bool);
-  bool hasChargesAndMultiplicities();
-  std::vector<ChargeMultiplicityPair> getChargesAndMultiplicities();
+  void setFragmentInformation(const QStringList &,
+                              const std::vector<ChemicalStructure::FragmentState> &,
+                              bool);
+  bool hasFragmentStates();
+  std::vector<ChemicalStructure::FragmentState> getFragmentStates();
+  void populate(ChemicalStructure *);
+
 public slots:
   void accept();
 
@@ -38,7 +40,7 @@ private:
   void registerConnectionsForSpinBoxes();
   void cleanupWidgets();
   void createWidgets(const QStringList &,
-                     const std::vector<ChargeMultiplicityPair> &);
+                     const std::vector<ChemicalStructure::FragmentState> &);
   int totalCharge();
   bool chargeIsBalanced();
 

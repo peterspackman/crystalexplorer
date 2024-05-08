@@ -2,7 +2,7 @@
 #include "exefileutilities.h"
 
 TontoTask::TontoTask(QObject *parent) : ExternalProgramTask(parent) {
-    setExecutable("/Users/285699f/git/crystalexplorer/resources/tonto");
+    setExecutable(QDir::homePath() + "/git/crystalexplorer/resources/tonto");
 }
 
 void TontoTask::appendBasisSetDirectoryBlock(QString &result) {

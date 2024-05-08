@@ -90,6 +90,8 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
 
   m_bondsNeedUpdate = false;
   m_fragments.clear();
+  m_symmetryUniqueFragments.clear();
+  m_symmetryUniqueFragmentStates.clear();
   m_fragmentForAtom.clear();
   m_covalentBonds.clear();
   m_hydrogenBonds.clear();
@@ -125,6 +127,16 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     m_bondGraph.breadth_first_traversal_with_edge_filtered(
         v.first, covalentVisitor, covalentPredicate);
     currentFragmentIndex++;
+  }
+
+  // TODO detect symmetry
+  for(int f = 0; f < m_fragments.size(); f++) {
+      std::vector<GenericAtomIndex> sym;
+      for(int idx : m_fragments[f]) {
+	  sym.push_back(GenericAtomIndex{idx});
+      }
+      m_symmetryUniqueFragments.push_back(sym);
+      m_symmetryUniqueFragmentStates.push_back({});
   }
 
   for (const auto &[edge_desc, edge] : m_bondGraph.edges()) {
@@ -407,6 +419,27 @@ void ChemicalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
 
   deleteAtoms(fragIndices);
   updateBondGraph();
+}
+
+
+std::vector<int> ChemicalStructure::completedFragments() const {
+    std::vector<int> result;
+    for(int fragmentIndex = 0; fragmentIndex < m_fragments.size(); fragmentIndex++) {
+	const auto &fragIndices = atomsForFragment(fragmentIndex);
+	if (fragIndices.size() == 0) continue;
+	result.push_back(fragmentIndex);
+    }
+    return result;
+}
+
+std::vector<int> ChemicalStructure::selectedFragments() const {
+    std::vector<int> result;
+    for(int fragmentIndex = 0; fragmentIndex < m_fragments.size(); fragmentIndex++) {
+	const auto &fragIndices = atomsForFragment(fragmentIndex);
+	if (fragIndices.size() == 0) continue;
+	if (atomsHaveFlags(fragIndices, AtomFlag::Selected)) result.push_back(fragmentIndex);
+    }
+    return result;
 }
 
 bool ChemicalStructure::hasIncompleteFragments() const { return false; }
@@ -806,5 +839,36 @@ std::vector<WavefunctionAndTransform> ChemicalStructure::wavefunctionsAndTransfo
 	}
     }
     return result;
+}
+
+
+ChemicalStructure::FragmentState ChemicalStructure::getSymmetryUniqueFragmentState(int fragmentIndex) const {
+    if(fragmentIndex < 0 || fragmentIndex >= m_symmetryUniqueFragmentStates.size()) return {};
+    return m_symmetryUniqueFragmentStates[fragmentIndex];
+}
+
+void ChemicalStructure::setSymmetryUniqueFragmentState(int fragmentIndex, ChemicalStructure::FragmentState state) {
+    if(fragmentIndex < 0 || fragmentIndex >= m_symmetryUniqueFragmentStates.size()) return;
+    m_symmetryUniqueFragmentStates[fragmentIndex] = state;
+}
+
+
+const std::vector<std::vector<GenericAtomIndex>> &ChemicalStructure::symmetryUniqueFragments() const {
+    return m_symmetryUniqueFragments;
+}
+
+
+const std::vector<ChemicalStructure::FragmentState> &ChemicalStructure::symmetryUniqueFragmentStates() const {
+    return m_symmetryUniqueFragmentStates;
+}
+
+QString ChemicalStructure::formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs, bool richText) const {
+    std::vector<QString> symbols;
+
+    occ::IVec nums = atomicNumbersForIndices(idxs);
+    for(int i = 0; i < nums.rows(); i++) {
+	symbols.push_back(QString::fromStdString(occ::core::Element(nums(i)).symbol()));
+    } 
+    return formulaSum(symbols, richText);
 }
 

@@ -127,6 +127,7 @@ void CrystalStructure::updateBondGraph() {
       }
     }
   }
+
 }
 
 void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
@@ -179,9 +180,23 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
 }
 
 void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
-  m_crystal = crystal;
+    m_crystal = crystal;
 
-  resetAtomsAndBonds();
+    resetAtomsAndBonds();
+
+    m_symmetryUniqueFragments.clear();
+    const auto &uc_atoms = m_crystal.unit_cell_atoms();
+    qDebug() << "Crystal has " << m_crystal.unit_cell_molecules().size() << "uc mols";
+    qDebug() << "Crystal has " << m_crystal.symmetry_unique_molecules().size() << "sym mols";
+    for(const auto &mol: m_crystal.symmetry_unique_molecules()) {
+	std::vector<GenericAtomIndex> idxs;
+	const auto &uc_idx = mol.unit_cell_idx();
+	for(int i = 0; i < uc_idx.rows(); i++) {
+	    idxs.push_back(GenericAtomIndex{i, uc_atoms.hkl(0, i), uc_atoms.hkl(1, i), uc_atoms.hkl(2, i)});
+	}
+	m_symmetryUniqueFragments.push_back(idxs);
+	m_symmetryUniqueFragmentStates.push_back({});
+    }
 }
 
 QString CrystalStructure::chemicalFormula() const {
@@ -458,6 +473,45 @@ bool CrystalStructure::hasIncompleteFragments() const {
   return false;
 }
 
+std::vector<int> CrystalStructure::completedFragments() const {
+
+  std::vector<int> result;
+  const auto &g = m_crystal.unit_cell_connectivity();
+  const auto &edges = g.edges();
+
+  int currentFragmentIndex{0};
+
+  auto covalentPredicate = [&edges](const EdgeDesc &e) {
+    return edges.at(e).connectionType == Connection::CovalentBond;
+  };
+
+  for (currentFragmentIndex = 0; currentFragmentIndex < m_fragments.size();
+       currentFragmentIndex++) {
+    if (m_fragments[currentFragmentIndex].size() == 0)
+      continue;
+    bool incomplete{false};
+
+    auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
+			 const EdgeDesc &e, const MillerIndex &hkl) {
+	CrystalIndex atomIdx{static_cast<int>(v), hkl};
+	auto location = m_atomMap.find(atomIdx);
+	if (location == m_atomMap.end()) {
+	  incomplete = true;
+	  return;
+	}
+    };
+
+    int atomIndex = m_fragments[currentFragmentIndex][0];
+    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unitCellOffset;
+    filtered_connectivity_traversal_with_cell_offset(
+        g, uc_vertex, visitor, covalentPredicate,
+        m_unitCellOffsets[atomIndex].hkl);
+    if (incomplete) continue;
+    else result.push_back(currentFragmentIndex);
+  }
+  return result;
+}
+
 void CrystalStructure::deleteIncompleteFragments() {
 
   const auto &g = m_crystal.unit_cell_connectivity();
@@ -696,4 +750,22 @@ occ::Mat3N CrystalStructure::atomicPositionsForIndices(const std::vector<Generic
     }
     result = m_crystal.to_cartesian(result);
     return result;
+}
+
+const std::vector<ChemicalStructure::FragmentState>& CrystalStructure::symmetryUniqueFragmentStates() const {
+    return m_symmetryUniqueFragmentStates;
+}
+
+const std::vector<std::vector<GenericAtomIndex>>& CrystalStructure::symmetryUniqueFragments() const {
+    return m_symmetryUniqueFragments;
+}
+
+ChemicalStructure::FragmentState CrystalStructure::getSymmetryUniqueFragmentState(int fragmentIndex) const {
+    if(fragmentIndex < 0 || fragmentIndex >= m_symmetryUniqueFragmentStates.size()) return {};
+    return m_symmetryUniqueFragmentStates[fragmentIndex];
+}
+
+void CrystalStructure::setSymmetryUniqueFragmentState(int fragmentIndex, ChemicalStructure::FragmentState state) {
+    if(fragmentIndex < 0 || fragmentIndex >= m_symmetryUniqueFragmentStates.size()) return;
+    m_symmetryUniqueFragmentStates[fragmentIndex] = state;
 }

@@ -470,11 +470,14 @@ void Crystal::update_unit_cell_molecules() const {
   std::vector<std::vector<std::pair<size_t, size_t>>> mol_bonds;
   Mat3N shifts = Mat3N::Zero(3, atoms.size());
   ankerl::unordered_dense::set<vertex_desc> visited;
+
+  auto predicate = [&edges](const edge_desc &e) {
+    return edges.at(e).connectionType == Connection::CovalentBond;
+  };
+
   auto visitor = [&](const vertex_desc &v, const vertex_desc &prev,
                      const edge_desc &e) {
     const auto &edge = edges.at(e);
-    if (edge.connectionType != Connection::CovalentBond)
-      return;
     auto &idxs = atom_indices[uc_mol_idx];
     visited.insert(v);
     molecule_index(v) = uc_mol_idx;
@@ -491,7 +494,7 @@ void Crystal::update_unit_cell_molecules() const {
     mol_bonds.push_back({});
     if (visited.contains(v.first))
       continue;
-    g.breadth_first_traversal_with_edge(v.first, visitor);
+    g.filtered_breadth_first_traversal_with_edge(v.first, visitor, predicate);
     uc_mol_idx++;
   }
   Mat3N cart_pos = to_cartesian(atoms.frac_pos + shifts);

@@ -12,6 +12,32 @@ void OccPairTask::setParameters(const pair_energy::Parameters &params) {
     m_parameters = params;
 }
 
+void OccPairTask::appendTransformArguments(QStringList &args) {
+    const auto ta = m_parameters.transformA.matrix();
+
+    for(int i = 0; i < 3; i++) {
+	args << QString("--translation-a=%1").arg(ta(3, i));
+    }
+
+    for(int i = 0; i < 3; i++) {
+	for(int j = 0; j < 3; j++) {
+	    args << QString("--rotation-a=%1").arg(ta(i, j));
+	}
+    }
+
+    const auto tb = m_parameters.transformB.matrix();
+
+    for(int i = 0; i < 3; i++) {
+	args << QString("--translation-b=%1").arg(tb(3, i));
+    }
+
+    for(int i = 0; i < 3; i++) {
+	for(int j = 0; j < 3; j++) {
+	    args << QString("--rotation-b=%1").arg(tb(i, j));
+	}
+    }
+}
+
 void OccPairTask::start() {
     if(!(m_parameters.wfnA && m_parameters.wfnB)) {
 	qWarning() << "Invalid wavefunctions specified";
@@ -38,14 +64,18 @@ void OccPairTask::start() {
     };
 
     args << QString("--threads=%1").arg(threads());
+    args << QString("--model=%1").arg(m_parameters.model);
+
+
+    appendTransformArguments(args);
+
     qDebug() << "Arguments:" << args;
     setArguments(args);
     setRequirements(reqs);
     setOutputs({FileDependency(outputName, outputName)});
     auto environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("OCC_DATA_PATH", "/Users/285699f/git/occ/share");
+    environment.insert("OCC_DATA_PATH", QDir::homePath() + "/git/occ/share");
     setEnvironment(environment);
-
 
     emit progressText("Starting OCC process");
     ExternalProgramTask::start();

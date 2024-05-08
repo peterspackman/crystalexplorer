@@ -73,7 +73,7 @@ void OccWavefunctionTask::start() {
     setRequirements({FileDependency(inputName)});
     setOutputs({FileDependency(outputName, outputName)});
     auto environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("OCC_BASIS_PATH", "/Users/285699f/git/occ/share");
+    environment.insert("OCC_DATA_PATH", QDir::homePath() + "/git/occ/share");
     setEnvironment(environment);
 
 

@@ -95,6 +95,25 @@ public:
   }
 
   template <typename T>
+  void depth_first_traversal_with_edge(VertexDescriptor source, T &func) const {
+    ankerl::unordered_dense::set<VertexDescriptor> visited;
+    std::stack<std::tuple<VertexDescriptor, VertexDescriptor, EdgeDescriptor>> store;
+    store.push({source, source, 0});
+    while (!store.empty()) {
+      auto [s, predecessor, edge] = store.top();
+      store.pop();
+      if (visited.contains(s))
+        continue;
+
+      visited.insert(s);
+      func(s, predecessor, edge);
+      for (const auto &kv : m_adjacency_list.at(s)) {
+        store.push({kv.first, s, kv.second});
+      }
+    }
+  }
+
+  template <typename T>
   void breadth_first_traversal(VertexDescriptor source, T &func) const {
     ankerl::unordered_dense::set<VertexDescriptor> visited;
     std::queue<VertexDescriptor> store;
@@ -133,6 +152,30 @@ public:
       }
     }
   }
+
+  template <typename T, typename P>
+  void filtered_breadth_first_traversal_with_edge(VertexDescriptor source,
+						  T &func, P &pred) const {
+    ankerl::unordered_dense::set<VertexDescriptor> visited;
+    std::queue<std::tuple<VertexDescriptor, VertexDescriptor, EdgeDescriptor>>
+        store;
+    store.push({source, source, 0});
+    while (!store.empty()) {
+      auto [s, predecessor, edge] = store.front();
+      store.pop();
+      if (visited.contains(s))
+        continue;
+
+      visited.insert(s);
+      func(s, predecessor, edge);
+      for (const auto &kv : m_adjacency_list.at(s)) {
+	if (pred(kv.second)) {
+           store.push({kv.first, s, kv.second});
+	}
+      }
+    }
+  }
+
 
   template <typename T>
   void breadth_first_traversal_all_edges(VertexDescriptor source,

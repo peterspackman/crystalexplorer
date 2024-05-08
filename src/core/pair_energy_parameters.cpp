@@ -1,6 +1,11 @@
 #include "pair_energy_parameters.h"
 
 namespace pair_energy {
+
+bool EnergyModelParameters::operator==(const EnergyModelParameters& rhs) const {
+    if(model != rhs.model) return false;
+}
+
 bool Parameters::operator==(const Parameters& rhs) const {
     if (model != rhs.model) return false;
     if (atomsA != rhs.atomsA) return false;

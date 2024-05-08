@@ -18,6 +18,8 @@ public:
     int threads() const;
 
 private:
+    void appendTransformArguments(QStringList &);
+
     QString kind() const;
     pair_energy::Parameters m_parameters;
     QString m_wavefunctionSuffix{".owf.json"};

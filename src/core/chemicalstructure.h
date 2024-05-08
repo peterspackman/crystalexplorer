@@ -16,9 +16,16 @@
 
 using Transform = Eigen::Isometry3d;
 
+
 class ChemicalStructure : public QAbstractItemModel {
   Q_OBJECT
 public:
+
+  struct FragmentState {
+      int charge{0};
+      int multiplicity{1};
+  };
+
   enum class StructureType {
     Cluster, // 0D
     Wire,    // 1D periodic
@@ -64,6 +71,7 @@ public:
   virtual bool getTransformation(const std::vector<GenericAtomIndex> &from, const std::vector<GenericAtomIndex> &to,
 				 Eigen::Isometry3d &result) const;
 
+
   // fragments
   virtual void selectFragmentContaining(int);
   virtual void completeFragmentContaining(int);
@@ -80,6 +88,15 @@ public:
   inline virtual occ::Mat3 cellVectors() const {
     return occ::Mat3::Identity(3, 3);
   }
+
+  virtual std::vector<int> completedFragments() const;
+  virtual std::vector<int> selectedFragments() const;
+
+  virtual FragmentState getSymmetryUniqueFragmentState(int) const;
+  virtual void setSymmetryUniqueFragmentState(int, FragmentState);
+
+  virtual const std::vector<std::vector<GenericAtomIndex>>& symmetryUniqueFragments() const;
+  virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
@@ -135,6 +152,8 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
   QModelIndex indexFromObject(QObject* object, const QModelIndex& parent = QModelIndex()); 
 
+  virtual QString formulaSumForAtoms(const std::vector<GenericAtomIndex>&, bool richText=false) const;
+
 signals:
   void childAdded(QObject *);
   void childRemoved(QObject *);
@@ -172,6 +191,9 @@ private:
 
   // all of these must be updated when the bondGraph is updated
   std::vector<std::vector<int>> m_fragments;
+  std::vector<std::vector<GenericAtomIndex>> m_symmetryUniqueFragments;
+  std::vector<FragmentState> m_symmetryUniqueFragmentStates;
+
   std::vector<int> m_fragmentForAtom;
   std::vector<std::pair<int, int>> m_covalentBonds;
   std::vector<std::pair<int, int>> m_vdwContacts;

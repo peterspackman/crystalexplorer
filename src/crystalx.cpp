@@ -442,7 +442,7 @@ void Crystalx::initMenuConnections() {
   connect(calculateVoidDomainsAction, &QAction::triggered, this,
           &Crystalx::calculateVoidDomains);
   connect(setFragmentChargesAction, &QAction::triggered, this,
-          &Crystalx::setFragmentCharges);
+          &Crystalx::setFragmentStates);
 
   // Help menu
   connect(helpAboutAction, &QAction::triggered, this,
@@ -1004,18 +1004,18 @@ void Crystalx::getSurfaceParametersFromUser() {
   if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
     readSurfaceFile();
   } else if (scene->crystal() == nullptr) {
-	if (m_newSurfaceGenerationDialog == nullptr) {
-	  m_newSurfaceGenerationDialog = new SurfaceGenerationDialog(this);
-	  m_newSurfaceGenerationDialog->setModal(true);
-	  connect(m_newSurfaceGenerationDialog,
+	if (m_surfaceGenerationDialog == nullptr) {
+	  m_surfaceGenerationDialog = new SurfaceGenerationDialog(this);
+	  m_surfaceGenerationDialog->setModal(true);
+	  connect(m_surfaceGenerationDialog,
 		  &SurfaceGenerationDialog::surfaceParametersChosenNew,
 		  this, &Crystalx::generateSurface
 	  );
-	  connect(m_newSurfaceGenerationDialog, &SurfaceGenerationDialog::surfaceParametersChosenNeedWavefunction,
+	  connect(m_surfaceGenerationDialog, &SurfaceGenerationDialog::surfaceParametersChosenNeedWavefunction,
 		  this, &Crystalx::generateSurfaceRequiringWavefunction);
 	}
-	m_newSurfaceGenerationDialog->setAtomIndices(structure->atomsWithFlags(AtomFlag::Selected));
-	m_newSurfaceGenerationDialog->show();
+	m_surfaceGenerationDialog->setAtomIndices(structure->atomsWithFlags(AtomFlag::Selected));
+	m_surfaceGenerationDialog->show();
   }
 }
 
@@ -1045,7 +1045,7 @@ void Crystalx::generateSurfaceRequiringWavefunction(isosurface::Parameters param
 
 	qDebug() << "Generate new wavefunction";
 	// NEW Wavefunction
-	wfn_parameters = Crystalx::getWavefunctionParametersFromUser(m_newSurfaceGenerationDialog->atomIndices(), wfn_parameters.charge, wfn_parameters.multiplicity);
+	wfn_parameters = Crystalx::getWavefunctionParametersFromUser(m_surfaceGenerationDialog->atomIndices(), wfn_parameters.charge, wfn_parameters.multiplicity);
 	wfn_parameters.structure = structure;
 	// Still not valid
 	if(!wfn_parameters.accepted) return;
@@ -1682,23 +1682,28 @@ void Crystalx::cloneSurface() {
 }
 
 void Crystalx::showEnergyCalculationDialog() {
-  DeprecatedCrystal *crystal = project->currentScene()->crystal();
-  if(!crystal) {
-      return;
-  }
-  Q_ASSERT(crystal);
+    Scene *scene = project->currentScene();
+    if (!scene) return;
+    auto *structure = scene->chemicalStructure();
+    if (!structure) return;
 
-  int numCompleteFragments = crystal->numberOfCompleteFragments();
-  int numSelectedFragments = crystal->numberOfSelectedFragments();
-  Q_ASSERT(numSelectedFragments != 0);
+    const auto completeFragments = structure->completedFragments();
+    const auto selectedFragments = structure->selectedFragments();
+    qDebug() << "Complete fragments:" << completeFragments.size();
+    qDebug() << "Selected fragments:" << selectedFragments.size();
 
-  if (crystal->noChargeMultiplicityInformation()) {
-    bool success = getCharges(crystal);
-    if (!success) {
-      return; // User doesn't want us to continue so early return;
+    const char *propName = "fragmentStatesSetByUser";
+    const QVariant setByUser = structure->property(propName);
+
+    if (!setByUser.isValid() || !setByUser.toBool()) {
+        bool success = getFragmentStatesIfMultipleFragments(structure);
+	if (!success) {
+	  return; // User doesn't want us to continue so early return;
+	}
+	structure->setProperty(propName, true);
     }
-  }
 
+    /*
   if (numCompleteFragments == 1) {
     const float CLUSTER_RADIUS = 3.8f; // angstroms
     QString question = QString("No pairs of fragments found.\n\nDo you want to "
@@ -1723,27 +1728,26 @@ void Crystalx::showEnergyCalculationDialog() {
     }
   }
 
-  if (energyCalculationDialog == nullptr) {
-    energyCalculationDialog = new EnergyCalculationDialog(this);
-    energyCalculationDialog->setModal(true);
-    connect(energyCalculationDialog,
+  if (m_energyCalculationDialog == nullptr) {
+    m_energyCalculationDialog = new EnergyCalculationDialog(this);
+    m_energyCalculationDialog->setModal(true);
+
+    
+    connect(m_energyCalculationDialog,
             &EnergyCalculationDialog::energyParametersChosen, this,
             &Crystalx::calculateEnergies, Qt::UniqueConnection);
 
-    /*
-     * TODO tidy up
-    connect(energyCalculationDialog,
+    connect(m_energyCalculationDialog,
             &EnergyCalculationDialog::requireWavefunction, this,
             &Crystalx::getWavefunctionParametersFromUser, Qt::UniqueConnection);
-    connect(energyCalculationDialog,
+    connect(m_energyCalculationDialog,
             &EnergyCalculationDialog::requireSpecifiedWavefunction, this,
             &Crystalx::generateWavefunction, Qt::UniqueConnection);
-    connect(energyCalculationDialog,
+    connect(m_energyCalculationDialog,
             &EnergyCalculationDialog::requireMonomerEnergy, this,
             &Crystalx::calculateMonomerEnergy, Qt::UniqueConnection);
-    */
   }
-  energyCalculationDialog->setCrystal(crystal);
+  m_energyCalculationDialog->setCrystal(crystal);
 
   if (numSelectedFragments == 1 && numCompleteFragments > 1) {
 
@@ -1756,13 +1760,13 @@ void Crystalx::showEnergyCalculationDialog() {
       auto fragAtomsB =
           crystal->atomIdsForFragment(fragmentIndices.takeFirst());
 
-      energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
-      energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
+      m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
+      m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
           crystal->chargeMultiplicityForFragment(fragAtomsA),
           crystal->chargeMultiplicityForFragment(fragAtomsB));
-      energyCalculationDialog->setAtomsForRemainingFragments(
+      m_energyCalculationDialog->setAtomsForRemainingFragments(
           crystal->atomIdsForFragments(fragmentIndices));
-      energyCalculationDialog->show();
+      m_energyCalculationDialog->show();
     } else { // Nothing to calculate so show results of previous calculation
       showInfo(InteractionEnergyInfo);
     }
@@ -1778,11 +1782,11 @@ void Crystalx::showEnergyCalculationDialog() {
     QVector<AtomId> fragAtomsA = crystal->atomIdsForFragment(indexFragA);
     QVector<AtomId> fragAtomsB = crystal->atomIdsForFragment(indexFragB);
 
-    energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
-    energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
+    m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
+    m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
         crystal->chargeMultiplicityForFragment(fragAtomsA),
         crystal->chargeMultiplicityForFragment(fragAtomsB));
-    energyCalculationDialog->show();
+    m_energyCalculationDialog->show();
 
   } else {
     QString baseMessage = "Unable to calculate interaction "
@@ -1795,54 +1799,22 @@ void Crystalx::showEnergyCalculationDialog() {
     QString errorMessage = baseMessage + cond1 + cond2 + cond3;
     QMessageBox::warning(this, "Error", errorMessage);
   }
+*/
 }
 
-void Crystalx::calculateEnergies(const JobParameters &newJobParams,
-                                 const QVector<Wavefunction> &wavefunctions) {
-  Scene * scene= project->currentScene();
-  Q_ASSERT(scene);
-  if(!scene->crystal()) return;
-  DeprecatedCrystal  * crystal = scene->crystal();
+void Crystalx::calculateEnergies(pair_energy::EnergyModelParameters modelParameters) {
 
-  bool write_cp_file =
-      settings::readSetting(settings::keys::WRITE_GAUSSIAN_CP_FILES).toBool();
-  bool use_occ =
-      (settings::readSetting(settings::keys::OCC_EXECUTABLE).toString() !=
-       "") &&
-      (settings::readSetting(settings::keys::PREFERRED_WAVEFUNCTION_SOURCE)
-           .toString() != "Tonto");
-  // Write D2-BSSE Gaussian input file
-  if (write_cp_file) {
-      /*
-    gaussianInterface->writeCounterpoiseInputFile(
-        crystal->crystalName() + "_cp.gjf", crystal,
-        newJobParams);
-	*/
-  }
+    Scene *scene = project->currentScene();
+    if (!scene) return;
+    auto *structure = scene->chemicalStructure();
+    if (!structure) return;
+    qDebug() << "In calculateEnergies";
 
-  if (scene->crystal()->haveInteractionEnergyForPairInJobParameters(
-          newJobParams)) { // delete to prevent memory leak
-    //tryCalculateAnotherEnergy();
-  } else {
-    jobParams = newJobParams;
+    const auto completeFragments = structure->completedFragments();
+    const auto selectedFragments = structure->selectedFragments();
+    qDebug() << "Complete fragments:" << completeFragments.size();
+    qDebug() << "Selected fragments:" << selectedFragments.size();
 
-    QString cifFilename = crystal->cifFilename();
-    QString crystalName = crystal->crystalName();
-
-    jobParams.inputFilename = cifFilename;
-    {
-        QFileInfo fi (cifFilename);
-        jobParams.outputFilename = fi.path() + "/" + fi.baseName() + "_" + crystalName + "." + ENERGYDATA_EXTENSION;
-    }
-
-    if (jobParams.theory == Method::DLPNO) {
-	qDebug() << "DLPNO";
-    } else if (jobParams.isXtbJob()) {
-	qDebug() << "XTB";
-    } else {
-	qDebug() << "Pair";
-    }
-  }
 }
 
 void Crystalx::calculateVoidDomains() {
@@ -2022,56 +1994,45 @@ void Crystalx::showCrystalPlaneDialog() {
 ////////////////////////////////////////////////////////////////////////////////////
 
 // This slot is connected to the "Set Fragment Charges" menu option
-void Crystalx::setFragmentCharges() {
-  DeprecatedCrystal *crystal = project->currentScene()->crystal();
+void Crystalx::setFragmentStates() {
+  Scene *scene = project->currentScene();
+  if (!scene) return;
+  auto * structure = scene->chemicalStructure();
 
-  if (crystal) {
-    getChargesFromUser(crystal);
+  if (structure) {
+    getFragmentStatesFromUser(structure);
   }
 }
 
-bool Crystalx::getCharges(DeprecatedCrystal *crystal) {
-  bool success;
-
-  if (crystal->moreThanOneSymmetryUniqueFragment()) {
-    success = getChargesFromUser(crystal);
-  } else {
-    crystal->setUncharged();
-    success = true;
-  }
-  return success;
+bool Crystalx::getFragmentStatesIfMultipleFragments(ChemicalStructure *structure) {
+    bool success = true;
+    if (structure->symmetryUniqueFragments().size() > 1) {
+	success = getFragmentStatesFromUser(structure);
+    } 
+    return success;
 }
 
-bool Crystalx::getChargesFromUser(DeprecatedCrystal *crystal) {
-  if (chargeDialog == nullptr) {
-    chargeDialog = new ChargeDialog(this);
-  }
+bool Crystalx::getFragmentStatesFromUser(ChemicalStructure *structure) {
+    if(!structure) return false;
 
-  QVector<QVector<AtomId>> fragments = crystal->symmetryUniqueFragments();
-  std::vector<ChargeMultiplicityPair> cms =
-      crystal->chargeMultiplicityForFragments(fragments);
-
-  QStringList fragmentStrings;
-  foreach (QVector<AtomId> fragment, fragments) {
-    fragmentStrings << crystal->formulaSumOfAtomIdsAsRichText(fragment);
-  }
-
-  chargeDialog->setChargeMultiplicityInfo(
-      fragmentStrings, cms, crystal->hasChargeMultiplicityInformation());
-  int retCode = chargeDialog->exec();
-
-  bool success = (retCode == QDialog::Accepted);
-
-  if (success) {
-    if (chargeDialog->hasChargesAndMultiplicities()) {
-      crystal->setChargesMultiplicitiesForFragments(
-          fragments, chargeDialog->getChargesAndMultiplicities());
-    } else {
-      crystal->setUncharged();
+    if (!m_fragmentStateDialog) {
+	m_fragmentStateDialog = new ChargeDialog(this);
     }
-  }
 
-  return success;
+    m_fragmentStateDialog->populate(structure);
+
+    bool success = false;
+
+    if (m_fragmentStateDialog->exec() == QDialog::Accepted) {
+	if (m_fragmentStateDialog->hasFragmentStates()) {
+	    const auto &states = m_fragmentStateDialog->getFragmentStates();
+	    for(int i = 0; i < states.size(); i++) {
+		structure->setSymmetryUniqueFragmentState(i, states[i]);
+	    }
+	}
+    }
+
+    return success;
 }
 
 void Crystalx::backgroundTaskFinished() {

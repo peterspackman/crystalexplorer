@@ -90,6 +90,14 @@ public:
   virtual void completeAllFragments() override;
   virtual void packUnitCells(const QPair<QVector3D, QVector3D> &) override;
 
+  virtual std::vector<int> completedFragments() const override;
+
+  virtual FragmentState getSymmetryUniqueFragmentState(int) const override;
+  virtual void setSymmetryUniqueFragmentState(int, FragmentState) override;
+
+  virtual const std::vector<std::vector<GenericAtomIndex>> &symmetryUniqueFragments() const override;
+  virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const override;
+
   virtual void expandAtomsWithinRadius(float radius, bool selected) override;
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const override;
@@ -116,6 +124,9 @@ private:
   std::vector<std::vector<int>> m_fragments;
   std::vector<CrystalIndex> m_fragmentUnitCellMolecules;
   std::vector<int> m_fragmentForAtom;
+  std::vector<std::vector<GenericAtomIndex>> m_symmetryUniqueFragments;
+  std::vector<ChemicalStructure::FragmentState> m_symmetryUniqueFragmentStates;
+
   std::vector<std::pair<int, int>> m_covalentBonds;
   std::vector<std::pair<int, int>> m_vdwContacts;
   std::vector<std::pair<int, int>> m_hydrogenBonds;

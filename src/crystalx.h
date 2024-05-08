@@ -27,6 +27,7 @@
 #include "preferencesdialog.h"
 #include "surfacegenerationdialog.h"
 #include "wavefunctioncalculationdialog.h"
+#include "pair_energy_parameters.h"
 
 // background tasks
 #include "taskmanager.h"
@@ -70,7 +71,7 @@ public slots:
   void displayFingerprint();
   void passCurrentCrystalToFingerprintWindow();
   void passCurrentSurfaceVisibilityToSurfaceController();
-  void calculateEnergies(const JobParameters &, const QVector<Wavefunction> &);
+  void calculateEnergies(pair_energy::EnergyModelParameters);
   void showInfo(InfoType);
   void showTaskManagerWidget();
   void updateInfo(InfoType);
@@ -141,7 +142,7 @@ private slots:
 
   void showCrystalPlaneDialog();
 
-  void setFragmentCharges();
+  void setFragmentStates();
 
   void updateSurfaceControllerForNewProperty();
   void handleTransformationMatrixUpdate();
@@ -219,8 +220,8 @@ private:
   void generateSurfaceWithProductProperty(DeprecatedCrystal *);
   void tryCalculateAnotherEnergy();
 
-  bool getCharges(DeprecatedCrystal *);
-  bool getChargesFromUser(DeprecatedCrystal *);
+  bool getFragmentStatesIfMultipleFragments(ChemicalStructure *);
+  bool getFragmentStatesFromUser(ChemicalStructure *);
 
   Project *project{nullptr};
   GLWindow *glWindow{nullptr};
@@ -228,16 +229,15 @@ private:
   ViewToolbar *viewToolbar{nullptr};
   ChildPropertyController *childPropertyController{nullptr};
   CrystalController *crystalController{nullptr};
-  SurfaceGenerationDialog *m_oldSurfaceGenerationDialog{nullptr};
-  SurfaceGenerationDialog *m_newSurfaceGenerationDialog{nullptr};
+  SurfaceGenerationDialog *m_surfaceGenerationDialog{nullptr};
   WavefunctionCalculationDialog *wavefunctionCalculationDialog{nullptr};
-  EnergyCalculationDialog *energyCalculationDialog{nullptr};
+  EnergyCalculationDialog *m_energyCalculationDialog{nullptr};
   FingerprintWindow *fingerprintWindow{nullptr};
   PreferencesDialog *preferencesDialog{nullptr};
   CloseContactDialog *m_closeContactDialog{nullptr};
   DepthFadingAndClippingDialog *depthFadingAndClippingDialog{nullptr};
   FrameworkDialog *frameworkDialog{nullptr};
-  ChargeDialog *chargeDialog{nullptr};
+  ChargeDialog *m_fragmentStateDialog{nullptr};
   InfoViewer *infoViewer{nullptr};
   PlaneGenerationDialog *m_planeGenerationDialog{nullptr};
 

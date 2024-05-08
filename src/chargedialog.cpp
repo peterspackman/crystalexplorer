@@ -21,7 +21,7 @@ void ChargeDialog::initConnections() {
 }
 
 void ChargeDialog::accept() {
-  if (hasChargesAndMultiplicities() && !chargeIsBalanced()) {
+  if (hasFragmentStates() && !chargeIsBalanced()) {
     QString question =
         "Charges are not balanced.\n\nDo you want to continue anyway?";
     QMessageBox::StandardButton reply =
@@ -64,7 +64,7 @@ void ChargeDialog::cleanupWidgets() {
 
 void ChargeDialog::createWidgets(
     const QStringList &fragmentString,
-    const std::vector<ChargeMultiplicityPair> &fragmentCM) {
+    const std::vector<ChemicalStructure::FragmentState> &fragmentStates) {
   QVBoxLayout *boxLayout = new QVBoxLayout();
 
   for (int i = 0; i < fragmentString.size(); ++i) {
@@ -72,14 +72,14 @@ void ChargeDialog::createWidgets(
     QSpinBox *chargeSpinBox = new QSpinBox();
     chargeSpinBox->setRange(-MAXMINCHARGE, MAXMINCHARGE);
     chargeSpinBox->setSingleStep(1);
-    chargeSpinBox->setValue(fragmentCM[i].charge);
+    chargeSpinBox->setValue(fragmentStates[i].charge);
     chargeSpinBox->setToolTip("Fragment charge");
     _chargeSpinBoxes.push_back(chargeSpinBox);
 
     QSpinBox *multiplicitySpinBox = new QSpinBox();
     multiplicitySpinBox->setRange(1, 12); // Need to factor this out
     multiplicitySpinBox->setSingleStep(1);
-    multiplicitySpinBox->setValue(fragmentCM[i].multiplicity);
+    multiplicitySpinBox->setValue(fragmentStates[i].multiplicity);
     multiplicitySpinBox->setToolTip("Fragment multiplicity");
     _multiplicitySpinBoxes.push_back(multiplicitySpinBox);
 
@@ -120,14 +120,33 @@ void ChargeDialog::registerConnectionsForSpinBoxes() {
   }
 }
 
-void ChargeDialog::setChargeMultiplicityInfo(
+void ChargeDialog::populate(ChemicalStructure *structure) {
+    if(!structure) return;
+
+    const auto fragments = structure->symmetryUniqueFragments();
+    bool statesFromUser{false};
+    const auto states = structure->symmetryUniqueFragmentStates();
+    bool hasChargedFragments = std::any_of(states.begin(), states.end(),
+	    [](const ChemicalStructure::FragmentState &state) { return state.charge != 0; });
+
+
+    QStringList fragmentStrings;
+    for(const auto &frag: fragments) {
+	fragmentStrings << structure->formulaSumForAtoms(frag, true);
+    }
+
+    setFragmentInformation(fragmentStrings, states, hasChargedFragments);
+
+}
+void ChargeDialog::setFragmentInformation(
     const QStringList &fragmentString,
-    const std::vector<ChargeMultiplicityPair> &fragmentCM,
+    const std::vector<ChemicalStructure::FragmentState> &fragmentStates,
     bool hasChargedFragments) {
-  Q_ASSERT((fragmentString.size() == fragmentCM.size()));
+    qDebug() << fragmentString << fragmentStates.size();
+  Q_ASSERT((fragmentString.size() == fragmentStates.size()));
 
   cleanupWidgets();
-  createWidgets(fragmentString, fragmentCM);
+  createWidgets(fragmentString, fragmentStates);
 
   // Take into account the size of the above added widgets
   adjustSize();
@@ -146,18 +165,18 @@ void ChargeDialog::yesRadioButtonToggled(bool state) {
   adjustSize();
 }
 
-bool ChargeDialog::hasChargesAndMultiplicities() {
+bool ChargeDialog::hasFragmentStates() {
   return ui->yesRadioButton->isChecked();
 }
 
-std::vector<ChargeMultiplicityPair>
-ChargeDialog::getChargesAndMultiplicities() {
-  std::vector<ChargeMultiplicityPair> result;
+std::vector<ChemicalStructure::FragmentState>
+ChargeDialog::getFragmentStates() {
+  std::vector<ChemicalStructure::FragmentState> result;
   for (int i = 0;
        i < std::min(_chargeSpinBoxes.size(), _multiplicitySpinBoxes.size());
        i++) {
     result.push_back(
-        {_chargeSpinBoxes[i]->value(), _multiplicitySpinBoxes[i]->value()});
+        ChemicalStructure::FragmentState{_chargeSpinBoxes[i]->value(), _multiplicitySpinBoxes[i]->value()});
   }
   return result;
 }

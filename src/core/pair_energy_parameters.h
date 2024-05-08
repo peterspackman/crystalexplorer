@@ -1,14 +1,21 @@
 #pragma once
-
 #include <QString>
 #include <ankerl/unordered_dense.h>
 #include <Eigen/Geometry>
 #include "generic_atom_index.h"
+#include "wavefunction_parameters.h"
 
 class ChemicalStructure;
 class MolecularWavefunction;
 
 namespace pair_energy {
+
+struct EnergyModelParameters {
+    QString model{"ce-1p"};
+    wfn::Parameters wfn;
+    bool operator==(const EnergyModelParameters& rhs) const;
+};
+
 
 struct Parameters {
     QString model{"ce-1p"};
