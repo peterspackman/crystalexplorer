@@ -885,8 +885,9 @@ ChemicalStructure::FragmentSymmetryRelation ChemicalStructure::findUniqueFragmen
     int result = -1;
     Eigen::Isometry3d transform;
     bool found = false;
-    for(int i = 0; i < m_symmetryUniqueFragments.size(); i++) {
-	found = getTransformation(idxs, m_symmetryUniqueFragments[i].atomIndices, transform);
+    const auto &sym = symmetryUniqueFragments();
+    for(int i = 0; i < sym.size(); i++) {
+	found = getTransformation(idxs, sym[i].atomIndices, transform);
 	if(found) {
 	    result = i;
 	    break;

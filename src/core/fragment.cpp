@@ -30,7 +30,7 @@ bool Fragment::isEquivalentTo(const Fragment &rhs) const {
   return occ::util::all_close(dists_a, dists_b, 1e-8, 1e-8);
 }
 
-bool FragmentPair::sameAsymmetricFragmentIndices(const FragmentPair &rhs) const {
+bool FragmentDimer::sameAsymmetricFragmentIndices(const FragmentDimer &rhs) const {
   bool same_idxs = false;
   const int a1_idx = a.asymmetricFragmentIndex;
   const int b1_idx = b.asymmetricFragmentIndex;
@@ -48,7 +48,7 @@ bool FragmentPair::sameAsymmetricFragmentIndices(const FragmentPair &rhs) const 
   return same_idxs;
 }
 
-bool FragmentPair::operator==(const FragmentPair &rhs) const {
+bool FragmentDimer::operator==(const FragmentDimer &rhs) const {
     if (!sameAsymmetricFragmentIndices(rhs))
 	return false;
     constexpr double eps = 1e-7;
@@ -68,4 +68,39 @@ bool FragmentPair::operator==(const FragmentPair &rhs) const {
     bool ba_eq = b.isEquivalentTo(rhs.a);
     bool ab_eq = a.isEquivalentTo(rhs.b);
     return ab_eq && ba_eq;
+}
+
+
+QDebug operator<<(QDebug debug, const Fragment& fragment) {
+    debug.nospace() << "Fragment {\n";
+    debug.nospace() << "  atomIndices: [";
+    for (const auto& index : fragment.atomIndices) {
+        debug.nospace() << index << ", ";
+    }
+    debug.nospace() << "]\n";
+    
+    debug.nospace() << "  _atomOffset: [";
+    for (int offset : fragment._atomOffset) {
+        debug.nospace() << offset << ", ";
+    }
+    debug.nospace() << "]\n";
+    
+    debug.nospace() << "  atomicNumbers: [";
+    for(int i = 0; i < fragment.atomicNumbers.rows(); i++) {
+	debug.nospace() << fragment.atomicNumbers(i) << ", ";
+    }
+    debug.nospace() << "]\n";
+
+    debug.nospace() << "  positions: [\n";
+    for(int i = 0; i < fragment.positions.cols(); i++) {
+	debug.nospace() << "[" << fragment.positions(0, i) << ", "
+			       << fragment.positions(1, i) << ", "
+			       << fragment.positions(2, i) << "]\n";
+    }
+    debug.nospace() << "]\n";
+    debug.nospace() << "  asymmetricFragmentIndex: " << fragment.asymmetricFragmentIndex << "\n";
+    debug.nospace() << "  size: " << fragment.size() << "\n";
+    debug.nospace() << "}";
+    
+    return debug;
 }

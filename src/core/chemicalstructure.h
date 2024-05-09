@@ -19,10 +19,10 @@ using Transform = Eigen::Isometry3d;
 
 struct FragmentPairs {
   struct SymmetryRelatedPair {
-      FragmentPair fragments;
+      FragmentDimer fragments;
       int uniquePairIndex{-1};
   };
-  std::vector<FragmentPair> uniquePairs;
+  std::vector<FragmentDimer> uniquePairs;
 
   using MoleculeNeighbors = std::vector<SymmetryRelatedPair>;
   std::vector<MoleculeNeighbors> pairs;

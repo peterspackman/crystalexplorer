@@ -134,7 +134,10 @@ void CrystalStructure::updateBondGraph() {
       std::vector<GenericAtomIndex> g;
       std::transform(idxs.begin(), idxs.end(), std::back_inserter(g), 
 	      [&](int i) { return m_unitCellOffsets[i]; });
+
+      std::sort(g.begin(), g.end());
       m_fragments.push_back(makeFragment(g));
+      qDebug() << "Made fragment\n" << m_fragments.back();
   }
 
 }
@@ -191,7 +194,6 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
 void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     m_crystal = crystal;
 
-    resetAtomsAndBonds();
 
     m_symmetryUniqueFragments.clear();
     const auto &uc_atoms = m_crystal.unit_cell_atoms();
@@ -199,13 +201,21 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     qDebug() << "Crystal has " << m_crystal.symmetry_unique_molecules().size() << "sym mols";
     for(const auto &mol: m_crystal.symmetry_unique_molecules()) {
 	std::vector<GenericAtomIndex> idxs;
+	occ::Mat3N pos_frac = m_crystal.to_fractional(mol.positions());
 	const auto &uc_idx = mol.unit_cell_idx();
+	const auto &uc_offset = mol.unit_cell_idx();
+	const auto &uc_shift = mol.unit_cell_atom_shift();
+
 	for(int i = 0; i < uc_idx.rows(); i++) {
-	    idxs.push_back(GenericAtomIndex{i, uc_atoms.hkl(0, i), uc_atoms.hkl(1, i), uc_atoms.hkl(2, i)});
+	    idxs.push_back(GenericAtomIndex{i, uc_shift(0, i), uc_shift(1, i), uc_shift(2, i)});
 	}
-	m_symmetryUniqueFragments.push_back(makeFragment(idxs));
+	std::sort(idxs.begin(), idxs.end());
+	m_symmetryUniqueFragments.push_back(makeAsymFragment(idxs));
+	qDebug() << "Made symmetry unique fragment\n" << m_symmetryUniqueFragments.back();
 	m_symmetryUniqueFragmentStates.push_back({});
     }
+
+    resetAtomsAndBonds();
 }
 
 QString CrystalStructure::chemicalFormula() const {
@@ -792,4 +802,34 @@ ChemicalStructure::FragmentState CrystalStructure::getSymmetryUniqueFragmentStat
 void CrystalStructure::setSymmetryUniqueFragmentState(int fragmentIndex, ChemicalStructure::FragmentState state) {
     if(fragmentIndex < 0 || fragmentIndex >= m_symmetryUniqueFragmentStates.size()) return;
     m_symmetryUniqueFragmentStates[fragmentIndex] = state;
+}
+
+Fragment CrystalStructure::makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const {
+    const auto uc_atoms = m_crystal.unit_cell_atoms();
+    Fragment result;
+    result.atomIndices = idxs;
+    result.atomicNumbers = atomicNumbersForIndices(idxs);
+    result.positions = atomicPositionsForIndices(idxs);
+    result.asymmetricUnitIndices = occ::IVec(idxs.size());
+    for(int i = 0; i < idxs.size(); i++) {
+	result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(i);
+    }
+    return result;
+}
+
+Fragment CrystalStructure::makeFragment(const std::vector<GenericAtomIndex> &idxs) const {
+    const auto uc_atoms = m_crystal.unit_cell_atoms();
+    Fragment result;
+    result.atomIndices = idxs;
+    std::transform(idxs.begin(), idxs.end(), std::back_inserter(result._atomOffset), 
+	    [&](const GenericAtomIndex &idx) { return m_atomMap.at(idx); });
+    result.atomicNumbers = atomicNumbersForIndices(idxs);
+    result.positions = atomicPositionsForIndices(idxs);
+    std::tie(result.asymmetricFragmentIndex, result.asymmetricFragmentTransform) = findUniqueFragment(idxs);
+
+    result.asymmetricUnitIndices = occ::IVec(idxs.size());
+    for(int i = 0; i < idxs.size(); i++) {
+	result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(i);
+    }
+    return result;
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <ankerl/unordered_dense.h>
+#include <QDebug>
 
 struct GenericAtomIndex {
     int unique{0};
@@ -31,3 +32,6 @@ struct GenericAtomIndexHash {
 	return ankerl::unordered_dense::detail::wyhash::hash(&idx, sizeof(idx));
     }
 };
+
+
+QDebug operator<<(QDebug debug, const GenericAtomIndex&);

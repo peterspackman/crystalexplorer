@@ -1,7 +1,4 @@
 #include "energycalculationdialog.h"
-#include "energydescription.h"
-#include "globals.h" // only NEW_WAVEFUNCTION_ITEM
-#include "settings.h"
 
 EnergyCalculationDialog::EnergyCalculationDialog(QWidget *parent)
     : QDialog(parent) {
@@ -26,7 +23,7 @@ void EnergyCalculationDialog::init() {
   quantitativeRadioButton->setText("Accurate");
   quantitativeLabel->setText(QString("[CE-1p]"));
   qualitativeRadioButton->setText("Fast");
-  qualitativeLabel->setText(QString("[CE-HF]");
+  qualitativeLabel->setText(QString("[CE-HF]"));
 
   gfnComboBox->addItem("GFN0-xTB");
   gfnComboBox->addItem("GFN1-xTB");
@@ -48,7 +45,8 @@ void EnergyCalculationDialog::initConnections() {
 
 void EnergyCalculationDialog::showEvent(QShowEvent *) {
 
-  bool show_experimental =
+    /*
+  bool show_experimental = false;
       settings::readSetting(
           settings::keys::ENABLE_EXPERIMENTAL_INTERACTION_ENERGIES)
           .toBool();
@@ -61,6 +59,10 @@ void EnergyCalculationDialog::showEvent(QShowEvent *) {
                     !settings::readSetting(settings::keys::XTB_EXECUTABLE)
                          .toString()
                          .isEmpty();
+			 */
+
+  bool orcaVisible = false;
+  bool xtbVisible = false;
   gfnRadioButton->setVisible(xtbVisible);
   gfnComboBox->setVisible(xtbVisible);
   orcaRadioButton->setVisible(orcaVisible);
@@ -73,8 +75,13 @@ bool EnergyCalculationDialog::needWavefunctionCalculationDialog() const {
            orcaRadioButton->isChecked() || gfnRadioButton->isChecked());
 }
 
+void EnergyCalculationDialog::handleModelChange() {
+
+}
+
 bool EnergyCalculationDialog::handleStructureChange() {
-  m_waveFunctions.clear();
+  m_wavefunctions.clear();
+  /*
   auto wfns_a =
       m_crystal->transformableWavefunctionsForAtoms(atomsForFragmentA());
   auto wfns_b =
@@ -99,33 +106,14 @@ bool EnergyCalculationDialog::handleStructureChange() {
     }
   }
   return m_foundA && m_foundB;
-}
-
-bool EnergyCalculationDialog::findMatchingMonomerEnergies() {
-  Q_ASSERT(m_crystal != nullptr);
-  m_monomerEnergies.clear();
-  JobParameters ja = createMonomerEnergyCalculationJobParameters(
-      atomsForFragmentA(), _chargeA, _multiplicityA);
-  JobParameters jb = createMonomerEnergyCalculationJobParameters(
-      atomsForFragmentB(), _chargeB, _multiplicityB);
-  auto m_a = m_crystal->monomerEnergyMatchingParameters(ja);
-  auto m_b = m_crystal->monomerEnergyMatchingParameters(jb);
-  m_foundA = false;
-  if (m_a) {
-    m_foundA = true;
-    m_monomerEnergies.push_back(*m_a);
-  }
-
-  m_foundB = false;
-  if (m_b) {
-    m_foundB = true;
-    m_monomerEnergies.push_back(*m_b);
-  }
-  return m_foundA && m_foundB;
+  */
+  return false;
 }
 
 // to chain the calculations on our part.
 void EnergyCalculationDialog::validate() {
+    return;
+    /*
   Q_ASSERT(m_crystal);
   if (!needWavefunctionCalculationDialog()) {
     if (orcaRadioButton->isChecked()) {
@@ -162,32 +150,17 @@ void EnergyCalculationDialog::validate() {
     }
   }
   calculate();
+  */
 }
 
-void EnergyCalculationDialog::setMethodAndBasis(Method method, BasisSet basis) {
-  m_method = method;
-  m_basis = basis;
-}
-
-void EnergyCalculationDialog::setAtomsForCalculation(
-    const QVector<AtomId> &atomsForFragmentA,
-    const QVector<AtomId> &atomsForFragmentB) {
-  _atomsForCalculation.clear();
-  _atomsForCalculation.append(atomsForFragmentA);
-  _atomsForCalculation.append(atomsForFragmentB);
-
-  _atomGroups.clear();
-  _atomGroups.append(atomsForFragmentA.size());
-  _atomGroups.append(atomsForFragmentB.size());
-}
-
+/*
 void EnergyCalculationDialog::updateWavefunctionComboBox() {
   wavefunctionCombobox->clear();
   qDebug() << "In update wavefunctionCombobox, index: " << wavefunctionCombobox->currentIndex();
   QStringList items{"Generate New Wavefunction"};
 
-  if (m_crystal) {
-    qDebug() << "Have m_crystal: " << m_crystal;
+  if (m_structure) {
+    qDebug() << "Have m_crystal: " << m_structure;
     for (const auto &wfn : m_crystal->wavefunctions()) {
       items.append(wfn.description());
     }
@@ -377,3 +350,4 @@ EnergyCalculationDialog::createMonomerEnergyCalculationJobParameters(
 
   return jobParams;
 }
+*/

@@ -1,7 +1,7 @@
 #pragma once
 #include "chemicalstructure.h"
 #include "pair_energy_parameters.h"
-#include "molecularwavefunction.h"
+#include "molecular_wavefunction.h"
 #include "ui_energycalculationdialog.h"
 #include <QDialog>
 
@@ -18,15 +18,16 @@ public:
     };
 
     EnergyCalculationDialog(QWidget *);
-    void setChemicalStructure(DeprecatedCrystal *);
+    void setChemicalStructure(ChemicalStructure *);
 
 signals:
     void energyParametersChosen(pair_energy::EnergyModelParameters);
 private slots:
     void validate();
+    void showEvent(QShowEvent *);
 
     void handleModelChange();
-    void handleStructureChange();
+    bool handleStructureChange();
 
 private:
     bool needWavefunctionCalculationDialog() const;

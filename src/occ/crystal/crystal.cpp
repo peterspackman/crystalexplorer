@@ -511,8 +511,11 @@ void Crystal::update_unit_cell_molecules() const {
       }
       return atoms.asym_idx(a) < atoms.asym_idx(b);
     });
+    IMat3N shift_hkl = shifts(Eigen::all, idx).cast<int>();
+
     occ::core::Molecule m(atoms.atomic_numbers(idx), cart_pos({0, 1, 2}, idx));
     m.set_unit_cell_idx(Eigen::Map<const IVec>(idx.data(), idx.size()));
+    m.set_unit_cell_atom_shift(shift_hkl);
     m.set_asymmetric_unit_idx(atoms.asym_idx(idx));
     m.set_asymmetric_unit_symop(atoms.symop(idx));
     m.set_unit_cell_molecule_idx(i);

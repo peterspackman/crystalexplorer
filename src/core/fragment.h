@@ -1,6 +1,7 @@
 #pragma once
 #include "generic_atom_index.h"
 #include <occ/core/linear_algebra.h>
+#include <QDebug>
 
 using Transform = Eigen::Isometry3d;
 struct Fragment {
@@ -22,7 +23,7 @@ struct Fragment {
     inline size_t size() const { return atomIndices.size(); }
 };
 
-struct FragmentPair {
+struct FragmentDimer {
   Fragment a;
   Fragment b;
 
@@ -30,7 +31,8 @@ struct FragmentPair {
   double nearestAtomDistance{0.0};
   double centerOfMassDistance{0.0};
 
-  bool sameAsymmetricFragmentIndices(const FragmentPair &) const;
-  bool operator==(const FragmentPair &) const;
+  bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
+  bool operator==(const FragmentDimer &) const;
 };
 
+QDebug operator<<(QDebug debug, const Fragment& fragment);

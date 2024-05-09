@@ -68,6 +68,7 @@ public:
   virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const override;
 
   virtual void expandAtomsWithinRadius(float radius, bool selected) override;
+  virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &idxs) const override;
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const override;
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const override;
@@ -77,7 +78,10 @@ public:
 
   [[nodiscard]] virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const override;
 
+
 private:
+  Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;
+
   void addAtomsByCrystalIndex(std::vector<GenericAtomIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);
   void addVanDerWaalsContactAtoms();

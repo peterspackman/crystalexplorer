@@ -132,7 +132,7 @@ void FragmentStateDialog::populate(ChemicalStructure *structure) {
 
     QStringList fragmentStrings;
     for(const auto &frag: fragments) {
-	fragmentStrings << structure->formulaSumForAtoms(frag, true);
+	fragmentStrings << structure->formulaSumForAtoms(frag.atomIndices, true);
     }
 
     setFragmentInformation(fragmentStrings, states, hasChargedFragments);
