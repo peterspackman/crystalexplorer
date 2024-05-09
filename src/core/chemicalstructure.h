@@ -1,5 +1,6 @@
 #pragma once
 #include "atomflags.h"
+#include "fragment.h"
 #include "interactions.h"
 #include "generic_atom_index.h"
 #include "molecular_wavefunction.h"
@@ -16,6 +17,17 @@
 
 using Transform = Eigen::Isometry3d;
 
+struct FragmentPairs {
+  struct SymmetryRelatedPair {
+      FragmentPair fragments;
+      int uniquePairIndex{-1};
+  };
+  std::vector<FragmentPair> uniquePairs;
+
+  using MoleculeNeighbors = std::vector<SymmetryRelatedPair>;
+  std::vector<MoleculeNeighbors> pairs;
+};
+
 
 class ChemicalStructure : public QAbstractItemModel {
   Q_OBJECT
@@ -25,6 +37,8 @@ public:
       int charge{0};
       int multiplicity{1};
   };
+
+  using FragmentSymmetryRelation = std::pair<int, Transform>;
 
   enum class StructureType {
     Cluster, // 0D
@@ -95,8 +109,10 @@ public:
   virtual FragmentState getSymmetryUniqueFragmentState(int) const;
   virtual void setSymmetryUniqueFragmentState(int, FragmentState);
 
-  virtual const std::vector<std::vector<GenericAtomIndex>>& symmetryUniqueFragments() const;
+  virtual const std::vector<Fragment> &symmetryUniqueFragments() const;
   virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const;
+
+  virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &) const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
@@ -113,6 +129,8 @@ public:
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
   virtual const std::vector<std::pair<int, int>> &vdwContacts() const;
 
+  FragmentSymmetryRelation findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
+  FragmentPairs findFragmentPairs() const;
 
   // flags
   const AtomFlags &atomFlags(int) const;
@@ -190,8 +208,8 @@ private:
   std::vector<occ::core::graph::BondGraph::EdgeDescriptor> m_bondGraphEdges;
 
   // all of these must be updated when the bondGraph is updated
-  std::vector<std::vector<int>> m_fragments;
-  std::vector<std::vector<GenericAtomIndex>> m_symmetryUniqueFragments;
+  std::vector<Fragment> m_fragments;
+  std::vector<Fragment> m_symmetryUniqueFragments;
   std::vector<FragmentState> m_symmetryUniqueFragmentStates;
 
   std::vector<int> m_fragmentForAtom;

@@ -10,10 +10,9 @@ EnergyCalculationDialog::EnergyCalculationDialog(QWidget *parent)
   initConnections();
 }
 
-void EnergyCalculationDialog::setCrystal(DeprecatedCrystal *crystal) {
-  m_crystal = crystal;
-  qDebug() << "Calling setCrystal";
-  updateWavefunctionComboBox();
+void EnergyCalculationDialog::setChemicalStructure(ChemicalStructure *structure) {
+  m_structure = structure;
+  handleStructureChange();
 }
 
 void EnergyCalculationDialog::init() {
@@ -21,39 +20,30 @@ void EnergyCalculationDialog::init() {
   adjustSize();
   editTontoInputFileCheckbox->setChecked(false);
   editWavefunctionInputFileCheckbox->setChecked(false);
-  _waitingOnWavefunction = false;
-  qDebug() << "Initialization";
-  updateWavefunctionComboBox();
-  _numberOfCalculations = 0;
-  _currentCalculationIndex = 1;
+
+  handleStructureChange();
 
   quantitativeRadioButton->setText("Accurate");
-  quantitativeLabel->setText(QString("[%1]").arg(
-      EnergyDescription::quantitativeEnergyModelDescription()));
+  quantitativeLabel->setText(QString("[CE-1p]"));
   qualitativeRadioButton->setText("Fast");
-  qualitativeLabel->setText(QString("[%1]").arg(
-      EnergyDescription::qualitativeEnergyModelDescription()));
+  qualitativeLabel->setText(QString("[CE-HF]");
 
   gfnComboBox->addItem("GFN0-xTB");
   gfnComboBox->addItem("GFN1-xTB");
   gfnComboBox->addItem("GFN2-xTB");
   gfnComboBox->setCurrentIndex(2);
 
-  _chargeA = 0;
-  _chargeB = 0;
-  _multiplicityA = 1;
-  _multiplicityB = 1;
 }
 
 void EnergyCalculationDialog::initConnections() {
   connect(this, &EnergyCalculationDialog::accepted,
           this, &EnergyCalculationDialog::validate);
-  connect(quantitativeRadioButton, SIGNAL(toggled(bool)), this,
-          SLOT(modelChemistryChanged()));
-  connect(qualitativeRadioButton, SIGNAL(toggled(bool)), this,
-          SLOT(modelChemistryChanged()));
-  connect(userWavefunctionRadioButton, SIGNAL(toggled(bool)), this,
-          SLOT(modelChemistryChanged()));
+  connect(quantitativeRadioButton, &QRadioButton::toggled,
+	  this, &EnergyCalculationDialog::handleModelChange);
+  connect(qualitativeRadioButton, &QRadioButton::toggled,
+	  this, &EnergyCalculationDialog::handleModelChange);
+  connect(userWavefunctionRadioButton, &QRadioButton::toggled,
+	  this, &EnergyCalculationDialog::handleModelChange);
 }
 
 void EnergyCalculationDialog::showEvent(QShowEvent *) {
@@ -77,22 +67,13 @@ void EnergyCalculationDialog::showEvent(QShowEvent *) {
   orcaLabel->setVisible(orcaVisible);
 }
 
-QVector<AtomId> EnergyCalculationDialog::atomsForFragmentA() {
-  return _atomsForCalculation.mid(0, _atomGroups[0]);
-}
-
-QVector<AtomId> EnergyCalculationDialog::atomsForFragmentB() {
-  return _atomsForCalculation.mid(_atomGroups[0]);
-}
-
-bool EnergyCalculationDialog::needWavefunctionCalculationDialog() {
+bool EnergyCalculationDialog::needWavefunctionCalculationDialog() const {
   return !(quantitativeRadioButton->isChecked() ||
            qualitativeRadioButton->isChecked() ||
            orcaRadioButton->isChecked() || gfnRadioButton->isChecked());
 }
 
-bool EnergyCalculationDialog::findMatchingWavefunctions() {
-  Q_ASSERT(m_crystal != nullptr);
+bool EnergyCalculationDialog::handleStructureChange() {
   m_waveFunctions.clear();
   auto wfns_a =
       m_crystal->transformableWavefunctionsForAtoms(atomsForFragmentA());

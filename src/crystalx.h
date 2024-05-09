@@ -17,7 +17,7 @@
 
 #include "animationsettingsdialog.h"
 #include "celllimitsdialog.h"
-#include "chargedialog.h"
+#include "fragmentstatedialog.h"
 #include "closecontactsdialog.h"
 #include "depthfadingandclippingdialog.h"
 #include "energycalculationdialog.h"
@@ -237,7 +237,7 @@ private:
   CloseContactDialog *m_closeContactDialog{nullptr};
   DepthFadingAndClippingDialog *depthFadingAndClippingDialog{nullptr};
   FrameworkDialog *frameworkDialog{nullptr};
-  ChargeDialog *m_fragmentStateDialog{nullptr};
+  FragmentStateDialog *m_fragmentStateDialog{nullptr};
   InfoViewer *infoViewer{nullptr};
   PlaneGenerationDialog *m_planeGenerationDialog{nullptr};
 

@@ -494,9 +494,10 @@ void Crystal::update_unit_cell_molecules() const {
     mol_bonds.push_back({});
     if (visited.contains(v.first))
       continue;
-    g.filtered_breadth_first_traversal_with_edge(v.first, visitor, predicate);
+    g.breadth_first_traversal_with_edge_filtered(v.first, visitor, predicate);
     uc_mol_idx++;
   }
+
   Mat3N cart_pos = to_cartesian(atoms.frac_pos + shifts);
   for (size_t i = 0; i < uc_mol_idx; i++) {
     auto idx = atom_indices[i];

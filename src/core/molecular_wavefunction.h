@@ -58,3 +58,5 @@ struct WavefunctionAndTransform {
     MolecularWavefunction *wavefunction{nullptr};
     Eigen::Isometry3d transform;
 };
+
+

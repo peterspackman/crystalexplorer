@@ -98,6 +98,8 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   m_vdwContacts.clear();
   m_fragmentForAtom.resize(numberOfAtoms(), -1);
 
+  std::vector<std::vector<int>> fragments;
+
   const auto &edges = m_bondGraph.edges();
 
   ankerl::unordered_dense::set<VertexDesc> visited;
@@ -108,7 +110,7 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     const auto &edge = edges.at(e);
     if (edge.connectionType != Connection::CovalentBond)
       return;
-    auto &idxs = m_fragments[currentFragmentIndex];
+    auto &idxs = fragments[currentFragmentIndex];
     visited.insert(v);
     m_fragmentForAtom[v] = currentFragmentIndex;
     idxs.push_back(v);
@@ -123,19 +125,21 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   for (const auto &v : m_bondGraph.vertices()) {
     if (visited.contains(v.first))
       continue;
-    m_fragments.push_back({});
+    fragments.push_back({});
     m_bondGraph.breadth_first_traversal_with_edge_filtered(
         v.first, covalentVisitor, covalentPredicate);
     currentFragmentIndex++;
   }
 
   // TODO detect symmetry
-  for(int f = 0; f < m_fragments.size(); f++) {
+  for(int f = 0; f < fragments.size(); f++) {
       std::vector<GenericAtomIndex> sym;
-      for(int idx : m_fragments[f]) {
+      for(int idx : fragments[f]) {
 	  sym.push_back(GenericAtomIndex{idx});
       }
-      m_symmetryUniqueFragments.push_back(sym);
+      std::sort(sym.begin(), sym.end());
+      m_fragments.push_back(makeFragment(sym));
+      m_symmetryUniqueFragments.push_back(m_fragments.back());
       m_symmetryUniqueFragmentStates.push_back({});
   }
 
@@ -243,8 +247,6 @@ void ChemicalStructure::setAtoms(const std::vector<QString> &elementSymbols,
     m_atomicPositions(0, i) = positions[i].x();
     m_atomicPositions(1, i) = positions[i].y();
     m_atomicPositions(2, i) = positions[i].z();
-    m_fragments.push_back({i});
-    m_fragmentForAtom.push_back(i);
 
     if (labels.size() > i) {
       m_labels.push_back(labels[i]);
@@ -281,7 +283,6 @@ void ChemicalStructure::addAtoms(const std::vector<QString> &elementSymbols,
     m_atomicPositions(0, index) = positions[i].x();
     m_atomicPositions(1, index) = positions[i].y();
     m_atomicPositions(2, index) = positions[i].z();
-    m_fragments[index] = {index};
     m_fragmentForAtom[index] = {index};
 
     if (labels.size() > i) {
@@ -488,16 +489,12 @@ ChemicalStructure::atomsForBond(int bondIndex) const {
 
 const std::vector<int> &
 ChemicalStructure::atomsForFragment(int fragIndex) const {
-  return m_fragments.at(fragIndex);
+  return m_fragments.at(fragIndex)._atomOffset;
 }
 
 std::vector<GenericAtomIndex> ChemicalStructure::atomIndicesForFragment(int fragmentIndex) const {
-    std::vector<GenericAtomIndex> result;
-    if(fragmentIndex < 0 || fragmentIndex >= m_fragments.size()) return result;
-    for(int i : m_fragments[fragmentIndex]) {
-	result.push_back(GenericAtomIndex{i});
-    }
-    return result;
+    if(fragmentIndex < 0 || fragmentIndex >= m_fragments.size()) return {};
+    return m_fragments[fragmentIndex].atomIndices;
 }
 
 QColor ChemicalStructure::atomColor(int atomIndex) const {
@@ -853,7 +850,7 @@ void ChemicalStructure::setSymmetryUniqueFragmentState(int fragmentIndex, Chemic
 }
 
 
-const std::vector<std::vector<GenericAtomIndex>> &ChemicalStructure::symmetryUniqueFragments() const {
+const std::vector<Fragment> &ChemicalStructure::symmetryUniqueFragments() const {
     return m_symmetryUniqueFragments;
 }
 
@@ -872,3 +869,40 @@ QString ChemicalStructure::formulaSumForAtoms(const std::vector<GenericAtomIndex
     return formulaSum(symbols, richText);
 }
 
+
+Fragment ChemicalStructure::makeFragment(const std::vector<GenericAtomIndex> &idxs) const {
+    Fragment result;
+    result.atomIndices = idxs;
+    std::transform(idxs.begin(), idxs.end(), std::back_inserter(result._atomOffset), 
+	    [](const GenericAtomIndex &idx) { return idx.unique; });
+    result.atomicNumbers = atomicNumbersForIndices(idxs);
+    result.positions = atomicPositionsForIndices(idxs);
+    std::tie(result.asymmetricFragmentIndex, result.asymmetricFragmentTransform) = findUniqueFragment(idxs);
+    return result;
+}
+
+ChemicalStructure::FragmentSymmetryRelation ChemicalStructure::findUniqueFragment(const std::vector<GenericAtomIndex> &idxs) const {
+    int result = -1;
+    Eigen::Isometry3d transform;
+    bool found = false;
+    for(int i = 0; i < m_symmetryUniqueFragments.size(); i++) {
+	found = getTransformation(idxs, m_symmetryUniqueFragments[i].atomIndices, transform);
+	if(found) {
+	    result = i;
+	    break;
+	}
+    }
+    return {result, transform};
+}
+
+FragmentPairs ChemicalStructure::findFragmentPairs() const {
+    // TODO
+    FragmentPairs result;
+    using Fragment = std::vector<GenericAtomIndex>;
+
+    auto &pairs = result.uniquePairs;
+    auto &molPairs = result.pairs;
+
+    std::vector<Fragment> fragments;
+    return result;
+}

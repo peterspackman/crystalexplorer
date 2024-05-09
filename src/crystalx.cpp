@@ -1682,14 +1682,15 @@ void Crystalx::cloneSurface() {
 }
 
 void Crystalx::showEnergyCalculationDialog() {
+    qDebug() << "Show Energy calculation dialog";
     Scene *scene = project->currentScene();
     if (!scene) return;
     auto *structure = scene->chemicalStructure();
     if (!structure) return;
 
-    const auto completeFragments = structure->completedFragments();
-    const auto selectedFragments = structure->selectedFragments();
+    auto completeFragments = structure->completedFragments();
     qDebug() << "Complete fragments:" << completeFragments.size();
+    auto selectedFragments = structure->selectedFragments();
     qDebug() << "Selected fragments:" << selectedFragments.size();
 
     const char *propName = "fragmentStatesSetByUser";
@@ -1703,52 +1704,41 @@ void Crystalx::showEnergyCalculationDialog() {
 	structure->setProperty(propName, true);
     }
 
-    /*
-  if (numCompleteFragments == 1) {
-    const float CLUSTER_RADIUS = 3.8f; // angstroms
-    QString question = QString("No pairs of fragments found.\n\nDo you want to "
-                               "calculate interaction energies for a %1%2 "
-                               "cluster around the selected fragment?")
+    if (completeFragments.size() == 1) {
+	const float CLUSTER_RADIUS = 3.8f; // angstroms
+	QString question = QString(
+	    "No pairs of fragments found.\n\nDo you want to "
+            "calculate interaction energies for a %1%2 "
+            "cluster around the selected fragment?")
                            .arg(CLUSTER_RADIUS, 0, 'f', 1)
                            .arg(ANGSTROM_SYMBOL);
-    QMessageBox msgBox(this);
-    msgBox.setWindowTitle("Interaction Energy Calculation");
-    msgBox.setText(question);
-    msgBox.setIconPixmap(QIcon(":/images/radial_cluster.png").pixmap(64, 64));
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox.setDefaultButton(QMessageBox::Yes);
+	QMessageBox msgBox(this);
+	msgBox.setWindowTitle("Interaction Energy Calculation");
+	msgBox.setText(question);
+	msgBox.setIconPixmap(QIcon(":/images/radial_cluster.png").pixmap(64, 64));
+	msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+	msgBox.setDefaultButton(QMessageBox::Yes);
 
-    if (msgBox.exec() == QMessageBox::Yes) {
-      project->showAtomsWithinRadius(CLUSTER_RADIUS, true);
-      project->completeFragmentsForCurrentCrystal();
-      numCompleteFragments = crystal->numberOfCompleteFragments();
-      numSelectedFragments = crystal->numberOfSelectedFragments();
-    } else {
-      return; // User doesn't want us to continue so early return
+	if (msgBox.exec() == QMessageBox::Yes) {
+	  project->showAtomsWithinRadius(CLUSTER_RADIUS, true);
+	  project->completeFragmentsForCurrentCrystal();
+	  completeFragments = structure->completedFragments();
+	  selectedFragments = structure->selectedFragments();
+	} else {
+	  return; // User doesn't want us to continue so early return
+	}
     }
-  }
 
-  if (m_energyCalculationDialog == nullptr) {
-    m_energyCalculationDialog = new EnergyCalculationDialog(this);
-    m_energyCalculationDialog->setModal(true);
+    if (m_energyCalculationDialog == nullptr) {
+	m_energyCalculationDialog = new EnergyCalculationDialog(this);
 
-    
-    connect(m_energyCalculationDialog,
-            &EnergyCalculationDialog::energyParametersChosen, this,
-            &Crystalx::calculateEnergies, Qt::UniqueConnection);
+	connect(m_energyCalculationDialog,
+		&EnergyCalculationDialog::energyParametersChosen, this,
+		&Crystalx::calculateEnergies, Qt::UniqueConnection);
+    }
+    m_energyCalculationDialog->setChemicalStructure(structure);
 
-    connect(m_energyCalculationDialog,
-            &EnergyCalculationDialog::requireWavefunction, this,
-            &Crystalx::getWavefunctionParametersFromUser, Qt::UniqueConnection);
-    connect(m_energyCalculationDialog,
-            &EnergyCalculationDialog::requireSpecifiedWavefunction, this,
-            &Crystalx::generateWavefunction, Qt::UniqueConnection);
-    connect(m_energyCalculationDialog,
-            &EnergyCalculationDialog::requireMonomerEnergy, this,
-            &Crystalx::calculateMonomerEnergy, Qt::UniqueConnection);
-  }
-  m_energyCalculationDialog->setCrystal(crystal);
-
+    /*
   if (numSelectedFragments == 1 && numCompleteFragments > 1) {
 
     int keyFragment = crystal->keyFragment();
@@ -2007,6 +1997,7 @@ void Crystalx::setFragmentStates() {
 bool Crystalx::getFragmentStatesIfMultipleFragments(ChemicalStructure *structure) {
     bool success = true;
     if (structure->symmetryUniqueFragments().size() > 1) {
+	qDebug() << "Skipping due to only 1 fragment";
 	success = getFragmentStatesFromUser(structure);
     } 
     return success;
@@ -2016,7 +2007,7 @@ bool Crystalx::getFragmentStatesFromUser(ChemicalStructure *structure) {
     if(!structure) return false;
 
     if (!m_fragmentStateDialog) {
-	m_fragmentStateDialog = new ChargeDialog(this);
+	m_fragmentStateDialog = new FragmentStateDialog(this);
     }
 
     m_fragmentStateDialog->populate(structure);

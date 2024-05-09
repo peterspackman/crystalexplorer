@@ -64,10 +64,12 @@ void CrystalStructure::updateBondGraph() {
   ankerl::unordered_dense::set<int> visited;
   size_t currentFragmentIndex{0};
 
+  std::vector<std::vector<int>> fragments;
+
   auto covalentVisitor = [&](const VertexDesc &v, const VertexDesc &prev,
                              const EdgeDesc &e, const MillerIndex &hkl) {
-    auto &idxs = m_fragments[currentFragmentIndex];
-    CrystalIndex atomIdx{static_cast<int>(v), hkl};
+    auto &idxs = fragments[currentFragmentIndex];
+    GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
     auto location = m_atomMap.find(atomIdx);
     if (location == m_atomMap.end()) {
       return;
@@ -89,27 +91,27 @@ void CrystalStructure::updateBondGraph() {
   for (int i = 0; i < numberOfAtoms(); i++) {
     if (visited.contains(i) || testAtomFlag(i, AtomFlag::Contact))
       continue;
-    m_fragments.push_back({});
-    VertexDesc uc_vertex = m_unitCellOffsets[i].unitCellOffset;
+    fragments.push_back({});
+    VertexDesc uc_vertex = m_unitCellOffsets[i].unique;
     filtered_connectivity_traversal_with_cell_offset(
         g, uc_vertex, covalentVisitor, covalentPredicate,
-        m_unitCellOffsets[i].hkl);
+	{m_unitCellOffsets[i].x, m_unitCellOffsets[i].y, m_unitCellOffsets[i].z});
     currentFragmentIndex++;
   }
 
   for (const auto &[sourceCrystalIndex, sourceAtomIndex] : m_atomMap) {
     const VertexDesc sourceVertex =
-        static_cast<VertexDesc>(sourceCrystalIndex.unitCellOffset);
+        static_cast<VertexDesc>(sourceCrystalIndex.unique);
     if (testAtomFlag(sourceAtomIndex, AtomFlag::Contact))
       continue;
     for (const auto &[neighborVertexDesc, edgeDesc] :
          adjacency.at(sourceVertex)) {
       const auto &edge = edges.at(edgeDesc);
-      MillerIndex targetHKL = {sourceCrystalIndex.hkl.h + edge.h,
-                               sourceCrystalIndex.hkl.k + edge.k,
-                               sourceCrystalIndex.hkl.l + edge.l};
+      MillerIndex targetHKL = {sourceCrystalIndex.x + edge.h,
+                               sourceCrystalIndex.y + edge.k,
+                               sourceCrystalIndex.z + edge.l};
 
-      CrystalIndex targetIndex{static_cast<int>(neighborVertexDesc), targetHKL};
+      GenericAtomIndex targetIndex{static_cast<int>(neighborVertexDesc), targetHKL.h, targetHKL.k, targetHKL.l};
       const auto targetLoc = m_atomMap.find(targetIndex);
       if (targetLoc != m_atomMap.end()) {
         int targetAtomIdx = targetLoc->second;
@@ -128,6 +130,13 @@ void CrystalStructure::updateBondGraph() {
     }
   }
 
+  for(const auto &idxs: fragments) {
+      std::vector<GenericAtomIndex> g;
+      std::transform(idxs.begin(), idxs.end(), std::back_inserter(g), 
+	      [&](int i) { return m_unitCellOffsets[i]; });
+      m_fragments.push_back(makeFragment(g));
+  }
+
 }
 
 void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
@@ -136,8 +145,8 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
   std::vector<QString> newLabels;
 
   if (toSelection) {
-    std::vector<CrystalIndex> newUnitCellOffsets;
-    ankerl::unordered_dense::map<CrystalIndex, int, CrystalIndexHash> newAtomMap;
+    std::vector<GenericAtomIndex> newUnitCellOffsets;
+    ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash> newAtomMap;
 
     int numAtoms = 0;
     for (int i = 0; i < numberOfAtoms(); i++) {
@@ -147,7 +156,7 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
       elementSymbols.push_back(QString::fromStdString(
           occ::core::Element(atomicNumbers()(i)).symbol()));
       newLabels.push_back(labels()[i]);
-      CrystalIndex idx = m_unitCellOffsets[i];
+      GenericAtomIndex idx = m_unitCellOffsets[i];
       newUnitCellOffsets.push_back(idx);
       newAtomMap.insert({idx, numAtoms});
       numAtoms++;
@@ -171,8 +180,8 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
       MillerIndex hkl = {static_cast<int>(floor(asym.positions(0, i))),
                          static_cast<int>(floor(asym.positions(1, i))),
                          static_cast<int>(floor(asym.positions(2, i)))};
-      m_unitCellOffsets[i] = {i, hkl};
-      m_atomMap.insert({CrystalIndex{i, hkl}, i});
+      m_unitCellOffsets[i] = {i, hkl.h, hkl.k, hkl.l};
+      m_atomMap.insert({GenericAtomIndex{i, hkl.h, hkl.k, hkl.l}, i});
     }
   }
   setAtoms(elementSymbols, positions, newLabels);
@@ -194,7 +203,7 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
 	for(int i = 0; i < uc_idx.rows(); i++) {
 	    idxs.push_back(GenericAtomIndex{i, uc_atoms.hkl(0, i), uc_atoms.hkl(1, i), uc_atoms.hkl(2, i)});
 	}
-	m_symmetryUniqueFragments.push_back(idxs);
+	m_symmetryUniqueFragments.push_back(makeFragment(idxs));
 	m_symmetryUniqueFragmentStates.push_back({});
     }
 }
@@ -228,21 +237,16 @@ const std::pair<int, int> &CrystalStructure::atomsForBond(int bondIndex) const {
 
 const std::vector<int> &
 CrystalStructure::atomsForFragment(int fragIndex) const {
-  return m_fragments.at(fragIndex);
+  return m_fragments.at(fragIndex)._atomOffset;
 }
 
 std::vector<GenericAtomIndex> CrystalStructure::atomIndicesForFragment(int fragmentIndex) const {
-    std::vector<GenericAtomIndex> result;
-    if(fragmentIndex < 0 || fragmentIndex >= m_fragments.size()) return result;
-    for(int i : m_fragments[fragmentIndex]) {
-	auto offset = m_unitCellOffsets[i];
-	result.push_back(GenericAtomIndex{offset.unitCellOffset, offset.hkl.h, offset.hkl.k, offset.hkl.l});
-    }
-    return result;
+    if(fragmentIndex < 0 || fragmentIndex >= m_fragments.size()) return {};
+    return m_fragments[fragmentIndex].atomIndices;
 }
 
 void CrystalStructure::addAtomsByCrystalIndex(
-    std::vector<CrystalIndex> &indices, const AtomFlags &flags) {
+    std::vector<GenericAtomIndex> &indices, const AtomFlags &flags) {
   const auto &uc_atoms = m_crystal.unit_cell_atoms();
   occ::IVec nums(indices.size());
   occ::Mat3N pos(3, indices.size());
@@ -253,11 +257,11 @@ void CrystalStructure::addAtomsByCrystalIndex(
   {
     int i = 0;
     for (const auto &idx : indices) {
-      nums(i) = uc_atoms.atomic_numbers(idx.unitCellOffset);
-      pos.col(i) = uc_atoms.frac_pos.col(idx.unitCellOffset) +
-                   occ::Vec3(idx.hkl.h, idx.hkl.k, idx.hkl.l);
+      nums(i) = uc_atoms.atomic_numbers(idx.unique);
+      pos.col(i) = uc_atoms.frac_pos.col(idx.unique) +
+                   occ::Vec3(idx.x, idx.y, idx.z);
       QString label = "";
-      auto asymIdx = uc_atoms.asym_idx(idx.unitCellOffset);
+      auto asymIdx = uc_atoms.asym_idx(idx.unique);
       if (asymIdx < asym.labels.size()) {
         label = QString::fromStdString(asym.labels[asymIdx]);
       }
@@ -285,13 +289,13 @@ void CrystalStructure::addAtomsByCrystalIndex(
 }
 
 void CrystalStructure::addVanDerWaalsContactAtoms() {
-  CrystalIndexSet atomsToShow;
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> atomsToShow;
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &adjacency = g.adjacency_list();
   const auto &edges = g.edges();
   for (const auto &[sourceCrystalIndex, sourceAtomIndex] : m_atomMap) {
     const VertexDesc sourceVertex =
-        static_cast<VertexDesc>(sourceCrystalIndex.unitCellOffset);
+        static_cast<VertexDesc>(sourceCrystalIndex.unique);
     // don't add vdw contacts for vdw contact atoms
     if (atomFlagsSet(sourceAtomIndex, AtomFlag::Contact))
       continue;
@@ -299,11 +303,11 @@ void CrystalStructure::addVanDerWaalsContactAtoms() {
     for (const auto &[neighborVertexDesc, edgeDesc] :
          adjacency.at(sourceVertex)) {
       const auto &edge = edges.at(edgeDesc);
-      MillerIndex targetHKL = {sourceCrystalIndex.hkl.h + edge.h,
-                               sourceCrystalIndex.hkl.k + edge.k,
-                               sourceCrystalIndex.hkl.l + edge.l};
+      MillerIndex targetHKL = {sourceCrystalIndex.x + edge.h,
+                               sourceCrystalIndex.y + edge.k,
+                               sourceCrystalIndex.z + edge.l};
 
-      CrystalIndex targetIndex{static_cast<int>(neighborVertexDesc), targetHKL};
+      GenericAtomIndex targetIndex{static_cast<int>(neighborVertexDesc), targetHKL.h, targetHKL.k, targetHKL.l};
       if (m_atomMap.find(targetIndex) != m_atomMap.end())
         continue;
       switch (edge.connectionType) {
@@ -319,7 +323,7 @@ void CrystalStructure::addVanDerWaalsContactAtoms() {
     }
   }
 
-  std::vector<CrystalIndex> indices(atomsToShow.begin(), atomsToShow.end());
+  std::vector<GenericAtomIndex> indices(atomsToShow.begin(), atomsToShow.end());
   addAtomsByCrystalIndex(indices, AtomFlag::Contact);
 }
 
@@ -335,7 +339,7 @@ void CrystalStructure::deleteAtoms(const std::vector<int> &atomIndices) {
   std::vector<QString> newElementSymbols;
   std::vector<occ::Vec3> newPositions;
   std::vector<QString> newLabels;
-  std::vector<CrystalIndex> unitCellOffsets;
+  std::vector<GenericAtomIndex> unitCellOffsets;
   m_unitCellOffsets.clear();
   m_atomMap.clear();
   const auto &currentPositions = atomicPositions();
@@ -407,11 +411,11 @@ void CrystalStructure::completeFragmentContaining(int atomIndex) {
 
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
-  ankerl::unordered_dense::set<CrystalIndex, CrystalIndexHash> atomsToAdd;
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> atomsToAdd;
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                      const EdgeDesc &e, const MillerIndex &hkl) {
-    CrystalIndex atomIdx{static_cast<int>(v), hkl};
+    GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
     auto location = m_atomMap.find(atomIdx);
     if (location != m_atomMap.end()) {
       setAtomFlag(location->second, AtomFlag::Contact, false);
@@ -424,12 +428,12 @@ void CrystalStructure::completeFragmentContaining(int atomIndex) {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unitCellOffset;
+  VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
   filtered_connectivity_traversal_with_cell_offset(
       g, uc_vertex, visitor, covalentPredicate,
-      m_unitCellOffsets[atomIndex].hkl);
+      {m_unitCellOffsets[atomIndex].x, m_unitCellOffsets[atomIndex].y, m_unitCellOffsets[atomIndex].z});
 
-  std::vector<CrystalIndex> indices(atomsToAdd.begin(), atomsToAdd.end());
+  std::vector<GenericAtomIndex> indices(atomsToAdd.begin(), atomsToAdd.end());
   addAtomsByCrystalIndex(indices, fragmentWasSelected ? AtomFlag::Selected
                                                       : AtomFlag::NoFlag);
   if (haveContactAtoms)
@@ -446,7 +450,7 @@ bool CrystalStructure::hasIncompleteFragments() const {
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                      const EdgeDesc &e, const MillerIndex &hkl) {
-    CrystalIndex atomIdx{static_cast<int>(v), hkl};
+    GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
     auto location = m_atomMap.find(atomIdx);
     if (location == m_atomMap.end()) {
       incomplete = true;
@@ -462,11 +466,11 @@ bool CrystalStructure::hasIncompleteFragments() const {
        currentFragmentIndex++) {
     if (m_fragments[currentFragmentIndex].size() == 0)
       continue;
-    int atomIndex = m_fragments[currentFragmentIndex][0];
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unitCellOffset;
+    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
+    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
     filtered_connectivity_traversal_with_cell_offset(
         g, uc_vertex, visitor, covalentPredicate,
-        m_unitCellOffsets[atomIndex].hkl);
+        {m_unitCellOffsets[atomIndex].x, m_unitCellOffsets[atomIndex].y, m_unitCellOffsets[atomIndex].z});
     if (incomplete)
       return true;
   }
@@ -493,7 +497,7 @@ std::vector<int> CrystalStructure::completedFragments() const {
 
     auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
 			 const EdgeDesc &e, const MillerIndex &hkl) {
-	CrystalIndex atomIdx{static_cast<int>(v), hkl};
+	GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
 	auto location = m_atomMap.find(atomIdx);
 	if (location == m_atomMap.end()) {
 	  incomplete = true;
@@ -501,15 +505,29 @@ std::vector<int> CrystalStructure::completedFragments() const {
 	}
     };
 
-    int atomIndex = m_fragments[currentFragmentIndex][0];
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unitCellOffset;
+    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
+    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+
+    const auto &offset = m_unitCellOffsets[atomIndex];
     filtered_connectivity_traversal_with_cell_offset(
         g, uc_vertex, visitor, covalentPredicate,
-        m_unitCellOffsets[atomIndex].hkl);
+	{offset.x, offset.y, offset.z});
     if (incomplete) continue;
     else result.push_back(currentFragmentIndex);
   }
   return result;
+}
+
+std::vector<int> CrystalStructure::selectedFragments() const {
+    std::vector<int> result;
+    for(int fragmentIndex = 0; fragmentIndex < m_fragments.size(); fragmentIndex++) {
+	const auto &fragIndices = atomsForFragment(fragmentIndex);
+	if (fragIndices.size() == 0) continue;
+	if (atomsHaveFlags(fragIndices, AtomFlag::Selected)) result.push_back(fragmentIndex);
+    }
+    return result;
+
+
 }
 
 void CrystalStructure::deleteIncompleteFragments() {
@@ -522,7 +540,7 @@ void CrystalStructure::deleteIncompleteFragments() {
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                      const EdgeDesc &e, const MillerIndex &hkl) {
-    CrystalIndex atomIdx{static_cast<int>(v), hkl};
+    GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
     auto location = m_atomMap.find(atomIdx);
     if (location == m_atomMap.end()) {
       fragmentIndicesToDelete.insert(currentFragmentIndex);
@@ -538,16 +556,17 @@ void CrystalStructure::deleteIncompleteFragments() {
        currentFragmentIndex++) {
     if (m_fragments[currentFragmentIndex].size() == 0)
       continue;
-    int atomIndex = m_fragments[currentFragmentIndex][0];
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unitCellOffset;
+    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
+    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+    const auto &offset = m_unitCellOffsets[atomIndex];
     filtered_connectivity_traversal_with_cell_offset(
         g, uc_vertex, visitor, covalentPredicate,
-        m_unitCellOffsets[atomIndex].hkl);
+	{offset.x, offset.y, offset.z});
   }
 
   std::vector<int> atomIndicesToDelete;
   for (const auto &fragIndex : fragmentIndicesToDelete) {
-    const auto &fragAtoms = m_fragments[fragIndex];
+    const auto &fragAtoms = m_fragments[fragIndex]._atomOffset;
     atomIndicesToDelete.insert(atomIndicesToDelete.end(), fragAtoms.begin(),
                                fragAtoms.end());
   }
@@ -564,11 +583,11 @@ void CrystalStructure::completeAllFragments() {
 
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
-  ankerl::unordered_dense::set<CrystalIndex, CrystalIndexHash> atomsToAdd;
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> atomsToAdd;
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                      const EdgeDesc &e, const MillerIndex &hkl) {
-    CrystalIndex atomIdx{static_cast<int>(v), hkl};
+    GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
     auto location = m_atomMap.find(atomIdx);
     if (location != m_atomMap.end()) {
       setAtomFlag(location->second, AtomFlag::Contact, false);
@@ -582,12 +601,14 @@ void CrystalStructure::completeAllFragments() {
   };
 
   for (int atomIndex = 0; atomIndex < numberOfAtoms(); atomIndex++) {
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unitCellOffset;
+    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+    const auto &offset = m_unitCellOffsets[atomIndex];
+
     filtered_connectivity_traversal_with_cell_offset(
         g, uc_vertex, visitor, covalentPredicate,
-        m_unitCellOffsets[atomIndex].hkl);
+	{offset.x, offset.y, offset.z});
   }
-  std::vector<CrystalIndex> indices(atomsToAdd.begin(), atomsToAdd.end());
+  std::vector<GenericAtomIndex> indices(atomsToAdd.begin(), atomsToAdd.end());
   addAtomsByCrystalIndex(indices, AtomFlag::NoFlag);
   if (haveContactAtoms)
     addVanDerWaalsContactAtoms();
@@ -633,8 +654,8 @@ void CrystalStructure::packUnitCells(
                        static_cast<int>(floor(slab.frac_pos(1, i))),
                        static_cast<int>(floor(slab.frac_pos(2, i)))};
     int ucOffset = i % n_uc;
-    m_unitCellOffsets.push_back({ucOffset, hkl});
-    m_atomMap.insert({CrystalIndex{ucOffset, hkl}, i});
+    m_unitCellOffsets.push_back({ucOffset, hkl.h, hkl.k, hkl.l});
+    m_atomMap.insert({GenericAtomIndex{ucOffset, hkl.h, hkl.k, hkl.l}, i});
   }
   setAtoms(elementSymbols, positions, labels);
   updateBondGraph();
@@ -643,7 +664,9 @@ void CrystalStructure::packUnitCells(
 void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
 
   if (selected) {
+    // resets to selection
     resetAtomsAndBonds(true);
+
     for (int atomIndex = 0; atomIndex < numberOfAtoms(); atomIndex++) {
       setAtomFlag(atomIndex,
                   AtomFlag::Selected); // the call to resetAtomsAndBonds
@@ -654,24 +677,25 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
   }
 
   auto uc_regions = m_crystal.unit_cell_atom_surroundings(radius);
-  ankerl::unordered_dense::set<CrystalIndex, CrystalIndexHash> atomsToAdd;
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> atomsToAdd;
   for (int atomIndex = 0; atomIndex < numberOfAtoms(); atomIndex++) {
     const auto &crystal_index = m_unitCellOffsets[atomIndex];
-    const auto &region = uc_regions[crystal_index.unitCellOffset];
+    const auto &region = uc_regions[crystal_index.unique];
     for (int i = 0; i < region.size(); i++) {
       int h = static_cast<float>(std::floor(region.frac_pos(0, i))) +
-              crystal_index.hkl.h;
+              crystal_index.x;
       int k = static_cast<float>(std::floor(region.frac_pos(1, i))) +
-              crystal_index.hkl.k;
+              crystal_index.y;
       int l = static_cast<float>(std::floor(region.frac_pos(2, i))) +
-              crystal_index.hkl.l;
-      CrystalIndex idx{region.uc_idx(i), {h, k, l}};
+              crystal_index.z;
+      GenericAtomIndex idx{region.uc_idx(i), h, k, l};
       atomsToAdd.insert(idx);
     }
   }
+
+  // set flags here for new atoms
   AtomFlags flags;
-  flags.setFlag(AtomFlag::Selected, true);
-  std::vector<CrystalIndex> atomIndexes(atomsToAdd.begin(), atomsToAdd.end());
+  std::vector<GenericAtomIndex> atomIndexes(atomsToAdd.begin(), atomsToAdd.end());
 
   // TODO remove atoms not within radius
   if (atomIndexes.size() > 0) {
@@ -687,7 +711,7 @@ std::vector<GenericAtomIndex> CrystalStructure::atomsWithFlags(const AtomFlags &
     for (int i = 0; i < numberOfAtoms(); i++) {
 	if (atomFlagsSet(i, flags)) {
 	    const auto &offset = m_unitCellOffsets[i];
-	    selected_idxs.insert({offset.unitCellOffset, offset.hkl.h, offset.hkl.k, offset.hkl.l});
+	    selected_idxs.insert({offset.unique, offset.x, offset.y, offset.z});
 	}
     }
 
@@ -702,7 +726,7 @@ std::vector<GenericAtomIndex> CrystalStructure::atomsSurroundingAtomsWithFlags(c
     for (int i = 0; i < numberOfAtoms(); i++) {
 	if (atomFlagsSet(i, flags)) {
 	    const auto &offset = m_unitCellOffsets[i];
-	    selected_idxs.insert({offset.unitCellOffset, offset.hkl.h, offset.hkl.k, offset.hkl.l});
+	    selected_idxs.insert({offset.unique, offset.x, offset.y, offset.z});
 	}
     }
 
@@ -756,7 +780,7 @@ const std::vector<ChemicalStructure::FragmentState>& CrystalStructure::symmetryU
     return m_symmetryUniqueFragmentStates;
 }
 
-const std::vector<std::vector<GenericAtomIndex>>& CrystalStructure::symmetryUniqueFragments() const {
+const std::vector<Fragment>& CrystalStructure::symmetryUniqueFragments() const {
     return m_symmetryUniqueFragments;
 }
 

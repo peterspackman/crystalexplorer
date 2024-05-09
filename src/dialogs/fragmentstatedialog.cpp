@@ -1,26 +1,26 @@
-#include "chargedialog.h"
-#include "ui_chargedialog.h"
+#include "fragmentstatedialog.h"
+#include "ui_fragmentstatedialog.h"
 
 #include <QDebug>
 #include <QMessageBox>
 
-ChargeDialog::ChargeDialog(QWidget *parent)
-    : QDialog(parent), ui(new Ui::ChargeDialog) {
+FragmentStateDialog::FragmentStateDialog(QWidget *parent)
+    : QDialog(parent), ui(new Ui::FragmentStateDialog) {
   ui->setupUi(this);
   init();
   initConnections();
 }
 
-ChargeDialog::~ChargeDialog() { delete ui; }
+FragmentStateDialog::~FragmentStateDialog() { delete ui; }
 
-void ChargeDialog::init() {}
+void FragmentStateDialog::init() {}
 
-void ChargeDialog::initConnections() {
+void FragmentStateDialog::initConnections() {
   connect(ui->yesRadioButton, &QAbstractButton::toggled, this,
-          &ChargeDialog::yesRadioButtonToggled);
+          &FragmentStateDialog::yesRadioButtonToggled);
 }
 
-void ChargeDialog::accept() {
+void FragmentStateDialog::accept() {
   if (hasFragmentStates() && !chargeIsBalanced()) {
     QString question =
         "Charges are not balanced.\n\nDo you want to continue anyway?";
@@ -35,7 +35,7 @@ void ChargeDialog::accept() {
   QDialog::accept();
 }
 
-void ChargeDialog::cleanupWidgets() {
+void FragmentStateDialog::cleanupWidgets() {
   for (auto spinBox : _chargeSpinBoxes) {
     delete spinBox;
   }
@@ -62,7 +62,7 @@ void ChargeDialog::cleanupWidgets() {
   }
 }
 
-void ChargeDialog::createWidgets(
+void FragmentStateDialog::createWidgets(
     const QStringList &fragmentString,
     const std::vector<ChemicalStructure::FragmentState> &fragmentStates) {
   QVBoxLayout *boxLayout = new QVBoxLayout();
@@ -113,14 +113,14 @@ void ChargeDialog::createWidgets(
   registerConnectionsForSpinBoxes();
 }
 
-void ChargeDialog::registerConnectionsForSpinBoxes() {
+void FragmentStateDialog::registerConnectionsForSpinBoxes() {
   for (const auto spinBox : std::as_const(_chargeSpinBoxes)) {
     connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
-            &ChargeDialog::chargeSpinBoxChanged);
+            &FragmentStateDialog::chargeSpinBoxChanged);
   }
 }
 
-void ChargeDialog::populate(ChemicalStructure *structure) {
+void FragmentStateDialog::populate(ChemicalStructure *structure) {
     if(!structure) return;
 
     const auto fragments = structure->symmetryUniqueFragments();
@@ -138,7 +138,7 @@ void ChargeDialog::populate(ChemicalStructure *structure) {
     setFragmentInformation(fragmentStrings, states, hasChargedFragments);
 
 }
-void ChargeDialog::setFragmentInformation(
+void FragmentStateDialog::setFragmentInformation(
     const QStringList &fragmentString,
     const std::vector<ChemicalStructure::FragmentState> &fragmentStates,
     bool hasChargedFragments) {
@@ -160,17 +160,17 @@ void ChargeDialog::setFragmentInformation(
   }
 }
 
-void ChargeDialog::yesRadioButtonToggled(bool state) {
+void FragmentStateDialog::yesRadioButtonToggled(bool state) {
   ui->chargesGroupBox->setVisible(state);
   adjustSize();
 }
 
-bool ChargeDialog::hasFragmentStates() {
+bool FragmentStateDialog::hasFragmentStates() {
   return ui->yesRadioButton->isChecked();
 }
 
 std::vector<ChemicalStructure::FragmentState>
-ChargeDialog::getFragmentStates() {
+FragmentStateDialog::getFragmentStates() {
   std::vector<ChemicalStructure::FragmentState> result;
   for (int i = 0;
        i < std::min(_chargeSpinBoxes.size(), _multiplicitySpinBoxes.size());
@@ -181,7 +181,7 @@ ChargeDialog::getFragmentStates() {
   return result;
 }
 
-void ChargeDialog::chargeSpinBoxChanged(int value) {
+void FragmentStateDialog::chargeSpinBoxChanged(int value) {
   // If there are only two spinboxes then there must be only two fragments
   // If the spinbox is set to value for one fragment then the other should be
   // set to -value to keep the charge balanced.
@@ -198,7 +198,7 @@ void ChargeDialog::chargeSpinBoxChanged(int value) {
   }
 }
 
-int ChargeDialog::totalCharge() {
+int FragmentStateDialog::totalCharge() {
   Q_ASSERT(_chargeSpinBoxes.size() >
            0); // Shouldn't be calling this if there's no charge to sum up
 
@@ -209,4 +209,4 @@ int ChargeDialog::totalCharge() {
   return total;
 }
 
-bool ChargeDialog::chargeIsBalanced() { return totalCharge() == 0; }
+bool FragmentStateDialog::chargeIsBalanced() { return totalCharge() == 0; }

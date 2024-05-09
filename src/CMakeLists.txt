@@ -7,6 +7,7 @@ add_subdirectory(crystal)
 add_subdirectory(graphics)
 add_subdirectory(pair_energy)
 add_subdirectory(volume)
+add_subdirectory(dialogs)
 
 # Source files
 set(CRYSTALEXPLORER_SOURCE_FILES
@@ -14,7 +15,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     asymmetricunit.cpp
     atom.cpp
     celllimitsdialog.cpp
-    chargedialog.cpp
     childpropertycontroller.cpp
     ciffile.cpp
     closecontactsdialog.cpp
@@ -30,7 +30,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     depthfadingandclippingdialog.cpp
     dialoghtml.cpp
     elementeditor.cpp
-    energycalculationdialog.cpp
     energydata.cpp
     fileeditor.cpp
     fingerprintoptions.cpp
@@ -82,7 +81,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     atomid.h
     cameraoptions.h
     celllimitsdialog.h
-    chargedialog.h
     chargemultiplicitypair.h
     childpropertycontroller.h
     ciffile.h
@@ -99,7 +97,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     depthfadingandclippingdialog.h
     dialoghtml.h
     elementeditor.h
-    energycalculationdialog.h
     energydata.h
     energydescription.h
     fileeditor.h
@@ -157,14 +154,12 @@ set(CRYSTALEXPLORER_HEADER_FILES
 set(CRYSTALEXPLORER_UI_FILES 
     animationsettingsdialog.ui
     celllimitsdialog.ui
-    chargedialog.ui
     childpropertycontroller.ui
     closecontactsdialog.ui
     crystalcontroller.ui
     crystalx.ui
     depthfadingandclippingdialog.ui
     elementeditor.ui
-    energycalculationdialog.ui
     fileeditor.ui
     fingerprintoptions.ui
     frameworkdialog.ui
@@ -209,6 +204,7 @@ target_link_libraries(
     cx_crystal
     cx_graphics
     cx_pair_energy
+    cx_dialogs
     Qt6::Widgets Qt6::Concurrent
     Qt6::OpenGLWidgets Qt6::DBus
 )

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chemicalstructure.h"
+#include <QObject>
 #include <QDialog>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -11,14 +12,14 @@ const int MAXMINCHARGE = 10;
 const bool CONSTRAIN_CHARGES = false;
 
 namespace Ui {
-class ChargeDialog;
+class FragmentStateDialog;
 }
 
-class ChargeDialog : public QDialog {
+class FragmentStateDialog : public QDialog {
   Q_OBJECT
 public:
-  explicit ChargeDialog(QWidget *parent = 0);
-  ~ChargeDialog();
+  explicit FragmentStateDialog(QWidget *parent = 0);
+  ~FragmentStateDialog();
 
   void setFragmentInformation(const QStringList &,
                               const std::vector<ChemicalStructure::FragmentState> &,
@@ -44,7 +45,7 @@ private:
   int totalCharge();
   bool chargeIsBalanced();
 
-  Ui::ChargeDialog *ui;
+  Ui::FragmentStateDialog *ui;
 
   std::vector<QSpinBox *> _chargeSpinBoxes;
   std::vector<QSpinBox *> _multiplicitySpinBoxes;

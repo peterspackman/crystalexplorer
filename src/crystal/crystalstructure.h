@@ -7,38 +7,6 @@
 
 using OccCrystal = occ::crystal::Crystal;
 
-struct CrystalIndex {
-  int unitCellOffset{0};
-  MillerIndex hkl;
-
-  inline bool operator==(const CrystalIndex &other) const {
-    return std::tie(unitCellOffset, hkl.h, hkl.k, hkl.l) ==
-           std::tie(other.unitCellOffset, other.hkl.h, other.hkl.k,
-                    other.hkl.l);
-  }
-  inline bool operator<(const CrystalIndex &other) const {
-    return std::tie(unitCellOffset, hkl.h, hkl.k, hkl.l) <
-           std::tie(other.unitCellOffset, other.hkl.h, other.hkl.k,
-                    other.hkl.l);
-  }
-  inline bool operator>(const CrystalIndex &other) const {
-    return std::tie(unitCellOffset, hkl.h, hkl.k, hkl.l) >
-           std::tie(other.unitCellOffset, other.hkl.h, other.hkl.k,
-                    other.hkl.l);
-  }
-
-};
-
-struct CrystalIndexHash {
-    using is_avalanching = void;
-    [[nodiscard]] auto operator()(CrystalIndex const &idx) const noexcept -> uint64_t {
-	static_assert(std::has_unique_object_representations_v<CrystalIndex>);
-	return ankerl::unordered_dense::detail::wyhash::hash(&idx, sizeof(idx));
-    }
-};
-
-using CrystalIndexSet = ankerl::unordered_dense::set<CrystalIndex, CrystalIndexHash>;
-
 class CrystalStructure : public ChemicalStructure {
   Q_OBJECT;
 
@@ -91,11 +59,12 @@ public:
   virtual void packUnitCells(const QPair<QVector3D, QVector3D> &) override;
 
   virtual std::vector<int> completedFragments() const override;
+  virtual std::vector<int> selectedFragments() const override;
 
   virtual FragmentState getSymmetryUniqueFragmentState(int) const override;
   virtual void setSymmetryUniqueFragmentState(int, FragmentState) override;
 
-  virtual const std::vector<std::vector<GenericAtomIndex>> &symmetryUniqueFragments() const override;
+  virtual const std::vector<Fragment> &symmetryUniqueFragments() const override;
   virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const override;
 
   virtual void expandAtomsWithinRadius(float radius, bool selected) override;
@@ -109,7 +78,7 @@ public:
   [[nodiscard]] virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const override;
 
 private:
-  void addAtomsByCrystalIndex(std::vector<CrystalIndex> &,
+  void addAtomsByCrystalIndex(std::vector<GenericAtomIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);
   void addVanDerWaalsContactAtoms();
   void removeVanDerWaalsContactAtoms();
@@ -119,12 +88,12 @@ private:
   QString m_filename;
   OccCrystal m_crystal;
 
-  std::vector<CrystalIndex> m_unitCellOffsets;
-  ankerl::unordered_dense::map<CrystalIndex, int, CrystalIndexHash> m_atomMap;
-  std::vector<std::vector<int>> m_fragments;
-  std::vector<CrystalIndex> m_fragmentUnitCellMolecules;
+  std::vector<GenericAtomIndex> m_unitCellOffsets;
+  ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash> m_atomMap;
+  std::vector<Fragment> m_fragments;
+  std::vector<GenericAtomIndex> m_fragmentUnitCellMolecules;
   std::vector<int> m_fragmentForAtom;
-  std::vector<std::vector<GenericAtomIndex>> m_symmetryUniqueFragments;
+  std::vector<Fragment> m_symmetryUniqueFragments;
   std::vector<ChemicalStructure::FragmentState> m_symmetryUniqueFragmentStates;
 
   std::vector<std::pair<int, int>> m_covalentBonds;
