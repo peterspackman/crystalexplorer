@@ -34,9 +34,9 @@ public:
 
   virtual int fragmentIndexForAtom(int) const override;
   virtual void deleteFragmentContainingAtomIndex(int atomIndex) override;
+ 
+  virtual const std::vector<Fragment>& getFragments() const override;
   virtual void deleteIncompleteFragments() override;
-
-
 
   virtual const std::vector<int> &atomsForFragment(int) const override;
   virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const override;

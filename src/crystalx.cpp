@@ -1738,58 +1738,39 @@ void Crystalx::showEnergyCalculationDialog() {
     }
     m_energyCalculationDialog->setChemicalStructure(structure);
 
-    /*
-  if (numSelectedFragments == 1 && numCompleteFragments > 1) {
+    if (selectedFragments.size() == 1 && completeFragments.size() > 1) {
+	int keyIndex = selectedFragments[0];
+	const auto &keyFragment = structure->getFragments()[keyIndex];
+	m_energyCalculationDialog->show();
+    } else if (selectedFragments.size() == 2) {
+/********
+	int indexFragA = crystal->fragmentIndexOfFirstSelectedFragment();
+	int indexFragB = crystal->fragmentIndexOfSecondSelectedFragment();
 
-    int keyFragment = crystal->keyFragment();
-    auto fragmentIndices =
-        crystal->findUniquePairsInvolvingCompleteFragments(keyFragment);
+	Q_ASSERT(indexFragA != -1);
+	Q_ASSERT(indexFragB != -1);
 
-    if (fragmentIndices.size() > 0) { // We have pairs to calculate
-      auto fragAtomsA = crystal->atomIdsForFragment(keyFragment);
-      auto fragAtomsB =
-          crystal->atomIdsForFragment(fragmentIndices.takeFirst());
+	QVector<AtomId> fragAtomsA = crystal->atomIdsForFragment(indexFragA);
+	QVector<AtomId> fragAtomsB = crystal->atomIdsForFragment(indexFragB);
 
-      m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
-      m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
-          crystal->chargeMultiplicityForFragment(fragAtomsA),
-          crystal->chargeMultiplicityForFragment(fragAtomsB));
-      m_energyCalculationDialog->setAtomsForRemainingFragments(
-          crystal->atomIdsForFragments(fragmentIndices));
-      m_energyCalculationDialog->show();
-    } else { // Nothing to calculate so show results of previous calculation
-      showInfo(InteractionEnergyInfo);
+	m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
+	m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
+		crystal->chargeMultiplicityForFragment(fragAtomsA),
+		crystal->chargeMultiplicityForFragment(fragAtomsB));
+	m_energyCalculationDialog->show();
+
+	*/
+    } else {
+	QString baseMessage = "Unable to calculate interaction "
+	    "energies.\nCrystalExplorer can handle the following "
+	    "cases:\n\n";
+	QString cond1 = "1. One molecule on-screen, none selected.\n";
+	QString cond2 =
+	    "2. Multiple molecules on-screen, central fragment selected.\n";
+	QString cond3 = "3. A pair of selected fragments.";
+	QString errorMessage = baseMessage + cond1 + cond2 + cond3;
+	QMessageBox::warning(this, "Error", errorMessage);
     }
-
-  } else if (numSelectedFragments == 2) {
-
-    int indexFragA = crystal->fragmentIndexOfFirstSelectedFragment();
-    int indexFragB = crystal->fragmentIndexOfSecondSelectedFragment();
-
-    Q_ASSERT(indexFragA != -1);
-    Q_ASSERT(indexFragB != -1);
-
-    QVector<AtomId> fragAtomsA = crystal->atomIdsForFragment(indexFragA);
-    QVector<AtomId> fragAtomsB = crystal->atomIdsForFragment(indexFragB);
-
-    m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
-    m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
-        crystal->chargeMultiplicityForFragment(fragAtomsA),
-        crystal->chargeMultiplicityForFragment(fragAtomsB));
-    m_energyCalculationDialog->show();
-
-  } else {
-    QString baseMessage = "Unable to calculate interaction "
-                          "energies.\nCrystalExplorer can handle the following "
-                          "cases:\n\n";
-    QString cond1 = "1. One molecule on-screen, none selected.\n";
-    QString cond2 =
-        "2. Multiple molecules on-screen, central fragment selected.\n";
-    QString cond3 = "3. A pair of selected fragments.";
-    QString errorMessage = baseMessage + cond1 + cond2 + cond3;
-    QMessageBox::warning(this, "Error", errorMessage);
-  }
-*/
 }
 
 void Crystalx::calculateEnergies(pair_energy::EnergyModelParameters modelParameters) {

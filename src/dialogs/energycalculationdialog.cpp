@@ -81,6 +81,12 @@ void EnergyCalculationDialog::handleModelChange() {
 
 bool EnergyCalculationDialog::handleStructureChange() {
   m_wavefunctions.clear();
+
+  if(!m_structure) return false;
+
+  m_fragmentPairs =  m_structure->findFragmentPairs();
+  qDebug() << "Found" << m_fragmentPairs.uniquePairs.size() << "unique pairs";
+
   /*
   auto wfns_a =
       m_crystal->transformableWavefunctionsForAtoms(atomsForFragmentA());

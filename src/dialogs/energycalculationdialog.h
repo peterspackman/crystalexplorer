@@ -19,6 +19,8 @@ public:
 
     EnergyCalculationDialog(QWidget *);
     void setChemicalStructure(ChemicalStructure *);
+    std::vector<wfn::Parameters> requiredWavefunctions();
+    FragmentPairs fragmentPairs();
 
 signals:
     void energyParametersChosen(pair_energy::EnergyModelParameters);
@@ -38,5 +40,8 @@ private:
     std::vector<MolecularWavefunction *> m_wavefunctions;
     QString m_method{"b3lyp"};
     QString m_basis{"def2-svp"};
+
+    std::vector<wfn::Parameters> m_requiredWavefunctions;
+    FragmentPairs m_fragmentPairs;
 };
 

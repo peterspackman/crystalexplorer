@@ -5,6 +5,13 @@
 
 using Transform = Eigen::Isometry3d;
 struct Fragment {
+
+    struct NearestAtomResult{
+	size_t idx_this;
+	size_t idx_other;
+	double distance;
+    };
+
     std::vector<GenericAtomIndex> atomIndices;
     std::vector<int> _atomOffset;
 
@@ -16,6 +23,12 @@ struct Fragment {
 
     occ::IVec asymmetricUnitIndices;
 
+    NearestAtomResult nearestAtom(const Fragment &other) const;
+
+    occ::Vec atomicMasses() const;
+    occ::Vec3 centroid() const;
+    occ::Vec3 centerOfMass() const;
+
     bool sameAsymmetricIndices(const Fragment &) const;
     bool isEquivalentTo(const Fragment &) const;
     bool isComparableTo(const Fragment &) const;
@@ -24,6 +37,8 @@ struct Fragment {
 };
 
 struct FragmentDimer {
+  FragmentDimer(const Fragment&, const Fragment&);
+
   Fragment a;
   Fragment b;
 

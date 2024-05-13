@@ -897,13 +897,54 @@ ChemicalStructure::FragmentSymmetryRelation ChemicalStructure::findUniqueFragmen
 }
 
 FragmentPairs ChemicalStructure::findFragmentPairs() const {
-    // TODO
     FragmentPairs result;
-    using Fragment = std::vector<GenericAtomIndex>;
+    constexpr double tolerance = 1e-1;
 
     auto &pairs = result.uniquePairs;
     auto &molPairs = result.pairs;
+    const auto &fragments = getFragments();
+    const auto &uniqueFragments = symmetryUniqueFragments();
 
-    std::vector<Fragment> fragments;
+    size_t asymIndex = 0;
+    for (const auto &afrag: uniqueFragments) {
+	molPairs.push_back({});
+          for (const auto &ofrag: fragments) {
+            double distance = (afrag.nearestAtom(ofrag).distance);
+            if (distance > tolerance) {
+              FragmentDimer d(afrag, ofrag);
+              molPairs[asymIndex].push_back({d, -1});
+              if (std::any_of(pairs.begin(), pairs.end(),
+                              [&d](const FragmentDimer &d2) { return d == d2; }))
+                continue;
+		pairs.push_back(d);
+            }
+          }
+	  asymIndex++;
+    }
+
+    auto fragmentDimerSortFunc = [](const FragmentDimer &a, const FragmentDimer &b) {
+	return a.nearestAtomDistance < b.nearestAtomDistance;
+    };
+
+
+
+    auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
+			      const FragmentPairs::SymmetryRelatedPair &b) {
+	return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
+    };
+
+    std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
+    for (auto &vec : molPairs) {
+	std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
+	for (auto &d : vec) {
+	    size_t idx = std::distance(
+		    pairs.begin(), std::find(pairs.begin(), pairs.end(), d.fragments));
+	    d.uniquePairIndex = idx;
+	}
+    }
     return result;
+}
+
+const std::vector<Fragment>& ChemicalStructure::getFragments() const {
+    return m_fragments;
 }

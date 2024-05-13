@@ -113,6 +113,7 @@ public:
   virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const;
 
   virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &) const;
+  virtual const std::vector<Fragment>& getFragments() const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;

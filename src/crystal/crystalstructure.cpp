@@ -80,8 +80,6 @@ void CrystalStructure::updateBondGraph() {
     visited.insert(idx);
     m_fragmentForAtom[idx] = currentFragmentIndex;
     idxs.push_back(idx);
-    if (prev != v) {
-    }
   };
 
   auto covalentPredicate = [&edges](const EdgeDesc &e) {
@@ -89,13 +87,17 @@ void CrystalStructure::updateBondGraph() {
   };
 
   for (int i = 0; i < numberOfAtoms(); i++) {
-    if (visited.contains(i) || testAtomFlag(i, AtomFlag::Contact))
-      continue;
-    fragments.push_back({});
     VertexDesc uc_vertex = m_unitCellOffsets[i].unique;
-    filtered_connectivity_traversal_with_cell_offset(
-        g, uc_vertex, covalentVisitor, covalentPredicate,
-	{m_unitCellOffsets[i].x, m_unitCellOffsets[i].y, m_unitCellOffsets[i].z});
+    int h = m_unitCellOffsets[i].x;
+    int k = m_unitCellOffsets[i].y;
+    int l = m_unitCellOffsets[i].z;
+    int idx = m_atomMap[GenericAtomIndex{static_cast<int>(uc_vertex), h, k, l}];
+
+    if (visited.contains(idx) || testAtomFlag(idx, AtomFlag::Contact))
+      continue;
+
+    fragments.push_back({});
+    filtered_connectivity_traversal_with_cell_offset(g, uc_vertex, covalentVisitor, covalentPredicate, {h, k, l});
     currentFragmentIndex++;
   }
 
@@ -137,8 +139,9 @@ void CrystalStructure::updateBondGraph() {
 
       std::sort(g.begin(), g.end());
       m_fragments.push_back(makeFragment(g));
-      qDebug() << "Made fragment\n" << m_fragments.back();
+      qDebug() << "Made fragment with" << idxs.size() << "atoms";
   }
+  qDebug() << "Now have" << m_fragments.size() << "fragments";
 
 }
 
@@ -194,9 +197,9 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
 void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     m_crystal = crystal;
 
-
     m_symmetryUniqueFragments.clear();
     const auto &uc_atoms = m_crystal.unit_cell_atoms();
+    qDebug() << "Crystal has " << uc_atoms.size() << "uc atoms";
     qDebug() << "Crystal has " << m_crystal.unit_cell_molecules().size() << "uc mols";
     qDebug() << "Crystal has " << m_crystal.symmetry_unique_molecules().size() << "sym mols";
     for(const auto &mol: m_crystal.symmetry_unique_molecules()) {
@@ -256,46 +259,56 @@ std::vector<GenericAtomIndex> CrystalStructure::atomIndicesForFragment(int fragm
 }
 
 void CrystalStructure::addAtomsByCrystalIndex(
-    std::vector<GenericAtomIndex> &indices, const AtomFlags &flags) {
-  const auto &uc_atoms = m_crystal.unit_cell_atoms();
-  occ::IVec nums(indices.size());
-  occ::Mat3N pos(3, indices.size());
-  const auto &asym = m_crystal.asymmetric_unit();
-  std::vector<QString> l;
-  const int numAtomsBefore = numberOfAtoms();
+    std::vector<GenericAtomIndex> &unfilteredIndices, const AtomFlags &flags) {
+    
+    // filter out already existing indices
+    std::vector<GenericAtomIndex> indices;
+    indices.reserve(unfilteredIndices.size());
 
-  {
-    int i = 0;
-    for (const auto &idx : indices) {
-      nums(i) = uc_atoms.atomic_numbers(idx.unique);
-      pos.col(i) = uc_atoms.frac_pos.col(idx.unique) +
-                   occ::Vec3(idx.x, idx.y, idx.z);
-      QString label = "";
-      auto asymIdx = uc_atoms.asym_idx(idx.unique);
-      if (asymIdx < asym.labels.size()) {
-        label = QString::fromStdString(asym.labels[asymIdx]);
-      }
-      l.push_back(label);
-      m_unitCellOffsets.push_back(idx);
-      m_atomMap.insert({idx, numAtomsBefore + i});
-      i++;
+    std::copy_if(unfilteredIndices.begin(), unfilteredIndices.end(),
+	         std::back_inserter(indices),
+		 [&](const GenericAtomIndex& index) {
+		     return m_atomMap.find(index) == m_atomMap.end();
+		 });
+    const auto &uc_atoms = m_crystal.unit_cell_atoms();
+    occ::IVec nums(indices.size());
+    occ::Mat3N pos(3, indices.size());
+    const auto &asym = m_crystal.asymmetric_unit();
+    std::vector<QString> l;
+    const int numAtomsBefore = numberOfAtoms();
+
+    {
+	int i = 0;
+	for (const auto &idx : indices) {
+	    nums(i) = uc_atoms.atomic_numbers(idx.unique);
+	    pos.col(i) = uc_atoms.frac_pos.col(idx.unique) +
+		occ::Vec3(idx.x, idx.y, idx.z);
+	    QString label = "";
+	    auto asymIdx = uc_atoms.asym_idx(idx.unique);
+	    if (asymIdx < asym.labels.size()) {
+		label = QString::fromStdString(asym.labels[asymIdx]);
+	    }
+	    l.push_back(label);
+	    m_unitCellOffsets.push_back(idx);
+	    m_atomMap.insert({idx, numAtomsBefore + i});
+	    i++;
+	}
+	pos = m_crystal.to_cartesian(pos);
     }
-    pos = m_crystal.to_cartesian(pos);
-  }
 
-  std::vector<occ::Vec3> positionsToAdd;
-  std::vector<QString> elementSymbols;
+    std::vector<occ::Vec3> positionsToAdd;
+    std::vector<QString> elementSymbols;
 
-  for (int i = 0; i < nums.rows(); i++) {
-    elementSymbols.push_back(
-        QString::fromStdString(occ::core::Element(nums(i)).symbol()));
-    positionsToAdd.push_back(pos.col(i));
-  }
-  addAtoms(elementSymbols, positionsToAdd, l);
-  const int numAtomsAfter = numberOfAtoms();
-  for (int i = numAtomsBefore; i < numAtomsAfter; i++) {
-    setAtomFlags(i, flags);
-  }
+    for (int i = 0; i < nums.rows(); i++) {
+	elementSymbols.push_back(
+		QString::fromStdString(occ::core::Element(nums(i)).symbol()));
+	positionsToAdd.push_back(pos.col(i));
+    }
+    addAtoms(elementSymbols, positionsToAdd, l);
+    const int numAtomsAfter = numberOfAtoms();
+    for (int i = numAtomsBefore; i < numAtomsAfter; i++) {
+	setAtomFlags(i, flags);
+    }
 }
 
 void CrystalStructure::addVanDerWaalsContactAtoms() {
@@ -530,8 +543,10 @@ std::vector<int> CrystalStructure::completedFragments() const {
 
 std::vector<int> CrystalStructure::selectedFragments() const {
     std::vector<int> result;
+    qDebug() << "m_fragments size:" << m_fragments.size();
     for(int fragmentIndex = 0; fragmentIndex < m_fragments.size(); fragmentIndex++) {
 	const auto &fragIndices = atomsForFragment(fragmentIndex);
+	qDebug() << "Num atoms in fragment:" << fragIndices.size();
 	if (fragIndices.size() == 0) continue;
 	if (atomsHaveFlags(fragIndices, AtomFlag::Selected)) result.push_back(fragmentIndex);
     }
@@ -692,12 +707,9 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
     const auto &crystal_index = m_unitCellOffsets[atomIndex];
     const auto &region = uc_regions[crystal_index.unique];
     for (int i = 0; i < region.size(); i++) {
-      int h = static_cast<float>(std::floor(region.frac_pos(0, i))) +
-              crystal_index.x;
-      int k = static_cast<float>(std::floor(region.frac_pos(1, i))) +
-              crystal_index.y;
-      int l = static_cast<float>(std::floor(region.frac_pos(2, i))) +
-              crystal_index.z;
+      int h = region.hkl(0, i) + crystal_index.x;
+      int k = region.hkl(1, i) + crystal_index.y;
+      int l = region.hkl(2, i) + crystal_index.z;
       GenericAtomIndex idx{region.uc_idx(i), h, k, l};
       atomsToAdd.insert(idx);
     }
@@ -832,4 +844,8 @@ Fragment CrystalStructure::makeFragment(const std::vector<GenericAtomIndex> &idx
 	result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(i);
     }
     return result;
+}
+
+const std::vector<Fragment>& CrystalStructure::getFragments() const {
+    return m_fragments;
 }

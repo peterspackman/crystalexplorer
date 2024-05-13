@@ -1,5 +1,6 @@
 #include "fragment.h"
 #include <occ/core/util.h>
+#include <occ/core/element.h>
 #include <cmath>
 
 occ::Vec Fragment::interatomicDistances() const {
@@ -103,4 +104,40 @@ QDebug operator<<(QDebug debug, const Fragment& fragment) {
     debug.nospace() << "}";
     
     return debug;
+}
+
+occ::Vec Fragment::atomicMasses() const {
+    occ::Vec result(size());
+    for(int i = 0; i < size(); i++) {
+	result(i) = static_cast<double>(occ::core::Element(atomicNumbers(i)).mass());
+    }
+    return result;
+}
+
+occ::Vec3 Fragment::centroid() const { return positions.rowwise().mean(); }
+
+occ::Vec3 Fragment::centerOfMass() const {
+  occ::RowVec masses = atomicMasses();
+  masses.array() /= masses.sum();
+  return (positions.array().rowwise() * masses.array()).rowwise().sum();
+}
+
+Fragment::NearestAtomResult Fragment::nearestAtom(const Fragment &other) const {
+    Fragment::NearestAtomResult result{0, 0, std::numeric_limits<double>::max()};
+    for (size_t i = 0; i < size(); i++) {
+	const occ::Vec3 &p1 = positions.col(i);
+	for (size_t j = 0; j < other.size(); j++) {
+	    const occ::Vec3 &p2 = other.positions.col(j);
+	    double d = (p2 - p1).norm();
+	    if (d < result.distance)
+		result = Fragment::NearestAtomResult{i, j, d};
+	}
+    }
+    return result;
+}
+
+FragmentDimer::FragmentDimer(const Fragment &fa, const Fragment& fb) : a(fa), b(fb) {
+    nearestAtomDistance = fa.nearestAtom(fb).distance;
+    centerOfMassDistance = (fb.centerOfMass() - fa.centerOfMass()).norm();
+    centroidDistance = (fa.centroid() - fa.centroid()).norm();
 }
