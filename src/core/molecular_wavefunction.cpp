@@ -30,11 +30,11 @@ void  MolecularWavefunction::setParameters(const wfn::Parameters &params) {
 
 
 const std::vector<GenericAtomIndex>& MolecularWavefunction::atomIndices() const {
-    return m_atomIndices; 
+    return m_parameters.atoms; 
 }
 
 void  MolecularWavefunction::setAtomIndices(const std::vector<GenericAtomIndex> &idxs) {
-    m_atomIndices = idxs;
+    m_parameters.atoms = idxs;
 }
 
 void MolecularWavefunction::writeToFile(const QString &filename) {

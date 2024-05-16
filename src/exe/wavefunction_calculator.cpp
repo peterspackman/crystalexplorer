@@ -33,19 +33,57 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
 
   auto taskId = m_taskManager->add(task);
   connect(task, &Task::completed, [&, params, wavefunctionName, wavefunctionFilename]() {
+	m_complete = true;
 	this->wavefunctionComplete(params, wavefunctionFilename, wavefunctionName);
   });
 
 }
 
+void WavefunctionCalculator::start_batch(const std::vector<wfn::Parameters> &wfn) {
+    QList<OccWavefunctionTask*> tasks;
+    completedTaskCount = 0; 
+
+    for (const auto &params : wfn) {
+        if (!params.structure) {
+            qDebug() << "Found nullptr for chemical structure in WavefunctionCalculator";
+            continue;
+        }
+	// assume they're all for the same structure.
+	m_structure = params.structure;
+
+        QString wavefunctionName = QString("%1/%2").arg(params.method).arg(params.basis);
+        auto *task = new OccWavefunctionTask();
+        task->setParameters(params);
+        task->setProperty("name", wavefunctionName);
+        QString wavefunctionFilename = task->wavefunctionFilename();
+
+        auto taskId = m_taskManager->add(task);
+        tasks.append(task);
+
+        connect(task, &Task::completed, this, [this, params, wavefunctionName, wavefunctionFilename, tasks]() {
+	    completedTaskCount++;
+
+            if (completedTaskCount == tasks.size()) {
+	        m_complete = true;
+            }
+
+            this->wavefunctionComplete(params, wavefunctionFilename, wavefunctionName);
+        });
+    }
+}
+
 void WavefunctionCalculator::wavefunctionComplete(wfn::Parameters params, QString filename, QString name) {
     qDebug() << "Task" << name << "finished in WavefunctionCalculator";
-    m_wavefunction = io::loadWavefunction(filename);
-    if(m_wavefunction) {
-	m_wavefunction->setParameters(params);
-	m_wavefunction->setObjectName(name);
-	m_wavefunction->setParent(m_structure);
-	emit calculationComplete();
+    auto wfn = io::loadWavefunction(filename);
+    qDebug() << "Loaded wavefunction from" << filename << wfn << params.atoms.size();
+    m_wavefunction = wfn;
+    if(wfn) {
+	wfn->setParameters(params);
+	wfn->setObjectName(name);
+	wfn->setParent(m_structure);
+	if(m_complete) {
+	    emit calculationComplete();
+	}
     }
 }
 

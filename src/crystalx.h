@@ -71,7 +71,10 @@ public slots:
   void displayFingerprint();
   void passCurrentCrystalToFingerprintWindow();
   void passCurrentSurfaceVisibilityToSurfaceController();
+
   void calculateEnergies(pair_energy::EnergyModelParameters);
+  void calculateEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters);
+
   void showInfo(InfoType);
   void showTaskManagerWidget();
   void updateInfo(InfoType);

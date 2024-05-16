@@ -23,6 +23,7 @@
 #include "tonto.h"
 #include "isosurface_calculator.h"
 #include "wavefunction_calculator.h"
+#include "pair_energy_calculator.h"
 
 Crystalx::Crystalx() : QMainWindow() {
   setupUi(this);
@@ -1773,6 +1774,76 @@ void Crystalx::showEnergyCalculationDialog() {
     }
 }
 
+void Crystalx::calculateEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters modelParameters) {
+    qDebug() << "Pairs needed:" << modelParameters.pairs.size();
+    qDebug() << "Wavefunctions assumed to exist";
+    Scene *scene = project->currentScene();
+    if (!scene) return;
+    auto *structure = scene->chemicalStructure();
+    if (!structure) return;
+
+    std::vector<MolecularWavefunction *> wavefunctions;
+    for(const auto &wfn: modelParameters.wavefunctions) {
+	auto candidates = structure->wavefunctionsAndTransformsForAtoms(wfn.atoms);
+	bool found = false;
+	qDebug() << "Found " << candidates.size() << "candidates";
+	for(auto &candidate: candidates) {
+	    if(wfn.hasEquivalentMethodTo(candidate.wavefunction->parameters())) {
+		found = true;
+		wavefunctions.push_back(candidate.wavefunction);
+		break;
+	    }
+	}
+	if(!found) {
+	    qDebug() << "Unable to find corresponding wavefunction...";
+	}
+    }
+
+    std::vector<pair_energy::Parameters> energies;
+
+    for(const auto &pair: modelParameters.pairs) {
+	pair_energy::Parameters p;
+	p.structure = structure;
+	p.atomsA = pair.a.atomIndices;
+	p.atomsB = pair.b.atomIndices;
+
+	bool foundA = false;
+	bool foundB = false;
+	for(auto * wfn: wavefunctions) {
+	    if(foundA && foundB) break;
+	    if(!foundA) {
+		foundA = structure->getTransformation(p.atomsA, wfn->atomIndices(), p.transformA);
+		if(foundA) {
+		    qDebug() << "Found wavefunction for A";
+		    p.wfnA = wfn;
+		}
+	    }
+	    if(!foundB) {
+		foundB = structure->getTransformation(p.atomsB, wfn->atomIndices(), p.transformB);
+		if(foundB) {
+		    qDebug() << "Found wavefunction for B";
+		    p.wfnB = wfn;
+		}
+	    }
+	}
+	if(!foundA && foundB) {
+	    qDebug() << "Unable to find wavefunctions for A and B";
+	    return;
+	}
+	energies.push_back(p);
+    }
+
+    PairEnergyCalculator * calc = new PairEnergyCalculator(this);
+    calc->setTaskManager(m_taskManager);
+
+    connect(calc, &PairEnergyCalculator::calculationComplete, this, [this, calc]() {
+	qDebug() << "Calculation of pair energies complete";
+	calc->deleteLater();
+    });
+
+    calc->start_batch(energies);
+}
+
 void Crystalx::calculateEnergies(pair_energy::EnergyModelParameters modelParameters) {
 
     Scene *scene = project->currentScene();
@@ -1781,11 +1852,49 @@ void Crystalx::calculateEnergies(pair_energy::EnergyModelParameters modelParamet
     if (!structure) return;
     qDebug() << "In calculateEnergies";
 
-    const auto completeFragments = structure->completedFragments();
-    const auto selectedFragments = structure->selectedFragments();
-    qDebug() << "Complete fragments:" << completeFragments.size();
-    qDebug() << "Selected fragments:" << selectedFragments.size();
+    qDebug() << "Wavefunctions needed:" << modelParameters.wavefunctions.size();
+    qDebug() << "Pairs needed:" << modelParameters.pairs.size();
 
+    std::vector<wfn::Parameters> wavefunctionsToCalculate;
+    for(auto &wfn: modelParameters.wavefunctions) {
+	if(!wfn.accepted) {
+	    wfn = Crystalx::getWavefunctionParametersFromUser(wfn.atoms, wfn.charge, wfn.multiplicity);
+	}
+	if(!wfn.accepted) return;
+	break;
+    }
+
+    for(auto &wfn: modelParameters.wavefunctions) {
+	wfn.structure = structure;
+	auto candidates = structure->wavefunctionsAndTransformsForAtoms(wfn.atoms);
+	bool found = false;
+	for(auto &candidate: candidates) {
+	    if(wfn.hasEquivalentMethodTo(candidate.wavefunction->parameters())) {
+		found = true;
+		break;
+	    }
+	}
+	if(!found) {
+	    wavefunctionsToCalculate.push_back(wfn);
+	}
+    }
+
+
+    if(wavefunctionsToCalculate.size() > 0) {
+	qDebug() << "Make calculator";
+	WavefunctionCalculator *wavefunctionCalc = new WavefunctionCalculator();
+	wavefunctionCalc->setTaskManager(m_taskManager);
+
+	connect(wavefunctionCalc, &WavefunctionCalculator::calculationComplete, this, [modelParameters, this, wavefunctionCalc]() {
+	    calculateEnergiesWithExistingWavefunctions(modelParameters);
+	    wavefunctionCalc->deleteLater();
+	});
+
+	wavefunctionCalc->start_batch(modelParameters.wavefunctions);
+    }
+    else {
+	calculateEnergiesWithExistingWavefunctions(modelParameters);
+    }
 }
 
 void Crystalx::calculateVoidDomains() {

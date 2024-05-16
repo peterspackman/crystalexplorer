@@ -214,6 +214,7 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
 	}
 	std::sort(idxs.begin(), idxs.end());
 	m_symmetryUniqueFragments.push_back(makeAsymFragment(idxs));
+	m_symmetryUniqueFragments.back().asymmetricFragmentIndex = m_symmetryUniqueFragments.size() - 1;
 	qDebug() << "Made symmetry unique fragment\n" << m_symmetryUniqueFragments.back();
 	m_symmetryUniqueFragmentStates.push_back({});
     }

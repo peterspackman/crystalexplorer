@@ -23,7 +23,11 @@ struct Parameters {
     std::vector<GenericAtomIndex> atoms;
     bool accepted{false};
 
-    bool operator==(const Parameters &rhs) const {
+    inline bool hasEquivalentMethodTo(const Parameters &rhs) const {
+	return (method.toLower() == rhs.method.toLower()) && (basis.toLower() == rhs.basis.toLower());
+    }
+
+    inline bool operator==(const Parameters &rhs) const {
 	if(structure != rhs.structure) return false;
 	if(charge != rhs.charge) return false;
 	if(multiplicity != rhs.multiplicity) return false;

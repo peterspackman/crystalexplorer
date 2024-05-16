@@ -1,4 +1,5 @@
 #include "energycalculationdialog.h"
+#include <ankerl/unordered_dense.h>
 
 EnergyCalculationDialog::EnergyCalculationDialog(QWidget *parent)
     : QDialog(parent) {
@@ -69,56 +70,85 @@ void EnergyCalculationDialog::showEvent(QShowEvent *) {
   orcaLabel->setVisible(orcaVisible);
 }
 
-bool EnergyCalculationDialog::needWavefunctionCalculationDialog() const {
-  return !(quantitativeRadioButton->isChecked() ||
-           qualitativeRadioButton->isChecked() ||
-           orcaRadioButton->isChecked() || gfnRadioButton->isChecked());
+bool EnergyCalculationDialog::methodIsDefined() const {
+    return (
+	quantitativeRadioButton->isChecked() ||
+	qualitativeRadioButton->isChecked() ||
+	orcaRadioButton->isChecked() ||
+	gfnRadioButton->isChecked()  ||
+	(wavefunctionCombobox->currentIndex() == 0)
+    );
 }
 
 void EnergyCalculationDialog::handleModelChange() {
-
+  m_method = (quantitativeRadioButton->isChecked()) ? "b3lyp" : "hf";
+  m_basis = (quantitativeRadioButton->isChecked()) ? "def2-svp" : "3-21g";
+  wavefunctionCombobox->setEnabled(userWavefunctionRadioButton->isChecked());
+  for(auto &wfn: m_requiredWavefunctions) {
+      wfn.method = m_method;
+      wfn.basis = m_basis;
+  }
 }
 
 bool EnergyCalculationDialog::handleStructureChange() {
   m_wavefunctions.clear();
-
+  m_requiredWavefunctions.clear();
   if(!m_structure) return false;
+  updateWavefunctionComboBox();
 
+
+  auto selectedFragments = m_structure->selectedFragments();
+  if(selectedFragments.size() > 2) return false;
+  const auto &fragments = m_structure->getFragments();
   m_fragmentPairs =  m_structure->findFragmentPairs();
+
   qDebug() << "Found" << m_fragmentPairs.uniquePairs.size() << "unique pairs";
 
-  /*
-  auto wfns_a =
-      m_crystal->transformableWavefunctionsForAtoms(atomsForFragmentA());
-  auto wfns_b =
-      m_crystal->transformableWavefunctionsForAtoms(atomsForFragmentB());
-  m_foundA = false;
-  for (const auto &tw : wfns_a) {
-    if (tw.first.jobParameters().theory == m_method &&
-        tw.first.jobParameters().basisset == m_basis) {
-      qDebug() << "Found matching wavefunction for A, atoms = "
-               << _atomGroups[0];
-      m_waveFunctions.push_back(tw);
-      m_foundA = true;
-    }
+  m_fragmentPairsToCalculate.clear();
+  int asymIndex = fragments[selectedFragments[0]].asymmetricFragmentIndex;
+  auto asymTransform = fragments[selectedFragments[0]].asymmetricFragmentTransform;
+
+  ankerl::unordered_dense::set<int> wavefunctionsNeeded;
+  wavefunctionsNeeded.insert(asymIndex);
+
+  for(const auto &pair: m_fragmentPairs.uniquePairs) {
+      if(pair.a.asymmetricFragmentIndex == asymIndex ||
+	 pair.b.asymmetricFragmentIndex == asymIndex) {
+	  m_fragmentPairsToCalculate.push_back(pair);
+	  qDebug() << pair.a.asymmetricFragmentIndex << pair.b.asymmetricFragmentIndex;
+	  wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
+	  wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);
+      }
   }
-  m_foundB = false;
-  for (const auto &tw : wfns_b) {
-    if (tw.first.jobParameters().theory == m_method &&
-        tw.first.jobParameters().basisset == m_basis) {
-      qDebug() << "Found matching wavefunction for B" << _atomGroups[1];
-      m_waveFunctions.push_back(tw);
-      m_foundB = true;
-    }
+
+  qDebug() << "Need to calculate" << wavefunctionsNeeded.size() << "wavefunctions";
+  qDebug() << "Need to calculate" << m_fragmentPairsToCalculate.size() << "pairs";
+
+  const auto &uniqueFragments = m_structure->symmetryUniqueFragments();
+  const auto &uniqueFragmentStates = m_structure->symmetryUniqueFragmentStates();
+  for(const auto &uniqueIndex: wavefunctionsNeeded) {
+      m_requiredWavefunctions.emplace_back(
+          wfn::Parameters{
+	      uniqueFragmentStates[uniqueIndex].charge,
+	      uniqueFragmentStates[uniqueIndex].multiplicity,
+	      m_method,
+	      m_basis,
+	      m_structure,
+	      uniqueFragments[uniqueIndex].atomIndices
+	 }
+      );
   }
-  return m_foundA && m_foundB;
-  */
   return false;
 }
 
-// to chain the calculations on our part.
 void EnergyCalculationDialog::validate() {
-    return;
+
+    if(methodIsDefined() || wavefunctionCombobox->currentIndex() != 0) {
+	for(auto &wfn: m_requiredWavefunctions) {
+	    wfn.accepted = true;
+	}
+    } 
+
     /*
   Q_ASSERT(m_crystal);
   if (!needWavefunctionCalculationDialog()) {
@@ -157,22 +187,30 @@ void EnergyCalculationDialog::validate() {
   }
   calculate();
   */
+  emit energyParametersChosen(pair_energy::EnergyModelParameters{
+    "ce-1p",
+    m_requiredWavefunctions,
+    m_fragmentPairsToCalculate
+  });
 }
 
-/*
 void EnergyCalculationDialog::updateWavefunctionComboBox() {
   wavefunctionCombobox->clear();
-  qDebug() << "In update wavefunctionCombobox, index: " << wavefunctionCombobox->currentIndex();
   QStringList items{"Generate New Wavefunction"};
 
   if (m_structure) {
-    qDebug() << "Have m_crystal: " << m_structure;
-    for (const auto &wfn : m_crystal->wavefunctions()) {
-      items.append(wfn.description());
+    qDebug() << "Have m_structure: " << m_structure;
+    for(const auto *child: m_structure->children()) {
+	const MolecularWavefunction * wfn = qobject_cast<const MolecularWavefunction *>(child);
+	if(wfn) {
+	    items.append(wfn->description());
+	}
     }
   }
   wavefunctionCombobox->addItems(items);
 }
+
+/*
 
 bool EnergyCalculationDialog::calculatedEnergiesForAllPairs() {
   return _atomsForRemainingFragments.size() == 0;
@@ -318,9 +356,6 @@ void EnergyCalculationDialog::calculate() {
                               wavefunctions); // along with wavefunction
 }
 
-void EnergyCalculationDialog::modelChemistryChanged() {
-  wavefunctionCombobox->setEnabled(userWavefunctionRadioButton->isChecked());
-}
 
 JobParameters
 EnergyCalculationDialog::createWavefunctionCalculationJobParameters(

@@ -1,12 +1,11 @@
 #pragma once
 #include "atomflags.h"
 #include "fragment.h"
-#include "interactions.h"
 #include "generic_atom_index.h"
+#include "pair_energy_results.h"
 #include "molecular_wavefunction.h"
+#include "object_tree_model.h"
 #include <Eigen/Dense>
-#include <QAbstractItemModel>
-#include <QModelIndex>
 #include <QVariant>
 #include <QColor>
 #include <QStringList>
@@ -29,7 +28,7 @@ struct FragmentPairs {
 };
 
 
-class ChemicalStructure : public QAbstractItemModel {
+class ChemicalStructure : public QObject {
   Q_OBJECT
 public:
 
@@ -153,25 +152,15 @@ public:
   void setFlagForAtomsFiltered(const AtomFlag &flagToSet, const AtomFlag &query,
                                bool on = true);
 
-  [[nodiscard]] inline const DimerInteractions * interactions() const { return m_interactions; }
-  [[nodiscard]] inline DimerInteractions * interactions() { return m_interactions; }
+  [[nodiscard]] inline PairInteractionResults *interactions() { return m_interactions; }
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const;
 
   [[nodiscard]] virtual std::vector<WavefunctionAndTransform> wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &);
 
-
-  // Abstract Item Model methods
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
-  QModelIndex parent(const QModelIndex &index) const override;
-  QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
-  QModelIndex indexFromObject(QObject* object, const QModelIndex& parent = QModelIndex()); 
-
-  virtual QString formulaSumForAtoms(const std::vector<GenericAtomIndex>&, bool richText=false) const;
+  [[nodiscard]] inline ObjectTreeModel* treeModel() { return m_treeModel; }
+  [[nodiscard]] QString formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs, bool richText) const;
 
 signals:
   void childAdded(QObject *);
@@ -182,7 +171,6 @@ protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
-  int topLevelItemsCount() const;
   void deleteAtoms(const std::vector<int> &atomIndices);
   void deleteAtom(int atomIndex);
   void guessBondsBasedOnDistances();
@@ -218,5 +206,7 @@ private:
   std::vector<std::pair<int, int>> m_vdwContacts;
   std::vector<std::pair<int, int>> m_hydrogenBonds;
   bool m_bondsNeedUpdate{true};
-  DimerInteractions *m_interactions{nullptr};
+
+  PairInteractionResults *m_interactions{nullptr};
+  ObjectTreeModel * m_treeModel{nullptr};
 };

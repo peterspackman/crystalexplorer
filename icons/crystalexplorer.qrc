@@ -36,6 +36,7 @@
         <file>crystal_surface_icon.png</file>
         <file>plane_icon.png</file>
         <file>mesh.png</file>
+        <file>wfn_icon.png</file>
     </qresource>
     <qresource prefix="/svg">
         <file>source_images/a-axis.svg</file>

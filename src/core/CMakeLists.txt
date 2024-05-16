@@ -12,7 +12,9 @@ add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/meshinstance.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/meshpropertymodel.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/molecular_wavefunction.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/object_tree_model.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pair_energy_parameters.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pair_energy_results.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/volume.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefunction_parameters.cpp"
 )

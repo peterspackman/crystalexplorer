@@ -599,7 +599,7 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     if (!meshInstance)
       break;
 
-    emit clickedSurface(m_structure->indexFromObject(meshInstance));
+    emit clickedSurface(m_structure->treeModel()->indexFromObject(meshInstance));
 
     float propertyValue = meshInstance->valueForSelectedPropertyAt(m_selection.secondaryIndex);
     emit clickedSurfacePropertyValue(propertyValue);

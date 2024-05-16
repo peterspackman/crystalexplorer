@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>43</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -1081,7 +1081,7 @@
   <action name="generateWavefunctionAction">
    <property name="icon">
     <iconset resource="../icons/crystalexplorer.qrc">
-     <normaloff>:/images/molecule_icon.png</normaloff>:/images/molecule_icon.png</iconset>
+     <normaloff>:/images/wfn_icon.png</normaloff>:/images/wfn_icon.png</iconset>
    </property>
    <property name="text">
     <string>Generate Wavefunction</string>

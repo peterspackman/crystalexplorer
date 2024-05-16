@@ -11,6 +11,8 @@ public:
     
     void setTaskManager(TaskManager *);
     void start(pair_energy::Parameters);
+    void start_batch(const std::vector<pair_energy::Parameters> &);
+
 signals:
     void calculationComplete();
 
@@ -24,4 +26,6 @@ private:
     ChemicalStructure * m_structure{nullptr};
     MolecularWavefunction * m_wavefunctionA{nullptr};
     MolecularWavefunction * m_wavefunctionB{nullptr};
+    int completedTaskCount{0};
+    bool m_complete{false};
 };

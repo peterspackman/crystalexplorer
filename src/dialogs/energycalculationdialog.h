@@ -30,9 +30,10 @@ private slots:
 
     void handleModelChange();
     bool handleStructureChange();
+    void updateWavefunctionComboBox();
 
 private:
-    bool needWavefunctionCalculationDialog() const;
+    bool methodIsDefined() const;
     void init();
     void initConnections();
 
@@ -43,5 +44,6 @@ private:
 
     std::vector<wfn::Parameters> m_requiredWavefunctions;
     FragmentPairs m_fragmentPairs;
+    std::vector<FragmentDimer> m_fragmentPairsToCalculate;
 };
 

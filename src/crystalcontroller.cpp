@@ -1,6 +1,7 @@
 #include "crystalcontroller.h"
 #include "confirmationbox.h"
 #include "dialoghtml.h"
+#include "object_tree_model.h"
 
 CrystalController::CrystalController(QWidget *parent) : QWidget(parent) {
   setupUi(this);
@@ -62,20 +63,21 @@ void CrystalController::setSurfaceInfo(Project *project) {
 }
 
 void CrystalController::updateSurfaceInfo(Scene *scene) {
-    structureTreeView->setModel(scene->chemicalStructure());
+    structureTreeView->setModel(scene->chemicalStructure()->treeModel());
     connect(structureTreeView->selectionModel(), &QItemSelectionModel::selectionChanged,
 	  this, &CrystalController::onStructureViewSelectionChanged, Qt::UniqueConnection);
 }
 
 void CrystalController::structureViewClicked(const QModelIndex &index) {
     if (index.column() != 0) return;
-    // Ensure the view corresponds to a ChemicalStructure
-    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(structureTreeView->model());
-    if (!structure) return;
+    // Ensure the view corresponds to an ObjectTreeModel
+    ObjectTreeModel * model = qobject_cast<ObjectTreeModel*>(structureTreeView->model());
+    if (!model) return;
 
     QObject* item = static_cast<QObject*>(index.internalPointer());
+    qDebug() << "Item on click: " << item;
     if (item) {
-	// Toggle the visibility
+	// Toggle the visibility);
 	bool currentVisibility = item->property("visible").toBool();
 	item->setProperty("visible", !currentVisibility);
 	qDebug() << "Setting object visibility";
@@ -84,10 +86,10 @@ void CrystalController::structureViewClicked(const QModelIndex &index) {
 
 	// Update all visibility decorations as they may have changed
 	// TODO make this more efficient
-	QModelIndex topLeft = structure->index(0, 0);
-	QModelIndex bottomRight = structure->index(structure->rowCount() - 1, structure->columnCount() - 1);
+	QModelIndex topLeft = model->index(0, 0);
+	QModelIndex bottomRight = model->index(model->rowCount() - 1, model->columnCount() - 1);
 
-	emit structure->dataChanged(topLeft, bottomRight, {Qt::DecorationRole});
+	emit model->dataChanged(topLeft, bottomRight, {Qt::DecorationRole});
 	structureTreeView->viewport()->update();
 
     }
@@ -108,8 +110,8 @@ template<typename T>
 T* maybeCastChild(const QModelIndex &index, QAbstractItemModel *model) {
     if (!index.isValid()) return nullptr;
 
-    ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(model);
-    if (!structure) return nullptr;
+    ObjectTreeModel * tree = qobject_cast<ObjectTreeModel*>(model);
+    if (!tree) return nullptr;
 
     QObject* item = static_cast<QObject*>(index.internalPointer());
     return qobject_cast<T*>(item);

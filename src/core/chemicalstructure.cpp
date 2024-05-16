@@ -4,11 +4,14 @@
 #include <occ/core/kabsch.h>
 #include "elementdata.h"
 #include "mesh.h"
+#include "object_tree_model.h"
 #include <QIcon>
 #include <QEvent>
 
-ChemicalStructure::ChemicalStructure(QObject *parent) : QAbstractItemModel(parent) {
+ChemicalStructure::ChemicalStructure(QObject *parent) : QObject(parent), m_interactions(new PairInteractionResults()) {
     this->installEventFilter(this);
+
+    m_treeModel = new ObjectTreeModel(this);
 }
 
 void ChemicalStructure::updateBondGraph() { guessBondsBasedOnDistances(); }
@@ -590,27 +593,18 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtomsWithFlags(
 
 bool ChemicalStructure::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::ChildAdded) {
-	qDebug() << "Child added event";
 	QChildEvent *childEvent = static_cast<QChildEvent*>(event);
 	QObject *newChild = childEvent->child();
 	if (newChild) {
 	    newChild->installEventFilter(this);  // Monitor the new child
-	    qDebug() << "Emit new child Added";
 	    emit childAdded(newChild);
-	    // Include the child in the model
-	    int newRow = this->children().indexOf(newChild);
-	    QModelIndex parentIndex = QModelIndex();
-	    beginInsertRows(parentIndex, newRow, newRow);
-	    endInsertRows();
 	}
     } else if (event->type() == QEvent::ChildRemoved) {
 	QChildEvent *childEvent = static_cast<QChildEvent*>(event);
 	QObject *removedChild = childEvent->child();
 	if (removedChild) {
-	    beginResetModel();
 	    removedChild->removeEventFilter(this);  // Stop monitoring the removed child
 	    emit childRemoved(removedChild);
-	    endResetModel();
 	}
     }
     return QObject::eventFilter(obj, event);
@@ -639,143 +633,6 @@ occ::Mat3N ChemicalStructure::atomicPositionsForIndices(const std::vector<Generi
     }
     return result;
 }
-
-// Abstract Item Model methods
-int ChemicalStructure::topLevelItemsCount() const {
-    // Implement this based on how top-level items are stored or managed within ChemicalStructure
-    return this->children().count(); // Example: directly using QObject's children count
-}
-
-int ChemicalStructure::rowCount(const QModelIndex &parent) const {
-    if (!parent.isValid()) {
-	// Return the count of top-level items when parent is invalid (root case)
-	return topLevelItemsCount();
-    } else {
-	// For a valid parent index, find the QObject and return its children count
-	const QObject* parentObject = static_cast<QObject*>(parent.internalPointer());
-	return parentObject->children().count();
-    }
-}
-
-QVariant ChemicalStructure::headerData(int section, Qt::Orientation orientation, int role) const {
-    if (role != Qt::DisplayRole) {
-        return QVariant();
-    }
-    
-    if (orientation == Qt::Horizontal) {
-        // Assuming column 0 is for "Visibility" and column 1 is for "Name" as an example
-        switch (section) {
-            case 0:
-                return tr("Visibility");
-            case 1:
-                return tr("Name");
-            // Add more cases as needed for additional columns
-            default:
-                return QVariant();
-        }
-    }
-
-    // Optionally handle vertical headers or return QVariant() if not needed
-    return QVariant();
-}
-
-
-int ChemicalStructure::columnCount(const QModelIndex &parent) const {
-    // This typically doesn't depend on the parent for hierarchical models
-    return 2; // Or more, depending on the data you wish to display
-}
-
-QVariant ChemicalStructure::data(const QModelIndex &index, int role) const {
-    if (!index.isValid())
-	return QVariant();
-
-    int col = index.column();
-    QObject* itemObject = static_cast<QObject*>(index.internalPointer());
-    if (role == Qt::DecorationRole) {
-	if(col == 0) { // Visibility column
-	    QVariant visibleProperty = itemObject->property("visible");
-	    if (!visibleProperty.isNull()) {
-		bool isVisible = visibleProperty.toBool();
-		return QIcon(isVisible ? ":/images/tick.png" : ":/images/cross.png");
-	    }
-        }
-	else if(col == 1) {
-	    auto *mesh = qobject_cast<Mesh*>(itemObject);
-	    if(mesh) {
-		return QIcon(":/images/mesh.png");
-	    }
-	}
-    }
-    else if (role == Qt::DisplayRole && col == 1) {
-	return QVariant(itemObject->objectName() + QString(" [%1]").arg(itemObject->metaObject()->className()));
-    }
-    return QVariant();
-}
-
-QModelIndex ChemicalStructure::index(int row, int column, const QModelIndex &parent) const {
-    if (!hasIndex(row, column, parent))
-	return QModelIndex();
-
-    const QObject* parentObject = parent.isValid() ? static_cast<const QObject*>(parent.internalPointer()) : this;
-    QObject* childObject = parentObject->children().at(row);
-    if (childObject)
-	return createIndex(row, column, childObject);
-    else
-	return QModelIndex();
-}
-
-QModelIndex ChemicalStructure::parent(const QModelIndex &index) const {
-    if (!index.isValid())
-	return QModelIndex();
-
-    QObject* childObject = static_cast<QObject*>(index.internalPointer());
-    QObject* parentObject = childObject->parent();
-
-    if (parentObject == this || !parentObject)
-	return QModelIndex();
-
-    QObject* grandparentObject = parentObject->parent();
-    const int parentRow = grandparentObject ? grandparentObject->children().indexOf(parentObject) : 0;
-    return createIndex(parentRow, 0, parentObject);
-}
-
-QModelIndex genericIndexFromObject(const QAbstractItemModel* model, QObject* object, const QModelIndex& parent = QModelIndex()) {
-    if (!model || !object) return QModelIndex();
-    qDebug() << "Querying for object:" << object;
-
-    int rowCount = model->rowCount(parent);
-    int columnCount = model->columnCount(parent);
-
-    for (int row = 0; row < rowCount; ++row) {
-        for (int column = 0; column < columnCount; ++column) {
-            QModelIndex index = model->index(row, column, parent);
-	    if(!index.isValid()) continue;
-
-	    const QObject* indexObj = static_cast<const QObject*>(index.internalPointer());
-
-            if (indexObj == object) {
-		qDebug() << "Found matching index at " << index;
-                // Found the matching index
-                return index;
-            }
-
-            // Recursively search in children
-            QModelIndex foundIndex = genericIndexFromObject(model, object, index);
-            if (foundIndex.isValid()) {
-                return foundIndex;
-            }
-        }
-    }
-
-    // Not found
-    return QModelIndex();
-}
-
-QModelIndex ChemicalStructure::indexFromObject(QObject* object, const QModelIndex& parent) {
-    qDebug() << "Initial query object:" << object;
-    return genericIndexFromObject(this, object, parent);
-}
-
 
 bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &from_orig,
 				          const std::vector<GenericAtomIndex> &to_orig,
@@ -806,11 +663,16 @@ bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &f
 
     double rmsd = (pos_a - pos_b).norm();
     qDebug() << "RMSD: " << rmsd;
+    qDebug() << "Rotation:";
+    for(int i = 0; i < 3; i++) {
+	qDebug() << rot(i, 0) << rot(i, 1) << rot(i, 2);
+    }
     // tolerance
     if(rmsd > 1e-3) return false;
 
     // Compute the translation
     occ::Vec3 translation = centroid_b - (rot * centroid_a);
+    qDebug() << "Translation:" << translation(0) << translation(1) << translation(2);
 
     // Construct the final transformation
     result = Eigen::Isometry3d::Identity();
@@ -822,12 +684,20 @@ bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &f
 
 
 std::vector<WavefunctionAndTransform> ChemicalStructure::wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &idxs) {
+    for(const auto &idx: idxs) {
+	qDebug() << idx.unique << idx.x << idx.y << idx.z;
+    }
     std::vector<WavefunctionAndTransform> result;
     for(auto * child: children()) {
 	MolecularWavefunction *wfn = qobject_cast<MolecularWavefunction *>(child);
 	if(wfn) {
+	    qDebug() << "Testing candidate wavefunction" << wfn->atomIndices().size();
 	    WavefunctionAndTransform t{wfn};
+	    for(const auto &idx: wfn->atomIndices()) {
+		qDebug() << idx.unique << idx.x << idx.y << idx.z;
+	    }
 	    bool valid = getTransformation(idxs, wfn->atomIndices(), t.transform);
+
 	    if(valid) {
 		qDebug() << "Found valid wavefunction";
 		result.push_back(t);

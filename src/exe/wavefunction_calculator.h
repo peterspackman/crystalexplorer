@@ -11,6 +11,7 @@ public:
     
     void setTaskManager(TaskManager *);
     void start(wfn::Parameters);
+    void start_batch(const std::vector<wfn::Parameters> &);
     MolecularWavefunction *getWavefunction() const;
 
 signals:
@@ -23,4 +24,6 @@ private:
     TaskManager * m_taskManager{nullptr};
     ChemicalStructure * m_structure{nullptr};
     MolecularWavefunction * m_wavefunction{nullptr};
+    bool m_complete{false};
+    int completedTaskCount{0}; 
 };

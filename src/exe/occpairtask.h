@@ -13,8 +13,6 @@ public:
     void setParameters(const pair_energy::Parameters &);
     virtual void start() override;
 
-    QString outputFileName() const;
-
     int threads() const;
 
 private:

@@ -4,15 +4,16 @@
 #include <Eigen/Geometry>
 #include "generic_atom_index.h"
 #include "wavefunction_parameters.h"
+#include "chemicalstructure.h"
 
-class ChemicalStructure;
 class MolecularWavefunction;
 
 namespace pair_energy {
 
 struct EnergyModelParameters {
     QString model{"ce-1p"};
-    wfn::Parameters wfn;
+    std::vector<wfn::Parameters> wavefunctions;
+    std::vector<FragmentDimer> pairs;
     bool operator==(const EnergyModelParameters& rhs) const;
 };
 
@@ -26,6 +27,9 @@ struct Parameters {
 
     MolecularWavefunction * wfnA{nullptr};
     MolecularWavefunction * wfnB{nullptr};
+    ChemicalStructure * structure{nullptr};
+
+    QString deriveName() const;
 
     bool operator==(const Parameters& rhs) const;
 };

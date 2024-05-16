@@ -49,7 +49,6 @@ private:
     int m_nbf{0};
     double m_totalEnergy{0.0};
     wfn::FileFormat m_fileFormat;
-    std::vector<GenericAtomIndex> m_atomIndices;
     QByteArray m_rawContents;
     wfn::Parameters m_parameters;
 };
