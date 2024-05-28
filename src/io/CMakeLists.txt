@@ -1,8 +1,10 @@
 add_library(cx_io
+    "${CMAKE_CURRENT_SOURCE_DIR}/ciffile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/genericxyzfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_wavefunction.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_pair_energy_json.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pdbfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyply.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefrontobjfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/xyzfile.cpp"
@@ -15,6 +17,7 @@ target_link_libraries(
     Eigen3::Eigen sbf_cpp fmt::fmt
     unordered_dense::unordered_dense
     occ_core
+    occ_crystal
 )
 
 target_compile_features(cx_io PUBLIC cxx_std_20)

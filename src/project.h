@@ -41,6 +41,7 @@ public:
 
   bool loadChemicalStructureFromXyzFile(const QString &);
   bool loadCrystalStructuresFromCifFile(const QString &);
+  bool loadCrystalStructuresFromPdbFile(const QString &);
 
   bool previouslySaved();
   QString saveFilename();

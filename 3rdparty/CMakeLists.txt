@@ -33,11 +33,5 @@ CPMAddPackage(
     NAME gemmi
     GITHUB_REPOSITORY project-gemmi/gemmi
     GIT_TAG master
-    DOWNLOAD_ONLY YES
+    OPTIONS "BUILD_SHARED_LIBS OFF" "BUILD_GEMMI_PROGRAM OFF"
 )
-
-# Add Gemmi as a header only library for linking
-if("${gemmi_ADDED}")
-    add_library(gemmi::gemmi INTERFACE IMPORTED GLOBAL)
-    target_include_directories(gemmi::gemmi INTERFACE "${gemmi_SOURCE_DIR}/include")
-endif()

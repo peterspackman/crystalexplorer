@@ -183,6 +183,7 @@ private:
   void updateRecentFileActions(QStringList);
   void updateWorkingDirectories(const QString &);
   void processCif(QString &);
+  void processPdb(QString &);
   void loadXyzFile(const QString &);
 
   void showLoadingMessageBox(QString);

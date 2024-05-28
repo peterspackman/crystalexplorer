@@ -2,6 +2,7 @@
 #include <QtDebug>
 
 #include "ciffile.h"
+#include "pdbfile.h"
 #include "confirmationbox.h"
 #include "crystaldata.h"
 #include "dialoghtml.h"
@@ -373,6 +374,38 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
   setCurrentCrystal(position);
   return true;
 }
+
+bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
+  PdbFile pdbReader;
+  bool success = pdbReader.readFromFile(filename);
+  if (!success)
+    return false;
+
+  int position = -1;
+  for (int i = 0; i < pdbReader.numberOfCrystals(); i++) {
+    CrystalStructure *tmp = new CrystalStructure();
+    tmp->setOccCrystal(pdbReader.getCrystalStructure(i));
+    //tmp->setFileContents(pdbReader.getCrystalCifContents(i));
+    //tmp->setName(pdbReader.getCrystalName(i));
+    Scene *scene = new Scene(tmp);
+    scene->setTitle(QFileInfo(filename).baseName());
+    if (i == 0) {
+      position = m_scenes.size();
+      beginInsertRows(QModelIndex(), position, position);
+      m_scenes.append(scene);
+      endInsertRows();
+    }
+  }
+
+  if (position > -1) {
+    setUnsavedChangesExists();
+    setCurrentCrystal(position);
+    emit selectedSceneChanged(position);
+  }
+
+  return true;
+}
+
 
 bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
   CifFile cifReader;

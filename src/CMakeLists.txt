@@ -16,7 +16,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     atom.cpp
     celllimitsdialog.cpp
     childpropertycontroller.cpp
-    ciffile.cpp
     closecontactsdialog.cpp
     colordelegate.cpp
     colorschemer.cpp
@@ -83,7 +82,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     celllimitsdialog.h
     chargemultiplicitypair.h
     childpropertycontroller.h
-    ciffile.h
     closecontactsdialog.h
     colordelegate.h
     colorschemer.h

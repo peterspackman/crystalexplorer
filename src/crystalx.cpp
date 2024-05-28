@@ -766,7 +766,8 @@ void Crystalx::resetSelectionMode() {
 void Crystalx::openFile() {
   const QString FILTER = "CIF, CIF2, Project File, XYZ file (*." +
                          CIF_EXTENSION + " *." + PROJECT_EXTENSION + " *." +
-                         CIF2_EXTENSION + " *." + XYZ_FILE_EXTENSION + ")";
+                         CIF2_EXTENSION + " *." + XYZ_FILE_EXTENSION + 
+			 " *.pdb" + ")";
   QStringList filenames = QFileDialog::getOpenFileNames(
       0, tr("Open File"), QDir::currentPath(), FILTER);
 
@@ -859,11 +860,14 @@ void Crystalx::loadExternalFileData(QString filename) {
   QString extension = fileInfo.suffix().toLower();
 
   if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
-    processCif(filename);
+      processCif(filename);
+  }
+  else if(extension == "pdb") {
+      processPdb(filename);
   } else if (extension == PROJECT_EXTENSION) {
-    loadProject(filename);
+      loadProject(filename);
   } else if (extension == XYZ_FILE_EXTENSION) {
-    loadXyzFile(filename);
+      loadXyzFile(filename);
   }
 }
 
@@ -904,6 +908,13 @@ void Crystalx::processCif(QString &filename) {
     // must be done outside lambda, filename must be copied.
     showStatusMessage(QString("Loading CIF file from %1").arg(filename));
     project->loadCrystalStructuresFromCifFile(filename);
+}
+
+void Crystalx::processPdb(QString &filename) {
+    qDebug() << "Loading CIF file: " << filename;
+    // must be done outside lambda, filename must be copied.
+    showStatusMessage(QString("Loading PDB file from %1").arg(filename));
+    project->loadCrystalStructuresFromPdbFile(filename);
 }
 
 void Crystalx::jobRunning() { setBusy(true); }

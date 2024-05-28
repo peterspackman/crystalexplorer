@@ -10,7 +10,7 @@ add_library(occ_crystal
 target_link_libraries(occ_crystal
     PUBLIC 
     occ_core
-    gemmi::gemmi
+    gemmi::gemmi_cpp
 )
 target_include_directories(occ_crystal PUBLIC 
     ${OCC_INCLUDE_DIR} 
