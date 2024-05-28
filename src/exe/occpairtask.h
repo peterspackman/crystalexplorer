@@ -14,6 +14,8 @@ public:
     virtual void start() override;
 
     int threads() const;
+    QString jsonFilename() const;
+    void setJsonFilename(QString);
 
 private:
     void appendTransformArguments(QStringList &);
@@ -21,5 +23,6 @@ private:
     QString kind() const;
     pair_energy::Parameters m_parameters;
     QString m_wavefunctionSuffix{".owf.json"};
+    QString m_jsonFilename{"energies.json"};
     QString m_basisSetDirectory;
 };

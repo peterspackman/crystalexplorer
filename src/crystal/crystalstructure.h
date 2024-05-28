@@ -17,11 +17,9 @@ public:
   void setOccCrystal(const OccCrystal &);
   inline const auto &occCrystal() const { return m_crystal; }
 
-  inline void setName(const QString &name) { m_name = name; }
-  inline const auto &name() const { return m_name; }
-
-  inline void setFilename(const QString &filename) { m_filename = filename; }
-  inline const auto &filename() const { return m_name; }
+  // assumed to be CIF for now
+  inline void setFileContents(const QByteArray &contents) { m_fileContents = contents; }
+  inline const QByteArray &fileContents() const { return m_fileContents; }
 
   QString chemicalFormula() const;
 
@@ -88,8 +86,8 @@ private:
   void removeVanDerWaalsContactAtoms();
   void deleteAtoms(const std::vector<int> &atomIndices);
 
-  QString m_name;
   QString m_filename;
+  QByteArray m_fileContents;
   OccCrystal m_crystal;
 
   std::vector<GenericAtomIndex> m_unitCellOffsets;

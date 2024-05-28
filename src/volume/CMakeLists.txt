@@ -8,6 +8,7 @@ target_link_libraries(
     cx_exe
     cx_core
     cx_io
+    cx_crystal
 )
 
 target_compile_features(cx_volume PUBLIC cxx_std_20)

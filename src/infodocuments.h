@@ -3,6 +3,7 @@
 
 #include "fingerprintwindow.h" // For FingerprintBreakdown typedef
 #include "scene.h"
+#include "pair_energy_results.h"
 
 class InfoDocuments {
 public:
@@ -42,7 +43,7 @@ private:
   // Interaction Energy Info
   static void insertEnergyScalingPreamble(QTextCursor);
   static void insertEnergyModelScalingInfo(QTextCursor);
-  static void insertInteractionEnergiesGroupedByPair(Scene *, QTextCursor);
+  static void insertInteractionEnergiesGroupedByPair(PairInteractionResults *, QTextCursor);
   static void insertInteractionEnergiesGroupedByWavefunction(Scene *,
                                                              QTextCursor);
   static void insertEnergyAtTableRow(int, QTextTable *, QTextCursor,

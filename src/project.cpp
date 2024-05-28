@@ -384,6 +384,8 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
   for (int i = 0; i < cifReader.numberOfCrystals(); i++) {
     CrystalStructure *tmp = new CrystalStructure();
     tmp->setOccCrystal(cifReader.getCrystalStructure(i));
+    tmp->setFileContents(cifReader.getCrystalCifContents(i));
+    tmp->setName(cifReader.getCrystalName(i));
     Scene *scene = new Scene(tmp);
     scene->setTitle(QFileInfo(filename).baseName());
     if (i == 0) {

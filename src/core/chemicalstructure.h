@@ -67,6 +67,9 @@ public:
   inline const auto &labels() const { return m_labels; }
   inline int numberOfAtoms() const { return m_atomicNumbers.rows(); }
 
+  inline void setName(const QString &name) { m_name = name; }
+  inline const auto &name() const { return m_name; }
+
   // colors
   QColor atomColor(int atomIndex) const;
   void overrideAtomColor(int index, const QColor &);
@@ -188,6 +191,7 @@ private:
   Eigen::VectorXi m_atomicNumbers;
   std::vector<AtomFlags> m_flags;
   std::vector<QColor> m_atomColors;
+  QString m_name{"structure"};
 
   // these are here for optimisation purposes, they need to be reconstructed if
   // the atoms are changed anyway.

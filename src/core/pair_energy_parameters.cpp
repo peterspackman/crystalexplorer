@@ -1,4 +1,5 @@
 #include "pair_energy_parameters.h"
+#include "chemicalstructure.h"
 #include <functional>
 
 // Helper function to combine hash values

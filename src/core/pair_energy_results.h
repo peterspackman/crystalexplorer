@@ -1,6 +1,7 @@
 #pragma once
 #include <QObject>
 #include <QAbstractItemModel>
+#include "pair_energy_parameters.h"
 
 class PairInteractionResult : public QObject
 {
@@ -11,9 +12,13 @@ public:
     void addComponent(const QString& component, double value);
     QList<QPair<QString, double>> components() const;
 
+    void setParameters(const pair_energy::Parameters&);
+    const pair_energy::Parameters &parameters() const;
+
 private:
     QString m_interactionModel;
     QList<QPair<QString, double>> m_components;
+    pair_energy::Parameters m_parameters;
 };
 
 class PairInteractionResults : public QAbstractItemModel

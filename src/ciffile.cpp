@@ -1,9 +1,11 @@
 #include "ciffile.h"
+#include <QByteArray>
 
 #include <algorithm>
 #include <array>
 #include <gemmi/cif.hpp>
 #include <gemmi/numb.hpp>
+#include <gemmi/to_cif.hpp>
 
 struct CifAtomData {
   std::string element;
@@ -48,6 +50,8 @@ struct CifCrystalData {
   std::vector<CifAtomData> atoms;
   CifCellData cellData;
   CifSymmetryData symmetryData;
+  QByteArray cifContents;
+  QString name{"crystal"};
 
   bool isValid() const {
     return cellData.isValid() && symmetryData.isValid() && atoms.size() > 0;
@@ -157,13 +161,21 @@ void extractSymmetryData(const gemmi::cif::Pair &pair,
   cleanUpString(destination.HM);
 }
 
+QByteArray blockToQByteArray(const gemmi::cif::Block& block, gemmi::cif::WriteOptions options = gemmi::cif::WriteOptions()) {
+    std::stringstream ss;
+    gemmi::cif::write_cif_block_to_stream(ss, block, options);
+    return QByteArray::fromStdString(ss.str());
+}
+
 std::vector<CifCrystalData> readDocument(gemmi::cif::Document &document) {
   std::vector<CifCrystalData> result;
   int blockNumber = 0;
   for (const auto &block : document.blocks) {
     CifCrystalData cifData;
-    for (const auto &item : block.items) {
-      switch (item.type) {
+
+    cifData.cifContents = blockToQByteArray(block);
+    cifData.name = QString::fromStdString(block.name);
+    for (const auto &item : block.items) { switch (item.type) {
       case gemmi::cif::ItemType::Pair:
         if (item.has_prefix("_cell")) {
           extractCellParameter(item.pair, cifData.cellData);
@@ -278,6 +290,8 @@ bool CifFile::readFromFile(const QString &fileName) {
         occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms),
                               buildSpacegroup(crystal.symmetryData),
                               buildUnitCell(crystal.cellData)));
+    m_crystalCifContents.push_back(crystal.cifContents);
+    m_crystalNames.push_back(crystal.name);
   }
   return true;
 }
@@ -296,6 +310,8 @@ bool CifFile::readFromString(const QString &content) {
         occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms),
                               buildSpacegroup(crystal.symmetryData),
                               buildUnitCell(crystal.cellData)));
+    m_crystalCifContents.push_back(crystal.cifContents);
+    m_crystalNames.push_back(crystal.name);
   }
   return true;
 }
@@ -303,5 +319,13 @@ bool CifFile::readFromString(const QString &content) {
 int CifFile::numberOfCrystals() const { return m_crystals.size(); }
 
 const OccCrystal &CifFile::getCrystalStructure(int index) const {
-  return m_crystals.at(index);
+    return m_crystals.at(index);
+}
+
+const QByteArray& CifFile::getCrystalCifContents(int index) const {
+    return m_crystalCifContents.at(index);
+}
+
+const QString& CifFile::getCrystalName(int index) const {
+    return m_crystalNames.at(index);
 }

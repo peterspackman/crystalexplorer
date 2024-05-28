@@ -4,9 +4,10 @@
 #include <Eigen/Geometry>
 #include "generic_atom_index.h"
 #include "wavefunction_parameters.h"
-#include "chemicalstructure.h"
+#include "fragment.h"
 
 class MolecularWavefunction;
+class ChemicalStructure;
 
 namespace pair_energy {
 

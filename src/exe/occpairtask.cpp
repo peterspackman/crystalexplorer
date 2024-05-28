@@ -49,6 +49,14 @@ void OccPairTask::appendTransformArguments(QStringList &args) {
     }
 }
 
+void OccPairTask::setJsonFilename(QString name) {
+    m_jsonFilename = name;
+}
+
+QString OccPairTask::jsonFilename() const {
+    return m_jsonFilename;
+}
+
 void OccPairTask::start() {
     if(!(m_parameters.wfnA && m_parameters.wfnB)) {
 	qWarning() << "Invalid wavefunctions specified";
@@ -77,14 +85,15 @@ void OccPairTask::start() {
 
     args << QString("--threads=%1").arg(threads());
     args << QString("--model=%1").arg(m_parameters.model);
-    args << QString("--verbosity=4");
-
+    //args << QString("--verbosity=4");
+    args << QString("--json=%1").arg(m_jsonFilename);
 
     appendTransformArguments(args);
 
     qDebug() << "Arguments:" << args;
     setArguments(args);
     setRequirements(reqs);
+    setOutputs({FileDependency(m_jsonFilename, m_jsonFilename)});
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("OCC_DATA_PATH", QDir::homePath() + "/git/occ/share");
     setEnvironment(environment);

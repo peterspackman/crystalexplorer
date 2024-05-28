@@ -1838,6 +1838,7 @@ void Crystalx::calculateEnergiesWithExistingWavefunctions(pair_energy::EnergyMod
 
     connect(calc, &PairEnergyCalculator::calculationComplete, this, [this, calc]() {
 	qDebug() << "Calculation of pair energies complete";
+	showInfo(InfoType::InteractionEnergyInfo);
 	calc->deleteLater();
     });
 

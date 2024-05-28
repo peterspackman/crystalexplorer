@@ -4,6 +4,8 @@
 #include "chemicalstructure.h"
 #include "pair_energy_parameters.h"
 
+class OccPairTask;
+
 class PairEnergyCalculator: public QObject {
     Q_OBJECT
 public:
@@ -17,7 +19,7 @@ signals:
     void calculationComplete();
 
 private slots:
-    void pairEnergyComplete(pair_energy::Parameters, QString name);
+    void pairEnergyComplete(pair_energy::Parameters, OccPairTask *);
 
 private:
     std::vector<GenericAtomIndex> m_atomsA;

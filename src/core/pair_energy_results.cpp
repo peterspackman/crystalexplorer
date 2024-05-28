@@ -15,6 +15,13 @@ QString PairInteractionResult::interactionModel() const {
     return m_interactionModel;
 }
 
+void PairInteractionResult::setParameters(const pair_energy::Parameters &params) {
+    m_parameters = params;
+}
+const pair_energy::Parameters& PairInteractionResult::parameters() const {
+    return m_parameters;
+}
+
 void PairInteractionResults::addPairInteractionResult(PairInteractionResult* result)
 {
     qDebug() << "Adding result" << result;

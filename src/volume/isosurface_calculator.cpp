@@ -2,6 +2,7 @@
 #include "occsurfacetask.h"
 #include "load_mesh.h"
 #include <occ/core/element.h>
+#include "crystalstructure.h"
 #include "xyzfile.h"
 
 namespace volume {
@@ -10,6 +11,19 @@ IsosurfaceCalculator::IsosurfaceCalculator(QObject * parent) : QObject(parent) {
 
 void IsosurfaceCalculator::setTaskManager(TaskManager *mgr) {
     m_taskManager = mgr;
+}
+
+inline bool writeByteArrayToFile(const QByteArray &contents, const QString &filename) {
+    QFile file(filename);
+    if (file.open(QIODevice::WriteOnly)) {
+	file.write(contents);
+	file.close();
+	return true;
+    }
+    else {
+	qDebug() << "Could not open file for writing in MolecularWavefunction::writeToFile";
+	return false;
+    }
 }
 
 void IsosurfaceCalculator::start(isosurface::Parameters params) {
@@ -23,7 +37,11 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   m_atoms = {};
 
   if(params.kind == isosurface::Kind::Void) {
-      filename = "crystal.cif";
+      CrystalStructure *crystal = qobject_cast<CrystalStructure *>(m_structure);
+      if(!crystal) return;
+      filename = m_structure->name() + "_" + isosurface::kindToString(params.kind) + ".cif";
+
+      if(!writeByteArrayToFile(crystal->fileContents(), filename)) return;
   }
   else {
       m_atoms = params.structure->atomsWithFlags(AtomFlag::Selected);
@@ -31,18 +49,17 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       occ::Mat3N pos = params.structure->atomicPositionsForIndices(m_atoms);
 
       if(params.wfn) {
-	filename = "ce_surface_inside.owf.json";
+        filename = m_structure->name() + "_" + isosurface::kindToString(params.kind) + "_inside.owf.json";
 	params.wfn->writeToFile(filename);
       }
       else {
-	filename = "ce_surface_inside.xyz";
+        filename = m_structure->name() + "_" + isosurface::kindToString(params.kind) + "_inside.xyz";
 	XYZFile xyz;
 	xyz.setElements(nums);
 	xyz.setAtomPositions(pos);
 	xyz.writeToFile(filename);
       }
-      filename_outside = "ce_surface_outside.xyz";
-
+      filename_outside = m_structure->name() + "_" + isosurface::kindToString(params.kind) + "_outside.xyz";
       {
 	  auto idxs = params.structure->atomsSurroundingAtomsWithFlags(AtomFlag::Selected, 12.0);
 	  qDebug() << "Idxs size: " << idxs.size();
