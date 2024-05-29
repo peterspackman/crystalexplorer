@@ -23,7 +23,7 @@ struct CifCellData {
   inline bool isValid() const {
     auto isPositive = [](double x) { return x > 0.0; };
     return std::all_of(lengths.begin(), lengths.end(), isPositive) &&
-           std::all_of(angles.begin(), angles.end(), isPositive);
+    std::all_of(angles.begin(), angles.end(), isPositive);
   }
 };
 
@@ -108,13 +108,13 @@ void extractCellParameter(const gemmi::cif::Pair &pair,
     destination.lengths[2] = gemmi::cif::as_number(pair.back());
   else if (tag == "_cell_angle_alpha")
     destination.angles[0] =
-        occ::units::radians(gemmi::cif::as_number(pair.back()));
+      occ::units::radians(gemmi::cif::as_number(pair.back()));
   else if (tag == "_cell_angle_beta")
     destination.angles[1] =
-        occ::units::radians(gemmi::cif::as_number(pair.back()));
+      occ::units::radians(gemmi::cif::as_number(pair.back()));
   else if (tag == "_cell_angle_gamma")
     destination.angles[2] =
-        occ::units::radians(gemmi::cif::as_number(pair.back()));
+      occ::units::radians(gemmi::cif::as_number(pair.back()));
 }
 
 void removeQuotes(std::string &s) {
@@ -150,7 +150,7 @@ void extractSymmetryData(const gemmi::cif::Pair &pair,
   else if (tag == "_symmetry_space_group_name_h-m")
     destination.HM = gemmi::cif::as_string(pair.back());
   else if (tag == "_space_group_it_number" ||
-           tag == "_symmetry_int_tables_number")
+      tag == "_symmetry_int_tables_number")
     destination.number = gemmi::cif::as_int(pair.back());
 
   auto cleanUpString = [](std::string &s) {
@@ -162,9 +162,9 @@ void extractSymmetryData(const gemmi::cif::Pair &pair,
 }
 
 QByteArray blockToQByteArray(const gemmi::cif::Block& block, gemmi::cif::WriteOptions options = gemmi::cif::WriteOptions()) {
-    std::stringstream ss;
-    gemmi::cif::write_cif_block_to_stream(ss, block, options);
-    return QByteArray::fromStdString(ss.str());
+  std::stringstream ss;
+  gemmi::cif::write_cif_block_to_stream(ss, block, options);
+  return QByteArray::fromStdString(ss.str());
 }
 
 std::vector<CifCrystalData> readDocument(gemmi::cif::Document &document) {
@@ -180,7 +180,7 @@ std::vector<CifCrystalData> readDocument(gemmi::cif::Document &document) {
         if (item.has_prefix("_cell")) {
           extractCellParameter(item.pair, cifData.cellData);
         } else if (item.has_prefix("_symmetry") ||
-                   item.has_prefix("_space_group")) {
+          item.has_prefix("_space_group")) {
           extractSymmetryData(item.pair, cifData.symmetryData);
         }
         break;
@@ -190,14 +190,14 @@ std::vector<CifCrystalData> readDocument(gemmi::cif::Document &document) {
             continue;
           cifData.atoms = extractAtomSites(item.loop);
         } else if (item.has_prefix("_symmetry_equiv_pos") ||
-                   item.has_prefix("_space_group_symop")) {
+          item.has_prefix("_space_group_symop")) {
           cifData.symmetryData.symmetryOperations =
-              extractSymmetryOperations(item.loop);
+            extractSymmetryOperations(item.loop);
         }
         break;
       default:
         continue;
-      }
+    }
     }
     if (cifData.isValid()) {
       result.push_back(cifData);
@@ -240,7 +240,7 @@ occ::crystal::UnitCell buildUnitCell(const CifCellData &cellData) {
 occ::crystal::SpaceGroup buildSpacegroup(const CifSymmetryData &symmetryData) {
   if (!symmetryData.isValid()) {
     qDebug() << "Symmetry data not valid, unable to determine space group from "
-                "CIF, using P1";
+      "CIF, using P1";
     return occ::crystal::SpaceGroup(1);
   }
   if (!symmetryData.HM.empty()) {
@@ -272,7 +272,7 @@ occ::crystal::SpaceGroup buildSpacegroup(const CifSymmetryData &symmetryData) {
     }
   }
   qDebug() << "Valid symmetry data, but unable to determine space group from "
-              "CIF, using P1";
+    "CIF, using P1";
   return occ::crystal::SpaceGroup(1);
 }
 
@@ -287,9 +287,9 @@ bool CifFile::readFromFile(const QString &fileName) {
   std::vector<CifCrystalData> crystals = readDocument(document);
   for (const auto &crystal : crystals) {
     m_crystals.emplace_back(
-        occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms),
-                              buildSpacegroup(crystal.symmetryData),
-                              buildUnitCell(crystal.cellData)));
+      occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms),
+                            buildSpacegroup(crystal.symmetryData),
+                            buildUnitCell(crystal.cellData)));
     m_crystalCifContents.push_back(crystal.cifContents);
     m_crystalNames.push_back(crystal.name);
   }
@@ -307,9 +307,9 @@ bool CifFile::readFromString(const QString &content) {
   std::vector<CifCrystalData> crystals = readDocument(document);
   for (const auto &crystal : crystals) {
     m_crystals.emplace_back(
-        occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms),
-                              buildSpacegroup(crystal.symmetryData),
-                              buildUnitCell(crystal.cellData)));
+      occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms),
+                            buildSpacegroup(crystal.symmetryData),
+                            buildUnitCell(crystal.cellData)));
     m_crystalCifContents.push_back(crystal.cifContents);
     m_crystalNames.push_back(crystal.name);
   }
@@ -319,13 +319,13 @@ bool CifFile::readFromString(const QString &content) {
 int CifFile::numberOfCrystals() const { return m_crystals.size(); }
 
 const OccCrystal &CifFile::getCrystalStructure(int index) const {
-    return m_crystals.at(index);
+  return m_crystals.at(index);
 }
 
 const QByteArray& CifFile::getCrystalCifContents(int index) const {
-    return m_crystalCifContents.at(index);
+  return m_crystalCifContents.at(index);
 }
 
 const QString& CifFile::getCrystalName(int index) const {
-    return m_crystalNames.at(index);
+  return m_crystalNames.at(index);
 }

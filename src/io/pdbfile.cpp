@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <occ/core/units.h>
-#include <gemmi/pdb.hpp>     // to read
+#include <gemmi/pdb.hpp>
 #include <gemmi/cif.hpp>
 #include <gemmi/to_cif.hpp>
 
@@ -25,7 +25,7 @@ struct PdbCellData {
   inline bool isValid() const {
     auto isPositive = [](double x) { return x > 0.0; };
     return std::all_of(lengths.begin(), lengths.end(), isPositive) &&
-           std::all_of(angles.begin(), angles.end(), isPositive);
+    std::all_of(angles.begin(), angles.end(), isPositive);
   }
 };
 
@@ -43,23 +43,23 @@ struct PdbCrystalData {
 
 
 std::vector<PdbAtomData> extractAtoms(const gemmi::Model &model) {
-    std::vector<PdbAtomData> atoms;
-    // Add atoms to the crystal structure
-    for (const auto& chain : model.chains) {
-        for (const auto& residue : chain.residues) {
-            for (const auto &atom : residue.atoms) {
-		atoms.push_back(PdbAtomData{
-		    atom.element.name(),
-		    atom.name,
-		    residue.name,
-		    chain.name,
-		    residue.group_idx,
-		    {atom.pos.x, atom.pos.y, atom.pos.z}
-		});
-            }
-        }
+  std::vector<PdbAtomData> atoms;
+  // Add atoms to the crystal structure
+  for (const auto& chain : model.chains) {
+    for (const auto& residue : chain.residues) {
+      for (const auto &atom : residue.atoms) {
+        atoms.push_back(PdbAtomData{
+          atom.element.name(),
+          atom.name,
+          residue.name,
+          chain.name,
+          residue.group_idx,
+          {atom.pos.x, atom.pos.y, atom.pos.z}
+        });
+      }
     }
-    return atoms;
+  }
+  return atoms;
 }
 
 std::vector<PdbCrystalData> readStructure(gemmi::Structure &structure) {
@@ -105,15 +105,15 @@ buildAsymmetricUnit(const std::vector<PdbAtomData> &atoms, const occ::crystal::U
 
 occ::crystal::UnitCell buildUnitCell(const gemmi::UnitCell &cell) {
   return occ::crystal::UnitCell(cell.a, cell.b, cell.c, 
-				occ::units::radians(cell.alpha),
-				occ::units::radians(cell.beta),
-				occ::units::radians(cell.gamma));
+                                occ::units::radians(cell.alpha),
+                                occ::units::radians(cell.beta),
+                                occ::units::radians(cell.gamma));
 }
 
 occ::crystal::SpaceGroup buildSpacegroup(const gemmi::SpaceGroup * sg) {
   if (!sg) {
     qDebug() << "Symmetry data not valid, unable to determine space group from "
-                "PDB, using P1";
+      "PDB, using P1";
     return occ::crystal::SpaceGroup(1);
   }
   return occ::crystal::SpaceGroup(sg->xhm());
@@ -129,11 +129,11 @@ bool PdbFile::readFromFile(const QString &fileName) {
   }
   std::vector<PdbCrystalData> crystals = readStructure(structure);
   for (const auto &crystal : crystals) {
-      auto uc = buildUnitCell(crystal.cell);
+    auto uc = buildUnitCell(crystal.cell);
     m_crystals.emplace_back(
-        occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms, uc),
-                              buildSpacegroup(crystal.spaceGroup),
-                              uc));
+      occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms, uc),
+                            buildSpacegroup(crystal.spaceGroup),
+                            uc));
     m_crystalPdbContents.push_back(crystal.cifContents);
     m_crystalNames.push_back(crystal.name);
   }
@@ -152,9 +152,9 @@ bool PdbFile::readFromString(const QString &content) {
   for (const auto &crystal : crystals) {
     auto uc = buildUnitCell(crystal.cell);
     m_crystals.emplace_back(
-        occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms, uc),
-                              buildSpacegroup(crystal.spaceGroup),
-                              uc));
+      occ::crystal::Crystal(buildAsymmetricUnit(crystal.atoms, uc),
+                            buildSpacegroup(crystal.spaceGroup),
+                            uc));
     m_crystalPdbContents.push_back(crystal.cifContents);
     m_crystalNames.push_back(crystal.name);
   }
@@ -163,14 +163,14 @@ bool PdbFile::readFromString(const QString &content) {
 
 int PdbFile::numberOfCrystals() const { return m_crystals.size(); }
 
-const OccCrystal &PdbFile::getCrystalStructure(int index) const {
-    return m_crystals.at(index);
+const occ::crystal::Crystal &PdbFile::getCrystalStructure(int index) const {
+  return m_crystals.at(index);
 }
 
 const QByteArray& PdbFile::getCrystalPdbContents(int index) const {
-    return m_crystalPdbContents.at(index);
+  return m_crystalPdbContents.at(index);
 }
 
 const QString& PdbFile::getCrystalName(int index) const {
-    return m_crystalNames.at(index);
+  return m_crystalNames.at(index);
 }

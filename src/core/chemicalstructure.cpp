@@ -224,6 +224,14 @@ occ::Vec ChemicalStructure::vdwRadii() const {
   return result;
 }
 
+void ChemicalStructure::clearAtoms() {
+  m_atomicNumbers = occ::IVec();
+  m_atomicPositions = occ::Mat3N();
+  m_flags.clear();
+  m_labels.clear();
+  m_atomColors.clear();
+}
+
 void ChemicalStructure::setAtoms(const std::vector<QString> &elementSymbols,
                                  const std::vector<occ::Vec3> &positions,
                                  const std::vector<QString> &labels) {

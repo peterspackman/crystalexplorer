@@ -53,6 +53,7 @@ public:
   void setAtoms(const std::vector<QString> &elementSymbols,
                 const std::vector<occ::Vec3> &positions,
                 const std::vector<QString> &labels = {});
+  void clearAtoms();
   void addAtoms(const std::vector<QString> &elementSymbols,
                 const std::vector<occ::Vec3> &positions,
                 const std::vector<QString> &labels = {});

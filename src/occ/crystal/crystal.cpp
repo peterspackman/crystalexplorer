@@ -80,6 +80,7 @@ CrystalAtomRegion Crystal::slab(const HKL &lower, const HKL &upper) const {
   result.frac_pos.resize(3, ncells * n_uc);
   result.frac_pos.block(0, 0, rows, cols) = uc_atoms.frac_pos;
   result.hkl = IMat3N::Zero(3, ncells * n_uc);
+  result.hkl.block(0, 0, 3, cols) = uc_atoms.hkl;
   result.asym_idx = uc_atoms.asym_idx.replicate(ncells, 1);
   result.uc_idx = uc_atoms.uc_idx.replicate(ncells, 1);
   result.symop = uc_atoms.symop.replicate(ncells, 1);
@@ -97,7 +98,7 @@ CrystalAtomRegion Crystal::slab(const HKL &lower, const HKL &upper) const {
         auto tmphkl = uc_atoms.hkl;
         tmphkl.colwise() += IVec3{h, k, l};
         result.frac_pos.block(0, offset, rows, cols) = tmp;
-        result.hkl.block(0, offset, rows, cols) = tmphkl;
+        result.hkl.block(0, offset, 3, cols) = tmphkl;
         offset += n_uc;
       }
     }
