@@ -34,7 +34,7 @@ Kind stringToKind(const QString &s) {
     else if(s == "void" || s == "Void" || s == "Crystal Voids" || s == "crystal_void" || s == "Crystal Void") return Kind::Void;
     else if(s == "esp" || s == "electric_potential") return Kind::ESP;
     else if(s == "rho" || s == "electron_density") return Kind::ElectronDensity;
-    else if(s == "def") return Kind::DeformationDensity;
+    else if(s == "def" || s == "deformation_density" || s == "Deformation Density") return Kind::DeformationDensity;
     else return Kind::Unknown;
 }
 

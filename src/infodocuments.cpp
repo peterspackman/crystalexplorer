@@ -9,14 +9,21 @@
 
 void InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(
     QTextDocument *document, Scene *scene) {
-  DeprecatedCrystal *crystal = scene->crystal();
-  if (!crystal)
+  ChemicalStructure * structure = scene->chemicalStructure();
+  if (!structure)
     return;
-  Q_ASSERT(crystal);
+
+  CrystalStructure * crystal = qobject_cast<CrystalStructure *>(structure);
+  if(!crystal) {
+    qDebug() << "No crystal for info";
+    return;
+  }
 
   QTextCursor cursor = QTextCursor(document);
-  QFileInfo fileInfo(crystal->cifFilename());
-  UnitCell cell = crystal->unitCell();
+  QFileInfo fileInfo(crystal->filename());
+
+  occ::Vec3 lengths = crystal->cellLengths();
+  occ::Vec3 angles = crystal->cellAngles() * 180.0 / M_PI;
 
   cursor.beginEditBlock();
   int numRows = 10;
@@ -24,16 +31,16 @@ void InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(
   QVector<QString> labels{"Crystal", "CIF", "Formula", "Space Group", "a",
                           "b",       "c",   "alpha",   "beta",        "gamma"};
   QVector<QString> values{
-      crystal->crystalName(),
+      crystal->name(),
       fileInfo.fileName(),
-      crystal->formula(),
-      crystal->spaceGroup().symbol(),
-      QString("%1 %2").arg(cell.a(), 12, 'f', 6).arg(ANGSTROM_SYMBOL),
-      QString("%1 %2").arg(cell.b(), 12, 'f', 6).arg(ANGSTROM_SYMBOL),
-      QString("%1 %2").arg(cell.c(), 12, 'f', 6).arg(ANGSTROM_SYMBOL),
-      QString("%1 %2").arg(cell.alpha(), 12, 'f', 6).arg(DEGREE_SYMBOL),
-      QString("%1 %2").arg(cell.beta(), 12, 'f', 6).arg(DEGREE_SYMBOL),
-      QString("%1 %2").arg(cell.gamma(), 12, 'f', 6).arg(DEGREE_SYMBOL)};
+      crystal->chemicalFormula(),
+      QString::fromStdString(crystal->spaceGroup().symbol()),
+      QString("%1 %2").arg(lengths(0), 12, 'f', 6).arg(ANGSTROM_SYMBOL),
+      QString("%1 %2").arg(lengths(1), 12, 'f', 6).arg(ANGSTROM_SYMBOL),
+      QString("%1 %2").arg(lengths(2), 12, 'f', 6).arg(ANGSTROM_SYMBOL),
+      QString("%1 %2").arg(angles(0), 12, 'f', 6).arg(DEGREE_SYMBOL),
+      QString("%1 %2").arg(angles(1), 12, 'f', 6).arg(DEGREE_SYMBOL),
+      QString("%1 %2").arg(angles(2), 12, 'f', 6).arg(DEGREE_SYMBOL)};
   int numCols = 2;
   QTextCharFormat boldFormat = cursor.charFormat();
   boldFormat.setFontWeight(QFont::Bold);
@@ -862,7 +869,7 @@ QTextTable *InfoDocuments::createTable(QTextCursor cursor, int numRows,
   QTextTable *table = cursor.insertTable(numRows, numColumns);
   QTextTableFormat tableFormat = table->format();
   tableFormat.setCellPadding(5.0);
-  tableFormat.setBorderStyle(QTextFrameFormat::BorderStyle_Solid);
+  tableFormat.setBorderStyle(QTextFrameFormat::BorderStyle_None);
   tableFormat.setCellSpacing(-1.0);
   tableFormat.setBorder(1.0);
   table->setFormat(tableFormat);

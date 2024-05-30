@@ -826,3 +826,12 @@ FragmentPairs ChemicalStructure::findFragmentPairs() const {
 const std::vector<Fragment>& ChemicalStructure::getFragments() const {
     return m_fragments;
 }
+
+QString ChemicalStructure::chemicalFormula(bool richText) const {
+    std::vector<QString> symbols;
+
+    for(int i = 0; i < m_atomicNumbers.rows(); i++) {
+	symbols.push_back(QString::fromStdString(occ::core::Element(m_atomicNumbers(i)).symbol()));
+    } 
+    return formulaSum(symbols, richText);
+}

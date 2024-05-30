@@ -9,52 +9,52 @@
 #include <QSignalBlocker>
 
 SurfaceGenerationDialog::SurfaceGenerationDialog(QWidget *parent)
-    : QDialog(parent), ui(new Ui::SurfaceGenerationDialog()) {
-  ui->setupUi(this);
-  init();
-  initConnections();
+: QDialog(parent), ui(new Ui::SurfaceGenerationDialog()) {
+    ui->setupUi(this);
+    init();
+    initConnections();
 }
 
 void SurfaceGenerationDialog::init() {
     auto * g = GlobalConfiguration::getInstance();
     if(g) {
-	m_surfaceDescriptions = g->getSurfaceDescriptions();
-	m_surfacePropertyDescriptions = g->getPropertyDescriptions();
+        m_surfaceDescriptions = g->getSurfaceDescriptions();
+        m_surfacePropertyDescriptions = g->getPropertyDescriptions();
     }
 
-  ui->surfaceComboBox->setDescriptions(m_surfaceDescriptions);
-  ui->propertyComboBox->setDescriptions(m_surfaceDescriptions, m_surfacePropertyDescriptions);
+    ui->surfaceComboBox->setDescriptions(m_surfaceDescriptions);
+    ui->propertyComboBox->setDescriptions(m_surfaceDescriptions, m_surfacePropertyDescriptions);
 
-  updateIsovalue();
-  ui->comboBoxHL->insertItems(0, orbitalLabels);
+    updateIsovalue();
+    ui->comboBoxHL->insertItems(0, orbitalLabels);
 
-  surfaceChanged(m_currentSurfaceType);
+    surfaceChanged(m_currentSurfaceType);
 
-  m_charge = 0; // default value but should be set with setChargeForCalculation
-  m_multiplicity = 1;
+    m_charge = 0; // default value but should be set with setChargeForCalculation
+    m_multiplicity = 1;
 
-  updateSettings();
+    updateSettings();
 }
 
 void SurfaceGenerationDialog::initConnections() {
-  connect(ui->showDescriptionsCheckBox,
-          &QCheckBox::stateChanged, [&](int state) {
-              this->updateDescriptions();
-          });
+    connect(ui->showDescriptionsCheckBox,
+            &QCheckBox::stateChanged, [&](int state) {
+            this->updateDescriptions();
+            });
 
-  connect(ui->surfaceComboBox, &SurfaceTypeDropdown::selectionChanged,
-          ui->propertyComboBox, &SurfacePropertyTypeDropdown::onSurfaceSelectionChanged);
-  ui->surfaceComboBox->setCurrent(m_currentSurfaceType);
+    connect(ui->surfaceComboBox, &SurfaceTypeDropdown::selectionChanged,
+            ui->propertyComboBox, &SurfacePropertyTypeDropdown::onSurfaceSelectionChanged);
+    ui->surfaceComboBox->setCurrent(m_currentSurfaceType);
 
-  connect(ui->surfaceComboBox, &SurfaceTypeDropdown::selectionChanged,
-	  this, &SurfaceGenerationDialog::surfaceChanged);
+    connect(ui->surfaceComboBox, &SurfaceTypeDropdown::selectionChanged,
+            this, &SurfaceGenerationDialog::surfaceChanged);
 
-  connect(this, &SurfaceGenerationDialog::accepted,
-	  this, &SurfaceGenerationDialog::validate);
-  connect(ui->comboBoxHL, QOverload<int>::of(&QComboBox::activated),
-	  this, &SurfaceGenerationDialog::setSignLabel);
-  connect(ui->useUserDefinedCluster, &QCheckBox::toggled,
-          ui->voidClusterPaddingSpinBox, &QDoubleSpinBox::setEnabled);
+    connect(this, &SurfaceGenerationDialog::accepted,
+            this, &SurfaceGenerationDialog::validate);
+    connect(ui->comboBoxHL, QOverload<int>::of(&QComboBox::activated),
+            this, &SurfaceGenerationDialog::setSignLabel);
+    connect(ui->useUserDefinedCluster, &QCheckBox::toggled,
+            ui->voidClusterPaddingSpinBox, &QDoubleSpinBox::setEnabled);
 }
 
 
@@ -72,15 +72,15 @@ void SurfaceGenerationDialog::setMultiplicityForCalculation(int multiplicity) {
 
 
 void SurfaceGenerationDialog::connectPropertyComboBox(bool makeConnection) {
-  if (makeConnection) {
-    connect(ui->propertyComboBox,
-	    &QComboBox::currentIndexChanged, this,
-            &SurfaceGenerationDialog::propertyChanged);
-  } else {
-    disconnect(ui->propertyComboBox,
-	       &QComboBox::currentIndexChanged, this,
-               &SurfaceGenerationDialog::propertyChanged);
-  }
+    if (makeConnection) {
+        connect(ui->propertyComboBox,
+                &QComboBox::currentIndexChanged, this,
+                &SurfaceGenerationDialog::propertyChanged);
+    } else {
+        disconnect(ui->propertyComboBox,
+                   &QComboBox::currentIndexChanged, this,
+                   &SurfaceGenerationDialog::propertyChanged);
+    }
 }
 
 void SurfaceGenerationDialog::setSuitableWavefunctions(const std::vector<WavefunctionAndTransform> &wfns) {
@@ -134,36 +134,46 @@ void SurfaceGenerationDialog::validate() {
 
   emit surfaceParametersChosen(jobParams, wfn);
   */
-  // NEW
+    // NEW
 
-  isosurface::Parameters parameters;
-  parameters.isovalue = ui->isovalueLineEdit->text().toFloat();
-  parameters.kind = isosurface::stringToKind(ui->surfaceComboBox->current());
-  parameters.separation = ResolutionDetails::value(ui->resolutionComboBox->currentLevel());
-  qDebug() << isosurface::kindToString(parameters.kind);
+    isosurface::Parameters parameters;
+    parameters.isovalue = ui->isovalueLineEdit->text().toFloat();
+    parameters.kind = isosurface::stringToKind(ui->surfaceComboBox->current());
+    parameters.separation = ResolutionDetails::value(ui->resolutionComboBox->currentLevel());
+    qDebug() << isosurface::kindToString(parameters.kind);
 
-  if(needWavefunction()) {
-      qDebug() << "Needs wavefunction";
-      wfn::Parameters wfn_params;
-      wfn_params.charge = m_charge;
-      wfn_params.multiplicity = m_multiplicity;
+    if(needWavefunction()) {
+        qDebug() << "Needs wavefunction";
+        wfn::Parameters wfn_params;
+        wfn_params.charge = m_charge;
+        wfn_params.multiplicity = m_multiplicity;
 
-      emit surfaceParametersChosenNeedWavefunction(parameters, wfn_params);
-  }
-  else {
-      emit surfaceParametersChosenNew(parameters);
-  }
+        const int wfnIndex = ui->wavefunctionCombobox->currentIndex() - 1;
+        if(wfnIndex > -1) {
+            qDebug() << "wfnIndex" << wfnIndex;
+            const auto &[wfn, transform] = m_availableWavefunctions[wfnIndex];
+            qDebug() << "Have existing wavefunction: " << wfn->description();
+            wfn_params = wfn->parameters();
+            wfn_params.accepted = true;
+            parameters.wfn = wfn;
+            parameters.wfn_transform = transform;
+        }
+        emit surfaceParametersChosenNeedWavefunction(parameters, wfn_params);
+    }
+    else {
+        emit surfaceParametersChosenNew(parameters);
+    }
 }
 
 void SurfaceGenerationDialog::updateSettings() {
-  ui->resolutionComboBox->setCurrentIndex(static_cast<int>(ResolutionDetails::defaultLevel()));
-  ui->comboBoxHL->setCurrentIndex(defaultOrbitalType);
-  ui->surfaceOptionsBox->setHidden(defaultHideSurfaceOptionsBox);
-  ui->editCheckBox->setCheckState(defaultEditTonto);
-  ui->showDescriptionsCheckBox->setCheckState(defaultShowDescriptions);
+    ui->resolutionComboBox->setCurrentIndex(static_cast<int>(ResolutionDetails::defaultLevel()));
+    ui->comboBoxHL->setCurrentIndex(defaultOrbitalType);
+    ui->surfaceOptionsBox->setHidden(defaultHideSurfaceOptionsBox);
+    ui->editCheckBox->setCheckState(defaultEditTonto);
+    ui->showDescriptionsCheckBox->setCheckState(defaultShowDescriptions);
 
-  updateDescriptions();
-  adjustSize();
+    updateDescriptions();
+    adjustSize();
 }
 
 void SurfaceGenerationDialog::updateIsovalue() {
@@ -199,34 +209,34 @@ void SurfaceGenerationDialog::updatePropertyOptions() {
 }
 
 void SurfaceGenerationDialog::updateSurfaceOptions() {
-  bool hideSurfaceOptions = true;
-  ui->isovalueBox->setHidden(true);
-  ui->clusterBox->setHidden(true);
+    bool hideSurfaceOptions = true;
+    ui->isovalueBox->setHidden(true);
+    ui->clusterBox->setHidden(true);
 
-  if (needIsovalueBox()) {
-    hideSurfaceOptions = false;
-    ui->isovalueBox->setHidden(false);
-    const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
-    ui->unitLabel->setText(currentSurface.units);
-  }
-  if (needClusterOptions()) {
-    hideSurfaceOptions = false;
-    ui->clusterBox->setHidden(false);
-    ui->useUnitCellPlusFiveAng->setChecked(true);
-  }
-  ui->surfaceOptionsBox->setHidden(hideSurfaceOptions);
+    if (needIsovalueBox()) {
+        hideSurfaceOptions = false;
+        ui->isovalueBox->setHidden(false);
+        const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
+        ui->unitLabel->setText(currentSurface.units);
+    }
+    if (needClusterOptions()) {
+        hideSurfaceOptions = false;
+        ui->clusterBox->setHidden(false);
+        ui->useUnitCellPlusFiveAng->setChecked(true);
+    }
+    ui->surfaceOptionsBox->setHidden(hideSurfaceOptions);
 
-  updateOrbitalOptions();
+    updateOrbitalOptions();
 }
 
 void SurfaceGenerationDialog::updateOrbitalOptions() {
-  ui->orbitalBox->setVisible(needOrbitalBox());
+    ui->orbitalBox->setVisible(needOrbitalBox());
 }
 
 bool SurfaceGenerationDialog::needIsovalueBox() {
-  const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
-  const auto &currentSurfaceProperty = ui->propertyComboBox->currentSurfacePropertyDescription();
-  return currentSurface.needsIsovalue || currentSurfaceProperty.needsIsovalue;
+    const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
+    const auto &currentSurfaceProperty = ui->propertyComboBox->currentSurfacePropertyDescription();
+    return currentSurface.needsIsovalue || currentSurfaceProperty.needsIsovalue;
 }
 
 bool SurfaceGenerationDialog::needClusterOptions() {
@@ -241,52 +251,52 @@ bool SurfaceGenerationDialog::needOrbitalBox() {
 }
 
 void SurfaceGenerationDialog::updateWavefunctionComboBox(bool selectLast) {
-  ui->wavefunctionBox->setVisible(needWavefunction());
+    ui->wavefunctionBox->setVisible(needWavefunction());
 
-  if (needWavefunction()) {
-    ui->wavefunctionCombobox->clear();
+    if (needWavefunction()) {
+        ui->wavefunctionCombobox->clear();
 
-    ui->wavefunctionCombobox->addItem(NEW_WAVEFUNCTION_ITEM);
+        ui->wavefunctionCombobox->addItem(NEW_WAVEFUNCTION_ITEM);
 
-    for(const auto [wavefunction, transform] : m_availableWavefunctions) {
-	if(wavefunction) {
-	    ui->wavefunctionCombobox->addItem(wavefunction->description());
-	}
+        for(const auto &[wavefunction, transform] : m_availableWavefunctions) {
+            if(wavefunction) {
+                ui->wavefunctionCombobox->addItem(wavefunction->description());
+            }
+        }
     }
-  }
 
-  if (selectLast) {
-    ui->wavefunctionCombobox->setCurrentIndex(ui->wavefunctionCombobox->count() - 1);
-  }
+    if (selectLast) {
+        ui->wavefunctionCombobox->setCurrentIndex(ui->wavefunctionCombobox->count() - 1);
+    }
 }
 
 bool SurfaceGenerationDialog::needWavefunction() {
     const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
     const auto &currentSurfaceProperty = ui->propertyComboBox->currentSurfacePropertyDescription();
     return currentSurface.needsWavefunction ||
-            currentSurfaceProperty.needsWavefunction;
+    currentSurfaceProperty.needsWavefunction;
 }
 
 void SurfaceGenerationDialog::updateDescriptions() {
-  bool hideDescriptions =
-      ui->showDescriptionsCheckBox->checkState() == Qt::Unchecked;
-  ui->surfaceDescriptionLabel->setHidden(hideDescriptions);
-  ui->propertyDescriptionLabel->setHidden(hideDescriptions);
-  if (!hideDescriptions) {
-      const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
-      const auto &currentSurfaceProperty = ui->propertyComboBox->currentSurfacePropertyDescription();
-      ui->surfaceDescriptionLabel->setText(currentSurface.description);
-      ui->propertyDescriptionLabel->setText(currentSurfaceProperty.description);
-  }
-  adjustSize();
+    bool hideDescriptions =
+        ui->showDescriptionsCheckBox->checkState() == Qt::Unchecked;
+    ui->surfaceDescriptionLabel->setHidden(hideDescriptions);
+    ui->propertyDescriptionLabel->setHidden(hideDescriptions);
+    if (!hideDescriptions) {
+        const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
+        const auto &currentSurfaceProperty = ui->propertyComboBox->currentSurfacePropertyDescription();
+        ui->surfaceDescriptionLabel->setText(currentSurface.description);
+        ui->propertyDescriptionLabel->setText(currentSurfaceProperty.description);
+    }
+    adjustSize();
 }
 
 void SurfaceGenerationDialog::setSignLabel(int option) {
-  if (option == 0) { // HOMO
-    ui->signLabel->setText("-");
-  } else { // LUMO
-    ui->signLabel->setText("+");
-  }
+    if (option == 0) { // HOMO
+        ui->signLabel->setText("-");
+    } else { // LUMO
+        ui->signLabel->setText("+");
+    }
 }
 
 

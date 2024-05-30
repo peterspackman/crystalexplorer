@@ -226,7 +226,8 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   resetAtomsAndBonds();
 }
 
-QString CrystalStructure::chemicalFormula() const {
+QString CrystalStructure::chemicalFormula(bool richText) const {
+  // TODO rich text
   auto formula = m_crystal.asymmetric_unit().chemical_formula();
   return QString::fromStdString(formula);
 }

@@ -60,6 +60,13 @@ public:
 
   QStringList uniqueElementSymbols() const;
 
+  // assumed to be CIF for now
+  inline void setFileContents(const QByteArray &contents) { m_fileContents = contents; }
+  inline const QByteArray &fileContents() const { return m_fileContents; }
+
+  inline void setFilename(const QString &filename) { m_filename = filename; }
+  inline const QString &filename() const { return m_filename; }
+
   virtual void setShowVanDerWaalsContactAtoms(bool state = false);
   virtual void updateBondGraph();
 
@@ -102,8 +109,17 @@ public:
   virtual void resetOrigin();
   virtual void setOrigin(const occ::Vec3 &);
   virtual float radius() const;
+
   inline virtual occ::Mat3 cellVectors() const {
     return occ::Mat3::Identity(3, 3);
+  }
+
+  inline virtual occ::Vec3 cellAngles() const {
+    return occ::Vec3(M_PI/2, M_PI/2, M_PI/2);
+  }
+
+  inline virtual occ::Vec3 cellLengths() const {
+    return occ::Vec3(1.0, 1.0, 1.0);
   }
 
   virtual std::vector<int> completedFragments() const;
@@ -166,6 +182,8 @@ public:
   [[nodiscard]] inline ObjectTreeModel* treeModel() { return m_treeModel; }
   [[nodiscard]] QString formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs, bool richText) const;
 
+  [[nodiscard]] virtual QString chemicalFormula(bool richText = true) const;
+
 signals:
   void childAdded(QObject *);
   void childRemoved(QObject *);
@@ -211,6 +229,9 @@ private:
   std::vector<std::pair<int, int>> m_vdwContacts;
   std::vector<std::pair<int, int>> m_hydrogenBonds;
   bool m_bondsNeedUpdate{true};
+
+  QString m_filename;
+  QByteArray m_fileContents;
 
   PairInteractionResults *m_interactions{nullptr};
   ObjectTreeModel * m_treeModel{nullptr};

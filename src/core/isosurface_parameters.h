@@ -22,6 +22,7 @@ struct Parameters {
     float separation{0.2};
     ChemicalStructure *structure{nullptr};
     MolecularWavefunction *wfn{nullptr};
+    Eigen::Isometry3d wfn_transform;
 };
 
 struct Result {

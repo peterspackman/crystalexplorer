@@ -62,7 +62,7 @@ void Crystalx::initStatusBar() {
   _jobProgress = new QProgressBar(this);
   _jobCancel = new QToolButton(this);
   _jobCancel->setIcon(QPixmap(":/images/cross.png")
-                          .scaledToWidth(24, Qt::SmoothTransformation));
+                      .scaledToWidth(24, Qt::SmoothTransformation));
 
   statusBar()->addPermanentWidget(_jobProgress);
   statusBar()->addPermanentWidget(_jobCancel);
@@ -74,17 +74,17 @@ bool Crystalx::readElementData() {
   bool success;
 
   QString filename =
-      settings::readSetting(settings::keys::ELEMENTDATA_FILE).toString();
+    settings::readSetting(settings::keys::ELEMENTDATA_FILE).toString();
   QFileInfo fileInfo(filename);
   bool useJmolColors =
-      settings::readSetting(settings::keys::USE_JMOL_COLORS).toBool();
+    settings::readSetting(settings::keys::USE_JMOL_COLORS).toBool();
 
   success = ElementData::getData(filename, useJmolColors);
   if (!success) {
     QMessageBox::critical(0, "Critical Error",
                           "CrystalExplorer can't read file :\n" +
-                              fileInfo.fileName() +
-                              "\n\nPlease reinstall CrystalExplorer.");
+                          fileInfo.fileName() +
+                          "\n\nPlease reinstall CrystalExplorer.");
   }
 
   return success;
@@ -92,19 +92,19 @@ bool Crystalx::readElementData() {
 
 bool Crystalx::resetElementData() {
   bool useJmolColors =
-      settings::readSetting(settings::keys::USE_JMOL_COLORS).toBool();
+    settings::readSetting(settings::keys::USE_JMOL_COLORS).toBool();
   return ElementData::resetAll(useJmolColors);
 }
 
 void Crystalx::initMainWindow() {
   resize(
-      settings::readSetting(settings::keys::MAIN_WINDOW_SIZE).value<QSize>());
+    settings::readSetting(settings::keys::MAIN_WINDOW_SIZE).value<QSize>());
 }
 
 void Crystalx::initMenus() {
   createRecentFileActionsAndAddToFileMenu();
   updateRecentFileActions(
-      settings::readSetting(settings::keys::FILE_HISTORY_LIST).toStringList());
+    settings::readSetting(settings::keys::FILE_HISTORY_LIST).toStringList());
   addExitOptionToFileMenu();
 }
 
@@ -204,43 +204,43 @@ void Crystalx::initInfoViewer() {
 
 void Crystalx::createDockWidgets() {
   createCrystalControllerDockWidget();
-    createChildPropertyControllerDockWidget();
+  createChildPropertyControllerDockWidget();
 }
 
 void Crystalx::createChildPropertyControllerDockWidget() {
-    childPropertyController = new ChildPropertyController();
-    childPropertyControllerDockWidget = new QDockWidget(tr("Properties"));
-    childPropertyControllerDockWidget->setObjectName("childPropertyControllerDockWidget");
-    childPropertyControllerDockWidget->setWidget(childPropertyController);
-    childPropertyControllerDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
-    childPropertyControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
-    childPropertyControllerDockWidget->adjustSize();
-    addDockWidget(Qt::RightDockWidgetArea, childPropertyControllerDockWidget);
-    childPropertyController->setEnabled(false);
+  childPropertyController = new ChildPropertyController();
+  childPropertyControllerDockWidget = new QDockWidget(tr("Properties"));
+  childPropertyControllerDockWidget->setObjectName("childPropertyControllerDockWidget");
+  childPropertyControllerDockWidget->setWidget(childPropertyController);
+  childPropertyControllerDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
+  childPropertyControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
+  childPropertyControllerDockWidget->adjustSize();
+  addDockWidget(Qt::RightDockWidgetArea, childPropertyControllerDockWidget);
+  childPropertyController->setEnabled(false);
 
-    connect(project, &Project::clickedSurfacePropertyValue,
-	    childPropertyController, &ChildPropertyController::setSelectedPropertyValue);
+  connect(project, &Project::clickedSurfacePropertyValue,
+          childPropertyController, &ChildPropertyController::setSelectedPropertyValue);
 
-    connect(crystalController, &CrystalController::childSelectionChanged,
-	    [&](QModelIndex index) {
-	auto * mesh = crystalController->getChildMesh(index);
-	auto * meshinstance = crystalController->getChildMeshInstance(index);
-	auto * wfn = crystalController->getChildWavefunction(index);
+  connect(crystalController, &CrystalController::childSelectionChanged,
+          [&](QModelIndex index) {
+          auto * mesh = crystalController->getChildMesh(index);
+          auto * meshinstance = crystalController->getChildMeshInstance(index);
+          auto * wfn = crystalController->getChildWavefunction(index);
 
-	// check for mesh instance first
-	if(mesh) {
-	    qDebug() << "Setting current mesh to " << mesh;
-	    childPropertyController->setCurrentMesh(mesh);
-	}
-	else if(meshinstance) {
-	    qDebug() << "Setting current mesh instance to " << meshinstance;
-	    childPropertyController->setCurrentMeshInstance(meshinstance);
-	}
-	else if(wfn) {
-	    qDebug() << "Setting current wfn to " << wfn;
-	    childPropertyController->setCurrentWavefunction(wfn);
-	}
-    });
+          // check for mesh instance first
+          if(mesh) {
+          qDebug() << "Setting current mesh to " << mesh;
+          childPropertyController->setCurrentMesh(mesh);
+          }
+          else if(meshinstance) {
+          qDebug() << "Setting current mesh instance to " << meshinstance;
+          childPropertyController->setCurrentMeshInstance(meshinstance);
+          }
+          else if(wfn) {
+          qDebug() << "Setting current wfn to " << wfn;
+          childPropertyController->setCurrentWavefunction(wfn);
+          }
+          });
 
 }
 
@@ -253,9 +253,9 @@ void Crystalx::createCrystalControllerDockWidget() {
   crystalControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
   crystalControllerDockWidget->adjustSize();
   // crystalControllerDockWidget->setFocus();
-  
+
   connect(project, &Project::clickedSurface,
-	  crystalController, &CrystalController::handleChildSelectionChange);
+          crystalController, &CrystalController::handleChildSelectionChange);
 
   addDockWidget(Qt::RightDockWidgetArea, crystalControllerDockWidget);
 }
@@ -268,19 +268,19 @@ void Crystalx::initConnections() {
           &CrystalController::update);
 
   connect(project, &Project::structureChanged, this,
-	  &Crystalx::handleStructureChange, Qt::QueuedConnection);
+          &Crystalx::handleStructureChange, Qt::QueuedConnection);
 
   // Project connections - current crystal changed in some way
   connect(project, &Project::selectedSceneChanged, crystalController,
           &CrystalController::handleSceneSelectionChange);
   connect(project, &Project::selectedSceneChanged, [&](int) {
-	    glWindow->setCurrentCrystal(project);
-	  });
+    glWindow->setCurrentCrystal(project);
+  });
   connect(project, &Project::projectSaved, this, &Crystalx::updateWindowTitle);
   connect(project, &Project::projectChanged, this,
           &Crystalx::updateWindowTitle);
   connect(project, &Project::selectedSceneChanged, this,
-	  &Crystalx::updateWindowTitle);
+          &Crystalx::updateWindowTitle);
   connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::allowActionsThatRequireSelectedAtoms);
   connect(project, &Project::selectedSceneChanged, this,
@@ -336,13 +336,13 @@ void Crystalx::initConnections() {
           [&]() { setBusy(true); });
 
   connect(m_taskManager, &TaskManager::taskComplete, this,
-	  &Crystalx::taskManagerTaskComplete);
+          &Crystalx::taskManagerTaskComplete);
   connect(m_taskManager, &TaskManager::taskError, this,
-	  &Crystalx::taskManagerTaskError);
+          &Crystalx::taskManagerTaskError);
   connect(m_taskManager, &TaskManager::taskAdded, this,
-	  &Crystalx::taskManagerTaskAdded);
+          &Crystalx::taskManagerTaskAdded);
   connect(m_taskManager, &TaskManager::taskRemoved, this,
-	  &Crystalx::taskManagerTaskRemoved);
+          &Crystalx::taskManagerTaskRemoved);
 
   initActionGroups();
 }
@@ -462,7 +462,7 @@ void Crystalx::initMenuConnections() {
   connect(actionShowTaskManager, &QAction::triggered, this, &Crystalx::showTaskManagerWidget);
 
   connect(generateWavefunctionAction, &QAction::triggered, 
-	  this, &Crystalx::handleGenerateWavefunctionAction);
+          this, &Crystalx::handleGenerateWavefunctionAction);
 }
 
 void Crystalx::initCloseContactsDialog() {
@@ -535,19 +535,19 @@ void Crystalx::setShowAtomsWithinRadius() {
 
     QString label;
     QString msgStart =
-        QString("Show atoms within a ") +
-        DialogHtml::bold(QString("radius (") + ANGSTROM_SYMBOL + ")");
+      QString("Show atoms within a ") +
+      DialogHtml::bold(QString("radius (") + ANGSTROM_SYMBOL + ")");
     if (generateClusterForSelection) {
       label = DialogHtml::paragraph(msgStart + " of the selected atoms");
     } else {
       label = DialogHtml::paragraph(msgStart + " of the " +
                                     DialogHtml::bold("all") + " atoms");
       QString selectionMsg =
-          "If you only want to generate a radial cluster for some atoms";
+        "If you only want to generate a radial cluster for some atoms";
       selectionMsg += DialogHtml::linebreak();
       selectionMsg += "then select them first before choosing this option.";
       label +=
-          DialogHtml::paragraph(DialogHtml::font(selectionMsg, "2", "gray"));
+        DialogHtml::paragraph(DialogHtml::font(selectionMsg, "2", "gray"));
     }
 
     bool ok;
@@ -566,7 +566,7 @@ void Crystalx::selectAtomsOutsideRadius() {
     bool ok;
     QString title = "Select Atoms";
     QString label = QString("Select atoms outside a <b>radius (") +
-                    ANGSTROM_SYMBOL + ")</b> of the currently selected atoms:";
+      ANGSTROM_SYMBOL + ")</b> of the currently selected atoms:";
     double radius = QInputDialog::getDouble(this, title, label, 5.0, 0.0, 25.0,
                                             2, &ok, Qt::Tool);
     if (ok) {
@@ -605,11 +605,11 @@ void Crystalx::generateCells() {
 
   bool ok;
   auto cellLimits = CellLimitsDialog::getCellLimits(
-      0, "Generate Unit Cells", QString(), 1, 1, 1, 0, 5, 1, &ok);
+    0, "Generate Unit Cells", QString(), 1, 1, 1, 0, 5, 1, &ok);
 
   if (ok) {
     _savedCellLimits =
-        cellLimits; // save cell limits for use by cloneVoidSurface
+      cellLimits; // save cell limits for use by cloneVoidSurface
     project->generateCells(cellLimits);
   }
 }
@@ -618,14 +618,14 @@ void Crystalx::helpAboutActionDialog() {
   QString message = "";
   message += DialogHtml::paragraph(CE_AUTHORS);
   message += DialogHtml::paragraph(
-      "Website: " + DialogHtml::website(CE_URL, CE_URL) +
-      DialogHtml::linebreak() + "Email: " +
-      DialogHtml::email(CE_EMAIL, CE_EMAIL, "CrystalExplorer",
-                        QString("Re: Build= %1").arg(CX_BUILD_DATE)) +
-      DialogHtml::linebreak() + "Citation: " +
-      DialogHtml::website(CE_CITATION_URL, "How to Cite CrystalExplorer"));
+    "Website: " + DialogHtml::website(CE_URL, CE_URL) +
+    DialogHtml::linebreak() + "Email: " +
+    DialogHtml::email(CE_EMAIL, CE_EMAIL, "CrystalExplorer",
+                      QString("Re: Build= %1").arg(CX_BUILD_DATE)) +
+    DialogHtml::linebreak() + "Citation: " +
+    DialogHtml::website(CE_CITATION_URL, "How to Cite CrystalExplorer"));
   message += DialogHtml::paragraph(
-      QString(COPYRIGHT_NOTICE).arg(QDate::currentDate().year()));
+    QString(COPYRIGHT_NOTICE).arg(QDate::currentDate().year()));
   message += DialogHtml::paragraph(QString(CE_NAME) + " uses " +
                                    DialogHtml::website(TONTO_URL, "Tonto") +
                                    "<br/>by D. Jayatilaka et al.");
@@ -640,8 +640,8 @@ void Crystalx::helpAboutActionDialog() {
 void Crystalx::initMoleculeStyles() {
   // QActionGroup* moleculeStyleGroup = new QActionGroup(toolBar);
   const auto availableDrawingStyles = {
-      DrawingStyle::Tube, DrawingStyle::BallAndStick, DrawingStyle::SpaceFill,
-      DrawingStyle::WireFrame, DrawingStyle::Ortep};
+    DrawingStyle::Tube, DrawingStyle::BallAndStick, DrawingStyle::SpaceFill,
+    DrawingStyle::WireFrame, DrawingStyle::Ortep};
   for (const auto &drawingStyle : availableDrawingStyles) {
     QString moleculeStyleString = drawingStyleLabel(drawingStyle);
     m_drawingStyleLabelToDrawingStyle[moleculeStyleString] = drawingStyle;
@@ -765,11 +765,11 @@ void Crystalx::resetSelectionMode() {
 
 void Crystalx::openFile() {
   const QString FILTER = "CIF, CIF2, Project File, XYZ file (*." +
-                         CIF_EXTENSION + " *." + PROJECT_EXTENSION + " *." +
-                         CIF2_EXTENSION + " *." + XYZ_FILE_EXTENSION + 
-			 " *.pdb" + ")";
+    CIF_EXTENSION + " *." + PROJECT_EXTENSION + " *." +
+    CIF2_EXTENSION + " *." + XYZ_FILE_EXTENSION + 
+  " *.pdb" + ")";
   QStringList filenames = QFileDialog::getOpenFileNames(
-      0, tr("Open File"), QDir::currentPath(), FILTER);
+    0, tr("Open File"), QDir::currentPath(), FILTER);
 
   for (const auto &filename : std::as_const(filenames)) {
     openFilename(filename);
@@ -797,11 +797,11 @@ void Crystalx::openFilename(QString filename) {
 
 void Crystalx::removeFileFromHistory(const QString &filename) {
   QStringList recentFileHistory =
-      settings::readSetting(settings::keys::FILE_HISTORY_LIST).toStringList();
+    settings::readSetting(settings::keys::FILE_HISTORY_LIST).toStringList();
 
   if (recentFileHistory.contains(filename)) {
     recentFileHistory.removeOne(filename); // file is already in history so we
-                                           // remove it so that we can...
+    // remove it so that we can...
   }
   settings::writeSetting(settings::keys::FILE_HISTORY_LIST, recentFileHistory);
   updateRecentFileActions(recentFileHistory);
@@ -809,15 +809,15 @@ void Crystalx::removeFileFromHistory(const QString &filename) {
 
 void Crystalx::addFileToHistory(const QString &filename) {
   QStringList recentFileHistory =
-      settings::readSetting(settings::keys::FILE_HISTORY_LIST).toStringList();
+    settings::readSetting(settings::keys::FILE_HISTORY_LIST).toStringList();
 
   if (recentFileHistory.contains(filename)) {
     recentFileHistory.removeOne(filename); // file is already in history so we
-                                           // remove it so that we can...
+    // remove it so that we can...
   }
   recentFileHistory.push_front(filename); // ...add filename to start history
   while (recentFileHistory.size() >
-         MAXHISTORYSIZE) { // Limit the history count to MAXHISTORYSIZE entries.
+    MAXHISTORYSIZE) { // Limit the history count to MAXHISTORYSIZE entries.
     recentFileHistory.removeLast();
   }
 
@@ -860,14 +860,14 @@ void Crystalx::loadExternalFileData(QString filename) {
   QString extension = fileInfo.suffix().toLower();
 
   if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
-      processCif(filename);
+    processCif(filename);
   }
   else if(extension == "pdb") {
-      processPdb(filename);
+    processPdb(filename);
   } else if (extension == PROJECT_EXTENSION) {
-      loadProject(filename);
+    loadProject(filename);
   } else if (extension == XYZ_FILE_EXTENSION) {
-      loadXyzFile(filename);
+    loadXyzFile(filename);
   }
 }
 
@@ -904,17 +904,17 @@ void Crystalx::loadProject(QString filename) {
  When Tonto is finished the slot tontoJobFinished slot is called.
  */
 void Crystalx::processCif(QString &filename) {
-    qDebug() << "Loading CIF file: " << filename;
-    // must be done outside lambda, filename must be copied.
-    showStatusMessage(QString("Loading CIF file from %1").arg(filename));
-    project->loadCrystalStructuresFromCifFile(filename);
+  qDebug() << "Loading CIF file: " << filename;
+  // must be done outside lambda, filename must be copied.
+  showStatusMessage(QString("Loading CIF file from %1").arg(filename));
+  project->loadCrystalStructuresFromCifFile(filename);
 }
 
 void Crystalx::processPdb(QString &filename) {
-    qDebug() << "Loading CIF file: " << filename;
-    // must be done outside lambda, filename must be copied.
-    showStatusMessage(QString("Loading PDB file from %1").arg(filename));
-    project->loadCrystalStructuresFromPdbFile(filename);
+  qDebug() << "Loading CIF file: " << filename;
+  // must be done outside lambda, filename must be copied.
+  showStatusMessage(QString("Loading PDB file from %1").arg(filename));
+  project->loadCrystalStructuresFromPdbFile(filename);
 }
 
 void Crystalx::jobRunning() { setBusy(true); }
@@ -961,7 +961,7 @@ void Crystalx::disableActionsWhenBusy(bool busy) {
 
 bool Crystalx::overrideBondLengths() {
   return !settings::readSetting(settings::keys::DISABLE_XH_NORMALIZATION)
-              .toBool();
+  .toBool();
 }
 
 void Crystalx::showStatusMessage(QString message) {
@@ -982,7 +982,7 @@ void Crystalx::updateProgressBar(int current_step, int max_steps) {
 
 void Crystalx::readSurfaceFile() {
   QString filter =
-      "CrystalExplorer Surface File(*." + SURFACEDATA_EXTENSION + ")";
+    "CrystalExplorer Surface File(*." + SURFACEDATA_EXTENSION + ")";
   QString filename = QFileDialog::getOpenFileName(0, tr("Open File"),
                                                   QDir::currentPath(), filter);
 
@@ -1016,67 +1016,67 @@ void Crystalx::getSurfaceParametersFromUser() {
   if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
     readSurfaceFile();
   } else if (scene->crystal() == nullptr) {
-	if (m_surfaceGenerationDialog == nullptr) {
-	  m_surfaceGenerationDialog = new SurfaceGenerationDialog(this);
-	  m_surfaceGenerationDialog->setModal(true);
-	  connect(m_surfaceGenerationDialog,
-		  &SurfaceGenerationDialog::surfaceParametersChosenNew,
-		  this, &Crystalx::generateSurface
-	  );
-	  connect(m_surfaceGenerationDialog, &SurfaceGenerationDialog::surfaceParametersChosenNeedWavefunction,
-		  this, &Crystalx::generateSurfaceRequiringWavefunction);
-	}
-	m_surfaceGenerationDialog->setAtomIndices(structure->atomsWithFlags(AtomFlag::Selected));
-	m_surfaceGenerationDialog->show();
+    if (m_surfaceGenerationDialog == nullptr) {
+      m_surfaceGenerationDialog = new SurfaceGenerationDialog(this);
+      m_surfaceGenerationDialog->setModal(true);
+      connect(m_surfaceGenerationDialog,
+              &SurfaceGenerationDialog::surfaceParametersChosenNew,
+              this, &Crystalx::generateSurface
+      );
+      connect(m_surfaceGenerationDialog, &SurfaceGenerationDialog::surfaceParametersChosenNeedWavefunction,
+              this, &Crystalx::generateSurfaceRequiringWavefunction);
+    }
+    auto atomIndices = structure->atomsWithFlags(AtomFlag::Selected);
+    m_surfaceGenerationDialog->setAtomIndices(atomIndices);
+    auto candidates = structure->wavefunctionsAndTransformsForAtoms(atomIndices);
+    m_surfaceGenerationDialog->setSuitableWavefunctions(candidates);
+    m_surfaceGenerationDialog->show();
   }
 }
 
 QString getSlaterBasis() {
   return (settings::readSetting(settings::keys::USE_CLEMENTI).toBool())
-             ? "Clementi-Roetti"
-             : "Thakkar";
+  ? "Clementi-Roetti"
+  : "Thakkar";
 }
 
 void Crystalx::generateSurface(isosurface::Parameters parameters) {
-    auto calc = new volume::IsosurfaceCalculator(this);
-    calc->setTaskManager(m_taskManager);
-    Scene *scene = project->currentScene();
-    parameters.structure = scene->chemicalStructure();
-    calc->start(parameters);
+  auto calc = new volume::IsosurfaceCalculator(this);
+  calc->setTaskManager(m_taskManager);
+  Scene *scene = project->currentScene();
+  parameters.structure = scene->chemicalStructure();
+  calc->start(parameters);
 
 }
 
 void Crystalx::generateSurfaceRequiringWavefunction(isosurface::Parameters parameters, wfn::Parameters wfn_parameters) {
-    Scene *scene = project->currentScene();
-    if (!scene) return;
-    auto *structure = scene->chemicalStructure();
-    if (!structure) return;
-    qDebug() << "In generateSurfaceRequiringWavefunction";
+  Scene *scene = project->currentScene();
+  if (!scene) return;
+  auto *structure = scene->chemicalStructure();
+  if (!structure) return;
+  qDebug() << "In generateSurfaceRequiringWavefunction";
 
-    if(!wfn_parameters.accepted) {
+  if(wfn_parameters.accepted) generateSurface(parameters);
 
-	qDebug() << "Generate new wavefunction";
-	// NEW Wavefunction
-	wfn_parameters = Crystalx::getWavefunctionParametersFromUser(m_surfaceGenerationDialog->atomIndices(), wfn_parameters.charge, wfn_parameters.multiplicity);
-	wfn_parameters.structure = structure;
-	// Still not valid
-	if(!wfn_parameters.accepted) return;
-    }
+  qDebug() << "Generate new wavefunction";
+  // NEW Wavefunction
+  wfn_parameters = Crystalx::getWavefunctionParametersFromUser(m_surfaceGenerationDialog->atomIndices(), wfn_parameters.charge, wfn_parameters.multiplicity);
+  wfn_parameters.structure = structure;
+  // Still not valid
+  if(!wfn_parameters.accepted) return;
+  qDebug() << "Make calculator";
+  WavefunctionCalculator *wavefunctionCalc = new WavefunctionCalculator();
+  wavefunctionCalc->setTaskManager(m_taskManager);
 
+  connect(wavefunctionCalc, &WavefunctionCalculator::calculationComplete, this, [parameters, this, wavefunctionCalc]() {
+    auto params_tmp = parameters;
+    params_tmp.wfn = wavefunctionCalc->getWavefunction();
 
-    qDebug() << "Make calculator";
-    WavefunctionCalculator *wavefunctionCalc = new WavefunctionCalculator();
-    wavefunctionCalc->setTaskManager(m_taskManager);
+    generateSurface(params_tmp);
+    wavefunctionCalc->deleteLater();
+  });
 
-    connect(wavefunctionCalc, &WavefunctionCalculator::calculationComplete, this, [parameters, this, wavefunctionCalc]() {
-	auto params_tmp = parameters;
-        params_tmp.wfn = wavefunctionCalc->getWavefunction();
-
-        generateSurface(params_tmp);
-        wavefunctionCalc->deleteLater();
-    });
-
-    wavefunctionCalc->start(wfn_parameters);
+  wavefunctionCalc->start(wfn_parameters);
 }
 
 void Crystalx::showLoadingMessageBox(QString msg) {
@@ -1093,35 +1093,35 @@ void Crystalx::hideLoadingMessageBox() { loadingMessageBox->hide(); }
 
 
 wfn::Parameters Crystalx::getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex> &atoms, int charge, int multiplicity) {
-    auto *structure = project->currentStructure();
-    if (!structure) return {};
+  auto *structure = project->currentStructure();
+  if (!structure) return {};
 
-    if (!wavefunctionCalculationDialog) {
-        wavefunctionCalculationDialog = new WavefunctionCalculationDialog(this);
-    }
+  if (!wavefunctionCalculationDialog) {
+    wavefunctionCalculationDialog = new WavefunctionCalculationDialog(this);
+  }
 
-    qDebug() << atoms.size() << "Atoms for wavefunction";
+  qDebug() << atoms.size() << "Atoms for wavefunction";
 
-    wavefunctionCalculationDialog->setAtomIndices(atoms);
-    wavefunctionCalculationDialog->setCharge(charge);
-    wavefunctionCalculationDialog->setMultiplicity(multiplicity);
+  wavefunctionCalculationDialog->setAtomIndices(atoms);
+  wavefunctionCalculationDialog->setCharge(charge);
+  wavefunctionCalculationDialog->setMultiplicity(multiplicity);
 
-    if (wavefunctionCalculationDialog->exec() == QDialog::Accepted) {
-        auto params = wavefunctionCalculationDialog->getParameters();
-	params.accepted = true;
-	return params;
-    }
+  if (wavefunctionCalculationDialog->exec() == QDialog::Accepted) {
+    auto params = wavefunctionCalculationDialog->getParameters();
+    params.accepted = true;
+    return params;
+  }
 
-    return {};
+  return {};
 }
 
 
 void Crystalx::handleGenerateWavefunctionAction() {
-    auto structure = project->currentStructure();
-    if(structure) {
-	auto params = getWavefunctionParametersFromUser(structure->atomsWithFlags(AtomFlag::Selected), 0, 1);
-	if(params.accepted) generateWavefunction(params);
-    }
+  auto structure = project->currentStructure();
+  if(structure) {
+    auto params = getWavefunctionParametersFromUser(structure->atomsWithFlags(AtomFlag::Selected), 0, 1);
+    if(params.accepted) generateWavefunction(params);
+  }
 }
 
 /*!
@@ -1231,7 +1231,7 @@ void Crystalx::colorHighlightHtml(QString &lineOfText, QString regExp,
                                   QString htmlColor) {
   if (lineOfText.trimmed().contains(QRegularExpression(regExp))) {
     lineOfText =
-        "<font color=\"" + htmlColor + "\"><b>" + lineOfText + "</b></font>";
+      "<font color=\"" + htmlColor + "\"><b>" + lineOfText + "</b></font>";
   }
 }
 
@@ -1246,7 +1246,7 @@ void Crystalx::updateWindowTitle() {
   } else {
     if (project->currentScene()) {
       title = QString(GLOBAL_MAINWINDOW_TITLE) + " - " +
-              project->currentScene()->title();
+        project->currentScene()->title();
     } else {
       title = QString(GLOBAL_MAINWINDOW_TITLE) + " - Untitled";
     }
@@ -1298,8 +1298,8 @@ void Crystalx::enableCalculateEnergiesAction(bool enable) {
     return;
 
   bool selectionOk =
-      (!project->currentScene()->crystal()->hasIncompleteSelectedFragments()) &&
-      (project->currentScene()->crystal()->numberOfSelectedFragments() >= 1);
+    (!project->currentScene()->crystal()->hasIncompleteSelectedFragments()) &&
+    (project->currentScene()->crystal()->numberOfSelectedFragments() >= 1);
   bool reallyEnable = enable && selectionOk;
   calculateEnergiesAction->setEnabled(reallyEnable);
 }
@@ -1314,9 +1314,9 @@ void Crystalx::updateCloseContactOptions() {
   if (!project->currentScene()->crystal())
     return;
   QStringList elements =
-      project->currentScene()->crystal()->listOfElementSymbols();
+    project->currentScene()->crystal()->listOfElementSymbols();
   QStringList hydrogenDonors =
-      project->currentScene()->crystal()->listOfHydrogenDonors();
+    project->currentScene()->crystal()->listOfHydrogenDonors();
   m_closeContactDialog->updateDonorsAndAcceptors(elements, hydrogenDonors);
 }
 
@@ -1338,8 +1338,8 @@ void Crystalx::passCurrentCrystalToFingerprintWindow() {
 }
 
 void Crystalx::passCurrentSurfaceVisibilityToSurfaceController() {
-    childPropertyController->currentSurfaceVisibilityChanged(
-      project->currentScene()->currentSurface()->isVisible());
+  childPropertyController->currentSurfaceVisibilityChanged(
+    project->currentScene()->currentSurface()->isVisible());
 }
 
 void Crystalx::setMoleculeStyleForCurrent() {
@@ -1347,7 +1347,7 @@ void Crystalx::setMoleculeStyleForCurrent() {
   if (scene) {
     QAction *action = qobject_cast<QAction *>(sender());
     DrawingStyle drawingStyle =
-        m_drawingStyleLabelToDrawingStyle[action->text()];
+      m_drawingStyleLabelToDrawingStyle[action->text()];
     scene->setDrawingStyle(drawingStyle);
     glWindow->redraw();
     showStatusMessage("Set molecule style to " + action->text());
@@ -1426,7 +1426,7 @@ void Crystalx::saveProjectAs() {
   if (project->currentScene()) {
     QString filter = "CrystalExplorer Project(*." + PROJECT_EXTENSION + ")";
     QString filename = QFileDialog::getSaveFileName(
-        0, tr("Save Project"), suggestedProjectFilename(), filter);
+      0, tr("Save Project"), suggestedProjectFilename(), filter);
 
     if (!filename.isEmpty()) {
       bool success = project->saveToFile(filename);
@@ -1481,7 +1481,7 @@ void Crystalx::exportSelectedSurface() {
   QFileInfo fi(project->currentScene()->crystal()->cifFilename());
   QString suggestedFilename = fi.baseName() + ".ply";
   QString filename = QFileDialog::getSaveFileName(
-      0, tr("Export current surface"), suggestedFilename, filter);
+    0, tr("Export current surface"), suggestedFilename, filter);
 
   if (!filename.isEmpty()) {
     currentSurface->save(filename);
@@ -1511,7 +1511,7 @@ void Crystalx::initPreferencesDialog() {
             &Project::updateCurrentCrystalContents);
     // TODO fix None property color
     // connect(preferencesDialog, &PreferencesDialog::nonePropertyColorChanged,
-      //       project, &Project::updateNonePropertiesForAllCrystals);
+    //       project, &Project::updateNonePropertiesForAllCrystals);
 
     connect(preferencesDialog,
             &PreferencesDialog::redrawCloseContactsForPreferencesChange,
@@ -1559,7 +1559,7 @@ bool Crystalx::closeProjectConfirmed() {
   if (project->hasUnsavedChanges()) {
     QMessageBox msgBox;
     msgBox.setText(
-        "Do you want to save the changes to this project before closing?");
+      "Do you want to save the changes to this project before closing?");
     msgBox.setInformativeText("If you don't, your changes will be lost.");
     msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard |
                               QMessageBox::Cancel);
@@ -1567,17 +1567,17 @@ bool Crystalx::closeProjectConfirmed() {
     int ret = msgBox.exec();
 
     switch (ret) {
-    case QMessageBox::Save: // Save was clicked
-      saveProject();
-      break;
-    case QMessageBox::Discard: // Don't Save was clicked
-      break;
-    case QMessageBox::Cancel: // Cancel was clicked
-      confirmed = false;
-      break;
-    default:
-      Q_ASSERT(false);
-      break;
+      case QMessageBox::Save: // Save was clicked
+        saveProject();
+        break;
+      case QMessageBox::Discard: // Don't Save was clicked
+        break;
+      case QMessageBox::Cancel: // Cancel was clicked
+        confirmed = false;
+        break;
+      default:
+        Q_ASSERT(false);
+        break;
     }
   }
 
@@ -1639,274 +1639,274 @@ void Crystalx::cloneVoidSurface(Scene *scene) {
 
   bool ok;
   auto cellShifts =
-      CellLimitsDialog::getCellLimits(0, "Clone Current Surface", QString(),
-                                      aLimit, bLimit, cLimit, 0, 5, 1, &ok);
+    CellLimitsDialog::getCellLimits(0, "Clone Current Surface", QString(),
+                                    aLimit, bLimit, cLimit, 0, 5, 1, &ok);
   if (ok) {
     scene->cloneCurrentSurfaceWithCellShifts(cellShifts.second);
   }
 }
 
 void Crystalx::cloneGeneralSurface(Scene *scene) {
-    DeprecatedCrystal * crystal = scene->crystal();
-    if(!crystal) return;
+  DeprecatedCrystal * crystal = scene->crystal();
+  if(!crystal) return;
 
-    if (crystal->hasSelectedAtoms()) {
-	scene->cloneCurrentSurfaceForSelection();
-    } else {
-	scene->cloneCurrentSurfaceForAllFragments();
-    }
+  if (crystal->hasSelectedAtoms()) {
+    scene->cloneCurrentSurfaceForSelection();
+  } else {
+    scene->cloneCurrentSurfaceForAllFragments();
+  }
 }
 
 void Crystalx::cloneSurface() {
-    Scene *scene = project->currentScene();
-    if(!scene) {
-	qDebug() << "Clone surface called with no current scene";
-	return;
-    }
+  Scene *scene = project->currentScene();
+  if(!scene) {
+  qDebug() << "Clone surface called with no current scene";
+    return;
+  }
 
-    Mesh *mesh = childPropertyController->getCurrentMesh();
-    if(!mesh) {
-	qDebug() << "Clone surface called with no current mesh";
-	return;
-    }
+  Mesh *mesh = childPropertyController->getCurrentMesh();
+  if(!mesh) {
+  qDebug() << "Clone surface called with no current mesh";
+    return;
+  }
 
-    auto * structure = scene->chemicalStructure();
-    if(!structure) {
-	qDebug() << "Clone surface called with no current structure";
-	return;
-    }
+  auto * structure = scene->chemicalStructure();
+  if(!structure) {
+  qDebug() << "Clone surface called with no current structure";
+    return;
+  }
 
-    auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
-    if (selectedAtoms.size() > 0) {
-	auto * instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, selectedAtoms);
-	qDebug() << "Cloned surface: " << instance;
+  auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
+  if (selectedAtoms.size() > 0) {
+    auto * instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, selectedAtoms);
+  qDebug() << "Cloned surface: " << instance;
 
-    } else {
-	for(int i = 0; i < structure->numberOfFragments(); i++) {
-	    auto idxs = structure->atomIndicesForFragment(i);
-	    if(idxs.size() < 1) continue;
-	    auto * instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, idxs);
-	    qDebug() << "Cloned surface: " << instance;
-	    
-	}
+  } else {
+    for(int i = 0; i < structure->numberOfFragments(); i++) {
+      auto idxs = structure->atomIndicesForFragment(i);
+      if(idxs.size() < 1) continue;
+      auto * instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, idxs);
+    qDebug() << "Cloned surface: " << instance;
+
     }
-    crystalController->setSurfaceInfo(project);
+  }
+  crystalController->setSurfaceInfo(project);
 }
 
 void Crystalx::showEnergyCalculationDialog() {
-    qDebug() << "Show Energy calculation dialog";
-    Scene *scene = project->currentScene();
-    if (!scene) return;
-    auto *structure = scene->chemicalStructure();
-    if (!structure) return;
+  qDebug() << "Show Energy calculation dialog";
+  Scene *scene = project->currentScene();
+  if (!scene) return;
+  auto *structure = scene->chemicalStructure();
+  if (!structure) return;
 
-    auto completeFragments = structure->completedFragments();
-    qDebug() << "Complete fragments:" << completeFragments.size();
-    auto selectedFragments = structure->selectedFragments();
-    qDebug() << "Selected fragments:" << selectedFragments.size();
+  auto completeFragments = structure->completedFragments();
+  qDebug() << "Complete fragments:" << completeFragments.size();
+  auto selectedFragments = structure->selectedFragments();
+  qDebug() << "Selected fragments:" << selectedFragments.size();
 
-    const char *propName = "fragmentStatesSetByUser";
-    const QVariant setByUser = structure->property(propName);
+  const char *propName = "fragmentStatesSetByUser";
+  const QVariant setByUser = structure->property(propName);
 
-    if (!setByUser.isValid() || !setByUser.toBool()) {
-        bool success = getFragmentStatesIfMultipleFragments(structure);
-	if (!success) {
-	  return; // User doesn't want us to continue so early return;
-	}
-	structure->setProperty(propName, true);
+  if (!setByUser.isValid() || !setByUser.toBool()) {
+    bool success = getFragmentStatesIfMultipleFragments(structure);
+    if (!success) {
+      return; // User doesn't want us to continue so early return;
     }
+    structure->setProperty(propName, true);
+  }
 
-    if (completeFragments.size() == 1) {
-	const float CLUSTER_RADIUS = 3.8f; // angstroms
-	QString question = QString(
-	    "No pairs of fragments found.\n\nDo you want to "
-            "calculate interaction energies for a %1%2 "
-            "cluster around the selected fragment?")
-                           .arg(CLUSTER_RADIUS, 0, 'f', 1)
-                           .arg(ANGSTROM_SYMBOL);
-	QMessageBox msgBox(this);
-	msgBox.setWindowTitle("Interaction Energy Calculation");
-	msgBox.setText(question);
-	msgBox.setIconPixmap(QIcon(":/images/radial_cluster.png").pixmap(64, 64));
-	msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-	msgBox.setDefaultButton(QMessageBox::Yes);
+  if (completeFragments.size() == 1) {
+    const float CLUSTER_RADIUS = 3.8f; // angstroms
+    QString question = QString(
+      "No pairs of fragments found.\n\nDo you want to "
+      "calculate interaction energies for a %1%2 "
+      "cluster around the selected fragment?")
+      .arg(CLUSTER_RADIUS, 0, 'f', 1)
+      .arg(ANGSTROM_SYMBOL);
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Interaction Energy Calculation");
+    msgBox.setText(question);
+    msgBox.setIconPixmap(QIcon(":/images/radial_cluster.png").pixmap(64, 64));
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::Yes);
 
-	if (msgBox.exec() == QMessageBox::Yes) {
-	  project->showAtomsWithinRadius(CLUSTER_RADIUS, true);
-	  project->completeFragmentsForCurrentCrystal();
-	  completeFragments = structure->completedFragments();
-	  selectedFragments = structure->selectedFragments();
-	} else {
-	  return; // User doesn't want us to continue so early return
-	}
+    if (msgBox.exec() == QMessageBox::Yes) {
+      project->showAtomsWithinRadius(CLUSTER_RADIUS, true);
+      project->completeFragmentsForCurrentCrystal();
+      completeFragments = structure->completedFragments();
+      selectedFragments = structure->selectedFragments();
+  } else {
+      return; // User doesn't want us to continue so early return
     }
+  }
 
-    if (m_energyCalculationDialog == nullptr) {
-	m_energyCalculationDialog = new EnergyCalculationDialog(this);
+  if (m_energyCalculationDialog == nullptr) {
+    m_energyCalculationDialog = new EnergyCalculationDialog(this);
 
-	connect(m_energyCalculationDialog,
-		&EnergyCalculationDialog::energyParametersChosen, this,
-		&Crystalx::calculateEnergies, Qt::UniqueConnection);
-    }
-    m_energyCalculationDialog->setChemicalStructure(structure);
+    connect(m_energyCalculationDialog,
+            &EnergyCalculationDialog::energyParametersChosen, this,
+            &Crystalx::calculateEnergies, Qt::UniqueConnection);
+  }
+  m_energyCalculationDialog->setChemicalStructure(structure);
 
-    if (selectedFragments.size() == 1 && completeFragments.size() > 1) {
-	int keyIndex = selectedFragments[0];
-	const auto &keyFragment = structure->getFragments()[keyIndex];
-	m_energyCalculationDialog->show();
-    } else if (selectedFragments.size() == 2) {
-/********
-	int indexFragA = crystal->fragmentIndexOfFirstSelectedFragment();
-	int indexFragB = crystal->fragmentIndexOfSecondSelectedFragment();
+  if (selectedFragments.size() == 1 && completeFragments.size() > 1) {
+    int keyIndex = selectedFragments[0];
+    const auto &keyFragment = structure->getFragments()[keyIndex];
+    m_energyCalculationDialog->show();
+  } else if (selectedFragments.size() == 2) {
+    /********
+        int indexFragA = crystal->fragmentIndexOfFirstSelectedFragment();
+        int indexFragB = crystal->fragmentIndexOfSecondSelectedFragment();
 
-	Q_ASSERT(indexFragA != -1);
-	Q_ASSERT(indexFragB != -1);
+        Q_ASSERT(indexFragA != -1);
+        Q_ASSERT(indexFragB != -1);
 
-	QVector<AtomId> fragAtomsA = crystal->atomIdsForFragment(indexFragA);
-	QVector<AtomId> fragAtomsB = crystal->atomIdsForFragment(indexFragB);
+        QVector<AtomId> fragAtomsA = crystal->atomIdsForFragment(indexFragA);
+        QVector<AtomId> fragAtomsB = crystal->atomIdsForFragment(indexFragB);
 
-	m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
-	m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
-		crystal->chargeMultiplicityForFragment(fragAtomsA),
-		crystal->chargeMultiplicityForFragment(fragAtomsB));
-	m_energyCalculationDialog->show();
+        m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA, fragAtomsB);
+        m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
+                crystal->chargeMultiplicityForFragment(fragAtomsA),
+                crystal->chargeMultiplicityForFragment(fragAtomsB));
+        m_energyCalculationDialog->show();
 
-	*/
-    } else {
-	QString baseMessage = "Unable to calculate interaction "
-	    "energies.\nCrystalExplorer can handle the following "
-	    "cases:\n\n";
-	QString cond1 = "1. One molecule on-screen, none selected.\n";
-	QString cond2 =
-	    "2. Multiple molecules on-screen, central fragment selected.\n";
-	QString cond3 = "3. A pair of selected fragments.";
-	QString errorMessage = baseMessage + cond1 + cond2 + cond3;
-	QMessageBox::warning(this, "Error", errorMessage);
-    }
+    */
+  } else {
+    QString baseMessage = "Unable to calculate interaction "
+      "energies.\nCrystalExplorer can handle the following "
+      "cases:\n\n";
+    QString cond1 = "1. One molecule on-screen, none selected.\n";
+    QString cond2 =
+      "2. Multiple molecules on-screen, central fragment selected.\n";
+    QString cond3 = "3. A pair of selected fragments.";
+    QString errorMessage = baseMessage + cond1 + cond2 + cond3;
+    QMessageBox::warning(this, "Error", errorMessage);
+  }
 }
 
 void Crystalx::calculateEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters modelParameters) {
-    qDebug() << "Pairs needed:" << modelParameters.pairs.size();
-    qDebug() << "Wavefunctions assumed to exist";
-    Scene *scene = project->currentScene();
-    if (!scene) return;
-    auto *structure = scene->chemicalStructure();
-    if (!structure) return;
+  qDebug() << "Pairs needed:" << modelParameters.pairs.size();
+  qDebug() << "Wavefunctions assumed to exist";
+  Scene *scene = project->currentScene();
+  if (!scene) return;
+  auto *structure = scene->chemicalStructure();
+  if (!structure) return;
 
-    std::vector<MolecularWavefunction *> wavefunctions;
-    for(const auto &wfn: modelParameters.wavefunctions) {
-	auto candidates = structure->wavefunctionsAndTransformsForAtoms(wfn.atoms);
-	bool found = false;
-	qDebug() << "Found " << candidates.size() << "candidates";
-	for(auto &candidate: candidates) {
-	    if(wfn.hasEquivalentMethodTo(candidate.wavefunction->parameters())) {
-		found = true;
-		wavefunctions.push_back(candidate.wavefunction);
-		break;
-	    }
-	}
-	if(!found) {
-	    qDebug() << "Unable to find corresponding wavefunction...";
-	}
+  std::vector<MolecularWavefunction *> wavefunctions;
+  for(const auto &wfn: modelParameters.wavefunctions) {
+    auto candidates = structure->wavefunctionsAndTransformsForAtoms(wfn.atoms);
+    bool found = false;
+  qDebug() << "Found " << candidates.size() << "candidates";
+    for(auto &candidate: candidates) {
+      if(wfn.hasEquivalentMethodTo(candidate.wavefunction->parameters())) {
+        found = true;
+        wavefunctions.push_back(candidate.wavefunction);
+        break;
+      }
     }
-
-    std::vector<pair_energy::Parameters> energies;
-
-    for(const auto &pair: modelParameters.pairs) {
-	pair_energy::Parameters p;
-	p.structure = structure;
-	p.atomsA = pair.a.atomIndices;
-	p.atomsB = pair.b.atomIndices;
-
-	bool foundA = false;
-	bool foundB = false;
-	for(auto * wfn: wavefunctions) {
-	    if(foundA && foundB) break;
-	    if(!foundA) {
-		foundA = structure->getTransformation(p.atomsA, wfn->atomIndices(), p.transformA);
-		if(foundA) {
-		    qDebug() << "Found wavefunction for A";
-		    p.wfnA = wfn;
-		}
-	    }
-	    if(!foundB) {
-		foundB = structure->getTransformation(p.atomsB, wfn->atomIndices(), p.transformB);
-		if(foundB) {
-		    qDebug() << "Found wavefunction for B";
-		    p.wfnB = wfn;
-		}
-	    }
-	}
-	if(!foundA && foundB) {
-	    qDebug() << "Unable to find wavefunctions for A and B";
-	    return;
-	}
-	energies.push_back(p);
+    if(!found) {
+    qDebug() << "Unable to find corresponding wavefunction...";
     }
+  }
 
-    PairEnergyCalculator * calc = new PairEnergyCalculator(this);
-    calc->setTaskManager(m_taskManager);
+  std::vector<pair_energy::Parameters> energies;
 
-    connect(calc, &PairEnergyCalculator::calculationComplete, this, [this, calc]() {
-	qDebug() << "Calculation of pair energies complete";
-	showInfo(InfoType::InteractionEnergyInfo);
-	calc->deleteLater();
-    });
+  for(const auto &pair: modelParameters.pairs) {
+    pair_energy::Parameters p;
+    p.structure = structure;
+    p.atomsA = pair.a.atomIndices;
+    p.atomsB = pair.b.atomIndices;
 
-    calc->start_batch(energies);
+    bool foundA = false;
+    bool foundB = false;
+    for(auto * wfn: wavefunctions) {
+      if(foundA && foundB) break;
+      if(!foundA) {
+        foundA = structure->getTransformation(p.atomsA, wfn->atomIndices(), p.transformA);
+        if(foundA) {
+          qDebug() << "Found wavefunction for A";
+          p.wfnA = wfn;
+        }
+      }
+      if(!foundB) {
+        foundB = structure->getTransformation(p.atomsB, wfn->atomIndices(), p.transformB);
+        if(foundB) {
+          qDebug() << "Found wavefunction for B";
+          p.wfnB = wfn;
+        }
+      }
+    }
+    if(!foundA && foundB) {
+    qDebug() << "Unable to find wavefunctions for A and B";
+      return;
+    }
+    energies.push_back(p);
+  }
+
+  PairEnergyCalculator * calc = new PairEnergyCalculator(this);
+  calc->setTaskManager(m_taskManager);
+
+  connect(calc, &PairEnergyCalculator::calculationComplete, this, [this, calc]() {
+  qDebug() << "Calculation of pair energies complete";
+    showInfo(InfoType::InteractionEnergyInfo);
+    calc->deleteLater();
+  });
+
+  calc->start_batch(energies);
 }
 
 void Crystalx::calculateEnergies(pair_energy::EnergyModelParameters modelParameters) {
 
-    Scene *scene = project->currentScene();
-    if (!scene) return;
-    auto *structure = scene->chemicalStructure();
-    if (!structure) return;
-    qDebug() << "In calculateEnergies";
+  Scene *scene = project->currentScene();
+  if (!scene) return;
+  auto *structure = scene->chemicalStructure();
+  if (!structure) return;
+  qDebug() << "In calculateEnergies";
 
-    qDebug() << "Wavefunctions needed:" << modelParameters.wavefunctions.size();
-    qDebug() << "Pairs needed:" << modelParameters.pairs.size();
+  qDebug() << "Wavefunctions needed:" << modelParameters.wavefunctions.size();
+  qDebug() << "Pairs needed:" << modelParameters.pairs.size();
 
-    std::vector<wfn::Parameters> wavefunctionsToCalculate;
-    for(auto &wfn: modelParameters.wavefunctions) {
-	if(!wfn.accepted) {
-	    wfn = Crystalx::getWavefunctionParametersFromUser(wfn.atoms, wfn.charge, wfn.multiplicity);
-	}
-	if(!wfn.accepted) return;
-	break;
+  std::vector<wfn::Parameters> wavefunctionsToCalculate;
+  for(auto &wfn: modelParameters.wavefunctions) {
+    if(!wfn.accepted) {
+      wfn = Crystalx::getWavefunctionParametersFromUser(wfn.atoms, wfn.charge, wfn.multiplicity);
     }
+    if(!wfn.accepted) return;
+    break;
+  }
 
-    for(auto &wfn: modelParameters.wavefunctions) {
-	wfn.structure = structure;
-	auto candidates = structure->wavefunctionsAndTransformsForAtoms(wfn.atoms);
-	bool found = false;
-	for(auto &candidate: candidates) {
-	    if(wfn.hasEquivalentMethodTo(candidate.wavefunction->parameters())) {
-		found = true;
-		break;
-	    }
-	}
-	if(!found) {
-	    wavefunctionsToCalculate.push_back(wfn);
-	}
+  for(auto &wfn: modelParameters.wavefunctions) {
+    wfn.structure = structure;
+    auto candidates = structure->wavefunctionsAndTransformsForAtoms(wfn.atoms);
+    bool found = false;
+    for(auto &candidate: candidates) {
+      if(wfn.hasEquivalentMethodTo(candidate.wavefunction->parameters())) {
+        found = true;
+        break;
+      }
     }
-
-
-    if(wavefunctionsToCalculate.size() > 0) {
-	qDebug() << "Make calculator";
-	WavefunctionCalculator *wavefunctionCalc = new WavefunctionCalculator();
-	wavefunctionCalc->setTaskManager(m_taskManager);
-
-	connect(wavefunctionCalc, &WavefunctionCalculator::calculationComplete, this, [modelParameters, this, wavefunctionCalc]() {
-	    calculateEnergiesWithExistingWavefunctions(modelParameters);
-	    wavefunctionCalc->deleteLater();
-	});
-
-	wavefunctionCalc->start_batch(modelParameters.wavefunctions);
+    if(!found) {
+      wavefunctionsToCalculate.push_back(wfn);
     }
-    else {
-	calculateEnergiesWithExistingWavefunctions(modelParameters);
-    }
+  }
+
+
+  if(wavefunctionsToCalculate.size() > 0) {
+  qDebug() << "Make calculator";
+    WavefunctionCalculator *wavefunctionCalc = new WavefunctionCalculator();
+    wavefunctionCalc->setTaskManager(m_taskManager);
+
+    connect(wavefunctionCalc, &WavefunctionCalculator::calculationComplete, this, [modelParameters, this, wavefunctionCalc]() {
+      calculateEnergiesWithExistingWavefunctions(modelParameters);
+      wavefunctionCalc->deleteLater();
+    });
+
+    wavefunctionCalc->start_batch(modelParameters.wavefunctions);
+  }
+  else {
+    calculateEnergiesWithExistingWavefunctions(modelParameters);
+  }
 }
 
 void Crystalx::calculateVoidDomains() {
@@ -1931,23 +1931,23 @@ void Crystalx::calculateVoidDomains() {
 void Crystalx::handleStructureChange() {
   ChemicalStructure * structure = project->currentScene()->chemicalStructure();
   if(structure) {
-      qDebug() << "Structure changed";
+    qDebug() << "Structure changed";
 
-      for(auto * child: structure->children()) {
-	    auto* mesh = qobject_cast<Mesh*>(child);
-	    if (mesh) {
-            childPropertyController->setCurrentMesh(mesh);
-		break;
-	    }
+    for(auto * child: structure->children()) {
+      auto* mesh = qobject_cast<Mesh*>(child);
+      if (mesh) {
+        childPropertyController->setCurrentMesh(mesh);
+        break;
       }
-      glWindow->redraw();
-      // update surface controller
-      // update list of surfaces
+    }
+    glWindow->redraw();
+    // update surface controller
+    // update list of surfaces
   }
 }
 
 void Crystalx::updateSurfaceControllerForNewProperty() {
-    // TODO delete
+  // TODO delete
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1971,27 +1971,27 @@ void Crystalx::updateInfo(InfoType infoType) {
 
   QString title;
   switch (infoType) {
-  case GeneralCrystalInfo:
-    InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(document, scene);
-    break;
-  case AtomCoordinateInfo:
-    InfoDocuments::insertAtomicCoordinatesIntoTextDocument(document, scene);
-    break;
-  case InteractionEnergyInfo:
-    InfoDocuments::insertInteractionEnergiesIntoTextDocument(document, scene);
-    break;
-  case CurrentSurfaceInfo:
-    if (fingerprintWindow && scene->currentSurface() &&
+    case GeneralCrystalInfo:
+      InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(document, scene);
+      break;
+    case AtomCoordinateInfo:
+      InfoDocuments::insertAtomicCoordinatesIntoTextDocument(document, scene);
+      break;
+    case InteractionEnergyInfo:
+      InfoDocuments::insertInteractionEnergiesIntoTextDocument(document, scene);
+      break;
+    case CurrentSurfaceInfo:
+      if (fingerprintWindow && scene->currentSurface() &&
         scene->currentSurface()->isFingerprintable()) {
-      FingerprintBreakdown breakdown = fingerprintWindow->fingerprintBreakdown(
+        FingerprintBreakdown breakdown = fingerprintWindow->fingerprintBreakdown(
           scene->crystal()->listOfElementSymbols());
-      InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(document, scene,
-                                                              breakdown);
-    } else {
-      InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(
+        InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(document, scene,
+                                                                breakdown);
+      } else {
+        InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(
           document, scene, FingerprintBreakdown());
-    }
-    break;
+      }
+      break;
   }
 
   infoViewer->setDocument(document, infoType);
@@ -2097,35 +2097,35 @@ void Crystalx::setFragmentStates() {
 }
 
 bool Crystalx::getFragmentStatesIfMultipleFragments(ChemicalStructure *structure) {
-    bool success = true;
-    if (structure->symmetryUniqueFragments().size() > 1) {
-	qDebug() << "Skipping due to only 1 fragment";
-	success = getFragmentStatesFromUser(structure);
-    } 
-    return success;
+  bool success = true;
+  if (structure->symmetryUniqueFragments().size() > 1) {
+  qDebug() << "Skipping due to only 1 fragment";
+    success = getFragmentStatesFromUser(structure);
+  } 
+  return success;
 }
 
 bool Crystalx::getFragmentStatesFromUser(ChemicalStructure *structure) {
-    if(!structure) return false;
+  if(!structure) return false;
 
-    if (!m_fragmentStateDialog) {
-	m_fragmentStateDialog = new FragmentStateDialog(this);
+  if (!m_fragmentStateDialog) {
+    m_fragmentStateDialog = new FragmentStateDialog(this);
+  }
+
+  m_fragmentStateDialog->populate(structure);
+
+  bool success = false;
+
+  if (m_fragmentStateDialog->exec() == QDialog::Accepted) {
+    if (m_fragmentStateDialog->hasFragmentStates()) {
+      const auto &states = m_fragmentStateDialog->getFragmentStates();
+      for(int i = 0; i < states.size(); i++) {
+        structure->setSymmetryUniqueFragmentState(i, states[i]);
+      }
     }
+  }
 
-    m_fragmentStateDialog->populate(structure);
-
-    bool success = false;
-
-    if (m_fragmentStateDialog->exec() == QDialog::Accepted) {
-	if (m_fragmentStateDialog->hasFragmentStates()) {
-	    const auto &states = m_fragmentStateDialog->getFragmentStates();
-	    for(int i = 0; i < states.size(); i++) {
-		structure->setSymmetryUniqueFragmentState(i, states[i]);
-	    }
-	}
-    }
-
-    return success;
+  return success;
 }
 
 void Crystalx::backgroundTaskFinished() {
@@ -2135,35 +2135,35 @@ void Crystalx::backgroundTaskFinished() {
 }
 
 void Crystalx::taskManagerTaskComplete(TaskID id) {
-    showStatusMessage(QString("Task %1 complete").arg(id.toString()));
-    int finished = m_taskManager->numFinished();
-    int numTasks = m_taskManager->numTasks();
-    updateProgressBar(finished, numTasks);
-    if(finished == numTasks) setBusy(false);
+  showStatusMessage(QString("Task %1 complete").arg(id.toString()));
+  int finished = m_taskManager->numFinished();
+  int numTasks = m_taskManager->numTasks();
+  updateProgressBar(finished, numTasks);
+  if(finished == numTasks) setBusy(false);
 }
 
 void Crystalx::taskManagerTaskError(TaskID id, QString errorMessage) {
-    showStatusMessage(QString("Task %1 had error: %2").arg(id.toString()).arg(errorMessage));;
-    int finished = m_taskManager->numFinished();
-    int numTasks = m_taskManager->numTasks();
-    updateProgressBar(finished, numTasks);
-    if(finished == numTasks) setBusy(false);
+  showStatusMessage(QString("Task %1 had error: %2").arg(id.toString()).arg(errorMessage));;
+  int finished = m_taskManager->numFinished();
+  int numTasks = m_taskManager->numTasks();
+  updateProgressBar(finished, numTasks);
+  if(finished == numTasks) setBusy(false);
 }
 
 void Crystalx::taskManagerTaskAdded(TaskID id) {
-    showStatusMessage(QString("Task %1 added").arg(id.toString()));
-    updateProgressBar(m_taskManager->numFinished(), m_taskManager->numTasks());
-    setBusy(true);
+  showStatusMessage(QString("Task %1 added").arg(id.toString()));
+  updateProgressBar(m_taskManager->numFinished(), m_taskManager->numTasks());
+  setBusy(true);
 }
 
 void Crystalx::taskManagerTaskRemoved(TaskID id) {
-    showStatusMessage(QString("Task %1 removed").arg(id.toString()));
-    int finished = m_taskManager->numFinished();
-    int numTasks = m_taskManager->numTasks();
-    updateProgressBar(m_taskManager->numFinished(), m_taskManager->numTasks());
-    if(finished == numTasks) setBusy(false);
+  showStatusMessage(QString("Task %1 removed").arg(id.toString()));
+  int finished = m_taskManager->numFinished();
+  int numTasks = m_taskManager->numTasks();
+  updateProgressBar(m_taskManager->numFinished(), m_taskManager->numTasks());
+  if(finished == numTasks) setBusy(false);
 }
 
 void Crystalx::showTaskManagerWidget() {
-    m_taskManagerWidget->show();
+  m_taskManagerWidget->show();
 }

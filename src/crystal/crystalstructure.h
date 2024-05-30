@@ -17,17 +17,25 @@ public:
   void setOccCrystal(const OccCrystal &);
   inline const auto &occCrystal() const { return m_crystal; }
 
-  // assumed to be CIF for now
-  inline void setFileContents(const QByteArray &contents) { m_fileContents = contents; }
-  inline const QByteArray &fileContents() const { return m_fileContents; }
-
-  QString chemicalFormula() const;
 
   virtual inline StructureType structureType() const override {
     return StructureType::Crystal;
   }
-  virtual inline occ::Mat3 cellVectors() const override {
+
+  inline occ::Mat3 cellVectors() const override {
     return m_crystal.unit_cell().direct();
+  }
+
+  inline occ::Vec3 cellAngles() const override {
+    return m_crystal.unit_cell().angles();
+  }
+
+  inline occ::Vec3 cellLengths() const override {
+    return m_crystal.unit_cell().lengths();
+  }
+
+  inline const auto &spaceGroup() const {
+    return m_crystal.space_group();
   }
 
   virtual int fragmentIndexForAtom(int) const override;
@@ -76,6 +84,7 @@ public:
 
   [[nodiscard]] virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const override;
 
+  [[nodiscard]] QString chemicalFormula(bool richText=true) const override;
 
 private:
   Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;
@@ -86,8 +95,6 @@ private:
   void removeVanDerWaalsContactAtoms();
   void deleteAtoms(const std::vector<int> &atomIndices);
 
-  QString m_filename;
-  QByteArray m_fileContents;
   OccCrystal m_crystal;
 
   std::vector<GenericAtomIndex> m_unitCellOffsets;
