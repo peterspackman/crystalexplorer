@@ -84,6 +84,8 @@ public:
   void addInstance(const EllipsoidInstance &);
   void addInstances(const vector<EllipsoidInstance> &instances);
 
+  inline size_t size() const { return m_instances.size(); }
+
   virtual void beginUpdates() override;
   virtual void endUpdates() override;
   virtual void draw() override;

@@ -1340,7 +1340,7 @@ void Crystalx::toggleDrawHydrogenEllipsoids(bool draw) {
 void Crystalx::updateMenuOptionsForScene() {
   Scene *scene = project->currentScene();
   if (scene) {
-    _thermalEllipsoidMenu->setEnabled(scene->anyAtomHasAdp());
+    //_thermalEllipsoidMenu->setEnabled(scene->anyAtomHasAdp());
     QString moleculeStyleString = drawingStyleLabel(scene->drawingStyle());
     if (scene->drawingStyle() == DrawingStyle::Ortep) {
       moleculeStyleString = scene->thermalEllipsoidProbabilityString();
@@ -1348,7 +1348,7 @@ void Crystalx::updateMenuOptionsForScene() {
     foreach (QAction *action, moleculeStyleActions) {
       action->setChecked(action->text() == moleculeStyleString);
     }
-    _drawHEllipsoidsAction->setChecked(scene->drawHydrogenEllipsoids());
+    //_drawHEllipsoidsAction->setChecked(scene->drawHydrogenEllipsoids());
     showUnitCellAxesAction->setChecked(scene->unitCellBoxIsVisible());
     showAtomicLabelsAction->setChecked(scene->atomicLabelsVisible());
     showHydrogenAtomsAction->setChecked(scene->hydrogensAreVisible());

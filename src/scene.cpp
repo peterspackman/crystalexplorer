@@ -799,16 +799,16 @@ void Scene::draw() {
     drawUnitCellBox();
   }
 
-  m_structureRenderer->draw();
+  if(m_structureRenderer) {
+    m_structureRenderer->draw();
+  }
+
   if (hasVisibleAtoms()) {
 
     if (_showHydrogenBonds) {
       drawHydrogenBonds();
     }
     drawCloseContacts();
-  }
-
-  if (hasVisibleAtoms()) {
     drawMeasurements();
   }
 
