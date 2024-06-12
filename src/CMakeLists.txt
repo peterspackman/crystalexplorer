@@ -15,7 +15,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     childpropertycontroller.cpp
     closecontactsdialog.cpp
     colordelegate.cpp
-    colorschemer.cpp
     confirmationbox.cpp
     crystalcontroller.cpp
     crystalplanegenerator.cpp
@@ -28,7 +27,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     fingerprintplot.cpp
     fingerprintwindow.cpp
     glwindow.cpp
-    gltfexporter.cpp
     infodocuments.cpp
     infoviewer.cpp
     measurement.cpp
@@ -43,22 +41,18 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     spacegroup.cpp
     surfacedropdown.cpp
     surfacegenerationdialog.cpp
-    tasksequence.cpp
     viewtoolbar.cpp
     wavefunctioncalculationdialog.cpp
 )
 
 set(CRYSTALEXPLORER_HEADER_FILES
     animationsettingsdialog.h
-    asymmetricunit.h
-    atomid.h
     cameraoptions.h
     celllimitsdialog.h
     chargemultiplicitypair.h
     childpropertycontroller.h
     closecontactsdialog.h
     colordelegate.h
-    colorschemer.h
     confirmationbox.h
     crystalcontroller.h
     crystalplanegenerator.h
@@ -71,7 +65,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     fingerprintplot.h
     fingerprintwindow.h
     glwindow.h
-    gltfexporter.h
     infodocuments.h
     infoviewer.h
     measurement.h
@@ -88,7 +81,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     stldatastream.h
     surfacedropdown.h
     surfacegenerationdialog.h
-    vanderwaalscontact.h
     viewtoolbar.h
     wavefunctioncalculationdialog.h
 )

@@ -4,7 +4,7 @@
 #include <QMessageBox>
 #include <QtDebug>
 
-#include "colorschemer.h"
+#include "colormap.h"
 #include "elementeditor.h"
 #include "globals.h"
 #include "preferencesdialog.h"
@@ -88,11 +88,11 @@ void PreferencesDialog::init() {
   showLightPositionsCheckBox->setChecked(
       settings::readSetting(settings::keys::SHOW_LIGHT_POSITIONS).toBool());
 
-  ColorScheme currentScheme = colorSchemeFromString(
+  ColorMapName currentScheme = colorMapFromString(
       settings::readSetting(settings::keys::ENERGY_COLOR_SCHEME).toString());
   int idx = 0;
-  for (const auto &scheme : availableColorSchemes) {
-    energyColorSchemeComboBox->addItem(colorSchemeName(scheme));
+  for (const auto &scheme : availableColorMaps()) {
+    energyColorSchemeComboBox->addItem(colorMapToString(scheme));
     if (scheme == currentScheme)
       energyColorSchemeComboBox->setCurrentIndex(idx);
     idx++;

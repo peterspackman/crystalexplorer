@@ -12,7 +12,6 @@
 #include <QMouseEvent>
 #include <QStack>
 
-#include "colorschemer.h"
 #include "settings.h"
 
 FingerprintPlot::FingerprintPlot(QWidget *parent) : QWidget(parent) { init(); }

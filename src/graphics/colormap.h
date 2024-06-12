@@ -14,6 +14,11 @@ enum class ColorMapName
 QColor linearColorMap(double x, ColorMapName name);
 QColor quantizedLinearColorMap(double x, unsigned int num_levels, ColorMapName name);
 
+
+std::vector<ColorMapName> availableColorMaps();
+ColorMapName colorMapFromString(const QString &);
+const char * colorMapToString(ColorMapName);
+
 struct ColorMapFunc {
 
     ColorMapFunc(ColorMapName);
