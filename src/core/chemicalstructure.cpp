@@ -321,6 +321,38 @@ QStringList ChemicalStructure::uniqueElementSymbols() const {
   return result;
 }
 
+std::vector<int> ChemicalStructure::hydrogenBondDonors() const {
+  std::vector<int> result;
+  const auto nums = atomicNumbers();
+  for(const auto &[i, j]: covalentBonds()) {
+    if(nums(i) == 1)  {
+      result.push_back(j);
+    }
+    else if(nums(j) == 1) {
+      result.push_back(i);
+    }
+  }
+  return result;
+}
+
+
+QStringList ChemicalStructure::uniqueHydrogenDonorElements() const {
+  if (numberOfAtoms() < 1)
+    return {};
+
+  ankerl::unordered_dense::set<int> uniqueDonors;
+  const auto nums = atomicNumbers();
+  for(const auto &idx: hydrogenBondDonors()) {
+    uniqueDonors.insert(nums(idx));
+  }
+
+  QStringList result;
+  for (const auto &num : uniqueDonors) {
+    result.push_back(QString::fromStdString(occ::core::Element(num).symbol()));
+  }
+  return result;
+}
+
 void ChemicalStructure::deleteAtoms(const std::vector<int> &atomIndices) {
   // DOES NOT UPDATE BONDS
   const int originalNumAtoms = numberOfAtoms();
@@ -412,6 +444,12 @@ void ChemicalStructure::setFlagForAllAtoms(AtomFlag flag, bool on) {
   }
 }
 
+void ChemicalStructure::toggleFlagForAllAtoms(AtomFlag flag) {
+  for (int i = 0; i < numberOfAtoms(); i++) {
+    m_flags[i] ^= (m_flags[i] & flag);
+  }
+}
+
 void ChemicalStructure::selectFragmentContaining(int atom) {
   int fragIndex = fragmentIndexForAtom(atom);
   if (fragIndex < 0)
@@ -455,6 +493,7 @@ std::vector<int> ChemicalStructure::selectedFragments() const {
 }
 
 bool ChemicalStructure::hasIncompleteFragments() const { return false; }
+bool ChemicalStructure::hasIncompleteSelectedFragments() const { return false; }
 
 void ChemicalStructure::deleteIncompleteFragments() {}
 
@@ -571,6 +610,37 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomsWithFlags(const AtomFlags 
 	if (m_flags[i] & flags) result.push_back({i});
     }
     return result;
+}
+
+
+std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtoms(
+    const std::vector<GenericAtomIndex> &idxs, float radius) const {
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
+      unique_idxs;
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> idx_set(
+      idxs.begin(), idxs.end());
+
+  occ::core::KDTree<double> tree(3, m_atomicPositions, occ::core::max_leaf);
+  tree.index->buildIndex();
+  const double max_dist2 = radius * radius;
+
+  std::vector<std::pair<size_t, double>> idxs_dists;
+  nanoflann::RadiusResultSet results(max_dist2, idxs_dists);
+
+  for (const auto &idx : idx_set) {
+    int i = idx.unique;
+    const double *q = m_atomicPositions.col(i).data();
+    tree.index->findNeighbors(results, q, nanoflann::SearchParams());
+    for (const auto &result : idxs_dists) {
+      auto candidate = GenericAtomIndex{static_cast<int>(result.first)};
+      if (idx_set.contains(candidate)) {
+        continue;
+      }
+      unique_idxs.insert(candidate);
+    }
+  }
+  std::vector<GenericAtomIndex> res(unique_idxs.begin(), unique_idxs.end());
+  return res;
 }
 
 std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const {
@@ -704,7 +774,7 @@ std::vector<WavefunctionAndTransform> ChemicalStructure::wavefunctionsAndTransfo
 	    for(const auto &idx: wfn->atomIndices()) {
 		qDebug() << idx.unique << idx.x << idx.y << idx.z;
 	    }
-	    bool valid = getTransformation(idxs, wfn->atomIndices(), t.transform);
+	    bool valid = getTransformation(wfn->atomIndices(), idxs, t.transform);
 
 	    if(valid) {
 		qDebug() << "Found valid wavefunction";

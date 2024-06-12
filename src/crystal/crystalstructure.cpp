@@ -88,7 +88,6 @@ void CrystalStructure::updateBondGraph() {
 
   for (int i = 0; i < numberOfAtoms(); i++) {
     VertexDesc uc_vertex = m_unitCellOffsets[i].unique;
-    qDebug() << "VertexDesc" << uc_vertex;
     int h = m_unitCellOffsets[i].x;
     int k = m_unitCellOffsets[i].y;
     int l = m_unitCellOffsets[i].z;
@@ -102,7 +101,6 @@ void CrystalStructure::updateBondGraph() {
     currentFragmentIndex++;
   }
 
-  const auto &pos = atomicPositions();
   for (const auto &[sourceCrystalIndex, sourceAtomIndex] : m_atomMap) {
     const VertexDesc sourceVertex =
       static_cast<VertexDesc>(sourceCrystalIndex.unique);
@@ -177,8 +175,6 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
     clearAtoms();
     const auto &asym = m_crystal.asymmetric_unit();
     occ::Mat3N cartesianPos = m_crystal.to_cartesian(asym.positions);
-    const auto &asymLabels = asym.labels;
-    const auto &asymElements = asym.atomic_numbers;
     m_unitCellOffsets.clear();
     m_atomMap.clear();
 
@@ -210,7 +206,6 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     std::vector<GenericAtomIndex> idxs;
     occ::Mat3N pos_frac = m_crystal.to_fractional(mol.positions());
     const auto &uc_idx = mol.unit_cell_idx();
-    const auto &uc_offset = mol.unit_cell_idx();
     const auto &uc_shift = mol.unit_cell_atom_shift();
 
     for(int i = 0; i < uc_idx.rows(); i++) {
@@ -506,6 +501,49 @@ bool CrystalStructure::hasIncompleteFragments() const {
   return false;
 }
 
+
+bool CrystalStructure::hasIncompleteSelectedFragments() const { 
+  const auto &g = m_crystal.unit_cell_connectivity();
+  const auto &edges = g.edges();
+
+  int currentFragmentIndex{0};
+  bool incomplete{false};
+
+  auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
+                     const EdgeDesc &e, const MillerIndex &hkl) {
+      GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
+      auto location = m_atomMap.find(atomIdx);
+      if (location == m_atomMap.end()) {
+        incomplete = true;
+        return;
+      }
+    };
+
+  auto covalentPredicate = [&edges](const EdgeDesc &e) {
+    return edges.at(e).connectionType == Connection::CovalentBond;
+  };
+
+  for (currentFragmentIndex = 0; currentFragmentIndex < m_fragments.size();
+  currentFragmentIndex++) {
+    // fragment is length 0 - should not happen
+    if (m_fragments[currentFragmentIndex].size() == 0)
+      continue;
+
+    // ensure fragment is selected
+    const auto &fragIndices = atomsForFragment(currentFragmentIndex);
+    if (!atomsHaveFlags(fragIndices, AtomFlag::Selected)) continue;
+
+    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
+    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+    filtered_connectivity_traversal_with_cell_offset(
+      g, uc_vertex, visitor, covalentPredicate,
+      {m_unitCellOffsets[atomIndex].x, m_unitCellOffsets[atomIndex].y, m_unitCellOffsets[atomIndex].z});
+    if (incomplete)
+      return true;
+  }
+  return false;
+}
+
 std::vector<int> CrystalStructure::completedFragments() const {
 
   std::vector<int> result;
@@ -735,6 +773,34 @@ std::vector<GenericAtomIndex> CrystalStructure::atomsWithFlags(const AtomFlags &
   }
 
   std::vector<GenericAtomIndex> res(selected_idxs.begin(), selected_idxs.end());
+  return res;
+}
+
+std::vector<GenericAtomIndex> CrystalStructure::atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &idxs, float radius) const {
+
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> idx_set(idxs.begin(), idxs.end());
+
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> unique_idxs;
+
+  auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
+
+  for (const auto &idx: idx_set) {
+    const auto &region = uc_neighbors[idx.unique];
+    for(int n = 0; n < region.size(); n++) {
+      int h = region.hkl(0, n) + idx.x;
+      int k = region.hkl(1, n) + idx.y;
+      int l = region.hkl(2, n) + idx.z;
+
+      auto candidate = GenericAtomIndex{
+        region.uc_idx(n), h, k, l
+      };
+      if(!idx_set.contains(candidate)) {
+        unique_idxs.insert(candidate);
+      }
+    }
+  }
+
+  std::vector<GenericAtomIndex> res(unique_idxs.begin(), unique_idxs.end());
   return res;
 }
 

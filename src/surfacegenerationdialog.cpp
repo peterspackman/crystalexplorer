@@ -3,7 +3,6 @@
 #include "globals.h" // only NEW_WAVEFUNCTION_ITEM
 #include "settings.h"
 #include "globalconfiguration.h"
-#include "surfaceproperty.h"
 
 #include <QDebug>
 #include <QSignalBlocker>
@@ -26,7 +25,8 @@ void SurfaceGenerationDialog::init() {
     ui->propertyComboBox->setDescriptions(m_surfaceDescriptions, m_surfacePropertyDescriptions);
 
     updateIsovalue();
-    ui->comboBoxHL->insertItems(0, orbitalLabels);
+    // TODO orbital labels
+    //ui->comboBoxHL->insertItems(0, orbitalLabels);
 
     surfaceChanged(m_currentSurfaceType);
 
@@ -139,7 +139,7 @@ void SurfaceGenerationDialog::validate() {
     isosurface::Parameters parameters;
     parameters.isovalue = ui->isovalueLineEdit->text().toFloat();
     parameters.kind = isosurface::stringToKind(ui->surfaceComboBox->current());
-    parameters.separation = ResolutionDetails::value(ui->resolutionComboBox->currentLevel());
+    parameters.separation = isosurface::resolutionValue(ui->resolutionComboBox->currentLevel());
     qDebug() << isosurface::kindToString(parameters.kind);
 
     if(needWavefunction()) {
@@ -166,8 +166,9 @@ void SurfaceGenerationDialog::validate() {
 }
 
 void SurfaceGenerationDialog::updateSettings() {
-    ui->resolutionComboBox->setCurrentIndex(static_cast<int>(ResolutionDetails::defaultLevel()));
-    ui->comboBoxHL->setCurrentIndex(defaultOrbitalType);
+    ui->resolutionComboBox->setCurrentIndex(static_cast<int>(isosurface::Resolution::High));
+    // TODO defaultOrbitalType
+    ui->comboBoxHL->setCurrentIndex(0);
     ui->surfaceOptionsBox->setHidden(defaultHideSurfaceOptionsBox);
     ui->editCheckBox->setCheckState(defaultEditTonto);
     ui->showDescriptionsCheckBox->setCheckState(defaultShowDescriptions);

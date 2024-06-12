@@ -5,7 +5,6 @@
 #include <QVector>
 #include <QAbstractItemModel>
 
-#include "jobparameters.h"
 #include "packingdialog.h" // access to enum UnitCellPackingCriteria
 #include "scene.h"
 
@@ -25,15 +24,11 @@ public:
   Project(QObject *parent = 0);
   ~Project();
   void reset();
-  bool loadCrystalData(const JobParameters &);
-  bool loadCrystalDataTonto(const QString &cxs, const QString &cif);
-  bool loadSurfaceData(const JobParameters &);
   Scene *currentScene();
   ChemicalStructure *currentStructure();
   const Scene *currentScene() const;
   Scene *previousCrystal();
   QStringList sceneTitles();
-  QList<ScenePeriodicity> scenePeriodicities() const;
   int currentCrystalIndex() { return m_currentSceneIndex; }
   bool saveToFile(QString);
   bool hasUnsavedChanges() { return m_haveUnsavedChanges; }
@@ -45,11 +40,9 @@ public:
 
   bool previouslySaved();
   QString saveFilename();
-  void removeContactAtoms();
   int numberOfCrystals() { return m_scenes.size(); }
   bool currentHasSelectedAtoms() const;
   bool currentHasSurface() const;
-  void addMonomerEnergyToCurrent(const MonomerEnergy &m);
 
   // Abstract Item Model methods
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -77,10 +70,6 @@ public slots:
   void toggleHydrogenBonds(bool);
   void updateHydrogenBondsForCurrent(QString, QString, double, bool);
   void cycleDisorderHighlighting();
-  void cycleEnergyFramework(bool cycleBackwards = false);
-  void updateEnergyFramework();
-  void turnOffEnergyFramework();
-  void updateEnergyTheoryForEnergyFramework(EnergyTheory);
 
   void updateAllCrystalsForChangeInElementData();
 

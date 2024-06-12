@@ -1,5 +1,4 @@
 #pragma once
-#include "surfacedescription.h"
 #include "isosurface_parameters.h"
 #include <QComboBox>
 
@@ -52,7 +51,7 @@ class ResolutionDropdown : public QComboBox {
     Q_OBJECT
   public:
     ResolutionDropdown(QWidget *parent = nullptr);
-    ResolutionDetails::Level currentLevel() const;
+    isosurface::Resolution currentLevel() const;
     float currentResolutionValue() const;
 
   private slots:
@@ -60,5 +59,5 @@ class ResolutionDropdown : public QComboBox {
 
   private:
     void populateDropdown();
-    ResolutionDetails::Level m_level;
+    isosurface::Resolution m_resolutionLevel{isosurface::Resolution::High};
 };

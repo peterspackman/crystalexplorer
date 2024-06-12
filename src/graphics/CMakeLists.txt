@@ -19,7 +19,6 @@ add_library(cx_graphics
 
 target_link_libraries(
     cx_graphics PUBLIC 
-    cx_config
     cx_core
     Qt6::Core Qt6::OpenGL
     OpenGL::GL

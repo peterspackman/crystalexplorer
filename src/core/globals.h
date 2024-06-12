@@ -12,7 +12,7 @@ inline const char *CE_EMAIL = "support@crystalexplorer.net";
 inline const char *COPYRIGHT_NOTICE =
     "&copy;2005-%1 University of Western Australia"; // Insert current year at
                                                      // %1
-inline const char *TONTO_URL = "https://github.com/dylan-jayatilaka/tonto";
+inline const char *OCC_URL = "https://github.com/peterspackman/occ";
 
 inline const char *ANGSTROM_SYMBOL{"Å"}; // Å
 inline const char *DEGREE_SYMBOL{"°"};   // °

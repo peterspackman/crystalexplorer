@@ -33,16 +33,15 @@ void writePathsToResourcesInSettings(const QString pathToResources) {
   settings::writeSettings({
     {settings::keys::ELEMENTDATA_FILE, settings::GLOBAL_ELEMENTDATA_FILE},
 #if defined(Q_OS_LINUX)
-        {settings::keys::TONTO_EXECUTABLE,
-         settings::GLOBAL_TONTO_PATH + settings::GLOBAL_TONTO_EXECUTABLE},
+        {settings::keys::OCC_EXECUTABLE,
+         settings::GLOBAL_OCC_PATH + settings::GLOBAL_OCC_EXECUTABLE},
 #else
-        {settings::keys::TONTO_EXECUTABLE,
-         pathToResources + settings::GLOBAL_TONTO_EXECUTABLE},
+        {settings::keys::OCC_EXECUTABLE,
+         pathToResources + settings::GLOBAL_OCC_EXECUTABLE},
 #endif
-        {settings::keys::TONTO_BASIS_DIRECTORY,
+        {settings::keys::OCC_DATA_DIRECTORY,
          pathToResources +
-             settings::GLOBAL_TONTO_BASIS_DIRECTORY}, // location of Tonto
-                                                      // basis sets
+             settings::GLOBAL_OCC_DATA_DIRECTORY}, // location of occ share
   });
 }
 

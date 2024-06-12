@@ -58,11 +58,12 @@ void FingerprintWindow::createOptionsDockWidget() {
 }
 
 void FingerprintWindow::show() {
-  fingerprintPlot->setCrystalAndSurface(m_scene->crystal(),
-                                        m_scene->currentSurface());
-  if (m_scene->crystal() != nullptr) {
-    fingerprintOptions->setElementList(
-        m_scene->crystal()->listOfElementSymbols());
+  Mesh * mesh{nullptr};
+  fingerprintPlot->setMesh(mesh);
+
+  auto * structure = qobject_cast<ChemicalStructure *>(mesh->parent());
+  if (structure != nullptr) {
+    fingerprintOptions->setElementList(structure->uniqueElementSymbols());
   }
   fingerprintPlot->updateFingerprintPlot();
   QWidget::show();
@@ -76,7 +77,8 @@ void FingerprintWindow::setScene(Scene *scene) {
 void FingerprintWindow::resetCrystal() { setScene(nullptr); }
 
 void FingerprintWindow::resetSurfaceFeatures() {
-  m_scene->resetSurfaceFeatures();
+  // TODO
+  //m_scene->resetSurfaceFeatures();
   emit surfaceFeatureChanged();
 }
 
@@ -95,10 +97,8 @@ void FingerprintWindow::setTitle(Scene *scene) {
   if (scene == nullptr)
     return;
   QString name = scene->title();
-  Surface *surface = scene->currentSurface();
-  QString surfaceDescription =
-      (surface) ? surface->surfaceDescription() : "No Surface Available";
-
+  // TODO get proper surface description
+  QString surfaceDescription = "Surface description";
   setWindowTitle(name + " [ " + surfaceDescription + " ]");
 }
 

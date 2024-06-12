@@ -34,24 +34,20 @@ const QString GLOBAL_ELEMENTDATA_FILE = ":/resources/elementdata.json";
 
 // Tonto
 #if defined(Q_OS_LINUX)
-const QString GLOBAL_TONTO_PATH = "/usr/bin/";
-const QString GLOBAL_TONTO_EXECUTABLE = "tonto"; // linux
+const QString GLOBAL_OCC_PATH = "/usr/bin/";
+const QString GLOBAL_OCC_EXECUTABLE = "occ"; // linux
 #elif defined(Q_OS_WIN)
-const QString GLOBAL_TONTO_EXECUTABLE = "tonto.exe"; // Windows
+const QString GLOBAL_OCC_EXECUTABLE = "occ.exe"; // Windows
 #elif defined(Q_OS_MACOS)
-const QString GLOBAL_TONTO_EXECUTABLE = "tonto"; // MacOS
+const QString GLOBAL_OCC_EXECUTABLE = "occ"; // MacOS
 #endif
-const QString GLOBAL_TONTO_BASIS_DIRECTORY = "basis_sets";
+const QString GLOBAL_OCC_DATA_DIRECTORY = "share";
 
 const bool GLOBAL_DEPTH_FOG_ENABLED = false;
 const float GLOBAL_DEPTH_FOG_DENSITY = 10.0f;
 const float GLOBAL_DEPTH_FOG_OFFSET = 0.1f;
 
 namespace keys {
-const QString LICENCE_USER_NAME = LICENCE_GROUP + "userName";
-const QString LICENCE_CODE = LICENCE_GROUP + "code";
-
-const QString USE_OCC_NOT_TONTO = "useOccNotTonto";
 
 const QString PREFERRED_WAVEFUNCTION_SOURCE = "preferredWavefunctionSource";
 
@@ -72,7 +68,7 @@ const QString PSI4_EXECUTABLE = PSI4_GROUP + "/executablePath";
 // Occ
 const QString OCC_GROUP = "occ";
 const QString OCC_EXECUTABLE = OCC_GROUP + "/executablePath";
-const QString OCC_BASIS_DIRECTORY = OCC_GROUP + "/basisSetDirectory";
+const QString OCC_DATA_DIRECTORY = OCC_GROUP + "/basisSetDirectory";
 const QString OCC_NTHREADS = OCC_GROUP + "/numThreads";
 
 // Orca
@@ -84,23 +80,11 @@ const QString ORCA_NTHREADS = ORCA_GROUP + "/numProcs";
 const QString XTB_GROUP = "xtb";
 const QString XTB_EXECUTABLE = XTB_GROUP + "/executablePath";
 
-// Tonto
-const QString TONTO_GROUP = "tonto/";
-const QString TONTO_EXECUTABLE = TONTO_GROUP + "executable";
-const QString TONTO_USER_EXECUTABLE = TONTO_GROUP + "userExecutable";
-const QString TONTO_BASIS_DIRECTORY = TONTO_GROUP + "basisDirectory";
-const QString TONTO_PATH = TONTO_GROUP + "path";
-
-const QString DISABLE_XH_NORMALIZATION = TONTO_GROUP + "disableXHNormalisation";
-const QString CH_BOND_LENGTH = TONTO_GROUP + "CHBondLength";
-const QString NH_BOND_LENGTH = TONTO_GROUP + "NHBondLength";
-const QString OH_BOND_LENGTH = TONTO_GROUP + "OHBondLength";
-const QString BH_BOND_LENGTH = TONTO_GROUP + "BHBondLength";
-const QString USE_CLEMENTI = TONTO_GROUP + "useClementiBasisset";
-
-// Other Programs
-const QString PROGRAMS_GROUP = "programs/";
-const QString DFTD3_EXECUTABLE = PROGRAMS_GROUP + "dftd3_executable";
+const QString XH_NORMALIZATION = "XHNormalization";
+const QString CH_BOND_LENGTH = "CHBondLength";
+const QString NH_BOND_LENGTH = "NHBondLength";
+const QString OH_BOND_LENGTH = "OHBondLength";
+const QString BH_BOND_LENGTH = "BHBondLength";
 
 // CrystalExplorer
 const QString EXECUTABLE = "executable";
@@ -114,7 +98,6 @@ const QString NONE_PROPERTY_COLOR = "nonePropertyColor";
 const QString ATOM_LABEL_COLOR = "atomLabelColor";
 const QString BOND_THICKNESS = "bondThickness";
 const QString CONTACT_LINE_THICKNESS = "contactLineThickness";
-const QString USE_SBF_INTERFACE = "useSBFFilesForSurfaceGeneration";
 const QString USE_JMOL_COLORS = "useJmolColors";
 
 const QString RESET_ELEMENTS_ELEMENTDATATXTFILE =
@@ -218,4 +201,3 @@ void writeAllDefaultSettings(bool overwrite = false);
 
 QString filePath();
 } // namespace settings
-#define USE_SBF

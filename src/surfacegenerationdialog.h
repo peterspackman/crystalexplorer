@@ -6,13 +6,8 @@
 #include <vector>
 
 #include "generic_atom_index.h"
-#include "atomid.h"
-#include "jobparameters.h"
 #include "molecular_wavefunction.h"
-#include "surfacedescription.h"
-#include "transformablewavefunction.h"
 #include "ui_surfacegenerationdialog.h"
-#include "wavefunction.h"
 #include "isosurface_parameters.h"
 #include "wavefunction_parameters.h"
 

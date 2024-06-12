@@ -4,50 +4,57 @@
 #include <QVector>
 #include <QWidget>
 
-#include "deprecatedcrystal.h"
 #include "qeigen.h"
-#include "surface.h"
+#include "meshinstance.h"
+#include "colormap.h"
 
-enum PlotType { dPlot, dnormPlot };
-// const QStringList plotTypeLabels = QStringList() << "di vs de" << "dnormi vs
-// dnorme"; // Used by the fingerprint options widget
-const QStringList plotTypeLabels =
-    QStringList() << "dᵢ vs. dₑ"; // Used by the fingerprint options widget
+const QString plotTypeLabel = "dᵢ vs. dₑ"; // Used by the fingerprint options widget
 
 // dPlot - plots property 1 on x-axis and property 2 on y-axis i.e. di vs de
 // dnormPlot - plots property 3 on x-axis and property 4 on y-axis i.e. dnormi
 // vs dnorme
-const QVector<int> xPropertyIndices = QVector<int>() << 1 << 3;
-const QVector<int> yPropertyIndices = QVector<int>() << 2 << 4;
 
-enum PlotRange { standardPlot, translatedPlot, expandedPlot };
-const QStringList plotRangeLabels =
-    QStringList() << "Standard"
-                  << "Translated"
-                  << "Expanded"; // Used by the fingerprint options widget
+struct FingerprintPlotSettings {
+    QString label{"Standard"};
+    double rangeMinimum{0.4};
+    double rangeMaximum{2.6};
+    double binSize{0.01};
+    double gridSize{0.2};
+    int pixelsPerBin{2};
+};
 
-// Parameters for di/de plot
-const QVector<double> dPlotMinForRange = QVector<double>() << 0.4 << 0.8 << 0.4;
-const QVector<double> dPlotMaxForRange = QVector<double>() << 2.6 << 3.0 << 3.0;
-const QVector<double> dPlotBinSizeForRange = QVector<double>()
-                                             << 0.01 << 0.01 << 0.01;
-const QVector<double> dPlotGridSizeForRange = QVector<double>()
-                                              << 0.2 << 0.2 << 0.2;
+enum class FingerprintPlotRange { Standard, Translated, Expanded};
 
-// Parameters for dnormi/dnorme plot
-const QVector<double> dnormPlotMinForRange = QVector<double>()
-                                             << -0.4 << -0.2 << -0.4;
-const QVector<double> dnormPlotMaxForRange = QVector<double>()
-                                             << 0.8 << 1.0 << 1.0;
-const QVector<double> dnormPlotBinSizeForRange = QVector<double>()
-                                                 << 0.005 << 0.005 << 0.005;
-const QVector<double> dnormPlotGridSizeForRange = QVector<double>()
-                                                  << 0.1 << 0.1 << 0.1;
 
-const PlotType DEFAULT_PLOT_TYPE = dPlot;
-const PlotRange DEFAULT_PLOT_RANGE = standardPlot;
+inline FingerprintPlotSettings plotRangeSettings(FingerprintPlotRange r) {
+    switch(r) {
+        case FingerprintPlotRange::Standard: 
+            return FingerprintPlotSettings{
+                "Standard",
+                0.4,
+                2.6,
+                0.01,
+                0.2
+            };
+        case FingerprintPlotRange::Translated:
+            return FingerprintPlotSettings{
+                "Translated",
+                0.8,
+                3.0,
+                0.01,
+                0.2
+            };
+        case FingerprintPlotRange::Expanded:
+            return FingerprintPlotSettings{
+                "Expanded",
+                0.4,
+                3.0,
+                0.01,
+                0.2
+            };
+    }
+}
 
-const int PIXELS_PER_BIN = 2;
 
 const int UNDEFINED_BIN_INDEX = -1;
 
@@ -94,14 +101,17 @@ const int AXIS_SCALE_OFFSET = 30;
 const int AXIS_SCALE_TEXT_OFFSET = 2;
 
 // Fingerprint filtering
-enum FingerprintFilterMode { noFilter, elementFilter, selectionFilter };
-const QStringList fingerprintFilterLabels = QStringList()
-                                            << "None"
-                                            << "By Element"
-                                            << "By Selection [Graphics Window]";
-const QVector<FingerprintFilterMode> requestableFilters =
-    QVector<FingerprintFilterMode>()
-    << noFilter << elementFilter; // << selectionFilter;
+enum class FingerprintFilterMode {None, Element};
+
+inline const QStringList fingerprintFilterLabels{
+    "None",
+    "By Element",
+};
+
+inline const QVector<FingerprintFilterMode> requestableFilters{
+    FingerprintFilterMode::None,
+    FingerprintFilterMode::Element
+};
 
 const QString NO_FINGERPRINT_MESSAGE = "Fingerprint Plot Unavailable";
 
@@ -159,14 +169,13 @@ class FingerprintPlot : public QWidget {
 
 public:
   FingerprintPlot(QWidget *parent = 0);
-  void setCrystalAndSurface(DeprecatedCrystal *, Surface *);
+  void setMesh(Mesh *);
   void updateFingerprintPlot();
   QVector<double> filteredAreas(QString, QStringList);
 
 public slots:
   void updateFilter(FingerprintFilterMode, bool, bool, bool, QString, QString);
-  void updatePlotType(PlotType);
-  void updatePlotRange(PlotRange);
+  void updatePlotRange(FingerprintPlotRange);
   void saveFingerprint(QString);
 
 signals:
@@ -182,8 +191,7 @@ private:
   void init();
   void resetFilter();
   void setFilter(FingerprintFilterMode, bool, bool, bool, QString, QString);
-  void setPlotType(PlotType);
-  void setRange(PlotRange);
+  void setRange(FingerprintPlotRange);
   void setPropertiesToPlot();
   void setAxisLabels();
   void initBinnedAreas();
@@ -201,7 +209,6 @@ private:
   int tolerant_yBinIndex(double);
   bool includeArea(int);
   bool includeAreaFilteredByElement(int);
-  bool includeAreaFilteredBySelection(int);
   void drawGrid(QPainter *);
   void drawGridlines(QPainter *painter);
   void drawScaleLabels(QPainter *painter);
@@ -268,39 +275,36 @@ private:
   QSize graphSize() const;
   QSize gridSeparation() const;
 
-  PlotType _plotType;
-  PlotRange _range;
+  FingerprintPlotRange m_range{FingerprintPlotRange::Standard};
   QPixmap plotPixmap;
-  DeprecatedCrystal *_crystal;
-  Surface *_surface;
-  int _xPropertyIndex;
-  int _yPropertyIndex;
-  QString _xAxisLabel;
-  QString _yAxisLabel;
-  QVector<double> _xPropertyAtFace;
-  QVector<double> _yPropertyAtFace;
-  double _xPropertyMin;
-  double _xPropertyMax;
-  double _yPropertyMin;
-  double _yPropertyMax;
-  MatrixXq binnedAreas;
-  Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> binUsed;
-  double _totalFilteredArea;
+  Mesh * m_mesh{nullptr};
+  QString m_xAxisLabel{"di"};
+  QString m_yAxisLabel{"de"};
 
-  // Plot parameters; these depend on PlotType
-  QVector<double> _plotMinForRange;
-  QVector<double> _plotMaxForRange;
-  QVector<double> _plotBinSizeForRange;
-  QVector<double> _plotGridSizeForRange;
+  Eigen::VectorXd m_x, m_xFace;
+  Eigen::VectorXd m_y, m_yFace;
+  double m_xmin{0.0}, m_xmax{0.0};
+  double m_ymin{0.0}, m_ymax{0.0};
+
+  double m_xFaceMin{0.0};
+  double m_xFaceMax{0.0};
+  double m_yFaceMin{0.0};
+  double m_yFaceMax{0.0};
+
+  Eigen::MatrixXd binnedAreas;
+  Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> binUsed;
+  double m_totalFilteredArea{0.0};
+
+
+  FingerprintPlotSettings m_settings;
 
   // Filter options
-  FingerprintFilterMode _filterMode;
-  bool _includeReciprocalContacts;
-  bool _filterInsideElement;
-  bool _filterOutsideElement;
-  QString _insideFilterElementSymbol;
-  QString _outsideFilterElementSymbol;
+  FingerprintFilterMode m_filterMode{FingerprintFilterMode::None};
+  bool m_includeReciprocalContacts{false};
+  bool m_filterInsideElement{false};
+  bool m_filterOutsideElement{false};
+  QString m_insideFilterElementSymbol{"H"};
+  QString m_outsideFilterElementSymbol{"H"};
 
-  ColorScheme m_colorScheme{ColorScheme::RedGreenBlue};
-  bool _plotTypeChanged;
+  ColorMapName m_colorScheme{ColorMapName::CE_rgb};
 };

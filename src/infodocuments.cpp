@@ -1,20 +1,21 @@
 #include "infodocuments.h"
-#include "energydescription.h" // For description(EnergyModel)
+#include "globals.h"
+#include "molecular_wavefunction.h" // For levelOfTheoryString
 #include "settings.h"
-#include "wavefunction.h" // For levelOfTheoryString
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General Crystal Info
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+inline const char * INFO_HORIZONTAL_RULE = "----------------------------------------------------------------------\n";
 
 void InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(
     QTextDocument *document, Scene *scene) {
-  ChemicalStructure * structure = scene->chemicalStructure();
+  ChemicalStructure *structure = scene->chemicalStructure();
   if (!structure)
     return;
 
-  CrystalStructure * crystal = qobject_cast<CrystalStructure *>(structure);
-  if(!crystal) {
+  CrystalStructure *crystal = qobject_cast<CrystalStructure *>(structure);
+  if (!crystal) {
     qDebug() << "No crystal for info";
     return;
   }
@@ -73,48 +74,52 @@ void InfoDocuments::insertAtomicCoordinatesIntoTextDocument(
 
 void InfoDocuments::insertAtomicCoordinatesWithAtomDescription(
     QTextCursor cursor, Scene *scene, AtomDescription AtomDescription) {
-  DeprecatedCrystal *crystal = scene->crystal();
-  if (!crystal)
-    return;
-  if (crystal->hasSelectedAtoms()) {
-    QVector<Atom> atoms = crystal->atoms();
-    auto partition_point =
-        std::partition(atoms.begin(), atoms.end(),
-                       [](const Atom &a) { return a.isSelected(); });
-    QVector<Atom> selectedAtoms(partition_point, atoms.end());
-    atoms.erase(partition_point, atoms.end());
-    insertAtomicCoordinatesSection(cursor, "Selected Atoms", selectedAtoms,
-                                   AtomDescription);
-    insertAtomicCoordinatesSection(cursor, "Unselected Atoms", atoms,
-                                   AtomDescription);
-  }
+  qDebug() << "insertAtomicCoordinatesWithAtomDescription";
+  /*
+DeprecatedCrystal *crystal = scene->crystal();
+if (!crystal)
+  return;
+if (crystal->hasSelectedAtoms()) {
+  QVector<Atom> atoms = crystal->atoms();
+  auto partition_point =
+      std::partition(atoms.begin(), atoms.end(),
+                     [](const Atom &a) { return a.isSelected(); });
+  QVector<Atom> selectedAtoms(partition_point, atoms.end());
+  atoms.erase(partition_point, atoms.end());
+  insertAtomicCoordinatesSection(cursor, "Selected Atoms", selectedAtoms,
+                                 AtomDescription);
+  insertAtomicCoordinatesSection(cursor, "Unselected Atoms", atoms,
+                                 AtomDescription);
+}
 
-  int numFragments = crystal->numberOfFragments();
-  QString header = QString("All Atoms [%1 molecule%2]")
-                       .arg(numFragments)
-                       .arg(numFragments > 1 ? "s" : "");
-  insertAtomicCoordinatesHeader(cursor, header, crystal->atoms().size(),
-                                AtomDescription);
-  foreach (int fragIndex, crystal->fragmentIndices()) {
-    SymopId symopId = crystal->symopIdForFragment(fragIndex);
-    if (symopId != NOSYMOP) {
-      QString symopString = crystal->spaceGroup().symopAsString(symopId);
-      cursor.insertText("[" + symopString + "]\n");
-    }
-    insertAtomicCoordinates(cursor, crystal->atomsForFragment(fragIndex),
-                            AtomDescription);
+int numFragments = crystal->numberOfFragments();
+QString header = QString("All Atoms [%1 molecule%2]")
+                     .arg(numFragments)
+                     .arg(numFragments > 1 ? "s" : "");
+insertAtomicCoordinatesHeader(cursor, header, crystal->atoms().size(),
+                              AtomDescription);
+foreach (int fragIndex, crystal->fragmentIndices()) {
+  SymopId symopId = crystal->symopIdForFragment(fragIndex);
+  if (symopId != NOSYMOP) {
+    QString symopString = crystal->spaceGroup().symopAsString(symopId);
+    cursor.insertText("[" + symopString + "]\n");
   }
+  insertAtomicCoordinates(cursor, crystal->atomsForFragment(fragIndex),
+                          AtomDescription);
+}
+*/
 }
 
 void InfoDocuments::insertAtomicCoordinatesSection(
-    QTextCursor cursor, QString title, const QVector<Atom> &atoms,
+    QTextCursor cursor, QString title, ChemicalStructure *structure,
+    const std::vector<GenericAtomIndex> &atoms,
     AtomDescription AtomDescription) {
   if (atoms.size() == 0) {
     return;
   }
 
   insertAtomicCoordinatesHeader(cursor, title, atoms.size(), AtomDescription);
-  insertAtomicCoordinates(cursor, atoms, AtomDescription);
+  insertAtomicCoordinates(cursor, structure, atoms, AtomDescription);
 }
 
 void InfoDocuments::insertAtomicCoordinatesHeader(
@@ -143,13 +148,17 @@ void InfoDocuments::insertAtomicCoordinatesHeader(
   cursor.insertText(INFO_HORIZONTAL_RULE);
 }
 
-void InfoDocuments::insertAtomicCoordinates(QTextCursor cursor,
-                                            const QVector<Atom> &atoms,
-                                            AtomDescription AtomDescription) {
+void InfoDocuments::insertAtomicCoordinates(
+    QTextCursor cursor, ChemicalStructure *structure,
+    const std::vector<GenericAtomIndex> &atoms,
+    AtomDescription AtomDescription) {
+  qDebug() << "insertAtomicCoordinates";
+  /*
   for (const auto &atom : atoms) {
     cursor.insertText(atom.description(AtomDescription) + "\n");
   }
   cursor.insertText("\n");
+  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,6 +169,8 @@ void InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(
     QTextDocument *document, Scene *scene, FingerprintBreakdown breakdown) {
   Q_ASSERT(scene);
 
+  // TODO surface info text
+  /*
   QTextCursor cursor = QTextCursor(document);
   cursor.beginEditBlock();
   Surface *surface = scene->currentSurface();
@@ -184,10 +195,12 @@ void InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(
     insertVoidDomainInformation(surface, cursor);
   }
   cursor.endEditBlock();
+  */
 }
 
-void InfoDocuments::insertGeneralSurfaceInformation(Surface *surface,
+void InfoDocuments::insertGeneralSurfaceInformation(Mesh *surface,
                                                     QTextCursor cursor) {
+  /*
   const QString TITLE = "General Surface Information";
 
   cursor.insertText(INFO_HORIZONTAL_RULE);
@@ -220,10 +233,12 @@ void InfoDocuments::insertGeneralSurfaceInformation(Surface *surface,
   insertWavefunctionInformation(surface, cursor);
 
   cursor.insertText("\n");
+  */
 }
 
-void InfoDocuments::insertWavefunctionInformation(Surface *surface,
+void InfoDocuments::insertWavefunctionInformation(Mesh *surface,
                                                   QTextCursor cursor) {
+    /*
   if (surface->jobParameters().program == ExternalProgram::None) {
     return;
   }
@@ -251,10 +266,12 @@ void InfoDocuments::insertWavefunctionInformation(Surface *surface,
   cursor.insertText(QString("Source\t" + source + "\n"));
   cursor.insertText(QString("Charge\t%1\n").arg(jobParams.charge));
   cursor.insertText(QString("Multiplicity\t%1\n").arg(jobParams.multiplicity));
+  */
 }
 
-void InfoDocuments::insertSurfacePropertyInformation(Surface *surface,
+void InfoDocuments::insertSurfacePropertyInformation(Mesh *surface,
                                                      QTextCursor cursor) {
+  /*
   QVector<IsosurfaceDetails::Type> surfacesToSkip =
       QVector<IsosurfaceDetails::Type>()
       << IsosurfaceDetails::Type::CrystalVoid;
@@ -293,6 +310,7 @@ void InfoDocuments::insertSurfacePropertyInformation(Surface *surface,
                           .arg(property->units()));
   }
   cursor.insertText("\n");
+  */
 }
 
 void InfoDocuments::insertFingerprintInformation(
@@ -346,8 +364,9 @@ void InfoDocuments::insertFingerprintInformation(
   cursor.insertText("\n");
 }
 
-void InfoDocuments::insertFragmentPatchInformation(Surface *surface,
+void InfoDocuments::insertFragmentPatchInformation(Mesh *surface,
                                                    QTextCursor cursor) {
+    /*
   QVector<double> areas = surface->areasOfFragmentPatches();
   QVector<QColor> colors = surface->colorsOfFragmentPatches();
   Q_ASSERT(areas.size() == colors.size());
@@ -391,10 +410,12 @@ void InfoDocuments::insertFragmentPatchInformation(Surface *surface,
     }
     row++;
   }
+  */
 }
 
 void InfoDocuments::insertSupplementarySurfacePropertyInformation(
-    Surface *surface, QTextCursor cursor) {
+    Mesh *surface, QTextCursor cursor) {
+    /*
   QVector<IsosurfaceDetails::Type> surfacesToSkip =
       QVector<IsosurfaceDetails::Type>()
       << IsosurfaceDetails::Type::CrystalVoid;
@@ -435,10 +456,12 @@ void InfoDocuments::insertSupplementarySurfacePropertyInformation(
     cursor.insertText(valueStrings.join("\t") + "\n");
   }
   cursor.insertText("\n");
+  */
 }
 
-void InfoDocuments::insertVoidDomainInformation(Surface *surface,
+void InfoDocuments::insertVoidDomainInformation(Mesh *surface,
                                                 QTextCursor cursor) {
+    /*
   // Get values for table
   QVector<QColor> domainColors = surface->domainColors();
   QVector<double> domainVolumes = surface->domainVolumes();
@@ -478,6 +501,7 @@ void InfoDocuments::insertVoidDomainInformation(Surface *surface,
   }
   cursor.movePosition(QTextCursor::End);
   cursor.insertText("\n\n");
+  */
 }
 
 void InfoDocuments::insertDomainAtTableRow(int row, QTextTable *table,
@@ -511,13 +535,14 @@ void InfoDocuments::insertDomainAtTableRow(int row, QTextTable *table,
 
 void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
     QTextDocument *document, Scene *scene) {
-  ChemicalStructure *structure= scene->chemicalStructure();
+  ChemicalStructure *structure = scene->chemicalStructure();
 
-  if (!structure) return;
+  if (!structure)
+    return;
 
   QTextCursor cursor = QTextCursor(document);
   qDebug() << "Made cursor";
-  auto * interactions = structure->interactions();
+  auto *interactions = structure->interactions();
 
   qDebug() << "have interactions";
 
@@ -525,8 +550,6 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
     // These must be here for performance!
     cursor.beginEditBlock();
     insertInteractionEnergiesGroupedByPair(interactions, cursor);
-    //    insertLatticeEnergy(crystal, cursor);
-    // insertInteractionEnergiesGroupedByWavefunction(scene, cursor);
     insertEnergyModelScalingInfo(cursor);
     cursor.endEditBlock();
   } else {
@@ -535,6 +558,7 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
 }
 
 void InfoDocuments::insertEnergyModelScalingInfo(QTextCursor cursor) {
+    /*
   const int SF_PRECISION = 3; // Precision of scale factors in table
   const int SF_WIDTH = 6;     // Field width of scale factors in table
 
@@ -584,6 +608,7 @@ void InfoDocuments::insertEnergyModelScalingInfo(QTextCursor cursor) {
   }
 
   cursor.movePosition(QTextCursor::End);
+  */
 }
 
 void InfoDocuments::insertEnergyScalingPreamble(QTextCursor cursor) {
@@ -624,241 +649,130 @@ void InfoDocuments::insertEnergyScalingPreamble(QTextCursor cursor) {
 }
 
 QList<QString> getOrderedComponents(QSet<QString> uniqueComponents) {
-    QList<QString> knownComponentsOrder;
-    knownComponentsOrder << "coulomb" << "repulsion" << "exchange" << "dispersion";
+  QList<QString> knownComponentsOrder;
+  knownComponentsOrder << "coulomb"
+                       << "repulsion"
+                       << "exchange"
+                       << "dispersion";
 
-    QList<QString> sortedComponents;
+  QList<QString> sortedComponents;
 
-    // Add known components in the desired order
-    for (const QString& component : knownComponentsOrder) {
-	if (uniqueComponents.contains(component)) {
-	    sortedComponents << component;
-	    uniqueComponents.remove(component);
-	}
+  // Add known components in the desired order
+  for (const QString &component : knownComponentsOrder) {
+    if (uniqueComponents.contains(component)) {
+      sortedComponents << component;
+      uniqueComponents.remove(component);
     }
-
-    // Add remaining components (excluding "total") in ascending order
-    QList<QString> remainingComponents = uniqueComponents.values();
-    remainingComponents.removeOne("total");
-    std::sort(remainingComponents.begin(), remainingComponents.end());
-    sortedComponents << remainingComponents;
-
-    // Add "total" component at the end if it exists
-    if (uniqueComponents.contains("total")) {
-	sortedComponents << "total";
-    }
-    return sortedComponents;
-}
-
-void InfoDocuments::insertInteractionEnergiesGroupedByPair(PairInteractionResults *results,
-                                                           QTextCursor cursor) {
-    qDebug() << "Cursor" << &cursor;
-    const int eprec = settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt();
-    const int ewidth = 6;
-
-    // Insert header
-    cursor.insertHtml("<h1>Interaction Energies</h1>");
-    insertEnergyScalingPreamble(cursor);
-
-    // Get unique components from the results
-    QSet<QString> uniqueComponents;
-    for (const auto &result : results->pairInteractionResults()) {
-        for (const auto &component : result->components()) {
-            uniqueComponents.insert(component.first);
-        }
-    }
-
-    QList<QString> sortedComponents = getOrderedComponents(uniqueComponents);
-
-    // Define table header
-    QStringList tableHeader{"Interaction Model"};
-    tableHeader.append(sortedComponents);
-    int numHeaderLines = 1;
-    int numLines = numHeaderLines + results->pairInteractionResults().size();
-
-    // Create table
-    QTextTable *table = createTable(cursor, numLines, tableHeader.size());
-
-    // Insert Table Header
-    insertTableHeader(table, cursor, tableHeader);
-
-    int row = 1;
-
-    for (const auto &result : results->pairInteractionResults()) {
-        QString interactionModel = result->interactionModel();
-
-        // Insert interaction model into the first cell
-        QTextTableCell interactionModelCell = table->cellAt(row, 0);
-        QTextCursor interactionModelCursor = interactionModelCell.firstCursorPosition();
-        interactionModelCursor.insertText(interactionModel);
-
-        // Insert component values into the corresponding cells
-        int column = 1;
-        for (const QString &component : sortedComponents) {
-            QTextTableCell componentCell = table->cellAt(row, column);
-            QTextCursor componentCursor = componentCell.firstCursorPosition();
-
-            bool found = false;
-            for (const auto &pair : result->components()) {
-                if (pair.first == component) {
-		    insertRightAlignedCellValue(table, cursor, row, column,
-						QString("%1").arg(pair.second, 6, 'f', eprec));
-
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-		insertRightAlignedCellValue(table, cursor, row, column, "-");
-            }
-
-            column++;
-        }
-
-        row++;
-    }
-
-    cursor.movePosition(QTextCursor::End);
-    cursor.insertText("\n\n");
-}
-
-void InfoDocuments::insertInteractionEnergiesGroupedByWavefunction(
-    Scene *scene, QTextCursor cursor) {
-  DeprecatedCrystal *crystal = scene->crystal();
-  if (!crystal)
-    return;
-  if (crystal->sameTheoryDifferentEnergies().size() < 2) {
-    return; // don't continue if there isn't more than one level of theory
   }
+
+  // Add remaining components (excluding "total") in ascending order
+  QList<QString> remainingComponents = uniqueComponents.values();
+  remainingComponents.removeOne("total");
+  std::sort(remainingComponents.begin(), remainingComponents.end());
+  sortedComponents << remainingComponents;
+
+  // Add "total" component at the end if it exists
+  if (uniqueComponents.contains("total")) {
+    sortedComponents << "total";
+  }
+  return sortedComponents;
+}
+
+void InfoDocuments::insertInteractionEnergiesGroupedByPair(
+    PairInteractionResults *results, QTextCursor cursor) {
+  qDebug() << "Cursor" << &cursor;
+  const int eprec =
+      settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt();
 
   // Insert header
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText(
-      "Interaction Energies Grouped by Electron Density (kJ/mol)\n");
-  cursor.insertText(
-      "R is the distance between molecular centers of mass (Å).\n\n");
+  cursor.insertHtml("<h1>Interaction Energies</h1>");
   insertEnergyScalingPreamble(cursor);
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText("\n");
 
-  QVector<QColor> energyColors = crystal->interactionEnergyColors();
-  QVector<SymopId> energySymops = crystal->interactionEnergySymops();
-  QVector<double> energyDistances = crystal->interactionEnergyDistances();
-  QMap<int, int> fragmentCounts = crystal->interactionEnergyFragmentCount();
-
-  QVector<EnergyType> benchmarkedEnergyComponents{
-      EnergyType::CoulombEnergy, EnergyType::PolarizationEnergy,
-      EnergyType::DispersionEnergy, EnergyType::RepulsionEnergy,
-      EnergyType::TotalEnergy};
-  QVector<EnergyType> unbenchmarkedEnergyComponents =
-      benchmarkedEnergyComponents;
-  unbenchmarkedEnergyComponents.removeAll(EnergyType::TotalEnergy);
-
-  // Insert tables
-  const auto &energies = crystal->interactionEnergies();
-  for (const auto &energyIndices : crystal->sameTheoryDifferentEnergies()) {
-    InteractionEnergy energy = energies[energyIndices[0]];
-    cursor.insertText(QString("[%1]\n").arg(Wavefunction::levelOfTheoryString(
-        energy.second.theory, energy.second.basisset)));
-
-    QVector<EnergyType> energyComponents = crystal->energyIsBenchmarked(energy)
-                                               ? benchmarkedEnergyComponents
-                                               : unbenchmarkedEnergyComponents;
-
-    // Define table header
-    QStringList tableHeader{"", "N", "Symop", "R"};
-    foreach (EnergyType energyComponent, energyComponents) {
-      tableHeader << energyNames[energyComponent];
+  // Get unique components from the results
+  QSet<QString> uniqueComponents;
+  for (const auto &result : results->pairInteractionResults()) {
+    for (const auto &component : result->components()) {
+      uniqueComponents.insert(component.first);
     }
-    int numHeaderLines = 1;
+  }
 
-    // Create table
-    int numRows = numHeaderLines + energyIndices.size();
-    QTextTable *table = createTable(cursor, numRows, tableHeader.size());
+  QList<QString> sortedComponents = getOrderedComponents(uniqueComponents);
 
-    // Insert table header
-    insertTableHeader(table, cursor, tableHeader);
+  // Define table header
+  QStringList tableHeader{"Interaction Model"};
+  tableHeader.append(sortedComponents);
+  int numHeaderLines = 1;
+  int numLines = numHeaderLines + results->pairInteractionResults().size();
 
-    // Insert rows of data
-    int row = 1;
-    for (int i = 0; i < energyIndices.size(); ++i) {
-      int energyIndex = energyIndices[i];
-      InteractionEnergy energy = energies[energyIndex];
-      QColor energyColor = energyColors[energyIndex];
-      QString symopString =
-          crystal->spaceGroup().symopAsString(energySymops[energyIndex]);
-      double distance = energyDistances[energyIndex];
-      int n = fragmentCounts[energyIndex];
-      insertEnergyAtTableRow(row, table, cursor, energy, energyComponents,
-                             energyColor, symopString, n, distance, true);
-      row++;
+  // Create table
+  QTextTable *table = createTable(cursor, numLines, tableHeader.size());
+
+  // Insert Table Header
+  insertTableHeader(table, cursor, tableHeader);
+
+  int row = 1;
+
+  for (const auto &result : results->pairInteractionResults()) {
+    QString interactionModel = result->interactionModel();
+
+    // Insert interaction model into the first cell
+    QTextTableCell interactionModelCell = table->cellAt(row, 0);
+    QTextCursor interactionModelCursor =
+        interactionModelCell.firstCursorPosition();
+    interactionModelCursor.insertText(interactionModel);
+
+    // Insert component values into the corresponding cells
+    int column = 1;
+    for (const QString &component : sortedComponents) {
+      QTextTableCell componentCell = table->cellAt(row, column);
+      QTextCursor componentCursor = componentCell.firstCursorPosition();
+
+      bool found = false;
+      for (const auto &pair : result->components()) {
+        if (pair.first == component) {
+          insertRightAlignedCellValue(
+              table, cursor, row, column,
+              QString("%1").arg(pair.second, 6, 'f', eprec));
+
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        insertRightAlignedCellValue(table, cursor, row, column, "-");
+      }
+
+      column++;
     }
-    cursor.movePosition(QTextCursor::End);
-    cursor.insertText("\n\n");
-  }
-}
 
-void InfoDocuments::insertEnergyAtTableRow(
-    int row, QTextTable *table, QTextCursor cursor, InteractionEnergy energy,
-    QVector<EnergyType> energyComponents, QColor energyColor,
-    QString symopString, int n, double distance, bool skipWavefunctionColumn) {
-  const int ENERGY_PRECISION =
-      settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt();
-  const int ENERGY_WIDTH = 6;
-
-  int column = 0;
-
-  insertColorBlock(table, cursor, row, column++, energyColor);
-  insertRightAlignedCellValue(table, cursor, row, column++,
-                              QString("%1").arg(n, 3));
-
-  cursor = table->cellAt(row, column++).firstCursorPosition();
-  if (symopString.isEmpty()) {
-    cursor.insertText("     ");
-  } else {
-    cursor.insertText(symopString);
+    row++;
   }
 
-  if (distance > 0.0) {
-    insertRightAlignedCellValue(table, cursor, row, column,
-                                QString("%1").arg(distance, 6, 'f', 2));
-  }
-  column++;
-
-  if (!skipWavefunctionColumn) {
-    cursor = table->cellAt(row, column++).firstCursorPosition();
-    cursor.insertText(Wavefunction::levelOfTheoryString(
-        energy.second.theory, energy.second.basisset));
-  }
-
-  foreach (EnergyType energyComponent, energyComponents) {
-    double energyValue = energy.first[energyComponent];
-    QString energyString =
-        QString("%1").arg(energyValue, ENERGY_WIDTH, 'f', ENERGY_PRECISION);
-
-    insertRightAlignedCellValue(table, cursor, row, column, energyString);
-    column++;
-  }
+  cursor.movePosition(QTextCursor::End);
+  cursor.insertText("\n\n");
 }
 
 void InfoDocuments::insertLatticeEnergy(Scene *scene, QTextCursor cursor) {
-  DeprecatedCrystal *crystal = scene->crystal();
-  if (!crystal)
-    return;
-  const auto theories = crystal->levelsOfTheoriesForLatticeEnergies();
-  const auto energies = crystal->latticeEnergies();
+  qDebug() << "insertLatticeEnergy";
+  /*
+DeprecatedCrystal *crystal = scene->crystal();
+if (!crystal)
+  return;
+const auto theories = crystal->levelsOfTheoriesForLatticeEnergies();
+const auto energies = crystal->latticeEnergies();
 
-  Q_ASSERT(theories.size() == energies.size());
+Q_ASSERT(theories.size() == energies.size());
 
-  for (int i = 0; i < theories.size(); i++) {
-    QString latticeEnergyLine =
-        QString("Estimated Lattice Energy [%1]:\t%2 kJ/mol\n")
-            .arg(theories[i])
-            .arg(energies[i]);
-    cursor.insertText(latticeEnergyLine);
-  }
-  cursor.insertText("\n\n");
+for (int i = 0; i < theories.size(); i++) {
+  QString latticeEnergyLine =
+      QString("Estimated Lattice Energy [%1]:\t%2 kJ/mol\n")
+          .arg(theories[i])
+          .arg(energies[i]);
+  cursor.insertText(latticeEnergyLine);
+}
+cursor.insertText("\n\n");
+  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

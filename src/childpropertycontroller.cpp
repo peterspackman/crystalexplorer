@@ -5,7 +5,6 @@
 #include <QLocale>
 
 #include "settings.h"
-#include "surfacedescription.h"
 
 ChildPropertyController::ChildPropertyController(QWidget *parent) : QWidget(parent),
     m_meshPropertyModel(new MeshPropertyModel(this)) {

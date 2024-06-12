@@ -10,7 +10,7 @@ void setButtonColor(QAbstractButton *colorButton, QColor color) {
 PlaneGenerationDialog::PlaneGenerationDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::PlaneGenerationDialog), m_color("red"),
       m_planesModel(new CrystalPlanesModel(this)),
-      m_colorDelegate(new ColorDelegate(this)) {
+      m_colorDelegate(new ColorDelegate(this)), m_spaceGroup(1) {
   ui->setupUi(this);
   setButtonColor(ui->colorButton, m_color);
   connect(ui->colorButton, &QAbstractButton::clicked, this,
@@ -62,14 +62,14 @@ void PlaneGenerationDialog::createSurfaceGeometryButtonClicked() {
 void PlaneGenerationDialog::addPlaneFromCurrentSettings() {
   CrystalPlane plane{{h(), k(), l()}, offset(), m_color};
   if (ui->symmetryEquivalentCheckBox->isChecked() &&
-      (m_spaceGroup.numberOfSymops() > 0)) {
-    Vector3q hklVec =
-        Vector3q{static_cast<double>(h()), static_cast<double>(k()),
+      (m_spaceGroup.symmetry_operations().size() > 0)) {
+    occ::Vec3 hklVec =
+        occ::Vec3{static_cast<double>(h()), static_cast<double>(k()),
                  static_cast<double>(l())};
     QSet<CrystalPlane> uniquePlanes;
     uniquePlanes.insert(plane);
-    for (int i = 0; i < m_spaceGroup.numberOfSymops(); i++) {
-      Vector3q candidate = m_spaceGroup.rotationMatrixForSymop(i) * hklVec;
+    for (const auto &symop: m_spaceGroup.symmetry_operations()) {
+      occ::Vec3 candidate = symop.rotation() * hklVec;
       CrystalPlane candidatePlane = plane;
       candidatePlane.hkl = {static_cast<int>(candidate(0)),
                             static_cast<int>(candidate(1)),
@@ -98,7 +98,7 @@ std::vector<CrystalPlane> PlaneGenerationDialog::planes() const {
   return result;
 }
 
-void PlaneGenerationDialog::setSpaceGroup(const SpaceGroup &sg) {
+void PlaneGenerationDialog::setSpaceGroup(const occ::crystal::SpaceGroup &sg) {
   m_spaceGroup = sg;
 }
 

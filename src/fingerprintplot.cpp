@@ -1,12 +1,16 @@
 #include "fingerprintplot.h"
 
-#include <QPen>
-#include <QStylePainter>
 #include <QInputDialog>
-#include <QRegularExpression>
 #include <QMessageBox>
+#include <QPen>
+#include <QRegularExpression>
+#include <QStylePainter>
 #include <QTime>
 #include <QtDebug>
+#include <QFile>
+#include <QFileInfo>
+#include <QMouseEvent>
+#include <QStack>
 
 #include "colorschemer.h"
 #include "settings.h"
@@ -15,16 +19,15 @@ FingerprintPlot::FingerprintPlot(QWidget *parent) : QWidget(parent) { init(); }
 
 void FingerprintPlot::init() {
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  _crystal = nullptr;
-  _surface = nullptr;
-  setRange(DEFAULT_PLOT_RANGE);
-  setPlotType(DEFAULT_PLOT_TYPE);
+  m_mesh = nullptr;
+  setRange(FingerprintPlotRange::Standard);
 
   resetFilter();
 }
 
 void FingerprintPlot::resetFilter() {
-  setFilter(noFilter, false, false, false, QString(), QString());
+  setFilter(FingerprintFilterMode::None, false, false, false, QString(),
+            QString());
 }
 
 void FingerprintPlot::setFilter(FingerprintFilterMode filterMode,
@@ -33,12 +36,12 @@ void FingerprintPlot::setFilter(FingerprintFilterMode filterMode,
                                 bool filterOutsideElement,
                                 QString insideFilterElementSymbol,
                                 QString outsideFilterElementSymbol) {
-  _filterMode = filterMode;
-  _includeReciprocalContacts = includeReciprocalContacts;
-  _filterInsideElement = filterInsideElement;
-  _filterOutsideElement = filterOutsideElement;
-  _insideFilterElementSymbol = insideFilterElementSymbol;
-  _outsideFilterElementSymbol = outsideFilterElementSymbol;
+  m_filterMode = filterMode;
+  m_includeReciprocalContacts = includeReciprocalContacts;
+  m_filterInsideElement = filterInsideElement;
+  m_filterOutsideElement = filterOutsideElement;
+  m_insideFilterElementSymbol = insideFilterElementSymbol;
+  m_outsideFilterElementSymbol = outsideFilterElementSymbol;
 }
 
 void FingerprintPlot::updateFilter(FingerprintFilterMode filterMode,
@@ -53,102 +56,45 @@ void FingerprintPlot::updateFilter(FingerprintFilterMode filterMode,
   updateFingerprintPlot();
 }
 
-void FingerprintPlot::setPlotType(PlotType plotType) {
-  _plotType = plotType;
-  switch (_plotType) {
-  case dPlot:
-    _plotMinForRange = dPlotMinForRange;
-    _plotMaxForRange = dPlotMaxForRange;
-    _plotBinSizeForRange = dPlotBinSizeForRange;
-    _plotGridSizeForRange = dPlotGridSizeForRange;
-    break;
-  case dnormPlot:
-    _plotMinForRange = dnormPlotMinForRange;
-    _plotMaxForRange = dnormPlotMaxForRange;
-    _plotBinSizeForRange = dnormPlotBinSizeForRange;
-    _plotGridSizeForRange = dnormPlotGridSizeForRange;
-    break;
-  }
-  _plotTypeChanged = true;
-}
+void FingerprintPlot::setRange(FingerprintPlotRange range) { m_range = range; }
 
-void FingerprintPlot::updatePlotType(PlotType plotType) {
-  setPlotType(plotType);
-  updateFingerprintPlot();
-}
-
-void FingerprintPlot::setRange(PlotRange range) { _range = range; }
-
-void FingerprintPlot::updatePlotRange(PlotRange range) {
+void FingerprintPlot::updatePlotRange(FingerprintPlotRange range) {
   setRange(range);
   updateFingerprintPlot();
 }
 
-void FingerprintPlot::setCrystalAndSurface(DeprecatedCrystal *crystal,
-                                           Surface *surface) {
-  _crystal = crystal;
-  _surface = surface;
-  // Ugly hack. This forces the properties to be reset for the new crystal
-  // See updateFingerprintPlot
-  _plotTypeChanged = true;
-
+void FingerprintPlot::setMesh(Mesh *mesh) {
+  m_mesh = mesh;
   updateFingerprintPlot();
 }
 
 void FingerprintPlot::setPropertiesToPlot() {
-  int xPropertyIndex = xPropertyIndices[_plotType];
-  int yPropertyIndex = yPropertyIndices[_plotType];
+  m_x = m_mesh->vertexProperty("di").cast<double>();
+  m_y = m_mesh->vertexProperty("de").cast<double>();
 
-  // Can't use properties that are not part of the surface
-  Q_ASSERT(xPropertyIndex >= 0 &&
-           xPropertyIndex < _surface->numberOfProperties());
-  Q_ASSERT(yPropertyIndex >= 0 &&
-           yPropertyIndex < _surface->numberOfProperties());
+  m_xmin = m_x.minCoeff();
+  m_xmax = m_x.maxCoeff();
+  m_ymin = m_y.minCoeff();
+  m_ymax = m_y.maxCoeff();
 
-  _xPropertyIndex = xPropertyIndex;
-  _yPropertyIndex = yPropertyIndex;
+  m_xFace = m_mesh->averagedFaceProperty("di").cast<double>();
+  m_xFace = m_mesh->averagedFaceProperty("de").cast<double>();
 
-  _xPropertyAtFace.clear();
-  _yPropertyAtFace.clear();
-
-  // Calculate and store the property values for each face (avg of three
-  // vertices)
-
-  _xPropertyMin = _surface->propertyAtIndex(_xPropertyIndex)->max();
-  _xPropertyMax = 0.0;
-  _yPropertyMin = _surface->propertyAtIndex(_yPropertyIndex)->max();
-  _yPropertyMax = 0.0;
-
-  for (int f = 0; f < _surface->numberOfFaces(); ++f) {
-    double xValue = _surface->valueForPropertyAtFace(f, _xPropertyIndex);
-    double yValue = _surface->valueForPropertyAtFace(f, _yPropertyIndex);
-
-    _xPropertyAtFace.append(xValue);
-    _yPropertyAtFace.append(yValue);
-
-    _xPropertyMin = qMin(_xPropertyMin, xValue);
-    _xPropertyMax = qMax(_xPropertyMax, xValue);
-    _yPropertyMin = qMin(_yPropertyMin, yValue);
-    _yPropertyMax = qMax(_yPropertyMax, yValue);
-  }
+  m_xFaceMin = m_xFace.minCoeff();
+  m_xFaceMax = m_xFace.maxCoeff();
+  m_yFaceMin = m_yFace.minCoeff();
+  m_yFaceMax = m_yFace.maxCoeff();
 
   setAxisLabels();
-
-  _plotTypeChanged = false; // reset flag
 }
 
 void FingerprintPlot::setAxisLabels() {
-  QStringList propertyLabels = _surface->listOfProperties();
-
-  _xAxisLabel = propertyLabels[_xPropertyIndex].split(" ")[0];
-  _yAxisLabel = propertyLabels[_yPropertyIndex].split(" ")[0];
+  m_xAxisLabel = "de";
+  m_yAxisLabel = "di";
 }
 
 void FingerprintPlot::updateFingerprintPlot() {
-  if (_surface != nullptr && _surface->isHirshfeldBased()) {
-    if (_plotTypeChanged) {
-      setPropertiesToPlot();
-    }
+  if (m_mesh != nullptr && m_mesh->kind() == isosurface::Kind::Hirshfeld) {
     initBinnedAreas();
     initBinnedFilterFlags();
     calculateBinnedAreas();
@@ -160,37 +106,12 @@ void FingerprintPlot::updateFingerprintPlot() {
   parentWidget()->adjustSize();
   update();
 }
-/*
-void FingerprintPlot::initBinnedAreas()
-{
-        int nBins = numberOfBins();
-        binnedAreas = QVector<QVector<double> >(nBins);
 
-    for (int i = 0; i < nBins; i++) {
-                QVector<double> innerVec = QVector<double>(nBins);
-                qFill(innerVec.begin(), innerVec.end(), 0.0);
-                binnedAreas[i] = innerVec;
-        }
-}
-*/
 void FingerprintPlot::initBinnedAreas() {
   int numxBins = numUsedxBins();
   int numyBins = numUsedyBins();
   binnedAreas = MatrixXq::Zero(numxBins, numyBins);
 }
-/*
-void FingerprintPlot::initBinnedFilterFlags()
-{
-        int nBins = numberOfBins();
-        binUsed = QVector<QVector<bool> >(nBins);
-
-    for (int i = 0; i < nBins; i++) {
-                QVector<bool> innerVec = QVector<bool>(nBins);
-                qFill(innerVec.begin(), innerVec.end(), false);
-                binUsed[i] = innerVec;
-        }
-}
-*/
 
 void FingerprintPlot::initBinnedFilterFlags() {
   int numxBins = numUsedxBins();
@@ -200,9 +121,8 @@ void FingerprintPlot::initBinnedFilterFlags() {
 }
 
 double FingerprintPlot::calculateBinnedAreasNoFilter() {
-  if (_surface->hasMaskedFaces()) {
-    _surface->resetMaskedFaces();
-  }
+  // unmask all faces if any
+  m_mesh->resetFaceMask(false);
 
   double nx = numUsedxBins();
   double ny = numUsedyBins();
@@ -213,29 +133,29 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
   double ymax = usedyPlotMax();
   double normy = ny / (ymax - ymin);
 
-  const auto &face_areas = _surface->faceAreas();
-  for (int f = 0; f < _surface->numberOfFaces(); ++f) {
-    double x = _xPropertyAtFace[f];
-    double y = _yPropertyAtFace[f];
+  const auto &face_areas = m_mesh->faceAreas();
+  for (int f = 0; f < face_areas.rows(); ++f) {
+    double x = m_xFace(f);
+    double y = m_yFace(f);
 
     if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
       int xIndex = static_cast<int>((x - xmin) * normx);
       int yIndex = static_cast<int>((y - xmin) * normy);
-      double area = face_areas[f];
+      double area = face_areas(f);
       if (area > 0.0) {
         binUsed(xIndex, yIndex) = true;
         binnedAreas(xIndex, yIndex) += area;
       }
     }
   }
-  return _surface->area();
+  return m_mesh->surfaceArea();
 }
 
 double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double totalFilteredArea = 0.0;
 
   // mask all faces
-  _surface->resetMaskedFaces(true);
+  m_mesh->resetFaceMask(true);
 
   double nx = numUsedxBins();
   double ny = numUsedyBins();
@@ -246,21 +166,23 @@ double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double ymax = usedyPlotMax();
   double normy = ny / (ymax - ymin);
 
-  const auto &face_areas = _surface->faceAreas();
-  for (int f = 0; f < _surface->numberOfFaces(); ++f) {
-    double x = _xPropertyAtFace[f];
-    double y = _yPropertyAtFace[f];
+  auto &faceMask = m_mesh->faceMask();
+
+  const auto &face_areas = m_mesh->faceAreas();
+  for (int f = 0; f < face_areas.rows(); ++f) {
+    double x = m_xFace(f);
+    double y = m_yFace(f);
 
     if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
       int xIndex = static_cast<int>((x - xmin) * normx);
       int yIndex = static_cast<int>((y - xmin) * normy);
-      double area = face_areas[f];
+      double area = face_areas(f);
       if (area > 0.0) {
         binUsed(xIndex, yIndex) = true;
         if (includeArea(f)) {
           totalFilteredArea += area;
           binnedAreas(xIndex, yIndex) += area;
-          _surface->unmaskFace(f);
+          faceMask(f) = false;
         }
       }
     }
@@ -272,84 +194,82 @@ double FingerprintPlot::calculateBinnedAreasWithFilter() {
 QVector<double> FingerprintPlot::filteredAreas(QString insideElementSymbol,
                                                QStringList elementSymbolList) {
   QVector<double> result;
-  if (!_surface)
+  if (!m_mesh)
     return result;
 
   // Save existing filter options
-  FingerprintFilterMode savedFilterMode = _filterMode;
-  bool savedIncludeReciprocalContacts = _includeReciprocalContacts;
-  bool savedFilterInsideElement = _filterInsideElement;
-  bool savedFilterOutsideElement = _filterOutsideElement;
-  QString savedInsideFilterElementSymbol = _insideFilterElementSymbol;
-  QString savedOutsideFilterElementSymbol = _outsideFilterElementSymbol;
+  auto savedFilterMode = m_filterMode;
+  bool savedIncludeReciprocalContacts = m_includeReciprocalContacts;
+  bool savedFilterInsideElement = m_filterInsideElement;
+  bool savedFilterOutsideElement = m_filterOutsideElement;
+  QString savedInsideFilterElementSymbol = m_insideFilterElementSymbol;
+  QString savedOutsideFilterElementSymbol = m_outsideFilterElementSymbol;
 
-  _filterMode = elementFilter;
-  _includeReciprocalContacts = false;
-  _filterInsideElement = true;
-  _filterOutsideElement = true;
-  _insideFilterElementSymbol = insideElementSymbol;
+  m_filterMode = FingerprintFilterMode::Element;
+  m_includeReciprocalContacts = false;
+  m_filterInsideElement = true;
+  m_filterOutsideElement = true;
+  m_insideFilterElementSymbol = insideElementSymbol;
 
   int symbolListSize = elementSymbolList.size();
 
   QVector<double> totalFilteredArea(symbolListSize);
   totalFilteredArea.fill(0.0);
 
+  const auto &faceAreas = m_mesh->faceAreas();
   // Sum all the areas of the faces which contribute to a particular bin
-  for (int f = 0; f < _surface->numberOfFaces(); ++f) {
+  for (int f = 0; f < faceAreas.rows(); f++) {
     for (int i = 0; i < symbolListSize; ++i) {
-      _outsideFilterElementSymbol = elementSymbolList[i];
+      m_outsideFilterElementSymbol = elementSymbolList[i];
       if (includeArea(f)) {
-        totalFilteredArea[i] += _surface->areaOfFace(f);
+        totalFilteredArea[i] += faceAreas(f);
       }
     }
   }
 
   // Calculate percentages
   for (const auto &filteredArea : totalFilteredArea) {
-    double percentageFilteredArea = (filteredArea / _surface->area()) * 100.0;
+    double percentageFilteredArea =
+        (filteredArea / m_mesh->surfaceArea()) * 100.0;
     result.append(percentageFilteredArea);
   }
 
   // Restore exisiting filter options
-  _filterMode = savedFilterMode;
-  _includeReciprocalContacts = savedIncludeReciprocalContacts;
-  _filterInsideElement = savedFilterInsideElement;
-  _filterOutsideElement = savedFilterOutsideElement;
-  _insideFilterElementSymbol = savedInsideFilterElementSymbol;
-  _outsideFilterElementSymbol = savedOutsideFilterElementSymbol;
+  m_filterMode = savedFilterMode;
+  m_includeReciprocalContacts = savedIncludeReciprocalContacts;
+  m_filterInsideElement = savedFilterInsideElement;
+  m_filterOutsideElement = savedFilterOutsideElement;
+  m_insideFilterElementSymbol = savedInsideFilterElementSymbol;
+  m_outsideFilterElementSymbol = savedOutsideFilterElementSymbol;
 
   return result;
 }
 
 void FingerprintPlot::calculateBinnedAreas() {
-  Q_ASSERT(_xPropertyAtFace.size() == _surface->numberOfFaces());
-  Q_ASSERT(_yPropertyAtFace.size() == _surface->numberOfFaces());
-
-  switch (_filterMode) {
-  case noFilter:
-    _totalFilteredArea = calculateBinnedAreasNoFilter();
+  switch (m_filterMode) {
+  case FingerprintFilterMode::None:
+    m_totalFilteredArea = calculateBinnedAreasNoFilter();
     break;
   default:
-    _totalFilteredArea = calculateBinnedAreasWithFilter();
+    m_totalFilteredArea = calculateBinnedAreasWithFilter();
     break;
   }
 
   // outputFingerprintAsTable();
   // outputFingerprintAsJSON();
 
-  emit surfaceAreaPercentageChanged((_totalFilteredArea / _surface->area()) *
-                                    100);
+  emit surfaceAreaPercentageChanged(
+      (m_totalFilteredArea / m_mesh->surfaceArea()) * 100);
   emit surfaceFeatureChanged();
 }
 
 void FingerprintPlot::outputFingerprintAsJSON() {
-  const QString EXTENSION = "json";
-  QString filename = _crystal->crystalName() + "." + EXTENSION;
+  QString filename = "fingerprint.json";
 
   const double stdAreaForSaturatedColor = 0.001;
   const double enhancementFactor = 1.0;
   double maxValue =
-      (stdAreaForSaturatedColor / enhancementFactor) * _surface->area();
+      (stdAreaForSaturatedColor / enhancementFactor) * m_mesh->surfaceArea();
 
   bool printComma = false;
 
@@ -365,15 +285,18 @@ void FingerprintPlot::outputFingerprintAsJSON() {
     int numxBins = numxBinsInCurrentPlotRange();
     int numyBins = numyBinsInCurrentPlotRange();
 
+    auto func = ColorMapFunc(m_colorScheme);
+    func.lower = 0.0;
+    func.upper = maxValue;
+
     for (int i = 0; i < numxBins; ++i) {
       for (int j = 0; j < numyBins; ++j) {
         int iBin = i + min_i;
         int jBin = j + min_j;
 
         if (binUsed(iBin, jBin)) {
-          QColor color = ColorSchemer::color(
-              m_colorScheme, binnedAreas(iBin, jBin), 0.0, maxValue, true);
 
+          QColor color = func(binnedAreas(iBin, jBin));
           if (printComma) {
             out << "," << Qt::endl;
           }
@@ -403,7 +326,7 @@ void FingerprintPlot::outputFingerprintAsTable() {
     const double stdAreaForSaturatedColor = 0.001;
     const double enhancementFactor = 1.0;
     double maxValue =
-        (stdAreaForSaturatedColor / enhancementFactor) * _surface->area();
+        (stdAreaForSaturatedColor / enhancementFactor) * m_mesh->surfaceArea();
 
     int min_i = smallestxBinInCurrentPlotRange();
     int min_j = smallestyBinInCurrentPlotRange();
@@ -412,10 +335,10 @@ void FingerprintPlot::outputFingerprintAsTable() {
     int numyBins = numyBinsInCurrentPlotRange();
 
     ts << "Total surface area (used to calculate max value): "
-       << _surface->area() << Qt::endl;
+       << m_mesh->surfaceArea() << Qt::endl;
     ts << "Min value (used for scaling): " << 0.0 << Qt::endl;
     ts << "Max value (used for scaling): " << maxValue << Qt::endl;
-    ts << "Number of pixels per bin (in each direction): " << PIXELS_PER_BIN
+    ts << "Number of pixels per bin (in each direction): " << m_settings.pixelsPerBin 
        << Qt::endl;
     ts << "Number of bins in de: " << numyBins << Qt::endl;
     ts << "Number of bins in di: " << numxBins << Qt::endl;
@@ -432,14 +355,16 @@ void FingerprintPlot::outputFingerprintAsTable() {
     ts << "* The corresponding color of that bin" << Qt::endl;
     ts << Qt::endl;
 
+    auto func = ColorMapFunc(m_colorScheme);
+    func.lower = 0;
+    func.upper = maxValue;
     for (int i = 0; i < numxBins; ++i) {
       for (int j = 0; j < numyBins; ++j) {
         int iBin = i + min_i;
         int jBin = j + min_j;
 
         if (binUsed(iBin, jBin)) {
-          QColor color = ColorSchemer::color(
-              m_colorScheme, binnedAreas(iBin, jBin), 0.0, maxValue, true);
+          QColor color = func(binnedAreas(iBin, jBin));
           ts << i << "\t" << j << "\t" << binnedAreas(iBin, jBin) << "\tRGB("
              << color.red() << "," << color.green() << "," << color.blue()
              << ")" << Qt::endl;
@@ -502,26 +427,26 @@ int FingerprintPlot::tolerant_yBinIndex(double value) {
 bool FingerprintPlot::includeArea(int face) {
   bool incArea = true;
 
-  switch (_filterMode) {
-  case noFilter:
+  switch (m_filterMode) {
+  case FingerprintFilterMode::None:
     break;
-  case selectionFilter:
-    incArea = includeAreaFilteredBySelection(face);
-    break;
-  case elementFilter:
+  case FingerprintFilterMode::Element:
     incArea = includeAreaFilteredByElement(face);
     break;
   }
   return incArea;
 }
 
-bool FingerprintPlot::includeAreaFilteredBySelection(int face) {
-  return true;
-}
-
 bool FingerprintPlot::includeAreaFilteredByElement(int face) {
-  bool incArea;
+  return false;
+  /*
+  bool incArea{false};
 
+  auto * structure = qobject_cast<ChemicalStructure *>(m_mesh->parent());
+  if(!structure) return false;
+
+  auto insideNums = structure->atomicNumbersForIndices(m_mesh->atomsInside());
+  auto outsideNums = structure->atomicNumbersForIndices(m_mesh->atomsInside());
   const QVector<Atom> &unitCellAtoms = _crystal->unitCellAtoms();
 
   QString insideElement =
@@ -530,32 +455,28 @@ bool FingerprintPlot::includeAreaFilteredByElement(int face) {
       unitCellAtoms[_surface->outsideAtomIdForFace(face).unitCellIndex]
           .symbol();
 
-  bool insideMatch = _insideFilterElementSymbol == insideElement;
-  bool outsideMatch = _outsideFilterElementSymbol == outsideElement;
+  bool insideMatch = m_insideFilterElementSymbol == insideElement;
+  bool outsideMatch = m_outsideFilterElementSymbol == outsideElement;
 
-  if (_includeReciprocalContacts) {
+  if (m_includeReciprocalContacts) {
 
     incArea = (insideMatch && outsideMatch) ||
-              (outsideElement == _insideFilterElementSymbol &&
-               insideElement == _outsideFilterElementSymbol);
+              (outsideElement == m_insideFilterElementSymbol &&
+               insideElement == m_outsideFilterElementSymbol);
 
-    /* Note: The above is NOT equivalent to the following: */
-    // incArea = (insideElement == _insideFilterElementSymbol || insideElement
-    // == _outsideFilterElementSymbol)
-    // && (outsideElement == _insideFilterElementSymbol || outsideElement ==
-    // _outsideFilterElementSymbol);
   } else {
-    if (_filterInsideElement && _filterOutsideElement) {
+    if (m_filterInsideElement && m_filterOutsideElement) {
       incArea = insideMatch && outsideMatch;
-    } else if (_filterInsideElement && !_filterOutsideElement) {
+    } else if (m_filterInsideElement && !m_filterOutsideElement) {
       incArea = insideMatch;
-    } else if (!_filterInsideElement && _filterOutsideElement) {
+    } else if (!m_filterInsideElement && m_filterOutsideElement) {
       incArea = outsideMatch;
     } else { // filter neither inside or outside element
       incArea = true;
     }
   }
   return incArea;
+  */
 }
 
 void FingerprintPlot::drawEmptyFingerprint() {
@@ -640,11 +561,11 @@ void FingerprintPlot::drawAxisLabels(QPainter *painter) {
   int xPos = graphSize().width() - gridSeparation().width();
   int yPos = gridSeparation().height();
   QRect xRect = QRect(t(xPos, yPos), gridSeparation());
-  painter->drawText(xRect, Qt::AlignHCenter | Qt::AlignVCenter, _xAxisLabel);
+  painter->drawText(xRect, Qt::AlignHCenter | Qt::AlignVCenter, m_xAxisLabel);
 
   // y-axis label
   QRect yRect = QRect(t(0, graphSize().height()), gridSeparation());
-  painter->drawText(yRect, Qt::AlignHCenter | Qt::AlignVCenter, _yAxisLabel);
+  painter->drawText(yRect, Qt::AlignHCenter | Qt::AlignVCenter, m_yAxisLabel);
 }
 
 void FingerprintPlot::drawGridBoundary(QPainter *painter) {
@@ -668,7 +589,7 @@ void FingerprintPlot::drawBins(QPainter *painter) {
   int nBins = numberOfBins();
   double pointRatio = graphRect().size().width() / (double)nBins;
   double maxValue =
-      (stdAreaForSaturatedColor / enhancementFactor) * _surface->area();
+      (stdAreaForSaturatedColor / enhancementFactor) * m_mesh->surfaceArea();
 
   QColor color;
 
@@ -681,21 +602,24 @@ void FingerprintPlot::drawBins(QPainter *painter) {
   int xOffset = xOffsetForCurrentPlotRange();
   int yOffset = yOffsetForCurrentPlotRange();
 
+  auto func = ColorMapFunc(m_colorScheme);
+  func.lower = 0.0;
+  func.upper = maxValue;
+
   for (int i = 0; i < numxBins; ++i) {
     for (int j = 0; j < numyBins; ++j) {
       int iBin = i + min_i;
       int jBin = j + min_j;
       if (binUsed(iBin, jBin)) {
         if (binnedAreas(iBin, jBin) > 0.0) {
-          color = ColorSchemer::color(m_colorScheme, binnedAreas(iBin, jBin),
-                                      0.0, maxValue, true);
+          color = func(binnedAreas(iBin, jBin));
         } else {
           color = MASKED_BIN_COLOR;
         }
         painter->setBrush(QBrush(color, Qt::SolidPattern));
         QPoint pos = t((xOffset + i) * pointRatio, (yOffset + j) * pointRatio);
-        painter->drawRect(pos.x(), pos.y() - (PIXELS_PER_BIN / 2),
-                          PIXELS_PER_BIN, PIXELS_PER_BIN);
+        painter->drawRect(pos.x(), pos.y() - (m_settings.pixelsPerBin / 2),
+                          m_settings.pixelsPerBin, m_settings.pixelsPerBin);
       }
     }
   }
@@ -759,7 +683,7 @@ void FingerprintPlot::paintEvent(QPaintEvent *event) {
 
 void FingerprintPlot::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton) {
-    _surface->resetFaceHighlights();
+    m_mesh->resetFaceHighlights();
     QPair<int, int> indices = binIndicesAtMousePosition(event->pos());
     if (indices.first != -1 && indices.second != -1) {
       highlightFacesWithPropertyValues(indices);
@@ -795,7 +719,6 @@ QPair<int, int> FingerprintPlot::binIndicesAtGraphPos(QPoint graphPos) {
 // Comments below may not be correct
 void FingerprintPlot::highlightFacesWithPropertyValues(
     QPair<int, int> binIndicesAtMousePos) {
-  Q_ASSERT(_surface != nullptr);
 
   double const D2_THRESHOLD = 4.1;
 
@@ -804,8 +727,8 @@ void FingerprintPlot::highlightFacesWithPropertyValues(
   // to where the mouse click occurred. Keep the face if it's less than
   // D2_THRESHOLD.
   int face;
-  double dx = xBinIndex(_xPropertyAtFace[0]) - binIndicesAtMousePos.first;
-  double dy = yBinIndex(_yPropertyAtFace[0]) - binIndicesAtMousePos.second;
+  double dx = xBinIndex(m_xFace(0)) - binIndicesAtMousePos.first;
+  double dy = yBinIndex(m_yFace(0)) - binIndicesAtMousePos.second;
   double d2min = dx * dx + dy * dy;
   if (d2min < D2_THRESHOLD) {
     face = 0;
@@ -816,9 +739,9 @@ void FingerprintPlot::highlightFacesWithPropertyValues(
 
   // Find the face with the smallest squared distance
   // and store it's index in "face"
-  for (int f = 0; f < _surface->numberOfFaces(); ++f) {
-    double dx = xBinIndex(_xPropertyAtFace[f]) - binIndicesAtMousePos.first;
-    double dy = yBinIndex(_yPropertyAtFace[f]) - binIndicesAtMousePos.second;
+  for (int f = 0; f < m_mesh->numberOfFaces(); ++f) {
+    double dx = xBinIndex(m_xFace(f)) - binIndicesAtMousePos.first;
+    double dy = yBinIndex(m_yFace(f)) - binIndicesAtMousePos.second;
     double d2 = dx * dx + dy * dy;
     if (d2 < d2min) {
       d2min = d2;
@@ -827,14 +750,14 @@ void FingerprintPlot::highlightFacesWithPropertyValues(
   }
   // Turn on all faces that have the same bin indices as "face"
   if (face != -1) {
-    int xBin = xBinIndex(_xPropertyAtFace[face]);
-    int yBin = yBinIndex(_yPropertyAtFace[face]);
+    int xBin = xBinIndex(m_xFace(face));
+    int yBin = yBinIndex(m_yFace(face));
 
-    for (int f = 0; f < _surface->numberOfFaces(); ++f) {
-      bool xBinTest = xBinIndex(_xPropertyAtFace[f]) == xBin;
-      bool yBinTest = yBinIndex(_yPropertyAtFace[f]) == yBin;
+    for (int f = 0; f < m_mesh->numberOfFaces(); ++f) {
+      bool xBinTest = xBinIndex(m_xFace(f)) == xBin;
+      bool yBinTest = yBinIndex(m_yFace(f)) == yBin;
       if (xBinTest && yBinTest) {
-        _surface->highlightFace(f);
+        m_mesh->highlightFace(f);
       }
     }
     emit surfaceFeatureChanged();
@@ -1139,7 +1062,7 @@ void FingerprintPlot::writeEpsBins(QTextStream &ts) {
   const double stdAreaForSaturatedColor = 0.001;
   const double enhancementFactor = 1.0;
   double maxValue =
-      (stdAreaForSaturatedColor / enhancementFactor) * _surface->area();
+      (stdAreaForSaturatedColor / enhancementFactor) * m_mesh->surfaceArea();
 
   int min_i = smallestxBinInCurrentPlotRange();
   int min_j = smallestyBinInCurrentPlotRange();
@@ -1150,6 +1073,10 @@ void FingerprintPlot::writeEpsBins(QTextStream &ts) {
   int xOffset = xOffsetForCurrentPlotRange();
   int yOffset = yOffsetForCurrentPlotRange();
 
+  auto func = ColorMapFunc(m_colorScheme);
+  func.lower = 0.0;
+  func.upper = maxValue;
+
   for (int i = 0; i < numxBins; ++i) {
     for (int j = 0; j < numyBins; ++j) {
       int iBin = i + min_i;
@@ -1157,8 +1084,7 @@ void FingerprintPlot::writeEpsBins(QTextStream &ts) {
 
       if (binUsed(iBin, jBin)) {
         if (binnedAreas(iBin, jBin) > 0.0) {
-          color = ColorSchemer::color(m_colorScheme, binnedAreas(iBin, jBin),
-                                      0.0, maxValue, true);
+          color = func(binnedAreas(iBin, jBin));
         } else {
           color = MASKED_BIN_COLOR;
         }
@@ -1209,19 +1135,19 @@ double FingerprintPlot::findLowerBound(double value, double min,
 }
 
 double FingerprintPlot::usedxPlotMin() {
-  return findLowerBound(_xPropertyMin, 0.0, binSize());
+  return findLowerBound(m_xmin, 0.0, binSize());
 }
 
 double FingerprintPlot::usedxPlotMax() {
-  return findLowerBound(_xPropertyMax, usedxPlotMin(), binSize()) + binSize();
+  return findLowerBound(m_xmax, usedxPlotMin(), binSize()) + binSize();
 }
 
 double FingerprintPlot::usedyPlotMin() {
-  return findLowerBound(_yPropertyMin, 0.0, binSize());
+  return findLowerBound(m_ymin, 0.0, binSize());
 }
 
 double FingerprintPlot::usedyPlotMax() {
-  return findLowerBound(_yPropertyMax, usedyPlotMin(), binSize()) + binSize();
+  return findLowerBound(m_ymax, usedyPlotMin(), binSize()) + binSize();
 }
 
 int FingerprintPlot::numUsedxBins() {
@@ -1313,7 +1239,7 @@ QRect FingerprintPlot::plotRect() const {
 }
 
 QRect FingerprintPlot::graphRect() const {
-  int graphWidthInPixels = PIXELS_PER_BIN * numberOfBins();
+  int graphWidthInPixels = m_settings.pixelsPerBin * numberOfBins();
   QSize graphSize =
       QSize(graphWidthInPixels,
             graphWidthInPixels); // Make the graph height equal to the width
@@ -1325,15 +1251,13 @@ QSize FingerprintPlot::graphSize() const { return graphRect().size(); }
 
 QSize FingerprintPlot::plotSize() const { return plotRect().size(); }
 
-double FingerprintPlot::plotMin() const { return _plotMinForRange[_range]; }
+double FingerprintPlot::plotMin() const { return m_settings.rangeMinimum; }
 
-double FingerprintPlot::plotMax() const { return _plotMaxForRange[_range]; }
+double FingerprintPlot::plotMax() const { return m_settings.rangeMaximum; }
 
-double FingerprintPlot::binSize() const { return _plotBinSizeForRange[_range]; }
+double FingerprintPlot::binSize() const { return m_settings.binSize; }
 
-double FingerprintPlot::gridSize() const {
-  return _plotGridSizeForRange[_range];
-}
+double FingerprintPlot::gridSize() const { return m_settings.gridSize; }
 
 QSize FingerprintPlot::gridSeparation() const {
   return QSize(graphSize().width() / numberOfGridlines(),

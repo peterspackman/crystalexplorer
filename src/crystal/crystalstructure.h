@@ -61,6 +61,7 @@ public:
   virtual void setShowVanDerWaalsContactAtoms(bool state) override;
   virtual void completeFragmentContaining(int) override;
   virtual bool hasIncompleteFragments() const override;
+  virtual bool hasIncompleteSelectedFragments() const override;
   virtual void completeAllFragments() override;
   virtual void packUnitCells(const QPair<QVector3D, QVector3D> &) override;
 
@@ -77,6 +78,7 @@ public:
   virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &idxs) const override;
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const override;
+  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtoms(const std::vector<GenericAtomIndex>&, float radius) const override;
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const override;
 
 

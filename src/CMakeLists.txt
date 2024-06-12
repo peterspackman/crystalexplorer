@@ -1,5 +1,4 @@
 add_subdirectory(occ)
-add_subdirectory(config)
 add_subdirectory(core)
 add_subdirectory(exe)
 add_subdirectory(io)
@@ -12,71 +11,46 @@ add_subdirectory(dialogs)
 # Source files
 set(CRYSTALEXPLORER_SOURCE_FILES
     animationsettingsdialog.cpp
-    asymmetricunit.cpp
-    atom.cpp
     celllimitsdialog.cpp
     childpropertycontroller.cpp
     closecontactsdialog.cpp
     colordelegate.cpp
     colorschemer.cpp
     confirmationbox.cpp
-    deprecatedcrystal.cpp
     crystalcontroller.cpp
-    crystaldata.cpp
     crystalplanegenerator.cpp
-    crystalsurfacehandler.cpp
     crystalx.cpp
     depthfadingandclippingdialog.cpp
     dialoghtml.cpp
     elementeditor.cpp
-    energydata.cpp
     fileeditor.cpp
     fingerprintoptions.cpp
     fingerprintplot.cpp
     fingerprintwindow.cpp
-    fragmentpairenergyjob.cpp
-    frameworkdialog.cpp
-    gaussianinterface.cpp
     glwindow.cpp
     gltfexporter.cpp
     infodocuments.cpp
     infoviewer.cpp
-    jobparameters.cpp
     measurement.cpp
-    nwcheminterface.cpp
-    occinterface.cpp
     orbitcamera.cpp
-    orcainterface.cpp
     orientation.cpp
     packingdialog.cpp
     planegenerationdialog.cpp
     periodictabledialog.cpp
     preferencesdialog.cpp
     project.cpp
-    psi4interface.cpp
-    quantumchemistryinterface.cpp
     scene.cpp
-    settings.cpp
     spacegroup.cpp
-    surface.cpp
-    surfacedata.cpp
-    surfacedescription.cpp
     surfacedropdown.cpp
     surfacegenerationdialog.cpp
-    surfaceproperty.cpp
     tasksequence.cpp
-    tontointerface.cpp
-    unitcell.cpp
     viewtoolbar.cpp
-    wavefunction.cpp
     wavefunctioncalculationdialog.cpp
-    xtbinterface.cpp
 )
 
 set(CRYSTALEXPLORER_HEADER_FILES
     animationsettingsdialog.h
     asymmetricunit.h
-    atom.h
     atomid.h
     cameraoptions.h
     celllimitsdialog.h
@@ -86,36 +60,21 @@ set(CRYSTALEXPLORER_HEADER_FILES
     colordelegate.h
     colorschemer.h
     confirmationbox.h
-    deprecatedcrystal.h
     crystalcontroller.h
-    crystaldata.h
     crystalplanegenerator.h
-    crystalsurfacehandler.h
     crystalx.h
     depthfadingandclippingdialog.h
     dialoghtml.h
     elementeditor.h
-    energydata.h
-    energydescription.h
     fileeditor.h
     fingerprintoptions.h
     fingerprintplot.h
     fingerprintwindow.h
-    fragmentpairenergyjob.h
-    fragmentpairinfo.h
-    frameworkdescription.h
-    frameworkdialog.h
-    gaussianinterface.h
-    globals.h
     glwindow.h
     gltfexporter.h
     infodocuments.h
     infoviewer.h
-    jobparameters.h
     measurement.h
-    nwcheminterface.h
-    occinterface.h
-    orcainterface.h
     orbitcamera.h
     orientation.h
     packingdialog.h
@@ -123,28 +82,14 @@ set(CRYSTALEXPLORER_HEADER_FILES
     planegenerationdialog.h
     preferencesdialog.h
     project.h
-    psi4interface.h
     qeigen.h
-    quantumchemistryinterface.h
     scene.h
-    settings.h
     spacegroup.h
     stldatastream.h
-    surface.h
-    surfacedata.h
-    surfacedescription.h
     surfacedropdown.h
     surfacegenerationdialog.h
-    surfaceproperty.h
     vanderwaalscontact.h
-    version.h
-    xtbinterface.h
-    tasksequence.h
-    tontointerface.h
-    transformablewavefunction.h
-    unitcell.h
     viewtoolbar.h
-    wavefunction.h
     wavefunctioncalculationdialog.h
 )
 
@@ -160,7 +105,6 @@ set(CRYSTALEXPLORER_UI_FILES
     elementeditor.ui
     fileeditor.ui
     fingerprintoptions.ui
-    frameworkdialog.ui
     infochooserdialog.ui
     infoviewer.ui
     packingdialog.ui

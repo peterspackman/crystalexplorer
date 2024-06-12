@@ -1,15 +1,15 @@
 #pragma once
 #include <QMatrix4x4>
+#include <QModelIndex>
 #include <QPair>
 #include <QtOpenGL>
-#include <QModelIndex>
 
-#include "deprecatedcrystal.h"
-#include "frameworkdescription.h"
 #include "orientation.h"
+#include "qeigen.h"
 
 #include "billboardrenderer.h"
 #include "chemicalstructure.h"
+#include "chemicalstructurerenderer.h"
 #include "circlerenderer.h"
 #include "crystalplane.h"
 #include "crystalplanerenderer.h"
@@ -23,11 +23,10 @@
 #include "mesh.h"
 #include "meshrenderer.h"
 #include "orbitcamera.h"
+#include "rendereruniforms.h"
+#include "renderselection.h"
 #include "settings.h"
 #include "sphereimpostorrenderer.h"
-#include "renderselection.h"
-#include "chemicalstructurerenderer.h"
-#include "rendereruniforms.h"
 
 enum class HighlightMode { Normal, Pair };
 typedef QPair<QString, QVector3D> Label;
@@ -37,17 +36,6 @@ enum class ScenePeriodicity {
   TwoDimensions,
   ThreeDimensions
 };
-
-// N.B. The indices in the map must be consecutive
-static QMap<int, FrameworkType> getCycleToFrameworkMapping() {
-  QMap<int, FrameworkType> map;
-  map[0] = coulombFramework;
-  map[1] = dispersionFramework;
-  map[2] = totalFramework;
-  map[3] = annotatedTotalFramework;
-  return map;
-}
-const QMap<int, FrameworkType> cycleToFramework = getCycleToFrameworkMapping();
 
 class XYZFile;
 
@@ -64,7 +52,6 @@ struct SelectedBond {
   SelectedAtom b;
 };
 
-
 class Scene : public QObject {
   Q_OBJECT
 
@@ -72,22 +59,14 @@ class Scene : public QObject {
   friend QDataStream &operator>>(QDataStream &, Scene &);
 
 public:
-
   Scene();
   Scene(const XYZFile &);
   Scene(ChemicalStructure *);
 
   inline ChemicalStructure *chemicalStructure() { return m_structure; }
-  inline DeprecatedCrystal *crystal() { return m_deprecatedCrystal; }
-  inline const DeprecatedCrystal *crystal() const {
-    return m_deprecatedCrystal;
-  }
 
   void resetViewAndSelections();
   bool hasOnScreenCloseContacts();
-  QSet<int> fragmentsConnectedToFragmentWithHydrogenBonds(int);
-  QSet<int> fragmentsConnectedToFragmentWithCloseContacts(int, int);
-  QList<int> fragmentsConnectedToFragmentWithOnScreenContacts(int);
   void setSelectStatusForAtomDoubleClick(int);
   bool processSelectionDoubleClick(const QColor &);
   bool processSelectionSingleClick(const QColor &);
@@ -101,29 +80,21 @@ public:
 
   void setTransformationMatrix(const QMatrix4x4 &tMatrix);
 
+  inline ScenePeriodicity periodicity() const { return ScenePeriodicity::ThreeDimensions; }
+
   const Orientation &orientation() const { return m_orientation; }
   Orientation &orientation() { return m_orientation; }
-
-  inline Matrix3q directCellMatrix() const {
-    if (m_periodicity == ScenePeriodicity::ThreeDimensions) {
-      return crystal()->unitCell().directCellMatrix();
-    } else {
-      return Matrix3q::Identity();
-    }
-  }
-  inline Matrix3q inverseCellMatrix() const {
-    if (m_periodicity == ScenePeriodicity::ThreeDimensions) {
-      return crystal()->unitCell().inverseCellMatrix();
-    } else {
-      return Matrix3q::Identity();
-    }
-  }
-
-  inline const auto &periodicity() const { return m_periodicity; }
 
   void updateForPreferencesChange();
 
   QStringList uniqueElementSymbols() const;
+
+  inline Matrix3q directCellMatrix() const {
+    return m_structure->cellVectors();
+  }
+  inline Matrix3q inverseCellMatrix() const {
+    return m_structure->cellVectors().inverse();
+  }
 
   inline void setNeedsUpdate() {
     m_atomsNeedUpdate = true;
@@ -137,13 +108,12 @@ public:
   void draw();
   void drawForPicking();
   inline auto selectionType() const { return m_selection.type; }
-  void resetNoSelection() { m_selection.type = cx::graphics::SelectionType::None; }
+  void resetNoSelection() {
+    m_selection.type = cx::graphics::SelectionType::None;
+  }
   const SelectedAtom &selectedAtom() const;
   std::vector<int> selectedAtomIndices() const;
   const SelectedBond &selectedBond() const;
-  Surface *selectedSurface();
-  int selectedSurfaceIndex();
-  int selectedSurfaceFaceIndex();
 
   bool unitCellBoxIsVisible() { return _showUnitCellBox; }
   void setUnitCellBoxVisible(bool show) { _showUnitCellBox = show; }
@@ -168,8 +138,6 @@ public:
   void setCloseContactVisible(int, bool);
   void selectAtomsOutsideRadiusOfSelectedAtoms(float);
 
-  inline int energyCycleIndex() const { return _energyCycleIndex; }
-
   void setSelectStatusForAllAtoms(bool set);
 
   // Measurements
@@ -178,24 +146,19 @@ public:
   void removeAllMeasurements();
   bool hasMeasurements() const;
 
-  inline Vector3q origin() const {
-    if (m_periodicity == ScenePeriodicity::ThreeDimensions) {
-      return crystal()->origin();
-    }
-    return m_structure->origin();
-  }
+  inline Vector3q origin() const { return m_structure->origin(); }
 
   bool hasVisibleAtoms() const;
 
   const QString &title() const { return m_name; }
   inline void setTitle(const QString &name) { m_name = name; }
 
-  QPair<QVector3D, QVector3D>
-  positionsForDistanceMeasurement(const QPair<cx::graphics::SelectionType, int> &,
-                                  const QPair<cx::graphics::SelectionType, int> &) const;
-  QPair<QVector3D, QVector3D>
-  positionsForDistanceMeasurement(const QPair<cx::graphics::SelectionType, int> &,
-                                  const QVector3D &pos) const;
+  QPair<QVector3D, QVector3D> positionsForDistanceMeasurement(
+      const QPair<cx::graphics::SelectionType, int> &,
+      const QPair<cx::graphics::SelectionType, int> &) const;
+  QPair<QVector3D, QVector3D> positionsForDistanceMeasurement(
+      const QPair<cx::graphics::SelectionType, int> &,
+      const QVector3D &pos) const;
 
   QVector<Label> labels();
   QVector<Label> measurementLabels();
@@ -207,7 +170,6 @@ public:
   void setDrawingStyle(DrawingStyle);
   DrawingStyle drawingStyle();
   void updateNoneProperties();
-  FragmentPairStyle currentEnergyFrameworkStyle();
 
   void cycleDisorderHighlighting();
   bool applyDisorderColoring();
@@ -216,13 +178,6 @@ public:
   void toggleFragmentColors();
   void colorFragmentsByEnergyPair();
   void clearFragmentColors();
-
-  void cycleEnergyFramework(bool);
-  void turnOffEnergyFramework();
-  void turnOnEnergyFramework();
-  FrameworkType currentFramework();
-  int minCycleIndex();
-  int maxCycleIndex();
 
   void setShowSurfaceInteriors(bool);
   void setShowCloseContacts(bool);
@@ -239,7 +194,7 @@ public:
     _backgroundColor = color;
   }
 
-  void setThermalEllipsoidProbabilityString(const QString &);
+  inline void setThermalEllipsoidProbabilityString(const QString &s) { _ellipsoidProbabilityString = s; }
   QString thermalEllipsoidProbabilityString() {
     return _ellipsoidProbabilityString;
   }
@@ -249,12 +204,6 @@ public:
 
   void setModelViewProjection(const QMatrix4x4 &, const QMatrix4x4 &,
                               const QMatrix4x4 &);
-  void exportToPovrayTextStream(QTextStream &);
-
-  inline const CrystalSurfaceHandler *surfaceHandler() const {
-    return m_surfaceHandler;
-  }
-  inline CrystalSurfaceHandler *surfaceHandler() { return m_surfaceHandler; }
 
   void generateAllExternalFragments();
   void generateInternalFragment();
@@ -262,50 +211,8 @@ public:
 
   bool hasAllAtomsSelected();
 
-  // Surfaces
-  void deleteSelectedSurface();
-  bool setCurrentSurfaceIndex(int);
-  void resetCurrentSurface();
-  void toggleVisibilityOfSurface(int);
-  void hideSurface(int);
-  void deleteCurrentSurface();
-  void setSurfaceVisibilities(bool);
-  bool loadSurfaceData(const JobParameters &);
-
-  Surface *currentSurface();
-  Surface *surface(int surfaceIndex);
-
-  bool hasSurface() const;
-  bool isCurrentSurface(int index) const;
-  bool hasVisibleSurfaces();
-  bool hasHiddenSurfaces();
-  int numberOfVisibleSurfaces();
-
-  QStringList listOfSurfaceTitles();
-  QVector<bool> listOfSurfaceVisibilities();
-  QVector<QVector3D> listOfSurfaceCentroids();
-  int numberOfSurfaces() const;
-  int surfaceEquivalent(const JobParameters &) const;
-  int propertyEquivalentToRequestedProperty(const JobParameters &, int) const;
-  void deleteSurface(Surface *);
-
-  // Cloning
-  void cloneCurrentSurfaceForSelection();
-  void cloneCurrentSurfaceForAllFragments();
-  void cloneCurrentSurfaceWithCellShifts(const QVector3D &);
-
-  // Cloning
-  Surface *cloneSurface(const Surface *);
-  Surface *cloneSurfaceWithCellShift(const Surface *, Vector3q);
-  Surface *cloneSurfaceForFragment(int, const Surface *);
-  void cloneCurrentSurfaceForFragmentList(const QVector<int>);
-  bool cloneAlreadyExists(const Surface *, CrystalSymops);
-  Surface *existingClone(const Surface *, CrystalSymops);
-  bool hasFragmentsWithoutClones(Surface *);
-
   // fingerprints
   void toggleAtomsForFingerprintSelectionFilter(bool show);
-  void resetSurfaceFeatures();
 
   Vector3q convertToCartesian(const Vector3q &) const;
   void resetOrigin();
@@ -385,73 +292,39 @@ private:
   void setSelectionStatusToDefaults();
   int nameWithSmallestZ(GLuint, GLuint[]);
 
-  bool isAtomName(int) const;
-  bool isBondName(int) const;
-  bool isSurfaceName(int) const;
-  int atomBasename() const;
-  int bondBasename() const;
-  int surfacesBasename() const;
-  int getAtomIndexFromAtomName(int) const;
-  int getBondIndexFromBondName(int) const;
-  QPair<int, int> surfaceIndexAndFaceFromName(int) const;
   int numberOfBonds() const;
   int numberOfAtoms() const;
-  int basenameForSurfaceWithIndex(int) const;
-  int numberOfFacesToDrawForAllSurfaces() const;
 
-  void updateAtomsForDrawing();
-  void updateBondsForDrawing();
-  void updateMeshesForDrawing();
   void updateLabelsForDrawing();
 
-  void updateAtomsFromCrystal();
-  void updateAtomsFromChemicalStructure();
-  void updateBondsFromCrystal();
-  void updateBondsFromChemicalStructure();
   void updateCrystalPlanes();
-
-  void drawAtomsAndBonds();
-  void drawEllipsoids(bool for_picking = false);
-  void drawSpheres(bool for_picking = false);
-  void drawCylinders(bool for_picking = false);
-  void drawMeshes(bool for_picking = false);
-  void drawSurfaces(bool for_picking = false);
-  void drawWireframe(bool for_picking = false);
 
   void drawLights();
   void drawLines();
   void drawLabels();
   void drawUnitCellBox();
   void drawMeasurements();
-  void drawEnergyFrameworks();
 
   void setLightPositionsBasedOnCamera();
 
-  bool skipBond(int atom_i, int atom_j);
   float bondThickness();
   float contactLineThickness();
-  void putBondAlongZAxis(QVector3D);
   void drawHydrogenBonds();
   void drawCloseContacts();
   QColor getColorForCloseContact(int);
 
   AtomDrawingStyle atomStyle() const;
   BondDrawingStyle bondStyle() const;
-  void setDisorderCycleHideShow(Atom &);
-  QColor getDisorderColor(const Atom &);
 
   void updateRendererUniforms();
   void setRendererUniforms(QOpenGLShaderProgram *, bool selection_mode = false);
   void setRendererUniforms(Renderer *, bool selection_mode = false);
 
-  QMatrix3x3 atomThermalEllipsoidTransformationMatrix(const Atom &) const;
-
   QString m_name;
-  DeprecatedCrystal *m_deprecatedCrystal{nullptr};
   QList<Measurement> m_measurementList;
 
   OrbitCamera m_camera;
-  QMap<QString, Renderer*> m_renderers;
+  QMap<QString, Renderer *> m_renderers;
   CylinderImpostorRenderer *m_cylinderImpostorRenderer{nullptr};
   CylinderRenderer *m_meshCylinderRenderer{nullptr};
   EllipsoidRenderer *m_ellipsoidRenderer{nullptr};
@@ -468,11 +341,6 @@ private:
   LineRenderer *m_hydrogenBondLines{nullptr};
   LineRenderer *m_closeContactLines{nullptr};
   LineRenderer *m_unitCellLines{nullptr};
-
-  LineRenderer *m_energyFrameworkLines{nullptr};
-  CylinderRenderer *m_energyFrameworkCylinders{nullptr};
-  EllipsoidRenderer *m_energyFrameworkSpheres{nullptr};
-  BillboardRenderer *m_energyFrameworkLabels{nullptr};
 
   CircleRenderer *m_circles{nullptr};
   EllipsoidRenderer *m_lightPositionRenderer{nullptr};
@@ -502,8 +370,6 @@ private:
   bool m_depthFogEnabled{settings::GLOBAL_DEPTH_FOG_ENABLED};
 
   int _disorderCycleIndex;
-  int _energyCycleIndex;
-  bool _showEnergyFramework;
 
   QColor _backgroundColor;
   QString _ellipsoidProbabilityString;
@@ -521,8 +387,6 @@ private:
 
   QMap<QString, Mesh> m_meshes;
 
-  CrystalSurfaceHandler *m_surfaceHandler{nullptr};
-  ScenePeriodicity m_periodicity{ScenePeriodicity::ThreeDimensions};
   ChemicalStructure *m_structure{nullptr};
   cx::graphics::RenderSelection *m_selectionHandler{nullptr};
 

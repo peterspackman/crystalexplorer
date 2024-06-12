@@ -386,10 +386,14 @@ QImage GLWindow::renderToImage(int scaleFactor, bool for_picking) {
 }
 
 bool GLWindow::renderToPovRay(QTextStream &ts) {
+  qDebug() << "renderToPovRay";
+  return false;
+  /*
   if (!scene)
     return false;
   scene->exportToPovrayTextStream(ts);
   return true;
+  */
 }
 
 void GLWindow::setModelView() {
@@ -617,15 +621,18 @@ void GLWindow::handleObjectInformationDisplay(QPoint pos) {
         break;
       }
       case SelectionType::Surface: {
-        auto surface = scene->selectedSurface();
-        QVector3D centroid = surface->centroid();
+        // TODO get surface info;
+        // auto surface = scene->selectedSurface();
+        QVector3D centroid;
+        std::string surfaceName = "surface";
+        double area{0.0}, volume{0.0};
         info = QString::fromStdString(fmt::format(
             "<b>Surface type</b>: {}<br/>"
             "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
             "<b>Volume</b>:       {:9.3f}<br/>"
             "<b>Surface area</b>: {:9.3f}",
-            surface->surfaceName().toStdString(), centroid.x(), centroid.y(),
-            centroid.z(), surface->volume(), surface->area()));
+            surfaceName, centroid.x(), centroid.y(),
+            centroid.z(), volume, area));
         setObjectInformationTextAndPosition(info, pos);
         break;
       }
@@ -682,6 +689,7 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
       numberOfSelections++;
 
     } else if (numberOfSelections == Measurement::totalPositions(type) - 1) {
+      /*
 
       _secondSelectionWasDoubleClick = _doubleMouseClick;
 
@@ -734,6 +742,7 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
         scene->addMeasurement(m_currentMeasurement);
         scene->setSelectStatusForAllAtoms(false);
       }
+      */
       numberOfSelections = 0;
     }
 
@@ -808,6 +817,8 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
                            &GLWindow::contextualDeleteFragmentWithBond);
     break;
   case SelectionType::Surface: {
+    // TODO
+    /*
     Surface *surface = scene->selectedSurface();
     if (surface) {
       contextMenu->addAction(tr("Hide Surface"), this,
@@ -848,6 +859,7 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
         }
       }
     }
+      */
     break;
   }
   case SelectionType::None: // do nothing
@@ -892,13 +904,15 @@ void GLWindow::contextualGenerateExternalFragment() {
 void GLWindow::contextualHideSurface() {
   Q_ASSERT(scene);
 
-  emit surfaceHideRequest(scene->selectedSurfaceIndex());
+  // TODO
+  // emit surfaceHideRequest(scene->selectedSurfaceIndex());
 }
 
 void GLWindow::contextualDeleteSurface() {
   Q_ASSERT(scene);
 
-  emit surfaceDeleteRequest(scene->selectedSurfaceIndex());
+  // TODO
+  // emit surfaceDeleteRequest(scene->selectedSurfaceIndex());
 }
 
 void GLWindow::contextualShowSurfaceCaps() { showSurfaceCaps(true); }
@@ -908,9 +922,12 @@ void GLWindow::contextualHideSurfaceCaps() { showSurfaceCaps(false); }
 void GLWindow::showSurfaceCaps(bool show) {
   Q_ASSERT(scene);
 
+  // TODO
+  /*
   Surface *surface = scene->selectedSurface();
   surface->setCapsVisible(show);
   redraw();
+  */
 }
 
 void GLWindow::contextualCompletePickedAtom() {
@@ -930,15 +947,19 @@ void GLWindow::contextualCompleteSelectedBond() {
 }
 
 void GLWindow::contextualEditNonePropertyColor() {
-  QColor color = QColorDialog::getColor(ColorSchemer::getNoneColor());
+  // TODO fetch none color
+  QColor noneColor = Qt::white;
+  QColor color = QColorDialog::getColor(noneColor);
   if (color.isValid()) {
-    scene->currentSurface()->setNonePropertyColor(color);
+    // TODO set none color
+    //scene->currentSurface()->setNonePropertyColor(color);
     redraw();
   }
 }
 
 void GLWindow::contextualResetNonePropertyColor() {
-  scene->currentSurface()->updateNoneProperty();
+  // TODO update none color
+  //scene->currentSurface()->updateNoneProperty();
   redraw();
 }
 
@@ -1118,6 +1139,8 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
                              &GLWindow::contextualResetCustomAtomColors);
     }
 
+    // TODO handle surface case
+    /* 
     if (scene->hasSurface()) {
       contextMenu->addSeparator();
 
@@ -1131,6 +1154,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
                                &GLWindow::contextualShowAllSurfaces);
       }
     }
+    */
   }
 
   // Add general actions that don't depend on having a crystal here
@@ -1281,15 +1305,21 @@ void GLWindow::contextualToggleAtomicLabels() {
 }
 
 void GLWindow::contextualHideAllSurfaces() {
+  qDebug() << "contextualHideAllSurfaces";
+  /*
   Q_ASSERT(scene);
   scene->setSurfaceVisibilities(false);
   redraw();
+  */
 }
 
 void GLWindow::contextualShowAllSurfaces() {
+  qDebug() << "contextualShowAllSurfaces";
+  /*
   Q_ASSERT(scene);
   scene->setSurfaceVisibilities(true);
   redraw();
+  */
 }
 
 void GLWindow::contextualSuppressSelectedAtoms() {
@@ -1352,7 +1382,6 @@ QColor GLWindow::pickObjectAt(QPoint pos) {
                   1.0f); // Nothing to select if we haven't got a crystal
   }
   m_pickingImage = renderToImage(1, true);
-  m_pickingImage.save("picking.png");
 
   const bool needDevicePixelRatio{false};
   int factor = 1;

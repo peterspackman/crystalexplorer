@@ -1,12 +1,14 @@
 #pragma once
+#include <occ/crystal/unitcell.h>
 #include "crystalplane.h"
-#include "unitcell.h"
+#include "chemicalstructure.h"
+#include "qeigen.h"
 #include <QVector>
 
 class CrystalPlaneGenerator {
 public:
-  CrystalPlaneGenerator(const UnitCell &unitCell, const MillerIndex &hkl);
-  Vector3q normalVector() const;
+  CrystalPlaneGenerator(ChemicalStructure *, const MillerIndex &hkl);
+  occ::Vec3 normalVector() const;
 
   inline double a() const { return m_aVector.norm(); }
   inline double b() const { return m_bVector.norm(); }
@@ -24,15 +26,15 @@ public:
   inline const auto &alpha() const { return m_angle; }
   inline const auto &hkl() const { return m_hkl; }
 
-  Vector3q origin(double offset = 0.0) const;
+  occ::Vec3 origin(double offset = 0.0) const;
 
 private:
   void calculateVectors();
 
-  UnitCell m_uc;
+  occ::crystal::UnitCell m_uc;
   MillerIndex m_hkl;
-  Vector3q m_aVector;
-  Vector3q m_bVector;
-  Vector3q m_depthVector;
+  occ::Vec3 m_aVector;
+  occ::Vec3 m_bVector;
+  occ::Vec3 m_depthVector;
   float m_angle{0.0};
 };

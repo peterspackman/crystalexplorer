@@ -34,7 +34,8 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   m_structure = params.structure;
 
   QString filename, filename_outside;
-  m_atoms = {};
+  m_atomsInside = {};
+  m_atomsOutside = {};
 
   if(params.kind == isosurface::Kind::Void) {
       CrystalStructure *crystal = qobject_cast<CrystalStructure *>(m_structure);
@@ -44,9 +45,9 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       if(!writeByteArrayToFile(crystal->fileContents(), filename)) return;
   }
   else {
-      m_atoms = params.structure->atomsWithFlags(AtomFlag::Selected);
-      occ::IVec nums = params.structure->atomicNumbersForIndices(m_atoms);
-      occ::Mat3N pos = params.structure->atomicPositionsForIndices(m_atoms);
+      m_atomsInside = params.structure->atomsWithFlags(AtomFlag::Selected);
+      occ::IVec nums = params.structure->atomicNumbersForIndices(m_atomsInside);
+      occ::Mat3N pos = params.structure->atomicPositionsForIndices(m_atomsInside);
 
       if(params.wfn) {
         filename = m_structure->name() + "_" + isosurface::kindToString(params.kind) + "_inside.owf.json";
@@ -61,10 +62,10 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       }
       filename_outside = m_structure->name() + "_" + isosurface::kindToString(params.kind) + "_outside.xyz";
       {
-	  auto idxs = params.structure->atomsSurroundingAtomsWithFlags(AtomFlag::Selected, 12.0);
-	  qDebug() << "Idxs size: " << idxs.size();
-	  auto nums_outside = params.structure->atomicNumbersForIndices(idxs);
-	  auto pos_outside = params.structure->atomicPositionsForIndices(idxs);
+	  m_atomsOutside = params.structure->atomsSurroundingAtomsWithFlags(AtomFlag::Selected, 12.0);
+	  auto nums_outside = params.structure->atomicNumbersForIndices(m_atomsOutside);
+	  auto pos_outside = params.structure->atomicPositionsForIndices(m_atomsOutside);
+
 	  XYZFile xyz;
 	  xyz.setElements(nums_outside);
 	  xyz.setAtomPositions(pos_outside);
@@ -92,7 +93,8 @@ void IsosurfaceCalculator::surfaceComplete() {
     qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
     Mesh * mesh = io::loadMesh(m_filename);
     mesh->setObjectName(m_name);
-    mesh->setAtoms(m_atoms);
+    mesh->setAtomsInside(m_atomsInside);
+    mesh->setAtomsOutside(m_atomsOutside);
     mesh->setParent(m_structure);
 }
 

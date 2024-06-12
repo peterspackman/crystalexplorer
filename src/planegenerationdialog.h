@@ -2,7 +2,7 @@
 
 #include "colordelegate.h"
 #include "crystalplane.h"
-#include "spacegroup.h"
+#include <occ/crystal/spacegroup.h>
 #include <QDialog>
 #include <QStandardItemModel>
 
@@ -51,7 +51,7 @@ public:
   std::vector<CrystalPlane> planes() const;
   void loadPlanes(const std::vector<CrystalPlane> &planes);
 
-  void setSpaceGroup(const SpaceGroup &);
+  void setSpaceGroup(const occ::crystal::SpaceGroup &);
 
 signals:
   void createSurfaceGeometry(CrystalPlane);
@@ -68,5 +68,5 @@ private:
   QColor m_color;
   CrystalPlanesModel *m_planesModel{nullptr};
   ColorDelegate *m_colorDelegate{nullptr};
-  SpaceGroup m_spaceGroup;
+  occ::crystal::SpaceGroup m_spaceGroup;
 };

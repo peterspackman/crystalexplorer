@@ -10,7 +10,6 @@
 #include "crystalcontroller.h"
 #include "fingerprintwindow.h"
 #include "glwindow.h"
-#include "jobparameters.h"
 #include "project.h"
 #include "childpropertycontroller.h"
 #include "viewtoolbar.h"
@@ -21,7 +20,6 @@
 #include "closecontactsdialog.h"
 #include "depthfadingandclippingdialog.h"
 #include "energycalculationdialog.h"
-#include "frameworkdialog.h"
 #include "infoviewer.h"
 #include "planegenerationdialog.h"
 #include "preferencesdialog.h"
@@ -70,7 +68,6 @@ public slots:
   void uncheckContactAtomsAction();
   void displayFingerprint();
   void passCurrentCrystalToFingerprintWindow();
-  void passCurrentSurfaceVisibilityToSurfaceController();
 
   void calculateEnergies(pair_energy::EnergyModelParameters);
   void calculateEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters);
@@ -105,12 +102,10 @@ private slots:
   void setEllipsoidStyleWithProbabilityForCurrent();
   void toggleDrawHydrogenEllipsoids(bool);
   void updateMenuOptionsForScene();
-  void updateMenuOptionsForSurface(Surface *);
   void newProject();
   void saveProject();
   void saveProjectAs();
   void exportAs();
-  void exportSelectedSurface();
   QString suggestedProjectFilename();
   void showPreferencesDialog();
   void helpAboutActionDialog();
@@ -137,7 +132,6 @@ private slots:
   void allowCloneSurfaceAction();
   void allowCalculateEnergiesAction();
   void showEnergyCalculationDialog();
-  void calculateVoidDomains();
 
   void showEnergyFrameworkDialog();
   void cycleEnergyFrameworkBackwards();
@@ -147,9 +141,8 @@ private slots:
 
   void setFragmentStates();
 
-  void updateSurfaceControllerForNewProperty();
-  void handleTransformationMatrixUpdate();
   void backgroundTaskFinished();
+  void handleTransformationMatrixUpdate();
 
   void taskManagerTaskComplete(TaskID);
   void taskManagerTaskError(TaskID, QString);
@@ -199,9 +192,6 @@ private:
   void enableCloneSurfaceAction(bool);
   void enableCalculateEnergiesAction(bool);
 
-  void cloneVoidSurface(Scene *);
-  void cloneGeneralSurface(Scene *);
-
   bool overrideBondLengths();
   void showStatusMessage(QString);
   void viewFile(QString, int width = 620, int height = 600,
@@ -215,21 +205,11 @@ private:
                           QString htmlColor);
   void initDepthFadingAndClippingDialog();
 
-  void readSurfaceFile();
-
-  void returnToSurfaceGeneration();
-  void returnToEnergyCalculation();
-
-  void writeMorokumaInput(DeprecatedCrystal *);
-  void generateSurfaceWithProductProperty(DeprecatedCrystal *);
-  void tryCalculateAnotherEnergy();
-
   bool getFragmentStatesIfMultipleFragments(ChemicalStructure *);
   bool getFragmentStatesFromUser(ChemicalStructure *);
 
   Project *project{nullptr};
   GLWindow *glWindow{nullptr};
-  JobParameters jobParams;
   ViewToolbar *viewToolbar{nullptr};
   ChildPropertyController *childPropertyController{nullptr};
   CrystalController *crystalController{nullptr};
@@ -240,7 +220,6 @@ private:
   PreferencesDialog *preferencesDialog{nullptr};
   CloseContactDialog *m_closeContactDialog{nullptr};
   DepthFadingAndClippingDialog *depthFadingAndClippingDialog{nullptr};
-  FrameworkDialog *frameworkDialog{nullptr};
   FragmentStateDialog *m_fragmentStateDialog{nullptr};
   InfoViewer *infoViewer{nullptr};
   PlaneGenerationDialog *m_planeGenerationDialog{nullptr};

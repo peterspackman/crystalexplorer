@@ -2,9 +2,8 @@
 #include <numeric>
 
 template <typename T>
-T convertToCartesian(const UnitCell &uc, const T &vector) {
-  Vector3q tmp = uc.aAxis() * vector.x() + uc.bAxis() * vector.y() +
-                 uc.cAxis() * vector.z();
+T convertToCartesian(const occ::crystal::UnitCell &uc, const T &vector) {
+  occ::Vec3 tmp = uc.direct() * occ::Vec3(vector.x(), vector.y(), vector.z());
   return T(tmp.x(), tmp.y(), tmp.z());
 }
 
@@ -21,12 +20,13 @@ std::vector<size_t> argsort(const Eigen::Matrix<T, Rows, 1> &vec) {
 }
 
 double CrystalPlaneGenerator::interplanarSpacing() const {
-  return (m_uc.reciprocalMatrix() * Vector3q(m_hkl.h, m_hkl.k, m_hkl.l)).norm();
+  return (m_uc.reciprocal() * occ::Vec3(m_hkl.h, m_hkl.k, m_hkl.l)).norm();
 }
 
-CrystalPlaneGenerator::CrystalPlaneGenerator(const UnitCell &uc,
+CrystalPlaneGenerator::CrystalPlaneGenerator(ChemicalStructure * structure,
                                              const MillerIndex &hkl)
-    : m_uc(uc), m_hkl(hkl) {
+    : m_hkl(hkl) {
+  m_uc = occ::crystal::UnitCell(structure->cellVectors());
   calculateVectors();
 }
 
@@ -35,14 +35,14 @@ void CrystalPlaneGenerator::calculateVectors() {
   int commonDenominator =
       std::gcd(std::gcd(m_hkl.h, m_hkl.k), std::gcd(m_hkl.k, m_hkl.l));
   double depthMagnitude = commonDenominator / interplanarSpacing();
-  Vector3q unitNormal = normalVector();
-  std::vector<Vector3q> vectorCandidates;
+  occ::Vec3 unitNormal = normalVector();
+  std::vector<occ::Vec3> vectorCandidates;
 
   // H, K
   {
     int c = std::gcd(m_hkl.h, m_hkl.k);
     double cd = (c != 0) ? c : 1.0;
-    Vector3q v = m_hkl.k / cd * m_uc.aAxis() - m_hkl.h / cd * m_uc.bAxis();
+    occ::Vec3 v = m_hkl.k / cd * m_uc.a_vector() - m_hkl.h / cd * m_uc.b_vector();
     if (v.squaredNorm() > minimumLength)
       vectorCandidates.push_back(v);
   }
@@ -50,7 +50,7 @@ void CrystalPlaneGenerator::calculateVectors() {
   {
     int c = std::gcd(m_hkl.h, m_hkl.l);
     double cd = (c != 0) ? c : 1.0;
-    Vector3q v = m_hkl.l / cd * m_uc.aAxis() - m_hkl.h / cd * m_uc.cAxis();
+    occ::Vec3 v = m_hkl.l / cd * m_uc.a_vector() - m_hkl.h / cd * m_uc.c_vector();
     if (v.squaredNorm() > minimumLength)
       vectorCandidates.push_back(v);
   }
@@ -58,16 +58,16 @@ void CrystalPlaneGenerator::calculateVectors() {
   {
     int c = std::gcd(m_hkl.k, m_hkl.l);
     double cd = (c != 0) ? c : 1.0;
-    Vector3q v = m_hkl.l / cd * m_uc.bAxis() - m_hkl.k / cd * m_uc.cAxis();
+    occ::Vec3 v = m_hkl.l / cd * m_uc.b_vector() - m_hkl.k / cd * m_uc.c_vector();
     if (v.squaredNorm() > minimumLength)
       vectorCandidates.push_back(v);
   }
-  std::vector<Vector3q> temp;
+  std::vector<occ::Vec3> temp;
   for (int i = 0; i < vectorCandidates.size(); i++) {
     const auto &vi = vectorCandidates[i];
     for (int j = i + 1; j < vectorCandidates.size(); j++) {
       const auto &vj = vectorCandidates[j];
-      Vector3q v = vi + vj;
+      occ::Vec3 v = vi + vj;
       if (v.squaredNorm() > minimumLength) {
         temp.push_back(v);
       }
@@ -80,14 +80,14 @@ void CrystalPlaneGenerator::calculateVectors() {
   vectorCandidates.insert(vectorCandidates.end(), temp.begin(), temp.end());
 
   std::sort(vectorCandidates.begin(), vectorCandidates.end(),
-            [](const Vector3q &a, const Vector3q &b) {
+            [](const occ::Vec3 &a, const occ::Vec3 &b) {
               return a.squaredNorm() < b.squaredNorm();
             });
 
   bool found = false;
   m_aVector = vectorCandidates[0];
   for (int i = 1; i < vectorCandidates.size(); i++) {
-    Vector3q tmp = m_aVector.cross(vectorCandidates[i]);
+    occ::Vec3 tmp = m_aVector.cross(vectorCandidates[i]);
     if (tmp.squaredNorm() > minimumLength) {
       found = true;
       m_bVector = vectorCandidates[i];
@@ -99,23 +99,23 @@ void CrystalPlaneGenerator::calculateVectors() {
   m_depthVector = depthMagnitude * unitNormal;
 }
 
-Vector3q CrystalPlaneGenerator::normalVector() const {
-  std::vector<Vector3q> vecs;
+occ::Vec3 CrystalPlaneGenerator::normalVector() const {
+  std::vector<occ::Vec3> vecs;
   if (m_hkl.h == 0)
-    vecs.push_back(m_uc.aAxis());
+    vecs.push_back(m_uc.a_vector());
   if (m_hkl.k == 0)
-    vecs.push_back(m_uc.bAxis());
+    vecs.push_back(m_uc.b_vector());
   if (m_hkl.l == 0)
-    vecs.push_back(m_uc.cAxis());
+    vecs.push_back(m_uc.c_vector());
 
   if (vecs.size() < 2) {
-    std::vector<Vector3q> points;
+    std::vector<occ::Vec3> points;
     if (m_hkl.h != 0)
-      points.push_back(convertToCartesian(m_uc, Vector3q(1.0 / m_hkl.h, 0, 0)));
+      points.push_back(convertToCartesian(m_uc, occ::Vec3(1.0 / m_hkl.h, 0, 0)));
     if (m_hkl.k != 0)
-      points.push_back(convertToCartesian(m_uc, Vector3q(0, 1.0 / m_hkl.k, 0)));
+      points.push_back(convertToCartesian(m_uc, occ::Vec3(0, 1.0 / m_hkl.k, 0)));
     if (m_hkl.l != 0)
-      points.push_back(convertToCartesian(m_uc, Vector3q(0, 0, 1.0 / m_hkl.l)));
+      points.push_back(convertToCartesian(m_uc, occ::Vec3(0, 0, 1.0 / m_hkl.l)));
     if (points.size() == 2) {
       vecs.push_back(points[1] - points[0]);
     } else {
@@ -123,12 +123,12 @@ Vector3q CrystalPlaneGenerator::normalVector() const {
       vecs.push_back(points[2] - points[0]);
     }
   }
-  Vector3q v = vecs[0].cross(vecs[1]);
+  occ::Vec3 v = vecs[0].cross(vecs[1]);
   v.normalize();
   qDebug() << "Normal vector" << QVector3D(v.x(), v.y(), v.z());
   return v;
 }
 
-Vector3q CrystalPlaneGenerator::origin(double offset) const {
+occ::Vec3 CrystalPlaneGenerator::origin(double offset) const {
   return offset * normalVector();
 }

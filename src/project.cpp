@@ -2,30 +2,14 @@
 #include <QtDebug>
 
 #include "ciffile.h"
-#include "pdbfile.h"
 #include "confirmationbox.h"
-#include "crystaldata.h"
 #include "dialoghtml.h"
 #include "elementdata.h"
+#include "pdbfile.h"
 #include "project.h"
 #include "version.h"
 #include "xyzfile.h"
-
-namespace CrystalNotification {
-void subscribe(Project *project, DeprecatedCrystal *crystal) {
-  if (!crystal)
-    return;
-  QObject::connect(crystal, &DeprecatedCrystal::atomsChanged, project,
-                   &Project::atomSelectionChanged);
-}
-
-void unsubscribe(Project *project, DeprecatedCrystal *crystal) {
-  if (!crystal)
-    return;
-  QObject::disconnect(crystal, &DeprecatedCrystal::atomsChanged, project,
-                      &Project::atomSelectionChanged);
-}
-} // namespace CrystalNotification
+#include "globals.h"
 
 namespace SceneNotification {
 void subscribe(Project *project) {
@@ -46,7 +30,6 @@ void subscribe(Project *project) {
                    &Project::clickedSurface);
   QObject::connect(scene, &Scene::clickedSurfacePropertyValue, project,
                    &Project::clickedSurfacePropertyValue);
-  CrystalNotification::subscribe(project, scene->crystal());
 }
 
 void unsubscribe(Project *project) {
@@ -62,12 +45,11 @@ void unsubscribe(Project *project) {
   QObject::disconnect(scene, &Scene::atomSelectionChanged, project,
                       &Project::atomSelectionChanged);
   QObject::disconnect(scene, &Scene::structureChanged, project,
-		      &Project::structureChanged);
+                      &Project::structureChanged);
   QObject::disconnect(scene, &Scene::clickedSurface, project,
-		      &Project::clickedSurface);
+                      &Project::clickedSurface);
   QObject::disconnect(scene, &Scene::clickedSurfacePropertyValue, project,
                       &Project::clickedSurfacePropertyValue);
-  CrystalNotification::unsubscribe(project, scene->crystal());
 }
 } // namespace SceneNotification
 
@@ -113,52 +95,12 @@ void Project::removeCurrentCrystal() {
   }
 }
 
-bool Project::loadCrystalDataTonto(const QString &cxs, const QString &cif) {
-  QVector<Scene *> crystalList = crystaldata::loadCrystalsFromTontoOutput(cxs, cif);
-  if (crystalList.size() > 0) {
-    int position = m_scenes.size();
-    beginInsertRows(QModelIndex(), position, position);
-    m_scenes.append(crystalList);
-    endInsertRows();
-    setUnsavedChangesExists();
-    setCurrentCrystal(position);
-    return true;
+ChemicalStructure *Project::currentStructure() {
+  auto *scene = currentScene();
+  if (scene) {
+    return scene->chemicalStructure();
   }
-  return false;
-}
-
-bool Project::loadCrystalData(const JobParameters &jobParams) {
-    QString cxs = jobParams.outputFilename;
-    QString cif = jobParams.inputFilename;
-  QVector<Scene *> crystalList = crystaldata::loadCrystalsFromTontoOutput(cxs, cif);
-  if (crystalList.size() > 0) {
-    int position = m_scenes.size();
-    beginInsertRows(QModelIndex(), position, position);
-    m_scenes.append(crystalList);
-    endInsertRows();
-    setUnsavedChangesExists();
-    setCurrentCrystal(position);
-    return true;
-  }
-  return false;
-}
-
-bool Project::loadSurfaceData(const JobParameters &jobParams) {
-  if (currentScene() && currentScene()->loadSurfaceData(jobParams)) {
-    currentScene()->setSelectStatusForAllAtoms(
-        false); // Now we have a surface, clear the currently selected atoms
-    setUnsavedChangesExists();
-    return true;
-  }
-  return false;
-}
-
-ChemicalStructure* Project::currentStructure() {
-    auto *scene = currentScene();
-    if(scene) {
-	return scene->chemicalStructure();
-    }
-    return nullptr;
+  return nullptr;
 }
 
 Scene *Project::currentScene() {
@@ -215,26 +157,9 @@ void Project::tidyUpOutgoingScene() {
   if (!currentScene()) {
     return;
   }
-
-  DeprecatedCrystal *crystal = currentScene()->crystal();
-  if (crystal) {
-    // turn off contact atoms when moving to a different crystal
-    if (currentScene()->crystal()->hasAnyVdwContactAtoms()) {
-      removeContactAtoms();
-      emit contactAtomsTurnedOff();
-    }
-  }
 }
 
 void Project::connectUpCurrentScene() { SceneNotification::subscribe(this); }
-
-QList<ScenePeriodicity> Project::scenePeriodicities() const {
-  QList<ScenePeriodicity> result;
-  for (const auto *scene : std::as_const(m_scenes)) {
-    result.append(scene->periodicity());
-  }
-  return result;
-}
 
 QStringList Project::sceneTitles() {
   QStringList result;
@@ -247,40 +172,6 @@ QStringList Project::sceneTitles() {
 void Project::cycleDisorderHighlighting() {
   if (currentScene()) {
     currentScene()->cycleDisorderHighlighting();
-    emit currentSceneChanged();
-  }
-}
-
-void Project::cycleEnergyFramework(bool cycleBackwards) {
-  Scene *crystal = currentScene();
-  if (crystal && crystal->crystal()->hasInteractionEnergies()) {
-    crystal->cycleEnergyFramework(cycleBackwards);
-    crystal->crystal()->updateEnergyInfo(crystal->currentFramework());
-    emit currentSceneChanged();
-  }
-}
-
-void Project::updateEnergyFramework() {
-  Scene *crystal = currentScene();
-  if (crystal && crystal->crystal()->hasInteractionEnergies()) {
-    crystal->crystal()->updateEnergyInfo(crystal->currentFramework());
-    emit currentSceneChanged();
-  }
-}
-
-void Project::turnOffEnergyFramework() {
-  Scene *crystal = currentScene();
-  if (crystal) {
-    crystal->turnOffEnergyFramework();
-    emit currentSceneChanged();
-  }
-}
-
-void Project::updateEnergyTheoryForEnergyFramework(EnergyTheory theory) {
-  Scene *crystal = currentScene();
-  if (crystal) {
-    crystal->crystal()->setEnergyTheoryForEnergyFramework(
-        theory, crystal->currentFramework());
     emit currentSceneChanged();
   }
 }
@@ -303,12 +194,6 @@ void Project::updateAllCrystalsForChangeInElementData() {
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }
-}
-
-void Project::removeContactAtoms() {
-  Q_ASSERT(currentScene());
-  currentScene()->crystal()->removeVdwContactAtoms();
-  emit currentSceneChanged();
 }
 
 void Project::generateCells(QPair<QVector3D, QVector3D> cellLimits) {
@@ -385,8 +270,8 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
   for (int i = 0; i < pdbReader.numberOfCrystals(); i++) {
     CrystalStructure *tmp = new CrystalStructure();
     tmp->setOccCrystal(pdbReader.getCrystalStructure(i));
-    //tmp->setFileContents(pdbReader.getCrystalCifContents(i));
-    //tmp->setName(pdbReader.getCrystalName(i));
+    // tmp->setFileContents(pdbReader.getCrystalCifContents(i));
+    // tmp->setName(pdbReader.getCrystalName(i));
     Scene *scene = new Scene(tmp);
     scene->setTitle(QFileInfo(filename).baseName());
     if (i == 0) {
@@ -405,7 +290,6 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
 
   return true;
 }
-
 
 bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
   CifFile cifReader;
@@ -551,11 +435,14 @@ QString Project::saveFilename() { return _saveFilename; }
 void Project::updateHydrogenBondsForCurrent(QString donor, QString acceptor,
                                             double distanceCriteria,
                                             bool includeIntraHBonds) {
+  qDebug() << "updateHydrogenBondsForCurrent";
+  /*
   if (currentScene() != nullptr) {
     currentScene()->crystal()->updateHBondList(
         donor, acceptor, distanceCriteria, includeIntraHBonds);
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::toggleCC1(bool show) { toggleCloseContact(CC1_INDEX, show); }
@@ -574,27 +461,36 @@ void Project::toggleCloseContact(int ccIndex, bool show) {
 void Project::updateCloseContactsForCurrent(int contactIndex, QString x,
                                             QString y,
                                             double distanceCriteria) {
+  qDebug() << "updateCloseContactsForCurrent";
+  /*
   if (currentScene() != nullptr) {
     currentScene()->crystal()->updateCloseContactWithIndex(contactIndex, x, y,
                                                            distanceCriteria);
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::removeIncompleteFragmentsForCurrentCrystal() {
+  qDebug() << "updateCloseContactsForCurrent";
+  /*
   if (currentScene()) {
     currentScene()->crystal()->discardIncompleteFragments();
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::removeSelectedAtomsForCurrentCrystal() {
+  qDebug() << "updateCloseContactsForCurrent";
+  /*
   if (currentScene()) {
     currentScene()->crystal()->discardSelectedAtoms();
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::resetCurrentCrystal() {
@@ -608,9 +504,7 @@ void Project::resetCurrentCrystal() {
 
 QString Project::projectFileVersion() const { return CX_VERSION; }
 
-QString Project::projectFileCompatibilityVersion() const {
-  return CX_VERSION;
-}
+QString Project::projectFileCompatibilityVersion() const { return CX_VERSION; }
 
 void Project::setUnsavedChangesExists() {
   m_haveUnsavedChanges = true;
@@ -628,6 +522,9 @@ void Project::showAtomsWithinRadius(float radius,
 }
 
 void Project::toggleAtomsForFingerprintSelectionFilter(bool show) {
+  // TODO
+  qDebug() << "toggleAtomsForFingerprintSelectionFilter";
+  /*
   if (currentScene() && currentScene()->currentSurface()) {
     currentScene()->toggleAtomsForFingerprintSelectionFilter(show);
     // emit currentCrystalContentsChanged();
@@ -635,6 +532,7 @@ void Project::toggleAtomsForFingerprintSelectionFilter(bool show) {
     // No current surface!
     Q_ASSERT(false);
   }
+  */
 }
 
 void Project::suppressSelectedAtoms() {
@@ -646,25 +544,34 @@ void Project::suppressSelectedAtoms() {
 }
 
 void Project::unsuppressSelectedAtoms() {
+  qDebug() << "unsupressSelectedAtoms";
+  /*
   if (currentScene()) {
     currentScene()->crystal()->unsuppressSelectedAtoms();
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::selectAllAtoms() {
+  qDebug() << "selectAllAtoms";
+  /*
   if (currentScene()) {
     currentScene()->crystal()->selectAllAtoms();
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::selectSuppressedAtoms() {
+  qDebug() << "selectSuppressedAtoms";
+  /*
   if (currentScene()) {
     currentScene()->crystal()->selectAllSuppressedAtoms();
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::selectAtomsOutsideRadiusOfSelectedAtoms(float radius) {
@@ -675,35 +582,39 @@ void Project::selectAtomsOutsideRadiusOfSelectedAtoms(float radius) {
 }
 
 void Project::selectAtomsInsideCurrentSurface() {
+  qDebug() << "selectAtomsInsideCurrentSurface";
+  /*
   if (currentScene() && currentScene()->currentSurface()) {
     currentScene()->selectAtomsSeparatedBySurface(true);
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::selectAtomsOutsideCurrentSurface() {
+  qDebug() << "selectAtomsInsideCurrentSurface";
+  /*
   if (currentScene() && currentScene()->currentSurface()) {
     currentScene()->selectAtomsSeparatedBySurface(false);
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::invertSelection() {
+  qDebug() << "invertSelection";
+  /*
   if (currentScene()) {
     currentScene()->crystal()->invertSelection();
     emit currentSceneChanged();
   }
+  */
 }
 
 void Project::removeAllMeasurements() {
-  foreach (Scene *scene, m_scenes) {
-    scene->removeAllMeasurements();
-  }
-}
-
-void Project::addMonomerEnergyToCurrent(const MonomerEnergy &m) {
-  if (currentScene()) {
-    currentScene()->crystal()->addMonomerEnergy(m);
+  for (auto *scene : m_scenes) {
+    if (scene)
+      scene->removeAllMeasurements();
   }
 }
 
@@ -712,9 +623,11 @@ void Project::addMonomerEnergyToCurrent(const MonomerEnergy &m) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 QDataStream &operator<<(QDataStream &datastream, const Project &project) {
-    qDebug() << "pos before" << datastream.device()->pos();
+  qDebug() << "Load project";
+  /*
+  qDebug() << "pos before" << datastream.device()->pos();
   datastream << project.projectFileVersion();
-    qDebug() << "pos after" << datastream.device()->pos();
+  qDebug() << "pos after" << datastream.device()->pos();
 
   ElementData::writeToStream(datastream);
   qDebug() << "Wrote element data";
@@ -727,11 +640,13 @@ QDataStream &operator<<(QDataStream &datastream, const Project &project) {
   }
   datastream << project.m_currentSceneIndex;
   datastream << project.m_previousSceneIndex;
+  */
 
   return datastream;
 }
 
 QDataStream &operator>>(QDataStream &ds, Project &project) {
+  /*
   // It's feasible that the contents of a project file changes over time
   // It's too difficult at present to provide the ability to read numerous
   // versions of project files. The (slightly brutal) solution is to only
@@ -769,78 +684,76 @@ QDataStream &operator>>(QDataStream &ds, Project &project) {
   ds >> project.m_currentSceneIndex;
   ds >> project.m_previousSceneIndex;
 
-
   Q_ASSERT(project.m_currentSceneIndex >= 0 &&
            project.m_currentSceneIndex < project.m_scenes.size());
   Q_ASSERT(project.m_previousSceneIndex >= -1 &&
            project.m_previousSceneIndex < project.m_scenes.size());
 
   // TODO fix title
+  */
   return ds;
 }
 
 int Project::rowCount(const QModelIndex &parent) const {
-    return m_scenes.size();
+  return m_scenes.size();
 }
 
-QVariant Project::headerData(int section, Qt::Orientation orientation, int role) const {
-    if (role != Qt::DisplayRole) {
-        return QVariant();
-    }
-    
-    if (orientation == Qt::Horizontal) {
-	return tr("Structure");
-    }
-    // Optionally handle vertical headers or return QVariant() if not needed
+QVariant Project::headerData(int section, Qt::Orientation orientation,
+                             int role) const {
+  if (role != Qt::DisplayRole) {
     return QVariant();
+  }
+
+  if (orientation == Qt::Horizontal) {
+    return tr("Structure");
+  }
+  // Optionally handle vertical headers or return QVariant() if not needed
+  return QVariant();
 }
 
-
-int Project::columnCount(const QModelIndex &parent) const {
-    return 1;
-}
+int Project::columnCount(const QModelIndex &parent) const { return 1; }
 
 QVariant Project::data(const QModelIndex &index, int role) const {
-    if (!index.isValid() || index.row() < 0 || index.row() >= m_scenes.size())
-        return QVariant();
-
-    // Retrieve the Scene* directly from the index's internal pointer:
-    Scene* scene = static_cast<Scene*>(index.internalPointer());
-    if (!scene) return QVariant();
-
-    if (role == Qt::DisplayRole) {
-        return scene->title();
-    }
-    else if(role == Qt::DecorationRole) {
-	auto kind = scene->periodicity();
-	if (m_sceneKindIcons.contains(kind)) {
-	    return m_sceneKindIcons[kind];
-	}
-    }
-
+  if (!index.isValid() || index.row() < 0 || index.row() >= m_scenes.size())
     return QVariant();
+
+  // Retrieve the Scene* directly from the index's internal pointer:
+  Scene *scene = static_cast<Scene *>(index.internalPointer());
+  if (!scene)
+    return QVariant();
+
+  if (role == Qt::DisplayRole) {
+    return scene->title();
+  } else if (role == Qt::DecorationRole) {
+    auto kind = scene->periodicity();
+    if (m_sceneKindIcons.contains(kind)) {
+      return m_sceneKindIcons[kind];
+    }
+  }
+
+  return QVariant();
 }
 
-
-QModelIndex Project::index(int row, int column, const QModelIndex &parent) const {
-    if (parent.isValid() || row < 0 || row >= m_scenes.size() || column != 0) {
-        return QModelIndex();
-    }
-    return createIndex(row, column, static_cast<void*>(m_scenes.at(row)));
+QModelIndex Project::index(int row, int column,
+                           const QModelIndex &parent) const {
+  if (parent.isValid() || row < 0 || row >= m_scenes.size() || column != 0) {
+    return QModelIndex();
+  }
+  return createIndex(row, column, static_cast<void *>(m_scenes.at(row)));
 }
 
 QModelIndex Project::parent(const QModelIndex &index) const {
-    return QModelIndex();
+  return QModelIndex();
 }
 
-void Project::onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected) {
-    Q_UNUSED(deselected); // If not used
+void Project::onSelectionChanged(const QItemSelection &selected,
+                                 const QItemSelection &deselected) {
+  Q_UNUSED(deselected); // If not used
 
-    QModelIndexList indexes = selected.indexes();
-    if (!indexes.isEmpty()) {
-        // Single selection mode assumed, take the first selected index
-        QModelIndex currentIndex = indexes.first();
-	setCurrentCrystal(currentIndex.row());
-    }
+  QModelIndexList indexes = selected.indexes();
+  if (!indexes.isEmpty()) {
+    // Single selection mode assumed, take the first selected index
+    QModelIndex currentIndex = indexes.first();
+    setCurrentCrystal(currentIndex.row());
+  }
 }
-

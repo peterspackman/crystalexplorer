@@ -25,7 +25,10 @@ private:
     ChemicalStructure * m_structure{nullptr};
     QString m_name;
     QString m_filename;
-    std::vector<GenericAtomIndex> m_atoms;
+    std::vector<GenericAtomIndex> m_atomsInside;
+    std::vector<GenericAtomIndex> m_atomsOutside;
+    occ::IVec m_nums_inside;
+    occ::IVec m_nums_outside;
 };
 
 }

@@ -5,7 +5,6 @@
 #include "fingerprintoptions.h"
 #include "fingerprintplot.h"
 #include "scene.h"
-#include "surface.h"
 
 typedef QMap<QString, QVector<double>> FingerprintBreakdown;
 

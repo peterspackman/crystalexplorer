@@ -7,7 +7,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>734</width>
+    <width>751</width>
     <height>713</height>
    </rect>
   </property>
@@ -1324,16 +1324,6 @@
           <string/>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="3" column="0">
-           <widget class="QCheckBox" name="useSBFFilesForSurfaceGeneration">
-            <property name="toolTip">
-             <string>Controls whether the (much faster) binary SBF files interface for all surface generation.</string>
-            </property>
-            <property name="text">
-             <string>Use SBF files for surface generation</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0">
            <widget class="QCheckBox" name="writeGaussianCPFilesCheckBox">
             <property name="toolTip">
@@ -1345,12 +1335,12 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QCheckBox" name="disableXHNormalisationCheckBox">
+           <widget class="QCheckBox" name="enableXHNormalisationCheckBox">
             <property name="toolTip">
              <string>Controls whether B-H, C-H, N-H and O-H bond lengths will be normalized to the average bond length. This is typically only desirable for experimental structures from XRD where H bond lengths may be artificially short.</string>
             </property>
             <property name="text">
-             <string>Disable X-H normalization</string>
+             <string>Enable  X-H normalization</string>
             </property>
            </widget>
           </item>
@@ -1361,85 +1351,6 @@
             </property>
             <property name="text">
              <string>Remove working files</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QCheckBox" name="useOccNotTontoCheckBox">
-            <property name="text">
-             <string>Use OCC instead of Tonto</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="slaterBasisGroupBox">
-         <property name="title">
-          <string>Atomic wavefunction type</string>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_3">
-          <item>
-           <widget class="QRadioButton" name="thakkarRadioButton">
-            <property name="text">
-             <string>Koga-Kanayama-Watanabe-Imai-Thakkar (2000)</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="clementiRoettiRadioButton">
-            <property name="text">
-             <string>Clementi-Roetti (1974)</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="tontoExpertGroupBox">
-         <property name="title">
-          <string>The Tonto executable</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout">
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_9">
-            <item>
-             <widget class="QLineEdit" name="tontoPathLineEdit"/>
-            </item>
-            <item>
-             <widget class="QPushButton" name="tontoPathButton">
-              <property name="text">
-               <string>Set Path</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="experimentalGroupBox">
-         <property name="title">
-          <string>Experimental</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_10">
-          <item>
-           <widget class="QCheckBox" name="experimentalEnergiesCheckBox">
-            <property name="toolTip">
-             <string>Allows the calculation of GFN-xTB energies using xtb, or DLPNO-CCSD(T) energies using ORCA.</string>
-            </property>
-            <property name="text">
-             <string>Enable experimental interaction energies</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="experimentalFeatureFlagCheckBox">
-            <property name="text">
-             <string>Enable (unstable) experimental features</string>
             </property>
            </widget>
           </item>

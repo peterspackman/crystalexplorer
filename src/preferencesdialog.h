@@ -35,7 +35,6 @@ signals:
   void textSettingsChanged();
 
 private slots:
-  void getTontoPath();
   void getValueForExternalProgramSetting(QStandardItem *item);
   void handleExternalProgramSettingsDoubleClick(const QModelIndex &index);
   void restoreDefaultExternalProgramSetting();
@@ -56,7 +55,6 @@ private slots:
   void updateSliderPerspective();
   void contextualGlwindowBackgroundColor();
   void restoreExpertSettings();
-  void setInternalBasisset();
   void setEnergiesTableDecimalPlaces(int);
   void setEnergiesColorScheme(int);
   void setJmolColors(bool);

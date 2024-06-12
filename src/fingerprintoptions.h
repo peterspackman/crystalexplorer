@@ -8,8 +8,6 @@
 
 const QString NONE_ELEMENT_LABEL = "All";
 
-const FingerprintFilterMode defaultFilter = noFilter;
-
 class FingerprintOptions : public QWidget, public Ui::FingerprintOptions {
   Q_OBJECT
 
@@ -19,14 +17,12 @@ public:
   void resetOptions();
 
 signals:
-  void plotTypeChanged(PlotType);
-  void plotRangeChanged(PlotRange);
+  void plotRangeChanged(FingerprintPlotRange);
   void filterChanged(FingerprintFilterMode, bool, bool, bool, QString, QString);
   void saveFingerprint(QString);
   void closeClicked();
 
 private slots:
-  void updatePlotType(int);
   void updatePlotRange(int);
   void updateFilterMode();
   void updateFilterSettings();
@@ -37,6 +33,7 @@ private slots:
 private:
   void init();
   QStringList filterOptions();
+  QStringList plotRangeLabels();
   void initConnections();
   void enableSignalsForWidgets(bool);
   void resetFilter();

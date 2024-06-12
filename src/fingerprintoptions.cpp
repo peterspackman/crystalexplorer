@@ -16,8 +16,7 @@ void FingerprintOptions::init() {
   surfaceAreaProgressBar->setFormat(""); // prevent default percentage label on
                                          // windows/linux (since we display our
                                          // own)
-  //	plotTypeComboBox->addItems(plotTypeLabels);
-  plotRangeComboBox->addItems(plotRangeLabels);
+  plotRangeComboBox->addItems(plotRangeLabels());
   filterComboBox->addItems(filterOptions());
   resetOptions();
 }
@@ -48,8 +47,22 @@ void FingerprintOptions::initConnections() {
 
 QStringList FingerprintOptions::filterOptions() {
   QStringList labels;
-  foreach (FingerprintFilterMode mode, requestableFilters) {
-    labels << fingerprintFilterLabels[mode];
+  for (const auto &mode: requestableFilters) {
+    labels.push_back(fingerprintFilterLabels[static_cast<int>(mode)]);
+  }
+  return labels;
+}
+
+QStringList FingerprintOptions::plotRangeLabels() {
+
+  const auto ranges = {
+    FingerprintPlotRange::Standard,
+    FingerprintPlotRange::Translated,
+    FingerprintPlotRange::Expanded,
+  };
+  QStringList labels;
+  for(const auto& plotRange: ranges) {
+    labels.push_back(plotRangeSettings(plotRange).label);
   }
   return labels;
 }
@@ -66,7 +79,7 @@ QColor FingerprintOptions::getButtonColor(QToolButton *colorButton) {
 }
 
 void FingerprintOptions::resetOptions() {
-  plotRangeComboBox->setCurrentIndex(static_cast<int>(standardPlot));
+  plotRangeComboBox->setCurrentIndex(0); // standard range
   filterComboBox->setCurrentIndex(0); // no filter
   updateFilterMode();
 }
@@ -78,7 +91,7 @@ void FingerprintOptions::resetElementFilterOptions() {
 }
 
 void FingerprintOptions::resetFilter() {
-  filterComboBox->setCurrentIndex(static_cast<int>(defaultFilter));
+  filterComboBox->setCurrentIndex(0);
 
   resetElementFilterOptions();
   surfaceAreaLabel->setText("100 %");
@@ -88,7 +101,7 @@ void FingerprintOptions::resetFilter() {
 void FingerprintOptions::updateFilterMode() {
   FingerprintFilterMode filterMode = getFilterMode();
   updateVisibilityOfFilterWidgets(filterMode);
-  if (filterMode == noFilter) {
+  if (filterMode == FingerprintFilterMode::None) {
     resetFilter();
   }
   updateFilterSettings();
@@ -107,15 +120,11 @@ void FingerprintOptions::updateVisibilityOfFilterWidgets(
   setVisibleCommonFilteringWidgets(false);
 
   switch (filterMode) {
-  case noFilter:
+  case FingerprintFilterMode::None:
     // handled above
     break;
-  case elementFilter:
+  case FingerprintFilterMode::Element:
     setVisibleElementFilteringWidgets(true);
-    setVisibleCommonFilteringWidgets(true);
-    break;
-  case selectionFilter:
-    setVisibleSelectionFilteringWidgets(true);
     setVisibleCommonFilteringWidgets(true);
     break;
   }
@@ -156,12 +165,8 @@ void FingerprintOptions::setElementList(QStringList elementSymbols) {
   updateFilterSettings();
 }
 
-void FingerprintOptions::updatePlotType(int index) {
-  emit plotTypeChanged(static_cast<PlotType>(index));
-}
-
 void FingerprintOptions::updatePlotRange(int index) {
-  emit plotRangeChanged(static_cast<PlotRange>(index));
+  emit plotRangeChanged(static_cast<FingerprintPlotRange>(index));
 }
 
 void FingerprintOptions::updateFilterSettings() {

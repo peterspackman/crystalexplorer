@@ -59,6 +59,8 @@ public:
                 const std::vector<QString> &labels = {});
 
   QStringList uniqueElementSymbols() const;
+  std::vector<int> hydrogenBondDonors() const;
+  QStringList uniqueHydrogenDonorElements() const;
 
   // assumed to be CIF for now
   inline void setFileContents(const QByteArray &contents) { m_fileContents = contents; }
@@ -142,6 +144,7 @@ public:
   virtual void deleteFragmentContainingAtomIndex(int atomIndex);
   virtual void deleteIncompleteFragments();
   virtual bool hasIncompleteFragments() const;
+  virtual bool hasIncompleteSelectedFragments() const;
   virtual const std::vector<int> &atomsForFragment(int) const;
   virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
@@ -171,10 +174,12 @@ public:
   void setFlagForAtoms(const std::vector<int> &, AtomFlag, bool on = true);
   void setFlagForAtomsFiltered(const AtomFlag &flagToSet, const AtomFlag &query,
                                bool on = true);
+  void toggleFlagForAllAtoms(AtomFlag);
 
   [[nodiscard]] inline PairInteractionResults *interactions() { return m_interactions; }
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
+  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &, float radius) const;
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const;
 
   [[nodiscard]] virtual std::vector<WavefunctionAndTransform> wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &);

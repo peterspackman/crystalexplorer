@@ -23,6 +23,7 @@ public:
     int threads() const;
 
 private:
+    void appendWavefunctionTransformArguments(QStringList &args);
     QString kind() const;
     isosurface::Parameters m_parameters;
     QString m_wavefunctionSuffix{".json"};

@@ -63,6 +63,8 @@ public:
     [[nodiscard]] VertexList computeFaceNormals() const;
     [[nodiscard]] VertexList computeVertexNormals(NormalSetting s = NormalSetting::Flat) const;
 
+    [[nodiscard]] ScalarPropertyValues averagedFaceProperty(const QString &) const;
+
     // vertex properties
     [[nodiscard]] QStringList availableVertexProperties() const;
     [[nodiscard]] const ScalarProperties &vertexProperties() const;
@@ -104,9 +106,28 @@ public:
     size_t rendererIndex() const;
     void setRendererIndex(size_t idx);
 
-    void setAtoms(const std::vector<GenericAtomIndex> &idxs);
-    [[nodiscard]] const std::vector<GenericAtomIndex> & atoms() const;
+    void setAtomsInside(const std::vector<GenericAtomIndex> &idxs);
+    [[nodiscard]] const std::vector<GenericAtomIndex> & atomsInside() const;
+
+    void setAtomsOutside(const std::vector<GenericAtomIndex> &idxs);
+    [[nodiscard]] const std::vector<GenericAtomIndex> & atomsOutside() const;
+
     bool haveChildMatchingTransform(const Eigen::Isometry3d &transform) const;
+
+    inline const auto &faceAreas() const { return m_faceAreas; }
+
+    void resetFaceMask(bool value = false);
+    [[nodiscard]] inline const auto &faceMask() const { return m_faceMask; }
+    [[nodiscard]] inline auto &faceMask() { return m_faceMask; }
+
+    inline void resetFaceHighlights() { 
+	m_faceHighlights.array() = false;
+    }
+
+    inline void highlightFace(int f) {
+	m_faceHighlights(f) = true;
+    }
+
 
 signals:
     void visibilityChanged();
@@ -132,11 +153,15 @@ private:
 
     std::vector<std::vector<int>> m_facesUsingVertex;
 
-    std::vector<GenericAtomIndex> m_atoms;
+    std::vector<GenericAtomIndex> m_atomsInside;
+    std::vector<GenericAtomIndex> m_atomsOutside;
 
     ScalarProperties m_vertexProperties;
     ScalarPropertyRanges m_vertexPropertyRanges;
     ScalarProperties m_faceProperties;
+
+    Eigen::Matrix<bool, Eigen::Dynamic, 1> m_faceMask;
+    Eigen::Matrix<bool, Eigen::Dynamic, 1> m_faceHighlights;
 
     bool m_transparent{false};
     size_t m_rendererIndex{0};

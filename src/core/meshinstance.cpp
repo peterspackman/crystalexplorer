@@ -100,7 +100,7 @@ float MeshInstance::valueForSelectedPropertyAt(size_t index) const {
 
 MeshInstance * MeshInstance::newInstanceFromSelectedAtoms(Mesh *mesh, const std::vector<GenericAtomIndex> &atoms) {
     if(!mesh) return nullptr;
-    const auto &meshAtoms = mesh->atoms();
+    const auto &meshAtoms = mesh->atomsInside();
     if(meshAtoms.size() < 1) return nullptr;
     ChemicalStructure * structure = qobject_cast<ChemicalStructure*>(mesh->parent());
 

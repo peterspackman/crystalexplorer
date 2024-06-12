@@ -3,7 +3,6 @@
 #include <QOpenGLWidget>
 #include <QVector3D>
 
-#include "deprecatedcrystal.h"
 #include "elementeditor.h"
 #include "measurement.h"
 #include "project.h"
