@@ -133,7 +133,6 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
   if (m_selectionHandler) {
     m_selectionHandler->clear(SelectionType::Atom);
   }
-  qDebug() << "Atoms update triggered";
 
   m_ellipsoidRenderer->clear();
 
@@ -178,7 +177,6 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
   if (m_selectionHandler) {
     m_selectionHandler->clear(SelectionType::Bond);
   }
-  qDebug() << "Bonds update triggered";
 
   m_lineRenderer->clear();
   m_cylinderRenderer->clear();
@@ -239,10 +237,11 @@ void ChemicalStructureRenderer::endUpdates() {
 }
 
 void ChemicalStructureRenderer::draw(bool forPicking) {
-  if(m_atomsNeedsUpdate || m_bondsNeedsUpdate) {
+  if(m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate) {
     beginUpdates();
     if(m_atomsNeedsUpdate) updateAtoms();
     if(m_bondsNeedsUpdate) updateBonds();
+    if(m_meshesNeedsUpdate) updateMeshes();
     endUpdates();
   }
 
@@ -302,7 +301,7 @@ void ChemicalStructureRenderer::clearMeshRenderers() {
 void ChemicalStructureRenderer::handleMeshesUpdate() {
   if (!m_meshesNeedsUpdate)
     return;
-  qDebug() << "Mesh update triggered";
+
   // TODO re-use mesh renderers
   m_meshRenderers.clear();
   m_meshIndexToMesh.clear();
