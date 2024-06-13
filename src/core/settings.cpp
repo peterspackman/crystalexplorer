@@ -12,6 +12,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::GAUSSIAN_EXECUTABLE, ""},
     {keys::GAUSSIAN_MDEF, ""},
     {keys::GAUSSIAN_PDEF, ""},
+    {keys::GAUSSIAN_EXECUTABLE_NAMES, QStringList{"g16", "g09"}},
 
     {keys::NWCHEM_EXECUTABLE, ""},
     {keys::PSI4_EXECUTABLE, ""},

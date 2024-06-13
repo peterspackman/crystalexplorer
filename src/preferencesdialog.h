@@ -16,6 +16,7 @@ public:
 public slots:
   void show();
   void updateGlwindowBackgroundColor(QColor);
+  void populateExecutablesFromPath(bool override=false);
 
 signals:
   void resetElementData();

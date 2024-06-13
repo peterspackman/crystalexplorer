@@ -10,6 +10,8 @@
 #include "preferencesdialog.h"
 #include "settings.h"
 
+#include "exefileutilities.h"
+
 enum PreferencesRoles { PreferencesKeyRole = Qt::UserRole + 1 };
 
 PreferencesDialog::PreferencesDialog(QWidget *parent)
@@ -32,6 +34,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent)
     m_externalProgramSettingsKeys.insert(group,
                                          settings::settingsFromGroup(group));
   }
+  populateExecutablesFromPath(false);
 
   m_lightColorKeys.insert(lightAmbientColour->objectName(),
                           settings::keys::LIGHT_AMBIENT);
@@ -267,7 +270,6 @@ void PreferencesDialog::updateSliderPerspective() {
   emit setOpenglProjection(true, sliderPerspective->value());
 }
 
-
 void PreferencesDialog::restoreDefaultExternalProgramSetting() {
   auto index = externalProgramPaths->currentIndex();
   if (!index.isValid())
@@ -314,10 +316,9 @@ void PreferencesDialog::getValueForExternalProgramSetting(QStandardItem *item) {
         currentValue);
     if (!path.isEmpty())
       item->setText(path);
-  } else if (setting == "basisSetDirectory") {
+  } else if (setting == "dataDirectory") {
     QString path = QFileDialog::getExistingDirectory(
-        0,
-        QString("Basis set directory path for %1").arg(item->parent()->text()),
+        0, QString("Data path for %1").arg(item->parent()->text()),
         currentValue);
     if (!path.isEmpty())
       item->setText(path);
@@ -337,7 +338,7 @@ void PreferencesDialog::show() {
 }
 
 void PreferencesDialog::updateLightsFromSettings() {
-    blockSignals(true);
+  blockSignals(true);
   lightPositionGroupBox->setHidden(
       settings::readSetting(settings::keys::LIGHT_TRACKS_CAMERA).toBool());
 
@@ -431,7 +432,7 @@ void PreferencesDialog::restoreDefaultLightingSettings() {
 }
 
 void PreferencesDialog::loadExternalProgramSettings() {
-  QStringList wavefunctionSources = {"Tonto"};
+  QStringList wavefunctionSources = {"OCC"};
 
   m_externalProgramSettingsModel->clear();
   m_externalProgramSettingsModel->setColumnCount(3);
@@ -812,8 +813,7 @@ void PreferencesDialog::resetAllElements() {
 void PreferencesDialog::restoreExpertSettings() {
 
   settings::restoreDefaultSettings(
-      {settings::keys::DELETE_WORKING_FILES,
-       settings::keys::XH_NORMALIZATION});
+      {settings::keys::DELETE_WORKING_FILES, settings::keys::XH_NORMALIZATION});
   deleteWorkingFilesCheckBox->setChecked(
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool());
   enableXHNormalisationCheckBox->setChecked(
@@ -830,5 +830,31 @@ void PreferencesDialog::setEnergyFrameworkPositiveColor() {
                            color);
     setButtonColor(energyFrameworkPositiveColorButton, color);
     emit redrawCrystalForPreferencesChange();
+  }
+}
+
+void PreferencesDialog::populateExecutablesFromPath(bool override) {
+
+  for (auto kv = m_externalProgramSettingsKeys.constKeyValueBegin();
+       kv != m_externalProgramSettingsKeys.constKeyValueEnd(); kv++) {
+    QString group = kv->first;
+    QString currentSetting = settings::readSetting(group + "/executablePath").toString();
+    if(!(override || currentSetting.isEmpty())) continue;
+    auto availableSettings = kv->second;
+    qDebug() << "Populate empty executables for" << group;
+    QStringList names;
+    if(availableSettings.contains("executableNames")) {
+        names = settings::readSetting(group + "/executableNames").toStringList();
+    }
+    else {
+        names.push_back(group);
+    }
+    for(const auto &name: names) {
+        auto result = exe::findProgramInPath(name);
+        if(!result.isEmpty()) {
+            settings::writeSetting(group + "/executablePath", result);
+            break;
+        }
+    }
   }
 }

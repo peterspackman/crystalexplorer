@@ -54,6 +54,7 @@ const QString PREFERRED_WAVEFUNCTION_SOURCE = "preferredWavefunctionSource";
 // Gaussian
 const QString GAUSSIAN_GROUP = "gaussian";
 const QString GAUSSIAN_EXECUTABLE = GAUSSIAN_GROUP + "/executablePath";
+const QString GAUSSIAN_EXECUTABLE_NAMES = GAUSSIAN_GROUP + "/executableNames";
 const QString GAUSSIAN_MDEF = GAUSSIAN_GROUP + "/memoryEnvironmentVariable";
 const QString GAUSSIAN_PDEF = GAUSSIAN_GROUP + "/nprocsEnvironmentVariable";
 
@@ -68,7 +69,7 @@ const QString PSI4_EXECUTABLE = PSI4_GROUP + "/executablePath";
 // Occ
 const QString OCC_GROUP = "occ";
 const QString OCC_EXECUTABLE = OCC_GROUP + "/executablePath";
-const QString OCC_DATA_DIRECTORY = OCC_GROUP + "/basisSetDirectory";
+const QString OCC_DATA_DIRECTORY = OCC_GROUP + "/dataDirectory";
 const QString OCC_NTHREADS = OCC_GROUP + "/numThreads";
 
 // Orca
