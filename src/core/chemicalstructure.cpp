@@ -353,7 +353,17 @@ QStringList ChemicalStructure::uniqueHydrogenDonorElements() const {
   return result;
 }
 
-void ChemicalStructure::deleteAtoms(const std::vector<int> &atomIndices) {
+void ChemicalStructure::deleteAtoms(const std::vector<GenericAtomIndex> &atoms) {
+  std::vector<int> offsets;
+  offsets.reserve(atoms.size());
+  for(const auto &idx: atoms) {
+    offsets.push_back(idx.unique);
+  }
+  deleteAtomsByOffset(offsets);
+  updateBondGraph();
+}
+
+void ChemicalStructure::deleteAtomsByOffset(const std::vector<int> &atomIndices) {
   // DOES NOT UPDATE BONDS
   const int originalNumAtoms = numberOfAtoms();
 
@@ -397,7 +407,7 @@ void ChemicalStructure::deleteAtoms(const std::vector<int> &atomIndices) {
 void ChemicalStructure::deleteAtom(int atomIndex) {
   // DOES NOT UPDATE BONDS
   // TODO more efficient implementation for a single atom.
-  deleteAtoms({atomIndex});
+  deleteAtomsByOffset({atomIndex});
 }
 
 bool ChemicalStructure::anyAtomHasFlags(const AtomFlags &flags) const {
@@ -467,7 +477,7 @@ void ChemicalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
   if (fragIndices.size() == 0)
     return;
 
-  deleteAtoms(fragIndices);
+  deleteAtomsByOffset(fragIndices);
   updateBondGraph();
 }
 

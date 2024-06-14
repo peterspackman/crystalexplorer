@@ -472,25 +472,19 @@ void Project::updateCloseContactsForCurrent(int contactIndex, QString x,
 }
 
 void Project::removeIncompleteFragmentsForCurrentCrystal() {
-  qDebug() << "updateCloseContactsForCurrent";
-  /*
   if (currentScene()) {
-    currentScene()->crystal()->discardIncompleteFragments();
+    currentScene()->deleteIncompleteFragments();
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::removeSelectedAtomsForCurrentCrystal() {
-  qDebug() << "updateCloseContactsForCurrent";
-  /*
   if (currentScene()) {
-    currentScene()->crystal()->discardSelectedAtoms();
+    currentScene()->deleteSelectedAtoms();
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::resetCurrentCrystal() {
@@ -544,34 +538,25 @@ void Project::suppressSelectedAtoms() {
 }
 
 void Project::unsuppressSelectedAtoms() {
-  qDebug() << "unsupressSelectedAtoms";
-  /*
   if (currentScene()) {
-    currentScene()->crystal()->unsuppressSelectedAtoms();
+    currentScene()->unsuppressSelectedAtoms();
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::selectAllAtoms() {
-  qDebug() << "selectAllAtoms";
-  /*
   if (currentScene()) {
-    currentScene()->crystal()->selectAllAtoms();
+    currentScene()->setSelectStatusForAllAtoms(true);
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::selectSuppressedAtoms() {
-  qDebug() << "selectSuppressedAtoms";
-  /*
   if (currentScene()) {
-    currentScene()->crystal()->selectAllSuppressedAtoms();
+    currentScene()->setSelectStatusForSuppressedAtoms(true);
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::selectAtomsOutsideRadiusOfSelectedAtoms(float radius) {
@@ -602,13 +587,10 @@ void Project::selectAtomsOutsideCurrentSurface() {
 }
 
 void Project::invertSelection() {
-  qDebug() << "invertSelection";
-  /*
   if (currentScene()) {
-    currentScene()->crystal()->invertSelection();
+    currentScene()->invertSelection();
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::removeAllMeasurements() {

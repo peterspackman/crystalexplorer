@@ -97,7 +97,6 @@ public:
   }
 
   inline void setNeedsUpdate() {
-    m_atomsNeedUpdate = true;
     m_surfacesNeedUpdate = true;
     m_labelsNeedUpdate = true;
   }
@@ -220,7 +219,6 @@ public:
   float radius() const;
 
   void deleteFragmentContainingAtomIndex(int);
-  void discardSelectedAtoms();
   void resetAllAtomColors();
   void bondSelectedAtoms();
   void unbondSelectedAtoms();
@@ -237,6 +235,7 @@ public:
   void expandAtomsWithinRadius(float radius, bool selection = true);
 
   void deleteIncompleteFragments();
+  void deleteSelectedAtoms();
   void completeAllFragments();
   void completeFragmentContainingAtom(int atomIndex);
 
@@ -277,7 +276,6 @@ public slots:
   void addCrystalPlane(CrystalPlane);
 
 private slots:
-  void handleAtomsNeedUpdate();
   void handleSurfacesNeedUpdate();
   void handleLabelsNeedUpdate();
 
@@ -377,7 +375,6 @@ private:
   bool _drawHydrogenEllipsoids;
   bool _drawMultipleCellBoxes;
 
-  bool m_atomsNeedUpdate{true};
   bool m_surfacesNeedUpdate{true};
   bool m_labelsNeedUpdate{true};
   bool m_crystalPlanesNeedUpdate{true};

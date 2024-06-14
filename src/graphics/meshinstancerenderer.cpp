@@ -205,11 +205,14 @@ void MeshInstanceRenderer::draw() {
   m_program->setUniformValue("u_numVertices", m_numVertices);
   m_vertexPropertyTexture->bind();
 
+  // TODO split the meshes into two groups to avoid over-drawing, especially noticable on flat rendering
   // Since we have inversion operators for the mesh transforms need to disable cull face in order to 
   // keep the same winding.
-  this->glDisable(GL_CULL_FACE);
+  
+  glFrontFace(GL_CW); // Assuming counter-clockwise winding order for front faces
   this->glDrawElementsInstanced(DrawType, m_numIndices, IndexType, 0, static_cast<int>(m_instances.size()));
-  this->glEnable(GL_CULL_FACE);
+  glFrontFace(GL_CCW); // Assuming counter-clockwise winding order for front faces
+  this->glDrawElementsInstanced(DrawType, m_numIndices, IndexType, 0, static_cast<int>(m_instances.size()));
 
   m_vertexPropertyTexture->release();
 }

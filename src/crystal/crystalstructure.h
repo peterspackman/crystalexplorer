@@ -17,7 +17,6 @@ public:
   void setOccCrystal(const OccCrystal &);
   inline const auto &occCrystal() const { return m_crystal; }
 
-
   virtual inline StructureType structureType() const override {
     return StructureType::Crystal;
   }
@@ -34,59 +33,64 @@ public:
     return m_crystal.unit_cell().lengths();
   }
 
-  inline const auto &spaceGroup() const {
-    return m_crystal.space_group();
-  }
+  inline const auto &spaceGroup() const { return m_crystal.space_group(); }
 
-  virtual int fragmentIndexForAtom(int) const override;
-  virtual void deleteFragmentContainingAtomIndex(int atomIndex) override;
- 
-  virtual const std::vector<Fragment>& getFragments() const override;
-  virtual void deleteIncompleteFragments() override;
+  int fragmentIndexForAtom(int) const override;
+  void deleteFragmentContainingAtomIndex(int atomIndex) override;
 
-  virtual const std::vector<int> &atomsForFragment(int) const override;
-  virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const override;
+  const std::vector<Fragment> &getFragments() const override;
+  void deleteIncompleteFragments() override;
+  void deleteAtoms(const std::vector<GenericAtomIndex> &) override;
 
-  virtual const std::pair<int, int> &atomsForBond(int) const override;
-  virtual const std::vector<std::pair<int, int>> &
-  hydrogenBonds() const override;
-  virtual const std::vector<std::pair<int, int>> &
-  covalentBonds() const override;
-  virtual const std::vector<std::pair<int, int>> &vdwContacts() const override;
+  const std::vector<int> &atomsForFragment(int) const override;
+  std::vector<GenericAtomIndex> atomIndicesForFragment(int) const override;
 
-  virtual void updateBondGraph() override;
+  const std::pair<int, int> &atomsForBond(int) const override;
+  const std::vector<std::pair<int, int>> &hydrogenBonds() const override;
+  const std::vector<std::pair<int, int>> &covalentBonds() const override;
+  const std::vector<std::pair<int, int>> &vdwContacts() const override;
 
-  virtual void resetAtomsAndBonds(bool toSelection = false) override;
+  void updateBondGraph() override;
 
-  virtual void setShowVanDerWaalsContactAtoms(bool state) override;
-  virtual void completeFragmentContaining(int) override;
-  virtual bool hasIncompleteFragments() const override;
-  virtual bool hasIncompleteSelectedFragments() const override;
-  virtual void completeAllFragments() override;
-  virtual void packUnitCells(const QPair<QVector3D, QVector3D> &) override;
+  void resetAtomsAndBonds(bool toSelection = false) override;
 
-  virtual std::vector<int> completedFragments() const override;
-  virtual std::vector<int> selectedFragments() const override;
+  void setShowVanDerWaalsContactAtoms(bool state) override;
+  void completeFragmentContaining(int) override;
+  bool hasIncompleteFragments() const override;
+  bool hasIncompleteSelectedFragments() const override;
+  void completeAllFragments() override;
+  void packUnitCells(const QPair<QVector3D, QVector3D> &) override;
 
-  virtual FragmentState getSymmetryUniqueFragmentState(int) const override;
-  virtual void setSymmetryUniqueFragmentState(int, FragmentState) override;
+  std::vector<int> completedFragments() const override;
+  std::vector<int> selectedFragments() const override;
 
-  virtual const std::vector<Fragment> &symmetryUniqueFragments() const override;
-  virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const override;
+  FragmentState getSymmetryUniqueFragmentState(int) const override;
+  void setSymmetryUniqueFragmentState(int, FragmentState) override;
 
-  virtual void expandAtomsWithinRadius(float radius, bool selected) override;
-  virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &idxs) const override;
+  const std::vector<Fragment> &symmetryUniqueFragments() const override;
+  const std::vector<FragmentState> &
+  symmetryUniqueFragmentStates() const override;
 
-  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const override;
-  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtoms(const std::vector<GenericAtomIndex>&, float radius) const override;
-  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const override;
+  void expandAtomsWithinRadius(float radius, bool selected) override;
+  Fragment
+  makeFragment(const std::vector<GenericAtomIndex> &idxs) const override;
 
+  [[nodiscard]] std::vector<GenericAtomIndex>
+  atomsWithFlags(const AtomFlags &flags) const override;
+  [[nodiscard]] std::vector<GenericAtomIndex>
+  atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &,
+                        float radius) const override;
+  [[nodiscard]] std::vector<GenericAtomIndex>
+  atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
+                                 float radius) const override;
 
-  [[nodiscard]] virtual occ::IVec atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const override;
+  [[nodiscard]] occ::IVec
+  atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const override;
 
-  [[nodiscard]] virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const override;
+  [[nodiscard]] occ::Mat3N atomicPositionsForIndices(
+      const std::vector<GenericAtomIndex> &) const override;
 
-  [[nodiscard]] QString chemicalFormula(bool richText=true) const override;
+  [[nodiscard]] QString chemicalFormula(bool richText = true) const override;
 
 private:
   Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;
@@ -95,12 +99,13 @@ private:
                               const AtomFlags &flags = AtomFlag::NoFlag);
   void addVanDerWaalsContactAtoms();
   void removeVanDerWaalsContactAtoms();
-  void deleteAtoms(const std::vector<int> &atomIndices);
+  void deleteAtomsByOffset(const std::vector<int> &atomIndices);
 
   OccCrystal m_crystal;
 
   std::vector<GenericAtomIndex> m_unitCellOffsets;
-  ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash> m_atomMap;
+  ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash>
+      m_atomMap;
   std::vector<Fragment> m_fragments;
   std::vector<GenericAtomIndex> m_fragmentUnitCellMolecules;
   std::vector<int> m_fragmentForAtom;

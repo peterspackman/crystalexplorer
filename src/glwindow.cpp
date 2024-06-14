@@ -230,6 +230,7 @@ void GLWindow::initializeGL() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
+  glDepthFunc(GL_GREATER);
 
   // One of the following commands is necessary to stop the shading problems
   // that occur when rescaling.  Without one of the following, when the picture
@@ -304,12 +305,10 @@ void GLWindow::setProjection(GLfloat width, GLfloat height) {
   GLfloat top = height / VIEWING_VOLUME_FAR;
   m_projection.setToIdentity();
   if (usePerspectiveProjection) {
-    m_projection.frustum(left, right, bottom, top, perspectiveNearValue,
-                         VIEWING_VOLUME_FAR);
+    m_projection.frustum(left, right, bottom, top, VIEWING_VOLUME_FAR, perspectiveNearValue);
 
   } else {
-    m_projection.ortho(left, right, bottom, top, frontClippingPlane,
-                       VIEWING_VOLUME_FAR);
+    m_projection.ortho(left, right, bottom, top, VIEWING_VOLUME_FAR, frontClippingPlane);
   }
 }
 
@@ -330,6 +329,7 @@ void GLWindow::paintGL() {
   }
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearDepth(0);
   setModelView();
   drawScene(false);
   m_framebuffer->release();
@@ -345,6 +345,7 @@ void GLWindow::paintGL() {
   glBindTexture(GL_TEXTURE_2D, m_resolvedFramebuffer->texture());
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearDepth(0);
   // Draw the screen-filling quad
   m_postprocessShader->bind();
   m_postprocessShader->setUniformValue(
@@ -371,8 +372,10 @@ QImage GLWindow::renderToImage(int scaleFactor, bool for_picking) {
   }
   if (for_picking) {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearDepth(0);
   }
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearDepth(0);
   drawScene(for_picking);
   fbo.release();
 
@@ -380,6 +383,7 @@ QImage GLWindow::renderToImage(int scaleFactor, bool for_picking) {
   if (for_picking) {
     const QColor &color = scene->backgroundColor();
     glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+    glClearDepth(0);
   }
   doneCurrent();
   return result;
@@ -1217,6 +1221,7 @@ void GLWindow::setBackgroundColor(QColor color) {
   updateDepthFading();
   makeCurrent();
   glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+  glClearDepth(0);
   doneCurrent();
 }
 
@@ -1372,7 +1377,7 @@ void GLWindow::contextualResetCustomAtomColors() {
 // We should have access to project here not just crystal
 void GLWindow::contextualRemoveSelectedAtoms() {
   Q_ASSERT(scene);
-  scene->discardSelectedAtoms();
+  scene->deleteSelectedAtoms();
   redraw();
 }
 

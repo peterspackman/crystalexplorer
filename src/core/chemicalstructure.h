@@ -143,6 +143,7 @@ public:
   virtual int fragmentIndexForAtom(int) const;
   virtual void deleteFragmentContainingAtomIndex(int atomIndex);
   virtual void deleteIncompleteFragments();
+  virtual void deleteAtoms(const std::vector<GenericAtomIndex>&);
   virtual bool hasIncompleteFragments() const;
   virtual bool hasIncompleteSelectedFragments() const;
   virtual const std::vector<int> &atomsForFragment(int) const;
@@ -198,7 +199,7 @@ protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
-  void deleteAtoms(const std::vector<int> &atomIndices);
+  void deleteAtomsByOffset(const std::vector<int> &atomIndices);
   void deleteAtom(int atomIndex);
   void guessBondsBasedOnDistances();
 

@@ -22,7 +22,7 @@ void main()
        vec4 color = v_color;
        vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
        colorLinear = flatWithNormalOutline(u_cameraPosVec, v_position, v_normal, colorLinear);
-       f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
+       f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), v_color.w * v_color.w);
        if(u_depthFogColor.r >= 0.0) f_color = mix(f_color, vec4(u_depthFogColor, 1.0), fogFactor(u_depthFogDensity, clamp(gl_FragCoord.z - u_depthFogOffset, 0, 1.0f)));
    }
    else {
