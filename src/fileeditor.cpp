@@ -13,8 +13,8 @@ void FileEditor::init() {
   setWindowFlags(Qt::Tool);
   textEdit->setFocus();
   textEdit->setFont(QFont("courier"));
-  connect(buttonBox, SIGNAL(accepted()), this, SLOT(saveFile()));
-  connect(buttonBox, SIGNAL(rejected()), this, SLOT(hide()));
+  connect(buttonBox, &QDialogButtonBox::accepted, this, &FileEditor::saveFile);
+  connect(buttonBox, &QDialogButtonBox::rejected, this, &FileEditor::hide);
 }
 
 void FileEditor::insertFile(QString filename) {

@@ -76,7 +76,7 @@ public:
   makeFragment(const std::vector<GenericAtomIndex> &idxs) const override;
 
   [[nodiscard]] std::vector<GenericAtomIndex>
-  atomsWithFlags(const AtomFlags &flags) const override;
+  atomsWithFlags(const AtomFlags &flags, bool set = true) const override;
   [[nodiscard]] std::vector<GenericAtomIndex>
   atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &,
                         float radius) const override;
@@ -86,6 +86,8 @@ public:
 
   [[nodiscard]] occ::IVec
   atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const override;
+
+  [[nodiscard]] std::vector<QString> labelsForIndices(const std::vector<GenericAtomIndex> &) const override;
 
   [[nodiscard]] occ::Mat3N atomicPositionsForIndices(
       const std::vector<GenericAtomIndex> &) const override;

@@ -2,11 +2,14 @@
 #include "globals.h"
 #include "molecular_wavefunction.h" // For levelOfTheoryString
 #include "settings.h"
+#include <occ/core/element.h>
+#include <fmt/core.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General Crystal Info
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-inline const char * INFO_HORIZONTAL_RULE = "----------------------------------------------------------------------\n";
+inline const char *INFO_HORIZONTAL_RULE =
+    "----------------------------------------------------------------------\n";
 
 void InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(
     QTextDocument *document, Scene *scene) {
@@ -74,40 +77,39 @@ void InfoDocuments::insertAtomicCoordinatesIntoTextDocument(
 
 void InfoDocuments::insertAtomicCoordinatesWithAtomDescription(
     QTextCursor cursor, Scene *scene, AtomDescription AtomDescription) {
-  qDebug() << "insertAtomicCoordinatesWithAtomDescription";
-  /*
-DeprecatedCrystal *crystal = scene->crystal();
-if (!crystal)
-  return;
-if (crystal->hasSelectedAtoms()) {
-  QVector<Atom> atoms = crystal->atoms();
-  auto partition_point =
-      std::partition(atoms.begin(), atoms.end(),
-                     [](const Atom &a) { return a.isSelected(); });
-  QVector<Atom> selectedAtoms(partition_point, atoms.end());
-  atoms.erase(partition_point, atoms.end());
-  insertAtomicCoordinatesSection(cursor, "Selected Atoms", selectedAtoms,
-                                 AtomDescription);
-  insertAtomicCoordinatesSection(cursor, "Unselected Atoms", atoms,
-                                 AtomDescription);
-}
-
-int numFragments = crystal->numberOfFragments();
-QString header = QString("All Atoms [%1 molecule%2]")
-                     .arg(numFragments)
-                     .arg(numFragments > 1 ? "s" : "");
-insertAtomicCoordinatesHeader(cursor, header, crystal->atoms().size(),
-                              AtomDescription);
-foreach (int fragIndex, crystal->fragmentIndices()) {
-  SymopId symopId = crystal->symopIdForFragment(fragIndex);
-  if (symopId != NOSYMOP) {
-    QString symopString = crystal->spaceGroup().symopAsString(symopId);
-    cursor.insertText("[" + symopString + "]\n");
+  ChemicalStructure *structure = scene->chemicalStructure();
+  if (!structure)
+    return;
+  const auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
+  const auto unselectedAtoms = structure->atomsWithFlags(AtomFlag::Selected, false);
+  qDebug() << "Selected atoms: " << selectedAtoms.size();
+  if (selectedAtoms.size() > 0) {
+    insertAtomicCoordinatesSection(cursor, "Selected Atoms", structure,
+                                   selectedAtoms, AtomDescription);
   }
-  insertAtomicCoordinates(cursor, crystal->atomsForFragment(fragIndex),
-                          AtomDescription);
-}
-*/
+  qDebug() << "Unselected atoms: " << unselectedAtoms.size();
+  if (unselectedAtoms.size() > 0) {
+    insertAtomicCoordinatesSection(cursor, "Unselected Atoms", structure,
+                                   unselectedAtoms, AtomDescription);
+  }
+
+  /*
+  int numFragments = crystal->numberOfFragments();
+  QString header = QString("All Atoms [%1 molecule%2]")
+                       .arg(numFragments)
+                       .arg(numFragments > 1 ? "s" : "");
+  insertAtomicCoordinatesHeader(cursor, header, crystal->atoms().size(),
+                                AtomDescription);
+  foreach (int fragIndex, crystal->fragmentIndices()) {
+    SymopId symopId = crystal->symopIdForFragment(fragIndex);
+    if (symopId != NOSYMOP) {
+      QString symopString = crystal->spaceGroup().symopAsString(symopId);
+      cursor.insertText("[" + symopString + "]\n");
+    }
+    insertAtomicCoordinates(cursor, crystal->atomsForFragment(fragIndex),
+                            AtomDescription);
+  }
+  */
 }
 
 void InfoDocuments::insertAtomicCoordinatesSection(
@@ -118,6 +120,8 @@ void InfoDocuments::insertAtomicCoordinatesSection(
     return;
   }
 
+  auto format = cursor.charFormat();
+  format.setFontStyleHint(QFont::Monospace);
   insertAtomicCoordinatesHeader(cursor, title, atoms.size(), AtomDescription);
   insertAtomicCoordinates(cursor, structure, atoms, AtomDescription);
 }
@@ -139,26 +143,45 @@ void InfoDocuments::insertAtomicCoordinatesHeader(
   }
 
   cursor.insertText(INFO_HORIZONTAL_RULE);
+  cursor.insertText(INFO_HORIZONTAL_RULE);
   cursor.insertText(title + "\n");
   cursor.insertText(QString("%1 atom%2, %3 coordinates\n")
                         .arg(numAtoms)
                         .arg(numAtoms > 1 ? "s" : "")
                         .arg(coords));
-  cursor.insertText("Label\tSymbol\tx\ty\tz\tOcc.\n");
+  cursor.insertText(QString::fromStdString(
+    fmt::format("{:<6s} {:<6s} {:>20s} {:>20s} {:>20s} {:>4s}\n",
+                "Label", "Symbol", "x", "y", "z", "Occ.")));
   cursor.insertText(INFO_HORIZONTAL_RULE);
 }
 
 void InfoDocuments::insertAtomicCoordinates(
     QTextCursor cursor, ChemicalStructure *structure,
     const std::vector<GenericAtomIndex> &atoms,
-    AtomDescription AtomDescription) {
-  qDebug() << "insertAtomicCoordinates";
-  /*
-  for (const auto &atom : atoms) {
-    cursor.insertText(atom.description(AtomDescription) + "\n");
+    AtomDescription atomDescription) {
+  if (!structure)
+    return;
+
+  switch (atomDescription) {
+  case AtomDescription::CartesianInfo: {
+    auto nums = structure->atomicNumbersForIndices(atoms);
+    auto pos = structure->atomicPositionsForIndices(atoms);
+    auto labels = structure->labelsForIndices(atoms);
+
+    for (int i = 0; i < nums.rows(); i++) {
+      std::string symbol = occ::core::Element(nums(i)).symbol();
+      std::string s = fmt::format("{:<6s} {:<6s} {: 20.12f} {: 20.12f} {: 20.12f} {:4.3f}\n",
+            labels[i].toStdString(), symbol, pos(0, i), pos(1, i), pos(2, i), 1.0);
+      cursor.insertText(QString::fromStdString(s));
+    }
+    break;
   }
-  cursor.insertText("\n");
-  */
+  case AtomDescription::FractionalInfo: {
+    break;
+  }
+  default:
+    break;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -238,35 +261,35 @@ void InfoDocuments::insertGeneralSurfaceInformation(Mesh *surface,
 
 void InfoDocuments::insertWavefunctionInformation(Mesh *surface,
                                                   QTextCursor cursor) {
-    /*
-  if (surface->jobParameters().program == ExternalProgram::None) {
-    return;
-  }
+  /*
+if (surface->jobParameters().program == ExternalProgram::None) {
+  return;
+}
 
-  JobParameters jobParams = surface->jobParameters();
-  QString source = jobParams.programName();
-  QString basisset = jobParams.basisSetName();
-  QString method;
-  switch (jobParams.theory) {
-  case Method::hartreeFock:
-  case Method::mp2:
-  case Method::b3lyp:
-    method = methodLabels[static_cast<int>(jobParams.theory)];
-    break;
-  case Method::kohnSham:
-    method =
-        exchangePotentialLabels[static_cast<int>(jobParams.exchangePotential)] +
-        correlationPotentialLabels[static_cast<int>(
-            jobParams.correlationPotential)];
-    break;
-  default:
-    throw std::runtime_error("Invalid in insertWavefunctionInformation");
-  }
-  cursor.insertText(QString("Wavefunc.\t") + method + "/" + basisset + "\n");
-  cursor.insertText(QString("Source\t" + source + "\n"));
-  cursor.insertText(QString("Charge\t%1\n").arg(jobParams.charge));
-  cursor.insertText(QString("Multiplicity\t%1\n").arg(jobParams.multiplicity));
-  */
+JobParameters jobParams = surface->jobParameters();
+QString source = jobParams.programName();
+QString basisset = jobParams.basisSetName();
+QString method;
+switch (jobParams.theory) {
+case Method::hartreeFock:
+case Method::mp2:
+case Method::b3lyp:
+  method = methodLabels[static_cast<int>(jobParams.theory)];
+  break;
+case Method::kohnSham:
+  method =
+      exchangePotentialLabels[static_cast<int>(jobParams.exchangePotential)] +
+      correlationPotentialLabels[static_cast<int>(
+          jobParams.correlationPotential)];
+  break;
+default:
+  throw std::runtime_error("Invalid in insertWavefunctionInformation");
+}
+cursor.insertText(QString("Wavefunc.\t") + method + "/" + basisset + "\n");
+cursor.insertText(QString("Source\t" + source + "\n"));
+cursor.insertText(QString("Charge\t%1\n").arg(jobParams.charge));
+cursor.insertText(QString("Multiplicity\t%1\n").arg(jobParams.multiplicity));
+*/
 }
 
 void InfoDocuments::insertSurfacePropertyInformation(Mesh *surface,
@@ -366,142 +389,142 @@ void InfoDocuments::insertFingerprintInformation(
 
 void InfoDocuments::insertFragmentPatchInformation(Mesh *surface,
                                                    QTextCursor cursor) {
-    /*
-  QVector<double> areas = surface->areasOfFragmentPatches();
-  QVector<QColor> colors = surface->colorsOfFragmentPatches();
-  Q_ASSERT(areas.size() == colors.size());
-  int numFragments = areas.size();
+  /*
+QVector<double> areas = surface->areasOfFragmentPatches();
+QVector<QColor> colors = surface->colorsOfFragmentPatches();
+Q_ASSERT(areas.size() == colors.size());
+int numFragments = areas.size();
 
-  // Properties that can be summed over patch
-  QVector<QVector<float>> patchProperties;
-  QStringList propertyHeaders;
+// Properties that can be summed over patch
+QVector<QVector<float>> patchProperties;
+QStringList propertyHeaders;
 
-  const QString TITLE = "Fragment Patch Information";
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText(TITLE + "\n");
-  cursor.insertText(QString("%1 Fragment Patches\n").arg(numFragments));
-  cursor.insertText(INFO_HORIZONTAL_RULE);
+const QString TITLE = "Fragment Patch Information";
+cursor.insertText(INFO_HORIZONTAL_RULE);
+cursor.insertText(TITLE + "\n");
+cursor.insertText(QString("%1 Fragment Patches\n").arg(numFragments));
+cursor.insertText(INFO_HORIZONTAL_RULE);
 
-  // Define Table Header
-  QString areaString =
-      QString("Area /%2%3").arg(ANGSTROM_SYMBOL).arg(SQUARED_SYMBOL);
-  QStringList tableHeader = QStringList() << "" << areaString;
-  tableHeader.append(propertyHeaders);
-  int numHeaderLines = 1;
+// Define Table Header
+QString areaString =
+    QString("Area /%2%3").arg(ANGSTROM_SYMBOL).arg(SQUARED_SYMBOL);
+QStringList tableHeader = QStringList() << "" << areaString;
+tableHeader.append(propertyHeaders);
+int numHeaderLines = 1;
 
-  // Create table
-  int numRows = numHeaderLines + numFragments;
-  QTextTable *table = createTable(cursor, numRows, tableHeader.size());
+// Create table
+int numRows = numHeaderLines + numFragments;
+QTextTable *table = createTable(cursor, numRows, tableHeader.size());
 
-  // Insert Table Header
-  insertTableHeader(table, cursor, tableHeader);
+// Insert Table Header
+insertTableHeader(table, cursor, tableHeader);
 
-  const float SCALE_FACTOR = 100.0;
-  int row = 1;
-  for (int i = 0; i < numFragments; ++i) {
-    int col = 0;
-    insertColorBlock(table, cursor, row, col++, colors[i]);
-    insertRightAlignedCellValue(table, cursor, row, col++,
-                                QString("%1").arg(areas[i], 0, 'f', 1));
-    foreach (QVector<float> patchProperty, patchProperties) {
-      insertRightAlignedCellValue(
-          table, cursor, row, col++,
-          QString("%1").arg(patchProperty[i] * SCALE_FACTOR, 0, 'f', 3));
-    }
-    row++;
+const float SCALE_FACTOR = 100.0;
+int row = 1;
+for (int i = 0; i < numFragments; ++i) {
+  int col = 0;
+  insertColorBlock(table, cursor, row, col++, colors[i]);
+  insertRightAlignedCellValue(table, cursor, row, col++,
+                              QString("%1").arg(areas[i], 0, 'f', 1));
+  foreach (QVector<float> patchProperty, patchProperties) {
+    insertRightAlignedCellValue(
+        table, cursor, row, col++,
+        QString("%1").arg(patchProperty[i] * SCALE_FACTOR, 0, 'f', 3));
   }
-  */
+  row++;
+}
+*/
 }
 
 void InfoDocuments::insertSupplementarySurfacePropertyInformation(
     Mesh *surface, QTextCursor cursor) {
-    /*
-  QVector<IsosurfaceDetails::Type> surfacesToSkip =
-      QVector<IsosurfaceDetails::Type>()
-      << IsosurfaceDetails::Type::CrystalVoid;
-  if (surfacesToSkip.contains(surface->type())) {
-    return;
+  /*
+QVector<IsosurfaceDetails::Type> surfacesToSkip =
+    QVector<IsosurfaceDetails::Type>()
+    << IsosurfaceDetails::Type::CrystalVoid;
+if (surfacesToSkip.contains(surface->type())) {
+  return;
+}
+
+QVector<IsosurfacePropertyDetails::Type> propertiesToSkip =
+    QVector<IsosurfacePropertyDetails::Type>()
+    << IsosurfacePropertyDetails::Type::None
+    << IsosurfacePropertyDetails::Type::FragmentPatch;
+
+const int WIDTH = 4;
+const int PRECISION = 3;
+
+const QString TITLE = "Supplementary Surface Property Statistics";
+
+QStringList statisticsLabels = surface->statisticsLabels();
+statisticsLabels.prepend("Name");
+
+cursor.insertText(INFO_HORIZONTAL_RULE);
+cursor.insertText(TITLE + "\n");
+cursor.insertText(statisticsLabels.join("\t") + "\n");
+cursor.insertText(INFO_HORIZONTAL_RULE);
+cursor.insertText("\n");
+for (int i = 0; i < surface->numberOfProperties(); ++i) {
+  const SurfaceProperty *property = surface->propertyAtIndex(i);
+  if (propertiesToSkip.contains(property->type())) {
+    continue;
   }
 
-  QVector<IsosurfacePropertyDetails::Type> propertiesToSkip =
-      QVector<IsosurfacePropertyDetails::Type>()
-      << IsosurfacePropertyDetails::Type::None
-      << IsosurfacePropertyDetails::Type::FragmentPatch;
-
-  const int WIDTH = 4;
-  const int PRECISION = 3;
-
-  const QString TITLE = "Supplementary Surface Property Statistics";
-
-  QStringList statisticsLabels = surface->statisticsLabels();
-  statisticsLabels.prepend("Name");
-
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText(TITLE + "\n");
-  cursor.insertText(statisticsLabels.join("\t") + "\n");
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText("\n");
-  for (int i = 0; i < surface->numberOfProperties(); ++i) {
-    const SurfaceProperty *property = surface->propertyAtIndex(i);
-    if (propertiesToSkip.contains(property->type())) {
-      continue;
-    }
-
-    QStringList valueStrings;
-    foreach (double value, property->getStatistics().values()) {
-      valueStrings.append(QString("%1").arg(value, WIDTH, 'g', PRECISION));
-    }
-    valueStrings.prepend(property->propertyName());
-    valueStrings.replaceInStrings("nan", "~");
-    cursor.insertText(valueStrings.join("\t") + "\n");
+  QStringList valueStrings;
+  foreach (double value, property->getStatistics().values()) {
+    valueStrings.append(QString("%1").arg(value, WIDTH, 'g', PRECISION));
   }
-  cursor.insertText("\n");
-  */
+  valueStrings.prepend(property->propertyName());
+  valueStrings.replaceInStrings("nan", "~");
+  cursor.insertText(valueStrings.join("\t") + "\n");
+}
+cursor.insertText("\n");
+*/
 }
 
 void InfoDocuments::insertVoidDomainInformation(Mesh *surface,
                                                 QTextCursor cursor) {
-    /*
-  // Get values for table
-  QVector<QColor> domainColors = surface->domainColors();
-  QVector<double> domainVolumes = surface->domainVolumes();
-  QVector<double> domainSurfaceAreas = surface->domainSurfaceAreas();
-  int numDomains = domainColors.size();
-  Q_ASSERT(numDomains != 0);
-  Q_ASSERT(numDomains == domainVolumes.size());
-  Q_ASSERT(numDomains == domainSurfaceAreas.size());
+  /*
+// Get values for table
+QVector<QColor> domainColors = surface->domainColors();
+QVector<double> domainVolumes = surface->domainVolumes();
+QVector<double> domainSurfaceAreas = surface->domainSurfaceAreas();
+int numDomains = domainColors.size();
+Q_ASSERT(numDomains != 0);
+Q_ASSERT(numDomains == domainVolumes.size());
+Q_ASSERT(numDomains == domainSurfaceAreas.size());
 
-  // Insert header
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText("Void Domains\n");
-  cursor.insertText(QString("%1 domains\n").arg(numDomains));
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText("\n");
+// Insert header
+cursor.insertText(INFO_HORIZONTAL_RULE);
+cursor.insertText("Void Domains\n");
+cursor.insertText(QString("%1 domains\n").arg(numDomains));
+cursor.insertText(INFO_HORIZONTAL_RULE);
+cursor.insertText("\n");
 
-  // Define Table Header
-  QString areaString =
-      QString("Surface Area /%1%2").arg(ANGSTROM_SYMBOL).arg(SQUARED_SYMBOL);
-  QString volumeString =
-      QString("Volume /%1%2").arg(ANGSTROM_SYMBOL).arg(CUBED_SYMBOL);
-  QStringList tableHeader = QStringList() << "" << areaString << volumeString;
-  int numHeaderLines = 1;
+// Define Table Header
+QString areaString =
+    QString("Surface Area /%1%2").arg(ANGSTROM_SYMBOL).arg(SQUARED_SYMBOL);
+QString volumeString =
+    QString("Volume /%1%2").arg(ANGSTROM_SYMBOL).arg(CUBED_SYMBOL);
+QStringList tableHeader = QStringList() << "" << areaString << volumeString;
+int numHeaderLines = 1;
 
-  // Create table
-  int numRows = numHeaderLines + numDomains;
-  QTextTable *table = createTable(cursor, numRows, tableHeader.size());
+// Create table
+int numRows = numHeaderLines + numDomains;
+QTextTable *table = createTable(cursor, numRows, tableHeader.size());
 
-  // Insert Table Header
-  insertTableHeader(table, cursor, tableHeader);
+// Insert Table Header
+insertTableHeader(table, cursor, tableHeader);
 
-  int row = 1;
-  for (int d = 0; d < domainColors.size(); ++d) {
-    insertDomainAtTableRow(row, table, cursor, domainColors[d],
-                           domainSurfaceAreas[d], domainVolumes[d]);
-    row++;
-  }
-  cursor.movePosition(QTextCursor::End);
-  cursor.insertText("\n\n");
-  */
+int row = 1;
+for (int d = 0; d < domainColors.size(); ++d) {
+  insertDomainAtTableRow(row, table, cursor, domainColors[d],
+                         domainSurfaceAreas[d], domainVolumes[d]);
+  row++;
+}
+cursor.movePosition(QTextCursor::End);
+cursor.insertText("\n\n");
+*/
 }
 
 void InfoDocuments::insertDomainAtTableRow(int row, QTextTable *table,
@@ -558,57 +581,57 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
 }
 
 void InfoDocuments::insertEnergyModelScalingInfo(QTextCursor cursor) {
-    /*
-  const int SF_PRECISION = 3; // Precision of scale factors in table
-  const int SF_WIDTH = 6;     // Field width of scale factors in table
+  /*
+const int SF_PRECISION = 3; // Precision of scale factors in table
+const int SF_WIDTH = 6;     // Field width of scale factors in table
 
-  // Insert header
-  cursor.insertBlock();
-  cursor.insertHtml("<h2>Scale factors for benchmarked energy models</h2>");
-  cursor.insertBlock();
-  cursor.insertHtml("See <em>Mackenzie et al. IUCrJ (2017)</em>");
+// Insert header
+cursor.insertBlock();
+cursor.insertHtml("<h2>Scale factors for benchmarked energy models</h2>");
+cursor.insertBlock();
+cursor.insertHtml("See <em>Mackenzie et al. IUCrJ (2017)</em>");
 
-  // Define table header
-  QStringList tableHeader{"Energy Model", "k_ele", "k_pol", "k_disp", "k_rep"};
-  int numHeaderLines = 1;
+// Define table header
+QStringList tableHeader{"Energy Model", "k_ele", "k_pol", "k_disp", "k_rep"};
+int numHeaderLines = 1;
 
-  QVector<EnergyModel> energyModels =
-      QVector<EnergyModel>() << EnergyModel::CE_HF << EnergyModel::CE_B3LYP;
+QVector<EnergyModel> energyModels =
+    QVector<EnergyModel>() << EnergyModel::CE_HF << EnergyModel::CE_B3LYP;
 
-  // Create table
-  int numRows = numHeaderLines + energyModels.size();
-  QTextTable *table = createTable(cursor, numRows, tableHeader.size());
+// Create table
+int numRows = numHeaderLines + energyModels.size();
+QTextTable *table = createTable(cursor, numRows, tableHeader.size());
 
-  // Insert Table Header
-  insertTableHeader(table, cursor, tableHeader);
+// Insert Table Header
+insertTableHeader(table, cursor, tableHeader);
 
-  // Insert rows of data...
-  int row = 1;
-  foreach (EnergyModel model, energyModels) {
-    int column = 0;
+// Insert rows of data...
+int row = 1;
+foreach (EnergyModel model, energyModels) {
+  int column = 0;
 
-    cursor = table->cellAt(row, column++).firstCursorPosition();
-    cursor.insertText(EnergyDescription::fullDescription(model));
+  cursor = table->cellAt(row, column++).firstCursorPosition();
+  cursor.insertText(EnergyDescription::fullDescription(model));
 
-    insertRightAlignedCellValue(table, cursor, row, column++,
-                                QString("%1").arg(coulombScaleFactors[model],
-                                                  SF_WIDTH, 'f', SF_PRECISION));
-    insertRightAlignedCellValue(
-        table, cursor, row, column++,
-        QString("%1").arg(polarizationScaleFactors[model], SF_WIDTH, 'f',
-                          SF_PRECISION));
-    insertRightAlignedCellValue(table, cursor, row, column++,
-                                QString("%1").arg(dispersionScaleFactors[model],
-                                                  SF_WIDTH, 'f', SF_PRECISION));
-    insertRightAlignedCellValue(table, cursor, row, column++,
-                                QString("%1").arg(repulsionScaleFactors[model],
-                                                  SF_WIDTH, 'f', SF_PRECISION));
+  insertRightAlignedCellValue(table, cursor, row, column++,
+                              QString("%1").arg(coulombScaleFactors[model],
+                                                SF_WIDTH, 'f', SF_PRECISION));
+  insertRightAlignedCellValue(
+      table, cursor, row, column++,
+      QString("%1").arg(polarizationScaleFactors[model], SF_WIDTH, 'f',
+                        SF_PRECISION));
+  insertRightAlignedCellValue(table, cursor, row, column++,
+                              QString("%1").arg(dispersionScaleFactors[model],
+                                                SF_WIDTH, 'f', SF_PRECISION));
+  insertRightAlignedCellValue(table, cursor, row, column++,
+                              QString("%1").arg(repulsionScaleFactors[model],
+                                                SF_WIDTH, 'f', SF_PRECISION));
 
-    row++;
-  }
+  row++;
+}
 
-  cursor.movePosition(QTextCursor::End);
-  */
+cursor.movePosition(QTextCursor::End);
+*/
 }
 
 void InfoDocuments::insertEnergyScalingPreamble(QTextCursor cursor) {

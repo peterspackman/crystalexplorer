@@ -52,6 +52,14 @@ struct SelectedBond {
   SelectedAtom b;
 };
 
+struct SelectedSurface {
+  int index{-1};
+  int faceIndex{-1};
+  MeshInstance *surface{nullptr};
+  float propertyValue{0.0};
+  QString property{"None"};
+};
+
 class Scene : public QObject {
   Q_OBJECT
 
@@ -113,6 +121,7 @@ public:
   const SelectedAtom &selectedAtom() const;
   std::vector<int> selectedAtomIndices() const;
   const SelectedBond &selectedBond() const;
+  const SelectedSurface &selectedSurface() const;
 
   bool unitCellBoxIsVisible() { return _showUnitCellBox; }
   void setUnitCellBoxVisible(bool show) { _showUnitCellBox = show; }
@@ -391,8 +400,10 @@ private:
 
   SelectedAtom m_selectedAtom;
   SelectedBond m_selectedBond;
+  SelectedSurface m_selectedSurface;
   void populateSelectedAtom();
   void populateSelectedBond();
+  void populateSelectedSurface();
 
   cx::graphics::RendererUniforms m_uniforms;
 };

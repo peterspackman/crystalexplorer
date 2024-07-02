@@ -15,9 +15,10 @@ void InfoViewer::init() {
 }
 
 void InfoViewer::initConnections() {
-  connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
-  connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-  connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+  connect(tabWidget, &QTabWidget::currentChanged, this,
+          &InfoViewer::tabChanged);
+  connect(buttonBox, &QDialogButtonBox::accepted, this, &InfoViewer::accept);
+  connect(buttonBox, &QDialogButtonBox::rejected, this, &InfoViewer::reject);
 }
 
 void InfoViewer::accept() {

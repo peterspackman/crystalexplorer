@@ -392,8 +392,8 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     qDebug() << "Selection type: Surface";
     size_t surfaceIndex = m_selection.index;
     qDebug() << "Surface index clicked:" << surfaceIndex;
-    MeshInstance *meshInstance =
-        m_structureRenderer->getMeshInstance(m_selection.index);
+
+    MeshInstance *meshInstance = m_structureRenderer->getMeshInstance(m_selection.index);
 
     if (!meshInstance)
       break;
@@ -553,6 +553,18 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
   return result;
 }
 
+void Scene::populateSelectedSurface() {
+  m_selectedSurface.index = m_selection.index;
+  m_selectedSurface.faceIndex = m_selection.secondaryIndex;
+  auto * surface = m_structureRenderer->getMeshInstance(m_selection.index);
+  m_selectedSurface.surface = surface;
+
+  if(surface) {
+    m_selectedSurface.property = surface->getSelectedProperty();
+    m_selectedSurface.propertyValue = surface->valueForSelectedPropertyAt(m_selection.secondaryIndex);
+  }
+}
+
 void Scene::populateSelectedAtom() {
   m_selectedAtom.index = m_selection.index;
   m_selectedAtom.atomicNumber = m_structure->atomicNumbers()(m_selection.index);
@@ -563,30 +575,29 @@ void Scene::populateSelectedAtom() {
 
 void Scene::populateSelectedBond() {
   m_selectedBond.index = m_selection.index;
-  if (m_structure) {
-    const auto [idx_a, idx_b] = m_structure->atomsForBond(m_selection.index);
-    {
-      auto &atomInfo = m_selectedBond.a;
-      atomInfo.index = idx_a;
-      atomInfo.atomicNumber = m_structure->atomicNumbers()(idx_a);
-      atomInfo.label = m_structure->labels()[idx_a];
-      const auto pos = m_structure->atomicPositions().col(idx_a);
-      atomInfo.position = QVector3D(pos.x(), pos.y(), pos.z());
-    }
-    {
-      auto &atomInfo = m_selectedBond.b;
-      atomInfo.index = idx_b;
-      atomInfo.atomicNumber = m_structure->atomicNumbers()(idx_b);
-      atomInfo.label = m_structure->labels()[idx_b];
-      const auto pos = m_structure->atomicPositions().col(idx_b);
-      atomInfo.position = QVector3D(pos.x(), pos.y(), pos.z());
-    }
+  const auto [idx_a, idx_b] = m_structure->atomsForBond(m_selection.index);
+  {
+    auto &atomInfo = m_selectedBond.a;
+    atomInfo.index = idx_a;
+    atomInfo.atomicNumber = m_structure->atomicNumbers()(idx_a);
+    atomInfo.label = m_structure->labels()[idx_a];
+    const auto pos = m_structure->atomicPositions().col(idx_a);
+    atomInfo.position = QVector3D(pos.x(), pos.y(), pos.z());
+  }
+  {
+    auto &atomInfo = m_selectedBond.b;
+    atomInfo.index = idx_b;
+    atomInfo.atomicNumber = m_structure->atomicNumbers()(idx_b);
+    atomInfo.label = m_structure->labels()[idx_b];
+    const auto pos = m_structure->atomicPositions().col(idx_b);
+    atomInfo.position = QVector3D(pos.x(), pos.y(), pos.z());
   }
 }
 
 SelectionType Scene::decodeSelectionType(const QColor &color) {
   m_selection = m_selectionHandler->getSelectionFromColor(color);
   m_selectedAtom = {};
+  m_selectedSurface = {};
   m_selectedBond = {};
 
   m_selection = m_selectionHandler->getSelectionFromColor(color);
@@ -600,11 +611,7 @@ SelectionType Scene::decodeSelectionType(const QColor &color) {
     break;
   }
   case SelectionType::Surface: {
-    // TODO handle surface selection
-    void *mesh = nullptr;
-    if (!mesh) {
-      m_selection.type = SelectionType::None;
-    }
+    populateSelectedSurface();
     break;
   }
   default:
@@ -614,6 +621,8 @@ SelectionType Scene::decodeSelectionType(const QColor &color) {
 }
 
 const SelectedBond &Scene::selectedBond() const { return m_selectedBond; }
+
+const SelectedSurface &Scene::selectedSurface() const { return m_selectedSurface; }
 
 void Scene::updateForPreferencesChange() {
   if (m_structure) {
@@ -1037,6 +1046,7 @@ float Scene::bondThickness() {
 }
 
 void Scene::drawHydrogenBonds() {
+  qDebug() << "Draw hydrogenbonds";
   if (m_hydrogenBondLines == nullptr) {
     m_hydrogenBondLines = new LineRenderer();
   } else {
@@ -1050,6 +1060,7 @@ void Scene::drawHydrogenBonds() {
 
   const auto &bonds = m_structure->hydrogenBonds();
   const auto &positions = m_structure->atomicPositions();
+  qDebug() << "Structure has" << bonds.size() << "hydrogen bonds";
   for (const auto &[a, b] : bonds) {
     // skip intramolecular contacts
     if (m_structure->fragmentIndexForAtom(a) ==

@@ -13,12 +13,16 @@ void ElementEditor::init() {
   setupUi(this);
 
   updateElementComboBox();
+  connect(elementComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+        this, [this](int index) { setElement(elementComboBox->itemText(index)); });
 
-  connect(elementComboBox, SIGNAL(currentIndexChanged(QString)), this,
-          SLOT(setElement(QString)));
-  connect(colorButton, SIGNAL(clicked(bool)), this, SLOT(getNewElementColor()));
-  connect(applyButton, SIGNAL(clicked()), this, SLOT(apply()));
-  connect(resetButton, SIGNAL(clicked()), this, SLOT(resetCurrentElement()));
+  connect(colorButton, &QPushButton::clicked, this,
+          &ElementEditor::getNewElementColor);
+
+  connect(applyButton, &QPushButton::clicked, this, &ElementEditor::apply);
+
+  connect(resetButton, &QPushButton::clicked, this,
+          &ElementEditor::resetCurrentElement);
 }
 
 void ElementEditor::updateElementComboBox(QStringList elementSymbols,

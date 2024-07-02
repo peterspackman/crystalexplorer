@@ -1,21 +1,20 @@
-#include <QDebug>
-#include <QMouseEvent>
 #include <QColorDialog>
+#include <QDebug>
 #include <QInputDialog>
-#include <QVector2D>
-#include <QToolTip>
-#include <cmath>
 #include <QMenu>
+#include <QMouseEvent>
+#include <QToolTip>
+#include <QVector2D>
+#include <cmath>
 
 #include "elementdata.h"
 #include "globals.h"
 #include "glwindow.h"
 #include "graphics.h"
 #include "mathconstants.h"
-#include "settings.h"
 #include "renderselection.h"
+#include "settings.h"
 #include <fmt/core.h>
-
 
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) { init(); }
 
@@ -130,9 +129,9 @@ void GLWindow::makeFrameBufferObject() {
     delete m_framebuffer;
     m_framebuffer = nullptr;
   }
-  if(m_resolvedFramebuffer) {
-      delete m_resolvedFramebuffer;
-      m_resolvedFramebuffer = nullptr;
+  if (m_resolvedFramebuffer) {
+    delete m_resolvedFramebuffer;
+    m_resolvedFramebuffer = nullptr;
   }
 
   // Create the FBO
@@ -144,7 +143,6 @@ void GLWindow::makeFrameBufferObject() {
   int h = std::max(1, static_cast<int>(height() * devicePixelRatio()));
   m_framebuffer = new QOpenGLFramebufferObject(w, h, format);
   m_resolvedFramebuffer = new QOpenGLFramebufferObject(w, h);
-
 }
 
 /*!
@@ -305,10 +303,12 @@ void GLWindow::setProjection(GLfloat width, GLfloat height) {
   GLfloat top = height / VIEWING_VOLUME_FAR;
   m_projection.setToIdentity();
   if (usePerspectiveProjection) {
-    m_projection.frustum(left, right, bottom, top, VIEWING_VOLUME_FAR, perspectiveNearValue);
+    m_projection.frustum(left, right, bottom, top, VIEWING_VOLUME_FAR,
+                         perspectiveNearValue);
 
   } else {
-    m_projection.ortho(left, right, bottom, top, VIEWING_VOLUME_FAR, frontClippingPlane);
+    m_projection.ortho(left, right, bottom, top, VIEWING_VOLUME_FAR,
+                       frontClippingPlane);
   }
 }
 
@@ -334,10 +334,9 @@ void GLWindow::paintGL() {
   drawScene(false);
   m_framebuffer->release();
 
-  m_framebuffer->blitFramebuffer(m_resolvedFramebuffer,
-                                 QRect(QPoint(), m_resolvedFramebuffer->size()),
-                               m_framebuffer,
-                                 QRect(QPoint(), m_framebuffer->size()));
+  m_framebuffer->blitFramebuffer(
+      m_resolvedFramebuffer, QRect(QPoint(), m_resolvedFramebuffer->size()),
+      m_framebuffer, QRect(QPoint(), m_framebuffer->size()));
   glDisable(GL_DEPTH_TEST);
 
   QOpenGLFramebufferObject::bindDefault();
@@ -626,18 +625,33 @@ void GLWindow::handleObjectInformationDisplay(QPoint pos) {
       }
       case SelectionType::Surface: {
         // TODO get surface info;
-        // auto surface = scene->selectedSurface();
-        QVector3D centroid;
-        std::string surfaceName = "surface";
-        double area{0.0}, volume{0.0};
-        info = QString::fromStdString(fmt::format(
-            "<b>Surface type</b>: {}<br/>"
-            "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
-            "<b>Volume</b>:       {:9.3f}<br/>"
-            "<b>Surface area</b>: {:9.3f}",
-            surfaceName, centroid.x(), centroid.y(),
-            centroid.z(), volume, area));
-        setObjectInformationTextAndPosition(info, pos);
+        auto selection = scene->selectedSurface();
+        if (selection.surface) {
+          QVector3D centroid(0.0f, 0.0f, 0.0f);
+          auto * mesh = selection.surface->mesh();
+          QString surfaceName = mesh->objectName();
+          QString surfaceInstance = selection.surface->objectName();
+          QString property = selection.property;
+          double value = selection.propertyValue;
+          double area = mesh->surfaceArea();
+          double volume = mesh->volume();
+          info = QString::fromStdString(
+              fmt::format("<b>Surface</b>: {}<br/>"
+                          "<b>Instance</b>: {}<br/>"
+                          "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
+                          "<b>Volume</b>:       {:9.3f}<br/>"
+                          "<b>Surface area</b>: {:9.3f}<br/>"
+                          "<b>Property</b>: {}<br/>"
+                          "<b>Property Value</b>: {:9.3f}",
+                          surfaceName.toStdString(), 
+                          surfaceInstance.toStdString(),
+                          centroid.x(), centroid.y(),
+                          centroid.z(), volume, area,
+                          property.toStdString(),
+                          value
+                          ));
+          setObjectInformationTextAndPosition(info, pos);
+        }
         break;
       }
       case SelectionType::None:
@@ -956,14 +970,14 @@ void GLWindow::contextualEditNonePropertyColor() {
   QColor color = QColorDialog::getColor(noneColor);
   if (color.isValid()) {
     // TODO set none color
-    //scene->currentSurface()->setNonePropertyColor(color);
+    // scene->currentSurface()->setNonePropertyColor(color);
     redraw();
   }
 }
 
 void GLWindow::contextualResetNonePropertyColor() {
   // TODO update none color
-  //scene->currentSurface()->updateNoneProperty();
+  // scene->currentSurface()->updateNoneProperty();
   redraw();
 }
 
@@ -1144,7 +1158,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
     }
 
     // TODO handle surface case
-    /* 
+    /*
     if (scene->hasSurface()) {
       contextMenu->addSeparator();
 
@@ -1390,12 +1404,11 @@ QColor GLWindow::pickObjectAt(QPoint pos) {
 
   const bool needDevicePixelRatio{false};
   int factor = 1;
-  if(needDevicePixelRatio) {
-      qDebug() << "Device pixel ratio: " << devicePixelRatio();
-      factor = devicePixelRatio();
+  if (needDevicePixelRatio) {
+    qDebug() << "Device pixel ratio: " << devicePixelRatio();
+    factor = devicePixelRatio();
   }
-  auto color = QColor(m_pickingImage.pixel(pos.x() * factor,
-                                           pos.y() * factor));
+  auto color = QColor(m_pickingImage.pixel(pos.x() * factor, pos.y() * factor));
   return color;
 }
 

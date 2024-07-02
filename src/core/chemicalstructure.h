@@ -93,6 +93,7 @@ public:
   virtual occ::IVec atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const;
 
   virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const;
+  virtual std::vector<QString> labelsForIndices(const std::vector<GenericAtomIndex> &) const;
 
   virtual bool getTransformation(const std::vector<GenericAtomIndex> &from, const std::vector<GenericAtomIndex> &to,
 				 Eigen::Isometry3d &result) const;
@@ -181,7 +182,7 @@ public:
 
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
   [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &, float radius) const;
-  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags) const;
+  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags, bool set = true) const;
 
   [[nodiscard]] virtual std::vector<WavefunctionAndTransform> wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &);
 

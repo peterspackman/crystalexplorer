@@ -22,8 +22,8 @@ void DepthFadingAndClippingDialog::init() {
 }
 
 void DepthFadingAndClippingDialog::initConnections() {
-  connect(buttonBox, SIGNAL(accepted()), this,
-          SLOT(accept())); // allows ok button to close dialog
+  connect(buttonBox, &QDialogButtonBox::accepted, this,
+          &DepthFadingAndClippingDialog::accept);
 
   // Widgets on 'depth fading' Tab
   connect(enableDepthFogCheckBox, &QCheckBox::toggled, this,
@@ -33,9 +33,10 @@ void DepthFadingAndClippingDialog::initConnections() {
   connect(fogOffsetSlider, &QSlider::sliderMoved, this,
           &DepthFadingAndClippingDialog::reportDepthFadingSettings);
   // Widgets on 'clipping' Tab
-  connect(frontClippingSlider, SIGNAL(valueChanged(int)), this,
-          SLOT(reportClippingSettings(int)));
-  connect(resetClippingButton, SIGNAL(clicked()), this, SLOT(resetClipping()));
+  connect(frontClippingSlider, &QSlider::valueChanged, this,
+          &DepthFadingAndClippingDialog::reportClippingSettings);
+  connect(resetClippingButton, &QPushButton::clicked, this,
+          &DepthFadingAndClippingDialog::resetClipping);
 }
 
 /// By using CLIPPING_SCALE we can increase the granularity of the slider

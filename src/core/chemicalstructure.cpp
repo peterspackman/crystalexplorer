@@ -1,17 +1,18 @@
 #include "chemicalstructure.h"
-#include <occ/core/element.h>
-#include <occ/core/kdtree.h>
-#include <occ/core/kabsch.h>
 #include "elementdata.h"
 #include "mesh.h"
 #include "object_tree_model.h"
-#include <QIcon>
 #include <QEvent>
+#include <QIcon>
+#include <occ/core/element.h>
+#include <occ/core/kabsch.h>
+#include <occ/core/kdtree.h>
 
-ChemicalStructure::ChemicalStructure(QObject *parent) : QObject(parent), m_interactions(new PairInteractionResults()) {
-    this->installEventFilter(this);
+ChemicalStructure::ChemicalStructure(QObject *parent)
+    : QObject(parent), m_interactions(new PairInteractionResults()) {
+  this->installEventFilter(this);
 
-    m_treeModel = new ObjectTreeModel(this);
+  m_treeModel = new ObjectTreeModel(this);
 }
 
 void ChemicalStructure::updateBondGraph() { guessBondsBasedOnDistances(); }
@@ -135,15 +136,15 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   }
 
   // TODO detect symmetry
-  for(int f = 0; f < fragments.size(); f++) {
-      std::vector<GenericAtomIndex> sym;
-      for(int idx : fragments[f]) {
-	  sym.push_back(GenericAtomIndex{idx});
-      }
-      std::sort(sym.begin(), sym.end());
-      m_fragments.push_back(makeFragment(sym));
-      m_symmetryUniqueFragments.push_back(m_fragments.back());
-      m_symmetryUniqueFragmentStates.push_back({});
+  for (int f = 0; f < fragments.size(); f++) {
+    std::vector<GenericAtomIndex> sym;
+    for (int idx : fragments[f]) {
+      sym.push_back(GenericAtomIndex{idx});
+    }
+    std::sort(sym.begin(), sym.end());
+    m_fragments.push_back(makeFragment(sym));
+    m_symmetryUniqueFragments.push_back(m_fragments.back());
+    m_symmetryUniqueFragmentStates.push_back({});
   }
 
   for (const auto &[edge_desc, edge] : m_bondGraph.edges()) {
@@ -193,16 +194,15 @@ float ChemicalStructure::radius() const {
 occ::Vec ChemicalStructure::covalentRadii() const {
   occ::Vec result(numberOfAtoms());
   for (int i = 0; i < numberOfAtoms(); i++) {
-      double radius = 0.0;
-      Element *el = ElementData::elementFromAtomicNumber(m_atomicNumbers(i));
-      if(el) {
-	  radius = el->covRadius();
-      }
-      else {
-	  auto element = occ::core::Element(m_atomicNumbers(i));
-	  radius = element.covalent_radius();
-      }
-      result(i) = (radius > 0.0) ? radius : 2.0;
+    double radius = 0.0;
+    Element *el = ElementData::elementFromAtomicNumber(m_atomicNumbers(i));
+    if (el) {
+      radius = el->covRadius();
+    } else {
+      auto element = occ::core::Element(m_atomicNumbers(i));
+      radius = element.covalent_radius();
+    }
+    result(i) = (radius > 0.0) ? radius : 2.0;
   }
   return result;
 }
@@ -210,16 +210,15 @@ occ::Vec ChemicalStructure::covalentRadii() const {
 occ::Vec ChemicalStructure::vdwRadii() const {
   occ::Vec result(numberOfAtoms());
   for (int i = 0; i < numberOfAtoms(); i++) {
-      double radius = 0.0;
-      Element *el = ElementData::elementFromAtomicNumber(m_atomicNumbers(i));
-      if(el) {
-	  radius = el->vdwRadius();
-      }
-      else {
-	  auto element = occ::core::Element(m_atomicNumbers(i));
-	  radius = element.van_der_waals_radius();
-      }
-      result(i) = (radius > 0.0) ? radius : 2.0;
+    double radius = 0.0;
+    Element *el = ElementData::elementFromAtomicNumber(m_atomicNumbers(i));
+    if (el) {
+      radius = el->vdwRadius();
+    } else {
+      auto element = occ::core::Element(m_atomicNumbers(i));
+      radius = element.van_der_waals_radius();
+    }
+    result(i) = (radius > 0.0) ? radius : 2.0;
   }
   return result;
 }
@@ -324,17 +323,15 @@ QStringList ChemicalStructure::uniqueElementSymbols() const {
 std::vector<int> ChemicalStructure::hydrogenBondDonors() const {
   std::vector<int> result;
   const auto nums = atomicNumbers();
-  for(const auto &[i, j]: covalentBonds()) {
-    if(nums(i) == 1)  {
+  for (const auto &[i, j] : covalentBonds()) {
+    if (nums(i) == 1) {
       result.push_back(j);
-    }
-    else if(nums(j) == 1) {
+    } else if (nums(j) == 1) {
       result.push_back(i);
     }
   }
   return result;
 }
-
 
 QStringList ChemicalStructure::uniqueHydrogenDonorElements() const {
   if (numberOfAtoms() < 1)
@@ -342,7 +339,7 @@ QStringList ChemicalStructure::uniqueHydrogenDonorElements() const {
 
   ankerl::unordered_dense::set<int> uniqueDonors;
   const auto nums = atomicNumbers();
-  for(const auto &idx: hydrogenBondDonors()) {
+  for (const auto &idx : hydrogenBondDonors()) {
     uniqueDonors.insert(nums(idx));
   }
 
@@ -353,17 +350,19 @@ QStringList ChemicalStructure::uniqueHydrogenDonorElements() const {
   return result;
 }
 
-void ChemicalStructure::deleteAtoms(const std::vector<GenericAtomIndex> &atoms) {
+void ChemicalStructure::deleteAtoms(
+    const std::vector<GenericAtomIndex> &atoms) {
   std::vector<int> offsets;
   offsets.reserve(atoms.size());
-  for(const auto &idx: atoms) {
+  for (const auto &idx : atoms) {
     offsets.push_back(idx.unique);
   }
   deleteAtomsByOffset(offsets);
   updateBondGraph();
 }
 
-void ChemicalStructure::deleteAtomsByOffset(const std::vector<int> &atomIndices) {
+void ChemicalStructure::deleteAtomsByOffset(
+    const std::vector<int> &atomIndices) {
   // DOES NOT UPDATE BONDS
   const int originalNumAtoms = numberOfAtoms();
 
@@ -481,25 +480,29 @@ void ChemicalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
   updateBondGraph();
 }
 
-
 std::vector<int> ChemicalStructure::completedFragments() const {
-    std::vector<int> result;
-    for(int fragmentIndex = 0; fragmentIndex < m_fragments.size(); fragmentIndex++) {
-	const auto &fragIndices = atomsForFragment(fragmentIndex);
-	if (fragIndices.size() == 0) continue;
-	result.push_back(fragmentIndex);
-    }
-    return result;
+  std::vector<int> result;
+  for (int fragmentIndex = 0; fragmentIndex < m_fragments.size();
+       fragmentIndex++) {
+    const auto &fragIndices = atomsForFragment(fragmentIndex);
+    if (fragIndices.size() == 0)
+      continue;
+    result.push_back(fragmentIndex);
+  }
+  return result;
 }
 
 std::vector<int> ChemicalStructure::selectedFragments() const {
-    std::vector<int> result;
-    for(int fragmentIndex = 0; fragmentIndex < m_fragments.size(); fragmentIndex++) {
-	const auto &fragIndices = atomsForFragment(fragmentIndex);
-	if (fragIndices.size() == 0) continue;
-	if (atomsHaveFlags(fragIndices, AtomFlag::Selected)) result.push_back(fragmentIndex);
-    }
-    return result;
+  std::vector<int> result;
+  for (int fragmentIndex = 0; fragmentIndex < m_fragments.size();
+       fragmentIndex++) {
+    const auto &fragIndices = atomsForFragment(fragmentIndex);
+    if (fragIndices.size() == 0)
+      continue;
+    if (atomsHaveFlags(fragIndices, AtomFlag::Selected))
+      result.push_back(fragmentIndex);
+  }
+  return result;
 }
 
 bool ChemicalStructure::hasIncompleteFragments() const { return false; }
@@ -552,9 +555,11 @@ ChemicalStructure::atomsForFragment(int fragIndex) const {
   return m_fragments.at(fragIndex)._atomOffset;
 }
 
-std::vector<GenericAtomIndex> ChemicalStructure::atomIndicesForFragment(int fragmentIndex) const {
-    if(fragmentIndex < 0 || fragmentIndex >= m_fragments.size()) return {};
-    return m_fragments[fragmentIndex].atomIndices;
+std::vector<GenericAtomIndex>
+ChemicalStructure::atomIndicesForFragment(int fragmentIndex) const {
+  if (fragmentIndex < 0 || fragmentIndex >= m_fragments.size())
+    return {};
+  return m_fragments[fragmentIndex].atomIndices;
 }
 
 QColor ChemicalStructure::atomColor(int atomIndex) const {
@@ -563,11 +568,12 @@ QColor ChemicalStructure::atomColor(int atomIndex) const {
     return loc->second;
   switch (m_atomColoring) {
   case AtomColoring::Element: {
-      Element *el = ElementData::elementFromAtomicNumber(m_atomicNumbers(atomIndex));
-      if (el != nullptr) {
-	return el->color();
-      }
-      else return m_atomColors[atomIndex];
+    Element *el =
+        ElementData::elementFromAtomicNumber(m_atomicNumbers(atomIndex));
+    if (el != nullptr) {
+      return el->color();
+    } else
+      return m_atomColors[atomIndex];
   }
   case AtomColoring::Fragment:
     return Qt::white;
@@ -614,14 +620,15 @@ void ChemicalStructure::expandAtomsWithinRadius(float radius, bool selected) {
   // TODO
 }
 
-std::vector<GenericAtomIndex> ChemicalStructure::atomsWithFlags(const AtomFlags &flags) const {
-    std::vector<GenericAtomIndex> result;
-    for (int i = 0; i < numberOfAtoms(); i++) {
-	if (m_flags[i] & flags) result.push_back({i});
-    }
-    return result;
+std::vector<GenericAtomIndex>
+ChemicalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
+  std::vector<GenericAtomIndex> result;
+  for (int i = 0; i < numberOfAtoms(); i++) {
+    bool check = m_flags[i].testFlags(flags);
+    if((set && check) || (!set && !check)) result.push_back({i});
+  }
+  return result;
 }
-
 
 std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtoms(
     const std::vector<GenericAtomIndex> &idxs, float radius) const {
@@ -653,265 +660,298 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtoms(
   return res;
 }
 
-std::vector<GenericAtomIndex> ChemicalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const {
-    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> unique_idxs;
+std::vector<GenericAtomIndex>
+ChemicalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
+                                                  float radius) const {
+  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
+      unique_idxs;
 
-    occ::core::KDTree<double> tree(3, m_atomicPositions, occ::core::max_leaf);
-    tree.index->buildIndex();
-    const double max_dist2 = radius * radius;
+  occ::core::KDTree<double> tree(3, m_atomicPositions, occ::core::max_leaf);
+  tree.index->buildIndex();
+  const double max_dist2 = radius * radius;
 
-    std::vector<std::pair<size_t, double>> idxs_dists;
-    nanoflann::RadiusResultSet results(max_dist2, idxs_dists);
+  std::vector<std::pair<size_t, double>> idxs_dists;
+  nanoflann::RadiusResultSet results(max_dist2, idxs_dists);
 
-
-    for (int i = 0; i < numberOfAtoms(); i++) {
-	if (m_flags[i] & flags) {
-	    const double *q = m_atomicPositions.col(i).data();
-	    tree.index->findNeighbors(results, q, nanoflann::SearchParams());
-	    for (const auto &result : idxs_dists) {
-		int idx = result.first;
-		unique_idxs.insert({idx});
-	    }
-	}
+  for (int i = 0; i < numberOfAtoms(); i++) {
+    if (m_flags[i] & flags) {
+      const double *q = m_atomicPositions.col(i).data();
+      tree.index->findNeighbors(results, q, nanoflann::SearchParams());
+      for (const auto &result : idxs_dists) {
+        int idx = result.first;
+        unique_idxs.insert({idx});
+      }
     }
+  }
 
-    std::vector<GenericAtomIndex> res(unique_idxs.begin(), unique_idxs.end());
-    return res;
+  std::vector<GenericAtomIndex> res(unique_idxs.begin(), unique_idxs.end());
+  return res;
 }
 
 bool ChemicalStructure::eventFilter(QObject *obj, QEvent *event) {
-    if (event->type() == QEvent::ChildAdded) {
-	QChildEvent *childEvent = static_cast<QChildEvent*>(event);
-	QObject *newChild = childEvent->child();
-	if (newChild) {
-	    newChild->installEventFilter(this);  // Monitor the new child
-	    emit childAdded(newChild);
-	}
-    } else if (event->type() == QEvent::ChildRemoved) {
-	QChildEvent *childEvent = static_cast<QChildEvent*>(event);
-	QObject *removedChild = childEvent->child();
-	if (removedChild) {
-	    removedChild->removeEventFilter(this);  // Stop monitoring the removed child
-	    emit childRemoved(removedChild);
-	}
+  if (event->type() == QEvent::ChildAdded) {
+    QChildEvent *childEvent = static_cast<QChildEvent *>(event);
+    QObject *newChild = childEvent->child();
+    if (newChild) {
+      newChild->installEventFilter(this); // Monitor the new child
+      emit childAdded(newChild);
     }
-    return QObject::eventFilter(obj, event);
+  } else if (event->type() == QEvent::ChildRemoved) {
+    QChildEvent *childEvent = static_cast<QChildEvent *>(event);
+    QObject *removedChild = childEvent->child();
+    if (removedChild) {
+      removedChild->removeEventFilter(
+          this); // Stop monitoring the removed child
+      emit childRemoved(removedChild);
+    }
+  }
+  return QObject::eventFilter(obj, event);
 }
 
 void ChemicalStructure::connectChildSignals(QObject *child) {
-    child->installEventFilter(this);  // Monitor the new child
+  child->installEventFilter(this); // Monitor the new child
 
-    for (QObject *grandChild : child->children()) {
-        connectChildSignals(grandChild);
+  for (QObject *grandChild : child->children()) {
+    connectChildSignals(grandChild);
+  }
+}
+
+occ::IVec ChemicalStructure::atomicNumbersForIndices(
+    const std::vector<GenericAtomIndex> &idxs) const {
+  occ::IVec result(idxs.size());
+  for (int i = 0; i < idxs.size(); i++) {
+    result(i) = m_atomicNumbers(i % m_atomicNumbers.rows());
+  }
+  return result;
+}
+
+std::vector<QString> ChemicalStructure::labelsForIndices(const std::vector<GenericAtomIndex> &idxs) const {
+  std::vector<QString> result;
+  result.reserve(idxs.size());
+  for (int i = 0; i < idxs.size(); i++) {
+    result.push_back(m_labels[i]);
+  }
+  return result;
+}
+
+
+occ::Mat3N ChemicalStructure::atomicPositionsForIndices(
+    const std::vector<GenericAtomIndex> &idxs) const {
+  occ::Mat3N result(3, idxs.size());
+  for (int i = 0; i < idxs.size(); i++) {
+    result.col(i) = m_atomicPositions.col(i % m_atomicPositions.cols());
+  }
+  return result;
+}
+
+bool ChemicalStructure::getTransformation(
+    const std::vector<GenericAtomIndex> &from_orig,
+    const std::vector<GenericAtomIndex> &to_orig,
+    Eigen::Isometry3d &result) const {
+
+  if (from_orig.size() != to_orig.size())
+    return false;
+  auto from = from_orig;
+  auto to = to_orig;
+  std::sort(from.begin(), from.end());
+  std::sort(to.begin(), to.end());
+  auto nums_a = atomicNumbersForIndices(from);
+  auto nums_b = atomicNumbersForIndices(to);
+
+  // first check if they're the same elements
+  if (!(nums_a.array() == nums_b.array()).all())
+    return false;
+
+  auto pos_a = atomicPositionsForIndices(from);
+  occ::Vec3 centroid_a = pos_a.rowwise().mean();
+  auto pos_b = atomicPositionsForIndices(to);
+  occ::Vec3 centroid_b = pos_b.rowwise().mean();
+  pos_a.array().colwise() -= centroid_a.array();
+  pos_b.array().colwise() -= centroid_b.array();
+
+  auto rot = occ::core::linalg::kabsch_rotation_matrix(
+      pos_a, pos_b, false); // allow inversions
+
+  // Apply rotation
+  pos_a = (rot * pos_a).eval();
+
+  double rmsd = (pos_a - pos_b).norm();
+  qDebug() << "RMSD: " << rmsd;
+  qDebug() << "Rotation:";
+  for (int i = 0; i < 3; i++) {
+    qDebug() << rot(i, 0) << rot(i, 1) << rot(i, 2);
+  }
+  // tolerance
+  if (rmsd > 1e-3)
+    return false;
+
+  // Compute the translation
+  occ::Vec3 translation = centroid_b - (rot * centroid_a);
+  qDebug() << "Translation:" << translation(0) << translation(1)
+           << translation(2);
+
+  // Construct the final transformation
+  result = Eigen::Isometry3d::Identity();
+  result.linear() = rot;
+  result.translation() = translation;
+
+  return true;
+}
+
+std::vector<WavefunctionAndTransform>
+ChemicalStructure::wavefunctionsAndTransformsForAtoms(
+    const std::vector<GenericAtomIndex> &idxs) {
+  for (const auto &idx : idxs) {
+    qDebug() << idx.unique << idx.x << idx.y << idx.z;
+  }
+  std::vector<WavefunctionAndTransform> result;
+  for (auto *child : children()) {
+    MolecularWavefunction *wfn = qobject_cast<MolecularWavefunction *>(child);
+    if (wfn) {
+      qDebug() << "Testing candidate wavefunction" << wfn->atomIndices().size();
+      WavefunctionAndTransform t{wfn};
+      for (const auto &idx : wfn->atomIndices()) {
+        qDebug() << idx.unique << idx.x << idx.y << idx.z;
+      }
+      bool valid = getTransformation(wfn->atomIndices(), idxs, t.transform);
+
+      if (valid) {
+        qDebug() << "Found valid wavefunction";
+        result.push_back(t);
+      }
     }
+  }
+  return result;
 }
 
-occ::IVec ChemicalStructure::atomicNumbersForIndices(const std::vector<GenericAtomIndex> &idxs) const {
-    occ::IVec result(idxs.size());
-    for(int i = 0; i < idxs.size(); i++) {
-	result(i) = m_atomicNumbers(i % m_atomicNumbers.rows());
+ChemicalStructure::FragmentState
+ChemicalStructure::getSymmetryUniqueFragmentState(int fragmentIndex) const {
+  if (fragmentIndex < 0 ||
+      fragmentIndex >= m_symmetryUniqueFragmentStates.size())
+    return {};
+  return m_symmetryUniqueFragmentStates[fragmentIndex];
+}
+
+void ChemicalStructure::setSymmetryUniqueFragmentState(
+    int fragmentIndex, ChemicalStructure::FragmentState state) {
+  if (fragmentIndex < 0 ||
+      fragmentIndex >= m_symmetryUniqueFragmentStates.size())
+    return;
+  m_symmetryUniqueFragmentStates[fragmentIndex] = state;
+}
+
+const std::vector<Fragment> &
+ChemicalStructure::symmetryUniqueFragments() const {
+  return m_symmetryUniqueFragments;
+}
+
+const std::vector<ChemicalStructure::FragmentState> &
+ChemicalStructure::symmetryUniqueFragmentStates() const {
+  return m_symmetryUniqueFragmentStates;
+}
+
+QString
+ChemicalStructure::formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs,
+                                      bool richText) const {
+  std::vector<QString> symbols;
+
+  occ::IVec nums = atomicNumbersForIndices(idxs);
+  for (int i = 0; i < nums.rows(); i++) {
+    symbols.push_back(
+        QString::fromStdString(occ::core::Element(nums(i)).symbol()));
+  }
+  return formulaSum(symbols, richText);
+}
+
+Fragment ChemicalStructure::makeFragment(
+    const std::vector<GenericAtomIndex> &idxs) const {
+  Fragment result;
+  result.atomIndices = idxs;
+  std::transform(idxs.begin(), idxs.end(),
+                 std::back_inserter(result._atomOffset),
+                 [](const GenericAtomIndex &idx) { return idx.unique; });
+  result.atomicNumbers = atomicNumbersForIndices(idxs);
+  result.positions = atomicPositionsForIndices(idxs);
+  std::tie(result.asymmetricFragmentIndex, result.asymmetricFragmentTransform) =
+      findUniqueFragment(idxs);
+  return result;
+}
+
+ChemicalStructure::FragmentSymmetryRelation
+ChemicalStructure::findUniqueFragment(
+    const std::vector<GenericAtomIndex> &idxs) const {
+  int result = -1;
+  Eigen::Isometry3d transform;
+  bool found = false;
+  const auto &sym = symmetryUniqueFragments();
+  for (int i = 0; i < sym.size(); i++) {
+    found = getTransformation(idxs, sym[i].atomIndices, transform);
+    if (found) {
+      result = i;
+      break;
     }
-    return result;
-}
-
-occ::Mat3N ChemicalStructure::atomicPositionsForIndices(const std::vector<GenericAtomIndex> &idxs) const {
-    occ::Mat3N result(3, idxs.size());
-    for(int i = 0; i < idxs.size(); i++) {
-	result.col(i) = m_atomicPositions.col(i % m_atomicPositions.cols());
-    }
-    return result;
-}
-
-bool ChemicalStructure::getTransformation(const std::vector<GenericAtomIndex> &from_orig,
-				          const std::vector<GenericAtomIndex> &to_orig,
-				          Eigen::Isometry3d &result) const {
-
-    if(from_orig.size() != to_orig.size()) return false;
-    auto from = from_orig;
-    auto to = to_orig;
-    std::sort(from.begin(), from.end());
-    std::sort(to.begin(), to.end());
-    auto nums_a = atomicNumbersForIndices(from);
-    auto nums_b = atomicNumbersForIndices(to);
-
-    // first check if they're the same elements
-    if(!(nums_a.array() == nums_b.array()).all()) return false;
-
-    auto pos_a = atomicPositionsForIndices(from);
-    occ::Vec3 centroid_a = pos_a.rowwise().mean();
-    auto pos_b = atomicPositionsForIndices(to);
-    occ::Vec3 centroid_b = pos_b.rowwise().mean();
-    pos_a.array().colwise() -= centroid_a.array();
-    pos_b.array().colwise() -= centroid_b.array();
-
-    auto rot = occ::core::linalg::kabsch_rotation_matrix(pos_a, pos_b, false); // allow inversions
-
-    // Apply rotation
-    pos_a = (rot * pos_a).eval();
-
-    double rmsd = (pos_a - pos_b).norm();
-    qDebug() << "RMSD: " << rmsd;
-    qDebug() << "Rotation:";
-    for(int i = 0; i < 3; i++) {
-	qDebug() << rot(i, 0) << rot(i, 1) << rot(i, 2);
-    }
-    // tolerance
-    if(rmsd > 1e-3) return false;
-
-    // Compute the translation
-    occ::Vec3 translation = centroid_b - (rot * centroid_a);
-    qDebug() << "Translation:" << translation(0) << translation(1) << translation(2);
-
-    // Construct the final transformation
-    result = Eigen::Isometry3d::Identity();
-    result.linear() = rot;
-    result.translation() = translation;
-
-    return true;
-}
-
-
-std::vector<WavefunctionAndTransform> ChemicalStructure::wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &idxs) {
-    for(const auto &idx: idxs) {
-	qDebug() << idx.unique << idx.x << idx.y << idx.z;
-    }
-    std::vector<WavefunctionAndTransform> result;
-    for(auto * child: children()) {
-	MolecularWavefunction *wfn = qobject_cast<MolecularWavefunction *>(child);
-	if(wfn) {
-	    qDebug() << "Testing candidate wavefunction" << wfn->atomIndices().size();
-	    WavefunctionAndTransform t{wfn};
-	    for(const auto &idx: wfn->atomIndices()) {
-		qDebug() << idx.unique << idx.x << idx.y << idx.z;
-	    }
-	    bool valid = getTransformation(wfn->atomIndices(), idxs, t.transform);
-
-	    if(valid) {
-		qDebug() << "Found valid wavefunction";
-		result.push_back(t);
-	    }
-
-	}
-    }
-    return result;
-}
-
-
-ChemicalStructure::FragmentState ChemicalStructure::getSymmetryUniqueFragmentState(int fragmentIndex) const {
-    if(fragmentIndex < 0 || fragmentIndex >= m_symmetryUniqueFragmentStates.size()) return {};
-    return m_symmetryUniqueFragmentStates[fragmentIndex];
-}
-
-void ChemicalStructure::setSymmetryUniqueFragmentState(int fragmentIndex, ChemicalStructure::FragmentState state) {
-    if(fragmentIndex < 0 || fragmentIndex >= m_symmetryUniqueFragmentStates.size()) return;
-    m_symmetryUniqueFragmentStates[fragmentIndex] = state;
-}
-
-
-const std::vector<Fragment> &ChemicalStructure::symmetryUniqueFragments() const {
-    return m_symmetryUniqueFragments;
-}
-
-
-const std::vector<ChemicalStructure::FragmentState> &ChemicalStructure::symmetryUniqueFragmentStates() const {
-    return m_symmetryUniqueFragmentStates;
-}
-
-QString ChemicalStructure::formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs, bool richText) const {
-    std::vector<QString> symbols;
-
-    occ::IVec nums = atomicNumbersForIndices(idxs);
-    for(int i = 0; i < nums.rows(); i++) {
-	symbols.push_back(QString::fromStdString(occ::core::Element(nums(i)).symbol()));
-    } 
-    return formulaSum(symbols, richText);
-}
-
-
-Fragment ChemicalStructure::makeFragment(const std::vector<GenericAtomIndex> &idxs) const {
-    Fragment result;
-    result.atomIndices = idxs;
-    std::transform(idxs.begin(), idxs.end(), std::back_inserter(result._atomOffset), 
-	    [](const GenericAtomIndex &idx) { return idx.unique; });
-    result.atomicNumbers = atomicNumbersForIndices(idxs);
-    result.positions = atomicPositionsForIndices(idxs);
-    std::tie(result.asymmetricFragmentIndex, result.asymmetricFragmentTransform) = findUniqueFragment(idxs);
-    return result;
-}
-
-ChemicalStructure::FragmentSymmetryRelation ChemicalStructure::findUniqueFragment(const std::vector<GenericAtomIndex> &idxs) const {
-    int result = -1;
-    Eigen::Isometry3d transform;
-    bool found = false;
-    const auto &sym = symmetryUniqueFragments();
-    for(int i = 0; i < sym.size(); i++) {
-	found = getTransformation(idxs, sym[i].atomIndices, transform);
-	if(found) {
-	    result = i;
-	    break;
-	}
-    }
-    return {result, transform};
+  }
+  return {result, transform};
 }
 
 FragmentPairs ChemicalStructure::findFragmentPairs() const {
-    FragmentPairs result;
-    constexpr double tolerance = 1e-1;
+  FragmentPairs result;
+  constexpr double tolerance = 1e-1;
 
-    auto &pairs = result.uniquePairs;
-    auto &molPairs = result.pairs;
-    const auto &fragments = getFragments();
-    const auto &uniqueFragments = symmetryUniqueFragments();
+  auto &pairs = result.uniquePairs;
+  auto &molPairs = result.pairs;
+  const auto &fragments = getFragments();
+  const auto &uniqueFragments = symmetryUniqueFragments();
 
-    size_t asymIndex = 0;
-    for (const auto &afrag: uniqueFragments) {
-	molPairs.push_back({});
-          for (const auto &ofrag: fragments) {
-            double distance = (afrag.nearestAtom(ofrag).distance);
-            if (distance > tolerance) {
-              FragmentDimer d(afrag, ofrag);
-              molPairs[asymIndex].push_back({d, -1});
-              if (std::any_of(pairs.begin(), pairs.end(),
-                              [&d](const FragmentDimer &d2) { return d == d2; }))
-                continue;
-		pairs.push_back(d);
-            }
-          }
-	  asymIndex++;
+  size_t asymIndex = 0;
+  for (const auto &afrag : uniqueFragments) {
+    molPairs.push_back({});
+    for (const auto &ofrag : fragments) {
+      double distance = (afrag.nearestAtom(ofrag).distance);
+      if (distance > tolerance) {
+        FragmentDimer d(afrag, ofrag);
+        molPairs[asymIndex].push_back({d, -1});
+        if (std::any_of(pairs.begin(), pairs.end(),
+                        [&d](const FragmentDimer &d2) { return d == d2; }))
+          continue;
+        pairs.push_back(d);
+      }
     }
+    asymIndex++;
+  }
 
-    auto fragmentDimerSortFunc = [](const FragmentDimer &a, const FragmentDimer &b) {
-	return a.nearestAtomDistance < b.nearestAtomDistance;
-    };
+  auto fragmentDimerSortFunc = [](const FragmentDimer &a,
+                                  const FragmentDimer &b) {
+    return a.nearestAtomDistance < b.nearestAtomDistance;
+  };
 
+  auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
+                            const FragmentPairs::SymmetryRelatedPair &b) {
+    return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
+  };
 
-
-    auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
-			      const FragmentPairs::SymmetryRelatedPair &b) {
-	return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
-    };
-
-    std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
-    for (auto &vec : molPairs) {
-	std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
-	for (auto &d : vec) {
-	    size_t idx = std::distance(
-		    pairs.begin(), std::find(pairs.begin(), pairs.end(), d.fragments));
-	    d.uniquePairIndex = idx;
-	}
+  std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
+  for (auto &vec : molPairs) {
+    std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
+    for (auto &d : vec) {
+      size_t idx = std::distance(
+          pairs.begin(), std::find(pairs.begin(), pairs.end(), d.fragments));
+      d.uniquePairIndex = idx;
     }
-    return result;
+  }
+  return result;
 }
 
-const std::vector<Fragment>& ChemicalStructure::getFragments() const {
-    return m_fragments;
+const std::vector<Fragment> &ChemicalStructure::getFragments() const {
+  return m_fragments;
 }
 
 QString ChemicalStructure::chemicalFormula(bool richText) const {
-    std::vector<QString> symbols;
+  std::vector<QString> symbols;
 
-    for(int i = 0; i < m_atomicNumbers.rows(); i++) {
-	symbols.push_back(QString::fromStdString(occ::core::Element(m_atomicNumbers(i)).symbol()));
-    } 
-    return formulaSum(symbols, richText);
+  for (int i = 0; i < m_atomicNumbers.rows(); i++) {
+    symbols.push_back(QString::fromStdString(
+        occ::core::Element(m_atomicNumbers(i)).symbol()));
+  }
+  return formulaSum(symbols, richText);
 }

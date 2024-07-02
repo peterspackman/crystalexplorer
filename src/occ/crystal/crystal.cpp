@@ -64,8 +64,7 @@ void Crystal::update_unit_cell_atoms() const {
                                         uc_idxs,
                                         IMat3N::Zero(3, uc_pos_masked.cols()),
                                         idxs.unaryExpr(uc_nums),
-                                        idxs.unaryExpr(sym)
-                                        };
+                                        idxs.unaryExpr(sym)};
   m_unit_cell_atoms_needs_update = false;
 }
 
@@ -131,7 +130,6 @@ CrystalAtomRegion Crystal::atom_surroundings(int asym_idx,
         std::min(lower.l, static_cast<int>(floor(pos(2) - frac_radius(2))));
   }
 
-
   auto atom_slab = slab(lower, upper);
   occ::core::KDTree<double> tree(atom_slab.cart_pos.rows(), atom_slab.cart_pos,
                                  occ::core::max_leaf);
@@ -149,7 +147,6 @@ CrystalAtomRegion Crystal::atom_surroundings(int asym_idx,
   if (idxs_dists.size() < 1)
     return result;
   result.resize(idxs_dists.size()); // -1 for the self
-
 
   int result_idx = 0;
   for (const auto &[idx, d] : idxs_dists) {
@@ -365,8 +362,6 @@ void Crystal::set_connectivity_criteria(bool guess) {
   m_guess_connectivity = guess;
 }
 
-
-
 void Crystal::update_unit_cell_connectivity() const {
   auto s = slab({-2, -2, -2}, {2, 2, 2});
   size_t n_uc = m_unit_cell_atoms.size();
@@ -386,6 +381,7 @@ void Crystal::update_unit_cell_connectivity() const {
                                  occ::core::max_leaf);
   tree.index->buildIndex();
   auto covalent_radii = m_asymmetric_unit.covalent_radii();
+  const auto &elements = m_asymmetric_unit.atomic_numbers;
   auto vdw_radii = m_asymmetric_unit.vdw_radii();
   double max_vdw = vdw_radii.maxCoeff();
 
@@ -398,21 +394,35 @@ void Crystal::update_unit_cell_connectivity() const {
   auto add_edge = [&](double d, size_t uc_l, size_t uc_r, size_t asym_l,
                       size_t asym_r, const IVec3 &hkl,
                       Connection connectionType) {
-    occ::core::graph::PeriodicEdge left_right{
-        sqrt(d), uc_l, uc_r, asym_l, asym_r, hkl(0), hkl(1), hkl(2), connectionType};
+    occ::core::graph::PeriodicEdge left_right{sqrt(d), uc_l,   uc_r,
+                                              asym_l,  asym_r, hkl(0),
+                                              hkl(1),  hkl(2), connectionType};
     m_bond_graph.add_edge(m_bond_graph_vertices[uc_l],
                           m_bond_graph_vertices[uc_r], left_right);
-    occ::core::graph::PeriodicEdge right_left{
-        sqrt(d), uc_r, uc_l, asym_r, asym_l, -hkl(0), -hkl(1), -hkl(2), connectionType};
+    occ::core::graph::PeriodicEdge right_left{sqrt(d), uc_r,    uc_l,
+                                              asym_r,  asym_l,  -hkl(0),
+                                              -hkl(1), -hkl(2), connectionType};
     m_bond_graph.add_edge(m_bond_graph_vertices[uc_r],
                           m_bond_graph_vertices[uc_l], right_left);
     num_connections++;
+  };
+
+  auto can_hbond = [](int a, int b) {
+    if (a == 1) {
+      if (b == 7 || b == 8 || b == 9)
+        return true;
+    } else if (b == 1) {
+      if (a == 7 || a == 8 || a == 9)
+        return true;
+    }
+    return false;
   };
 
   for (size_t uc_idx_l = 0; uc_idx_l < n_uc; uc_idx_l++) {
     size_t asym_idx_l = m_unit_cell_atoms.asym_idx(uc_idx_l);
     double cov_a = covalent_radii(asym_idx_l);
     double vdw_a = vdw_radii(asym_idx_l);
+    int el_a = elements(asym_idx_l);
 
     double *q = s.cart_pos.col(uc_idx_l).data();
     tree.index->findNeighbors(results, q, nanoflann::SearchParams());
@@ -428,6 +438,8 @@ void Crystal::update_unit_cell_connectivity() const {
       size_t asym_idx_r = m_unit_cell_atoms.asym_idx(uc_idx_r);
       double cov_b = covalent_radii(asym_idx_r);
       double vdw_b = vdw_radii(asym_idx_r);
+      int el_b = elements(asym_idx_r);
+
       double threshold = (cov_a + cov_b + 0.4) * (cov_a + cov_b + 0.4);
       double threshold_vdw = (vdw_a + vdw_b + 0.6) * (vdw_a + vdw_b + 0.6);
       if (d < threshold) {
@@ -435,9 +447,13 @@ void Crystal::update_unit_cell_connectivity() const {
         add_edge(d, uc_idx_l, uc_idx_r, asym_idx_l, asym_idx_r, hkl,
                  Connection::CovalentBond);
       } else if (d < threshold_vdw) {
-          auto hkl = s.hkl.col(idx);
+        auto hkl = s.hkl.col(idx);
         add_edge(d, uc_idx_l, uc_idx_r, asym_idx_l, asym_idx_r, hkl,
                  Connection::CloseContact);
+        if (can_hbond(el_a, el_b)) {
+          add_edge(d, uc_idx_l, uc_idx_r, asym_idx_l, asym_idx_r, hkl,
+                   Connection::HydrogenBond);
+        }
       }
     }
     results.clear();

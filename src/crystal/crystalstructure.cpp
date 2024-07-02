@@ -796,13 +796,14 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
 }
 
 std::vector<GenericAtomIndex>
-CrystalStructure::atomsWithFlags(const AtomFlags &flags) const {
+CrystalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
 
   ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
       selected_idxs;
 
   for (int i = 0; i < numberOfAtoms(); i++) {
-    if (atomFlagsSet(i, flags)) {
+    bool check = atomFlagsSet(i, flags);
+    if((set && check) || (!set && !check)) {
       const auto &offset = m_unitCellOffsets[i];
       selected_idxs.insert({offset.unique, offset.x, offset.y, offset.z});
     }
@@ -885,6 +886,20 @@ occ::IVec CrystalStructure::atomicNumbersForIndices(
   for (int i = 0; i < idxs.size(); i++) {
     const auto &idx = idxs[i];
     result(i) = uc_atoms.atomic_numbers(idx.unique);
+  }
+  return result;
+}
+
+std::vector<QString> CrystalStructure::labelsForIndices(
+    const std::vector<GenericAtomIndex> &idxs) const {
+  const auto &uc_atoms = m_crystal.unit_cell_atoms();
+  const auto &asym = m_crystal.asymmetric_unit();
+  std::vector<QString> result;
+  result.reserve(idxs.size());
+  for (int i = 0; i < idxs.size(); i++) {
+    const auto &idx = idxs[i];
+    int asym_index = uc_atoms.asym_idx(idx.unique);
+    result.push_back(QString::fromStdString(asym.labels[asym_index]));
   }
   return result;
 }

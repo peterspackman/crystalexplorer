@@ -18,27 +18,20 @@ void FingerprintWindow::init() {
 
 void FingerprintWindow::initConnections() {
   // Fingerprint option connections
-  connect(fingerprintOptions, SIGNAL(plotTypeChanged(PlotType)),
-          fingerprintPlot, SLOT(updatePlotType(PlotType)));
-  connect(fingerprintOptions, SIGNAL(plotRangeChanged(PlotRange)),
-          fingerprintPlot, SLOT(updatePlotRange(PlotRange)));
-  connect(fingerprintOptions,
-          SIGNAL(filterChanged(FingerprintFilterMode, bool, bool, bool, QString,
-                               QString)),
-          fingerprintPlot,
-          SLOT(updateFilter(FingerprintFilterMode, bool, bool, bool, QString,
-                            QString)));
-  connect(fingerprintOptions, SIGNAL(saveFingerprint(QString)), fingerprintPlot,
-          SLOT(saveFingerprint(QString)));
-  connect(fingerprintOptions, SIGNAL(closeClicked()), this, SLOT(close()));
+  connect(fingerprintOptions, &FingerprintOptions::filterChanged,
+          fingerprintPlot, &FingerprintPlot::updateFilter);
+  connect(fingerprintOptions, &FingerprintOptions::saveFingerprint,
+          fingerprintPlot, &FingerprintPlot::saveFingerprint);
+  connect(fingerprintOptions, &FingerprintOptions::closeClicked,
+          this, &FingerprintWindow::close);
 
   // Fingerprint plot connections
   connect(fingerprintPlot, &FingerprintPlot::resetSurfaceFeatures, this,
           &FingerprintWindow::resetSurfaceFeatures);
-  connect(fingerprintPlot, SIGNAL(surfaceFeatureChanged()), this,
-          SIGNAL(surfaceFeatureChanged()));
-  connect(fingerprintPlot, SIGNAL(surfaceAreaPercentageChanged(double)),
-          fingerprintOptions, SLOT(updateSurfaceAreaProgressBar(double)));
+  connect(fingerprintPlot, &FingerprintPlot::surfaceFeatureChanged, this,
+          &FingerprintWindow::surfaceFeatureChanged);
+  connect(fingerprintPlot, &FingerprintPlot::surfaceAreaPercentageChanged,
+          fingerprintOptions, &FingerprintOptions::updateSurfaceAreaProgressBar);
 }
 
 FingerprintWindow::~FingerprintWindow() { delete fingerprintPlot; }
@@ -58,10 +51,10 @@ void FingerprintWindow::createOptionsDockWidget() {
 }
 
 void FingerprintWindow::show() {
-  Mesh * mesh{nullptr};
+  Mesh *mesh{nullptr};
   fingerprintPlot->setMesh(mesh);
 
-  auto * structure = qobject_cast<ChemicalStructure *>(mesh->parent());
+  auto *structure = qobject_cast<ChemicalStructure *>(mesh->parent());
   if (structure != nullptr) {
     fingerprintOptions->setElementList(structure->uniqueElementSymbols());
   }
@@ -78,7 +71,7 @@ void FingerprintWindow::resetCrystal() { setScene(nullptr); }
 
 void FingerprintWindow::resetSurfaceFeatures() {
   // TODO
-  //m_scene->resetSurfaceFeatures();
+  // m_scene->resetSurfaceFeatures();
   emit surfaceFeatureChanged();
 }
 

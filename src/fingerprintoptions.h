@@ -22,12 +22,14 @@ signals:
   void saveFingerprint(QString);
   void closeClicked();
 
+public slots:
+  void updateSurfaceAreaProgressBar(double);
+
 private slots:
   void updatePlotRange(int);
   void updateFilterMode();
   void updateFilterSettings();
   void getFilenameAndSaveFingerprint();
-  void updateSurfaceAreaProgressBar(double);
   void updateVisibilityOfFilterWidgets(int);
 
 private:
