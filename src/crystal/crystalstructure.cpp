@@ -240,9 +240,9 @@ int CrystalStructure::fragmentIndexForAtom(int atomIndex) const {
   return m_fragmentForAtom[atomIndex];
 }
 
-const std::vector<std::pair<int, int>> &
-CrystalStructure::hydrogenBonds() const {
-  return m_hydrogenBonds;
+std::vector<HBondTriple>
+CrystalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
+  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds, m_hydrogenBonds);
 }
 
 const std::vector<std::pair<int, int>> &CrystalStructure::vdwContacts() const {

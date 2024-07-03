@@ -68,7 +68,7 @@ public slots:
   void toggleSuppressedAtoms(bool);
   void toggleCloseContacts(bool);
   void toggleHydrogenBonds(bool);
-  void updateHydrogenBondsForCurrent(QString, QString, double, bool);
+  void updateHydrogenBondCriteria(HBondCriteria);
   void cycleDisorderHighlighting();
 
   void updateAllCrystalsForChangeInElementData();

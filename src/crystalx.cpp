@@ -465,8 +465,8 @@ void Crystalx::initCloseContactsDialog() {
   m_closeContactDialog = new CloseContactDialog();
   connect(m_closeContactDialog, &CloseContactDialog::hbondColorChanged, project,
           &Project::currentSceneChanged);
-  connect(m_closeContactDialog, &CloseContactDialog::hbondSettingsChanged,
-          project, &Project::updateHydrogenBondsForCurrent);
+  connect(m_closeContactDialog, &CloseContactDialog::hbondCriteriaChanged,
+          project, &Project::updateHydrogenBondCriteria);
   connect(m_closeContactDialog, &CloseContactDialog::hbondsToggled, project,
           &Project::toggleHydrogenBonds);
 

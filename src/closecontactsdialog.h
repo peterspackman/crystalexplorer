@@ -3,6 +3,7 @@
 #include <QStringList>
 
 #include "globals.h"
+#include "hbond_criteria.h"
 #include "ui_closecontactsdialog.h"
 
 const int HBOND_TAB = 0;
@@ -21,7 +22,7 @@ public slots:
 
 signals:
   void hbondColorChanged();
-  void hbondSettingsChanged(QString, QString, double, bool);
+  void hbondCriteriaChanged(HBondCriteria);
   void hbondsToggled(bool);
   void cc1Toggled(bool);
   void cc2Toggled(bool);
@@ -50,6 +51,7 @@ private slots:
   void reportHBondSettingsChanges();
 
 private:
+  HBondCriteria currentHBondCriteria();
   void init();
   void initConnections();
   void updateComboBox(QComboBox *, QStringList);

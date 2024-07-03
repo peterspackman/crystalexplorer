@@ -82,7 +82,7 @@ void Scene::setShowStatusesToDefaults() {
   _showAtomicLabels = false;
   _showFragmentLabels = false;
   _showSurfaceLabels = false;
-  _showHydrogenBonds = false;
+  m_showHydrogenBonds = false;
   _showCloseContacts.clear();
   _showCloseContacts = {false, false, false};
 }
@@ -288,7 +288,7 @@ int Scene::nameWithSmallestZ(GLuint hits, GLuint buffer[]) {
 }
 
 bool Scene::hasOnScreenCloseContacts() {
-  return _showHydrogenBonds || _showCloseContacts.contains(true);
+  return m_showHydrogenBonds || _showCloseContacts.contains(true);
 }
 
 void Scene::setSelectStatusForAtomDoubleClick(int atomIndex) {
@@ -794,7 +794,7 @@ void Scene::draw() {
 
   if (hasVisibleAtoms()) {
 
-    if (_showHydrogenBonds) {
+    if (m_showHydrogenBonds) {
       drawHydrogenBonds();
     }
     drawCloseContacts();
@@ -1045,6 +1045,12 @@ float Scene::bondThickness() {
          bondThicknessRatio;
 }
 
+
+void Scene::updateHydrogenBondCriteria(HBondCriteria criteria) {
+  m_hbondCriteria = criteria;
+  m_hbondsNeedUpdate = true;
+}
+
 void Scene::drawHydrogenBonds() {
   qDebug() << "Draw hydrogenbonds";
   if (m_hydrogenBondLines == nullptr) {
@@ -1052,24 +1058,27 @@ void Scene::drawHydrogenBonds() {
   } else {
     m_hydrogenBondLines->clear();
   }
+  // TODO check if needs update
 
   QColor color =
       QColor(settings::readSetting(settings::keys::HBOND_COLOR).toString());
   double radius = contactLineThickness();
   m_hydrogenBondLines->beginUpdates();
 
-  const auto &bonds = m_structure->hydrogenBonds();
+  const auto &bonds = m_structure->hydrogenBonds(m_hbondCriteria);
   const auto &positions = m_structure->atomicPositions();
   qDebug() << "Structure has" << bonds.size() << "hydrogen bonds";
-  for (const auto &[a, b] : bonds) {
+  for (const auto &[d, h, a] : bonds) {
+    const auto fragD = m_structure->fragmentIndexForAtom(d);
+    const auto fragA = m_structure->fragmentIndexForAtom(a);
     // skip intramolecular contacts
-    if (m_structure->fragmentIndexForAtom(a) ==
-        m_structure->fragmentIndexForAtom(b))
+    if (!m_hbondCriteria.includeIntra && (fragD == fragA)) {
       continue;
+    }
+    QVector3D pos_h(positions(0, h), positions(1, h), positions(2, h));
     QVector3D pos_a(positions(0, a), positions(1, a), positions(2, a));
-    QVector3D pos_b(positions(0, b), positions(1, b), positions(2, b));
-    cx::graphics::addDashedLineToLineRenderer(*m_hydrogenBondLines, pos_a,
-                                              pos_b, radius, color);
+    cx::graphics::addDashedLineToLineRenderer(*m_hydrogenBondLines, pos_h,
+                                              pos_a, radius, color);
   }
   m_hydrogenBondLines->endUpdates();
   m_hydrogenBondLines->bind();

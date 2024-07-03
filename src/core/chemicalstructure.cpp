@@ -531,9 +531,9 @@ int ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
   return m_fragmentForAtom[atomIndex];
 }
 
-const std::vector<std::pair<int, int>> &
-ChemicalStructure::hydrogenBonds() const {
-  return m_hydrogenBonds;
+std::vector<HBondTriple>
+ChemicalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
+  return criteria.filter(m_atomicPositions, m_atomicNumbers, m_covalentBonds, m_hydrogenBonds);
 }
 
 const std::vector<std::pair<int, int>> &ChemicalStructure::vdwContacts() const {

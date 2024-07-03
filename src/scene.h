@@ -141,7 +141,7 @@ public:
   void setShowSuppressedAtoms(bool);
   inline bool suppressedAtomsAreVisible() { return _showSuppressedAtoms; }
 
-  inline void setHydrogenBondsVisible(bool show) { _showHydrogenBonds = show; }
+  inline void setHydrogenBondsVisible(bool show) { m_showHydrogenBonds = show; }
 
   void setCloseContactVisible(int, bool);
   void selectAtomsOutsideRadiusOfSelectedAtoms(float);
@@ -284,6 +284,8 @@ public slots:
   void depthFogSettingsChanged();
   void addCrystalPlane(CrystalPlane);
 
+  void updateHydrogenBondCriteria(HBondCriteria);
+
 private slots:
   void handleSurfacesNeedUpdate();
   void handleLabelsNeedUpdate();
@@ -366,7 +368,10 @@ private:
   bool _showAtomicLabels;
   bool _showFragmentLabels;
   bool _showSurfaceLabels;
-  bool _showHydrogenBonds;
+
+  bool m_showHydrogenBonds{false};
+  HBondCriteria m_hbondCriteria;
+
   QList<bool> _showCloseContacts;
 
   cx::graphics::SelectionResult m_selection;
@@ -387,6 +392,8 @@ private:
   bool m_surfacesNeedUpdate{true};
   bool m_labelsNeedUpdate{true};
   bool m_crystalPlanesNeedUpdate{true};
+  bool m_hbondsNeedUpdate{true};
+
   std::vector<CrystalPlane> m_crystalPlanes;
 
   HighlightMode _highlightMode;

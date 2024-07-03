@@ -432,17 +432,13 @@ bool Project::previouslySaved() { return (!_saveFilename.isEmpty()); }
 
 QString Project::saveFilename() { return _saveFilename; }
 
-void Project::updateHydrogenBondsForCurrent(QString donor, QString acceptor,
-                                            double distanceCriteria,
-                                            bool includeIntraHBonds) {
-  qDebug() << "updateHydrogenBondsForCurrent";
-  /*
-  if (currentScene() != nullptr) {
-    currentScene()->crystal()->updateHBondList(
-        donor, acceptor, distanceCriteria, includeIntraHBonds);
+void Project::updateHydrogenBondCriteria(HBondCriteria criteria) {
+  qDebug() << "updateHydrogenBondsCriteria";
+  auto * scene = currentScene();
+  if (scene) {
+    scene->updateHydrogenBondCriteria(criteria);
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::toggleCC1(bool show) { toggleCloseContact(CC1_INDEX, show); }

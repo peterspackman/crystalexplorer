@@ -46,7 +46,7 @@ public:
   std::vector<GenericAtomIndex> atomIndicesForFragment(int) const override;
 
   const std::pair<int, int> &atomsForBond(int) const override;
-  const std::vector<std::pair<int, int>> &hydrogenBonds() const override;
+  std::vector<HBondTriple> hydrogenBonds(const HBondCriteria & = {}) const override;
   const std::vector<std::pair<int, int>> &covalentBonds() const override;
   const std::vector<std::pair<int, int>> &vdwContacts() const override;
 

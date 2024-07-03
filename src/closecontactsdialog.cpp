@@ -52,6 +52,23 @@ void CloseContactDialog::initConnections() {
   connect(hbondAcceptorComboBox,
           QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           reportSettings);
+
+  connect(distanceMinSpinBox,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          reportSettings);
+
+  connect(distanceMaxSpinBox,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          reportSettings);
+
+  connect(angleMaxSpinBox,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          reportSettings);
+
+  connect(angleMinSpinBox,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          reportSettings);
+
   connect(includeIntraHBondsCheckBox, &QAbstractButton::toggled, this,
           &CloseContactDialog::reportHBondSettingsChanges);
   connect(hbondColorButton, &QAbstractButton::clicked, this,
@@ -66,53 +83,52 @@ void CloseContactDialog::initConnections() {
           &CloseContactDialog::updateCloseContact3);
 
   // Connections for first close contact
-  connect(cc1DonorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::reportCC1SettingsChanges);
-  connect(cc1DonorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::updateContact1DistanceCriteria);
+  connect(cc1DonorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::reportCC1SettingsChanges);
+  connect(cc1DonorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::updateContact1DistanceCriteria);
 
-  connect(cc1AcceptorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::reportCC1SettingsChanges);
-  connect(cc1AcceptorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::updateContact1DistanceCriteria);
+  connect(cc1AcceptorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::reportCC1SettingsChanges);
+  connect(cc1AcceptorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::updateContact1DistanceCriteria);
 
-  connect(cc1DistanceCriteriaSpinBox, &QDoubleSpinBox::valueChanged,
-          this, &CloseContactDialog::reportCC1SettingsChanges);
-  connect(cc1ColorButton, &QToolButton::clicked,
-          this, &CloseContactDialog::updateCloseContact1Color);
+  connect(cc1DistanceCriteriaSpinBox, &QDoubleSpinBox::valueChanged, this,
+          &CloseContactDialog::reportCC1SettingsChanges);
+  connect(cc1ColorButton, &QToolButton::clicked, this,
+          &CloseContactDialog::updateCloseContact1Color);
 
   // Connections for 2nd close contact
-  connect(cc2DonorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::reportCC2SettingsChanges);
-  connect(cc2DonorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::updateContact2DistanceCriteria);
+  connect(cc2DonorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::reportCC2SettingsChanges);
+  connect(cc2DonorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::updateContact2DistanceCriteria);
 
-  connect(cc2AcceptorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::reportCC2SettingsChanges);
-  connect(cc2AcceptorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::updateContact2DistanceCriteria);
+  connect(cc2AcceptorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::reportCC2SettingsChanges);
+  connect(cc2AcceptorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::updateContact2DistanceCriteria);
 
-  connect(cc2DistanceCriteriaSpinBox, &QDoubleSpinBox::valueChanged,
-          this, &CloseContactDialog::reportCC2SettingsChanges);
-  connect(cc2ColorButton, &QToolButton::clicked,
-          this, &CloseContactDialog::updateCloseContact2Color);
-
+  connect(cc2DistanceCriteriaSpinBox, &QDoubleSpinBox::valueChanged, this,
+          &CloseContactDialog::reportCC2SettingsChanges);
+  connect(cc2ColorButton, &QToolButton::clicked, this,
+          &CloseContactDialog::updateCloseContact2Color);
 
   // Connections for 3rd close contact
-  connect(cc3DonorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::reportCC3SettingsChanges);
-  connect(cc3DonorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::updateContact3DistanceCriteria);
+  connect(cc3DonorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::reportCC3SettingsChanges);
+  connect(cc3DonorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::updateContact3DistanceCriteria);
 
-  connect(cc3AcceptorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::reportCC3SettingsChanges);
-  connect(cc3AcceptorComboBox, &QComboBox::currentIndexChanged,
-          this, &CloseContactDialog::updateContact3DistanceCriteria);
+  connect(cc3AcceptorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::reportCC3SettingsChanges);
+  connect(cc3AcceptorComboBox, &QComboBox::currentIndexChanged, this,
+          &CloseContactDialog::updateContact3DistanceCriteria);
 
-  connect(cc3DistanceCriteriaSpinBox, &QDoubleSpinBox::valueChanged,
-          this, &CloseContactDialog::reportCC3SettingsChanges);
-  connect(cc3ColorButton, &QToolButton::clicked,
-          this, &CloseContactDialog::updateCloseContact3Color);
+  connect(cc3DistanceCriteriaSpinBox, &QDoubleSpinBox::valueChanged, this,
+          &CloseContactDialog::reportCC3SettingsChanges);
+  connect(cc3ColorButton, &QToolButton::clicked, this,
+          &CloseContactDialog::updateCloseContact3Color);
 }
 
 void CloseContactDialog::updateDonorsAndAcceptors(QStringList elements,
@@ -291,12 +307,7 @@ void CloseContactDialog::reportHBondColorChange() {
 
 void CloseContactDialog::reportHBondSettingsChanges() {
 
-  QString donor = hbondDonorComboBox->currentText();
-  QString acceptor = hbondAcceptorComboBox->currentText();
-  double distanceCriteria = hbondDistanceCriteriaSpinBox->value();
-  bool includeIntraContacts = includeIntraHBondsCheckBox->checkState();
-  emit hbondSettingsChanged(donor, acceptor, distanceCriteria,
-                            includeIntraContacts);
+  emit hbondCriteriaChanged(currentHBondCriteria());
 }
 
 void CloseContactDialog::updateCloseContactColor(QToolButton *colorButton,
@@ -319,4 +330,20 @@ void CloseContactDialog::updateCloseContact2Color() {
 
 void CloseContactDialog::updateCloseContact3Color() {
   updateCloseContactColor(cc3ColorButton, settings::keys::CONTACT3_COLOR);
+}
+
+HBondCriteria CloseContactDialog::currentHBondCriteria() {
+  QString donor = hbondDonorComboBox->currentText();
+  QString acceptor = hbondAcceptorComboBox->currentText();
+  double distanceCriteria = hbondDistanceCriteriaSpinBox->value();
+  double distanceMin = distanceMinSpinBox->value();
+
+  HBondCriteria criteria;
+  criteria.minAngle = angleMinSpinBox->value();
+  criteria.maxAngle = angleMaxSpinBox->value();
+  criteria.minDistance = distanceMinSpinBox->value();
+  criteria.maxDistance = distanceMaxSpinBox->value();
+  criteria.includeIntra = includeIntraHBondsCheckBox->checkState();
+
+  return criteria;
 }

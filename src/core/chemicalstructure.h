@@ -5,6 +5,7 @@
 #include "pair_energy_results.h"
 #include "molecular_wavefunction.h"
 #include "object_tree_model.h"
+#include "hbond_criteria.h"
 #include <Eigen/Dense>
 #include <QVariant>
 #include <QColor>
@@ -150,7 +151,7 @@ public:
   virtual const std::vector<int> &atomsForFragment(int) const;
   virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
-  virtual const std::vector<std::pair<int, int>> &hydrogenBonds() const;
+  virtual std::vector<HBondTriple> hydrogenBonds(const HBondCriteria & = {}) const;
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
   virtual const std::vector<std::pair<int, int>> &vdwContacts() const;
 
