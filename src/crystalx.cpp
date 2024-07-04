@@ -463,8 +463,6 @@ void Crystalx::initMenuConnections() {
 
 void Crystalx::initCloseContactsDialog() {
   m_closeContactDialog = new CloseContactDialog();
-  connect(m_closeContactDialog, &CloseContactDialog::hbondColorChanged, project,
-          &Project::currentSceneChanged);
   connect(m_closeContactDialog, &CloseContactDialog::hbondCriteriaChanged,
           project, &Project::updateHydrogenBondCriteria);
   connect(m_closeContactDialog, &CloseContactDialog::hbondsToggled, project,
@@ -475,18 +473,8 @@ void Crystalx::initCloseContactsDialog() {
   connect(closeContactOptionsAction, &QAction::triggered, m_closeContactDialog,
           &CloseContactDialog::showDialogWithCloseContactsTab);
 
-  connect(m_closeContactDialog, &CloseContactDialog::cc1Toggled, project,
-          &Project::toggleCC1);
-  connect(m_closeContactDialog, &CloseContactDialog::cc2Toggled, project,
-          &Project::toggleCC2);
-  connect(m_closeContactDialog, &CloseContactDialog::cc3Toggled, project,
-          &Project::toggleCC3);
-
-  connect(m_closeContactDialog,
-          &CloseContactDialog::closeContactsSettingsChanged, project,
-          &Project::updateCloseContactsForCurrent);
-  connect(m_closeContactDialog, &CloseContactDialog::closeContactsColorChanged,
-          project, &Project::currentSceneChanged);
+  connect(m_closeContactDialog, &CloseContactDialog::closeContactsSettingsChanged,
+          project, &Project::updateCloseContactsCriteria);
 }
 
 void Crystalx::updateCrystalActions() {

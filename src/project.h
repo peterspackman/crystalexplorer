@@ -73,11 +73,8 @@ public slots:
 
   void updateAllCrystalsForChangeInElementData();
 
-  void toggleCC1(bool);
-  void toggleCC2(bool);
-  void toggleCC3(bool);
-  void toggleCloseContact(int, bool);
-  void updateCloseContactsForCurrent(int, QString, QString, double);
+  void updateCloseContactsCriteria(int, CloseContactCriteria);
+
   void removeIncompleteFragmentsForCurrentCrystal();
   void removeSelectedAtomsForCurrentCrystal();
   void resetCurrentCrystal();

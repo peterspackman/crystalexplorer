@@ -48,7 +48,7 @@ public:
   const std::pair<int, int> &atomsForBond(int) const override;
   std::vector<HBondTriple> hydrogenBonds(const HBondCriteria & = {}) const override;
   const std::vector<std::pair<int, int>> &covalentBonds() const override;
-  const std::vector<std::pair<int, int>> &vdwContacts() const override;
+  std::vector<CloseContactPair> closeContacts(const CloseContactCriteria & = {}) const override;
 
   void updateBondGraph() override;
 

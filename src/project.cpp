@@ -441,30 +441,13 @@ void Project::updateHydrogenBondCriteria(HBondCriteria criteria) {
   }
 }
 
-void Project::toggleCC1(bool show) { toggleCloseContact(CC1_INDEX, show); }
-
-void Project::toggleCC2(bool show) { toggleCloseContact(CC2_INDEX, show); }
-
-void Project::toggleCC3(bool show) { toggleCloseContact(CC3_INDEX, show); }
-
-void Project::toggleCloseContact(int ccIndex, bool show) {
-  if (currentScene() != nullptr) {
-    currentScene()->setCloseContactVisible(ccIndex, show);
-    emit currentSceneChanged();
-  }
-}
-
-void Project::updateCloseContactsForCurrent(int contactIndex, QString x,
-                                            QString y,
-                                            double distanceCriteria) {
+void Project::updateCloseContactsCriteria(int contactIndex, CloseContactCriteria criteria) {
   qDebug() << "updateCloseContactsForCurrent";
-  /*
-  if (currentScene() != nullptr) {
-    currentScene()->crystal()->updateCloseContactWithIndex(contactIndex, x, y,
-                                                           distanceCriteria);
+  auto * scene = currentScene();
+  if (scene) {
+    scene->updateCloseContactsCriteria(contactIndex, criteria);
     emit currentSceneChanged();
   }
-  */
 }
 
 void Project::removeIncompleteFragmentsForCurrentCrystal() {

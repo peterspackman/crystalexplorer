@@ -14,6 +14,7 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     celllimitsdialog.cpp
     childpropertycontroller.cpp
     closecontactsdialog.cpp
+    closecontactcriteriawidget.cpp
     colordelegate.cpp
     confirmationbox.cpp
     crystalcontroller.cpp
@@ -52,6 +53,7 @@ set(CRYSTALEXPLORER_HEADER_FILES
     chargemultiplicitypair.h
     childpropertycontroller.h
     closecontactsdialog.h
+    closecontactcriteriawidget.h
     colordelegate.h
     confirmationbox.h
     crystalcontroller.h

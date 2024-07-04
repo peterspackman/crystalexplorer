@@ -6,6 +6,7 @@
 #include "molecular_wavefunction.h"
 #include "object_tree_model.h"
 #include "hbond_criteria.h"
+#include "close_contact_criteria.h"
 #include <Eigen/Dense>
 #include <QVariant>
 #include <QColor>
@@ -152,8 +153,8 @@ public:
   virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
   virtual std::vector<HBondTriple> hydrogenBonds(const HBondCriteria & = {}) const;
+  virtual std::vector<CloseContactPair> closeContacts(const CloseContactCriteria & = {}) const;
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
-  virtual const std::vector<std::pair<int, int>> &vdwContacts() const;
 
   FragmentSymmetryRelation findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
   FragmentPairs findFragmentPairs() const;

@@ -83,8 +83,7 @@ void Scene::setShowStatusesToDefaults() {
   _showFragmentLabels = false;
   _showSurfaceLabels = false;
   m_showHydrogenBonds = false;
-  _showCloseContacts.clear();
-  _showCloseContacts = {false, false, false};
+  m_closeContactCriteria.clear();
 }
 
 void Scene::setShowCloseContacts(bool set) {
@@ -288,7 +287,11 @@ int Scene::nameWithSmallestZ(GLuint hits, GLuint buffer[]) {
 }
 
 bool Scene::hasOnScreenCloseContacts() {
-  return m_showHydrogenBonds || _showCloseContacts.contains(true);
+
+  return m_showHydrogenBonds ||
+         std::any_of(m_closeContactCriteria.begin(),
+                     m_closeContactCriteria.end(),
+                     [](const auto &criteria) { return criteria.show; });
 }
 
 void Scene::setSelectStatusForAtomDoubleClick(int atomIndex) {
@@ -393,7 +396,8 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     size_t surfaceIndex = m_selection.index;
     qDebug() << "Surface index clicked:" << surfaceIndex;
 
-    MeshInstance *meshInstance = m_structureRenderer->getMeshInstance(m_selection.index);
+    MeshInstance *meshInstance =
+        m_structureRenderer->getMeshInstance(m_selection.index);
 
     if (!meshInstance)
       break;
@@ -556,12 +560,13 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
 void Scene::populateSelectedSurface() {
   m_selectedSurface.index = m_selection.index;
   m_selectedSurface.faceIndex = m_selection.secondaryIndex;
-  auto * surface = m_structureRenderer->getMeshInstance(m_selection.index);
+  auto *surface = m_structureRenderer->getMeshInstance(m_selection.index);
   m_selectedSurface.surface = surface;
 
-  if(surface) {
+  if (surface) {
     m_selectedSurface.property = surface->getSelectedProperty();
-    m_selectedSurface.propertyValue = surface->valueForSelectedPropertyAt(m_selection.secondaryIndex);
+    m_selectedSurface.propertyValue =
+        surface->valueForSelectedPropertyAt(m_selection.secondaryIndex);
   }
 }
 
@@ -622,7 +627,9 @@ SelectionType Scene::decodeSelectionType(const QColor &color) {
 
 const SelectedBond &Scene::selectedBond() const { return m_selectedBond; }
 
-const SelectedSurface &Scene::selectedSurface() const { return m_selectedSurface; }
+const SelectedSurface &Scene::selectedSurface() const {
+  return m_selectedSurface;
+}
 
 void Scene::updateForPreferencesChange() {
   if (m_structure) {
@@ -692,11 +699,6 @@ int Scene::numberOfAtoms() const { return m_structure->numberOfAtoms(); }
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 int Scene::numberOfBonds() const { return m_structure->covalentBonds().size(); }
-
-void Scene::setCloseContactVisible(int contactIndex, bool show) {
-  Q_ASSERT(contactIndex >= 0 && contactIndex <= CCMAX_INDEX);
-  _showCloseContacts[contactIndex] = show;
-}
 
 bool Scene::hasVisibleAtoms() const { return m_structure->numberOfAtoms() > 0; }
 
@@ -1045,102 +1047,90 @@ float Scene::bondThickness() {
          bondThicknessRatio;
 }
 
-
 void Scene::updateHydrogenBondCriteria(HBondCriteria criteria) {
   m_hbondCriteria = criteria;
-  m_hbondsNeedUpdate = true;
+  m_hydrogenBondsNeedUpdate = true;
 }
 
 void Scene::drawHydrogenBonds() {
-  qDebug() << "Draw hydrogenbonds";
   if (m_hydrogenBondLines == nullptr) {
     m_hydrogenBondLines = new LineRenderer();
   } else {
-    m_hydrogenBondLines->clear();
+    if(m_hydrogenBondsNeedUpdate) {
+      m_hydrogenBondLines->clear();
+    }
   }
   // TODO check if needs update
 
-  QColor color =
-      QColor(settings::readSetting(settings::keys::HBOND_COLOR).toString());
-  double radius = contactLineThickness();
-  m_hydrogenBondLines->beginUpdates();
+  if(m_hydrogenBondsNeedUpdate) {
+    double radius = contactLineThickness();
+    m_hydrogenBondLines->beginUpdates();
 
-  const auto &bonds = m_structure->hydrogenBonds(m_hbondCriteria);
-  const auto &positions = m_structure->atomicPositions();
-  qDebug() << "Structure has" << bonds.size() << "hydrogen bonds";
-  for (const auto &[d, h, a] : bonds) {
-    const auto fragD = m_structure->fragmentIndexForAtom(d);
-    const auto fragA = m_structure->fragmentIndexForAtom(a);
-    // skip intramolecular contacts
-    if (!m_hbondCriteria.includeIntra && (fragD == fragA)) {
-      continue;
+    const auto &bonds = m_structure->hydrogenBonds(m_hbondCriteria);
+    const auto &positions = m_structure->atomicPositions();
+    for (const auto &[d, h, a] : bonds) {
+      const auto fragD = m_structure->fragmentIndexForAtom(d);
+      const auto fragA = m_structure->fragmentIndexForAtom(a);
+      // skip intramolecular contacts
+      if (!m_hbondCriteria.includeIntra && (fragD == fragA)) {
+        continue;
+      }
+      QVector3D pos_h(positions(0, h), positions(1, h), positions(2, h));
+      QVector3D pos_a(positions(0, a), positions(1, a), positions(2, a));
+      cx::graphics::addDashedLineToLineRenderer(*m_hydrogenBondLines, pos_h,
+                                                pos_a, radius, m_hbondCriteria.color);
     }
-    QVector3D pos_h(positions(0, h), positions(1, h), positions(2, h));
-    QVector3D pos_a(positions(0, a), positions(1, a), positions(2, a));
-    cx::graphics::addDashedLineToLineRenderer(*m_hydrogenBondLines, pos_h,
-                                              pos_a, radius, color);
+    m_hydrogenBondLines->endUpdates();
+    m_hydrogenBondsNeedUpdate = false;
   }
-  m_hydrogenBondLines->endUpdates();
   m_hydrogenBondLines->bind();
   setRendererUniforms(m_hydrogenBondLines);
   m_hydrogenBondLines->draw();
   m_hydrogenBondLines->release();
 }
 
+
+void Scene::updateCloseContactsCriteria(int index, CloseContactCriteria criteria) {
+  m_closeContactCriteria[index] = criteria;
+  m_closeContactsNeedUpdate = true;
+}
+
 void Scene::drawCloseContacts() {
   if (m_closeContactLines == nullptr) {
     m_closeContactLines = new LineRenderer();
   } else {
-    m_closeContactLines->clear();
-  }
-  double radius = contactLineThickness();
-  m_closeContactLines->beginUpdates();
-
-  const auto &positions = m_structure->atomicPositions();
-  for (int ccIndex = 0; ccIndex <= CCMAX_INDEX; ++ccIndex) {
-    if (!_showCloseContacts[ccIndex]) {
-      continue; // Don't draw set of close contacts if not visible
+    if (m_closeContactsNeedUpdate) {
+      m_closeContactLines->clear();
     }
+  }
+  if (m_closeContactsNeedUpdate) {
+    double radius = contactLineThickness();
+    m_closeContactLines->beginUpdates();
 
-    QColor color = getColorForCloseContact(ccIndex);
-    for (const auto &[a, b] : m_structure->vdwContacts()) {
-      // skip intramolecular contacts
-      if (m_structure->fragmentIndexForAtom(a) ==
-          m_structure->fragmentIndexForAtom(b))
+    const auto &positions = m_structure->atomicPositions();
+    // Using C++17 structured bindings
+    for (const auto &[cc_id, criteria] :
+         m_closeContactCriteria.asKeyValueRange()) {
+      if (!criteria.show)
         continue;
-      QVector3D pos_a(positions(0, a), positions(1, a), positions(2, a));
-      QVector3D pos_b(positions(0, b), positions(1, b), positions(2, b));
-      cx::graphics::addDashedLineToLineRenderer(*m_closeContactLines, pos_a,
-                                                pos_b, radius, color);
+      for (const auto &[a, b] : m_structure->closeContacts(criteria)) {
+        // skip intramolecular contacts
+        if (m_structure->fragmentIndexForAtom(a) ==
+            m_structure->fragmentIndexForAtom(b))
+          continue;
+        QVector3D pos_a(positions(0, a), positions(1, a), positions(2, a));
+        QVector3D pos_b(positions(0, b), positions(1, b), positions(2, b));
+        cx::graphics::addDashedLineToLineRenderer(*m_closeContactLines, pos_a,
+                                                  pos_b, radius, criteria.color);
+      }
     }
+    m_closeContactLines->endUpdates();
+    m_closeContactsNeedUpdate = false;
   }
-  m_closeContactLines->endUpdates();
   m_closeContactLines->bind();
   setRendererUniforms(m_closeContactLines);
   m_closeContactLines->draw();
   m_closeContactLines->release();
-}
-
-QColor Scene::getColorForCloseContact(int contactIndex) {
-  QColor color;
-  switch (contactIndex) {
-  case CC1_INDEX:
-    color = QColor(
-        settings::readSetting(settings::keys::CONTACT1_COLOR).toString());
-    break;
-  case CC2_INDEX:
-    color = QColor(
-        settings::readSetting(settings::keys::CONTACT2_COLOR).toString());
-    break;
-  case CC3_INDEX:
-    color = QColor(
-        settings::readSetting(settings::keys::CONTACT3_COLOR).toString());
-    break;
-  default:
-    Q_ASSERT(false); // Shouldn't ever get here
-    break;
-  }
-  return color;
 }
 
 void Scene::setShowSuppressedAtoms(bool show) {
@@ -1369,9 +1359,7 @@ void Scene::toggleDrawHydrogenEllipsoids(bool hEllipsoids) {
   _drawHydrogenEllipsoids = hEllipsoids;
 }
 
-void Scene::setShowHydrogens(bool show) {
-  _showHydrogens = show;
-}
+void Scene::setShowHydrogens(bool show) { _showHydrogens = show; }
 
 void Scene::generateAllExternalFragments() {
   // TODO generateAllExternalFragments
@@ -1448,15 +1436,12 @@ void Scene::deleteIncompleteFragments() {
   m_structure->deleteIncompleteFragments();
 }
 
-
 void Scene::deleteSelectedAtoms() {
   auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
   m_structure->deleteAtoms(idxs);
 }
 
-void Scene::completeAllFragments() {
-  m_structure->completeAllFragments();
-}
+void Scene::completeAllFragments() { m_structure->completeAllFragments(); }
 
 void Scene::colorSelectedAtoms(const QColor &color) {
   // TODO color selected atoms

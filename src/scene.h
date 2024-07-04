@@ -143,7 +143,6 @@ public:
 
   inline void setHydrogenBondsVisible(bool show) { m_showHydrogenBonds = show; }
 
-  void setCloseContactVisible(int, bool);
   void selectAtomsOutsideRadiusOfSelectedAtoms(float);
 
   void setSelectStatusForAllAtoms(bool set);
@@ -285,6 +284,7 @@ public slots:
   void addCrystalPlane(CrystalPlane);
 
   void updateHydrogenBondCriteria(HBondCriteria);
+  void updateCloseContactsCriteria(int, CloseContactCriteria);
 
 private slots:
   void handleSurfacesNeedUpdate();
@@ -320,7 +320,6 @@ private:
   float contactLineThickness();
   void drawHydrogenBonds();
   void drawCloseContacts();
-  QColor getColorForCloseContact(int);
 
   AtomDrawingStyle atomStyle() const;
   BondDrawingStyle bondStyle() const;
@@ -372,7 +371,7 @@ private:
   bool m_showHydrogenBonds{false};
   HBondCriteria m_hbondCriteria;
 
-  QList<bool> _showCloseContacts;
+  QMap<int, CloseContactCriteria> m_closeContactCriteria;
 
   cx::graphics::SelectionResult m_selection;
   QColor m_selectionColor;
@@ -392,7 +391,8 @@ private:
   bool m_surfacesNeedUpdate{true};
   bool m_labelsNeedUpdate{true};
   bool m_crystalPlanesNeedUpdate{true};
-  bool m_hbondsNeedUpdate{true};
+  bool m_hydrogenBondsNeedUpdate{true};
+  bool m_closeContactsNeedUpdate{true};
 
   std::vector<CrystalPlane> m_crystalPlanes;
 

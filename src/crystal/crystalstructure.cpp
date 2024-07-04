@@ -245,8 +245,8 @@ CrystalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
   return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds, m_hydrogenBonds);
 }
 
-const std::vector<std::pair<int, int>> &CrystalStructure::vdwContacts() const {
-  return m_vdwContacts;
+std::vector<CloseContactPair> CrystalStructure::closeContacts(const CloseContactCriteria &criteria) const {
+  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds, m_vdwContacts);
 }
 
 const std::vector<std::pair<int, int>> &

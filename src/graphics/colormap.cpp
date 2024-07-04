@@ -2419,8 +2419,6 @@ QColor triColorMap(double x, double minValue, double maxValue,
 QColor colorMappedFromHueRange(double value, double minValue, double maxValue,
                                bool reverse, double minHue, double maxHue) {
 
-  QColor color;
-
   double newValue = std::max(std::min(value, maxValue), value);
   double range = maxValue - minValue;
   double rangeRatio = (range > 1e-6) ? (maxHue - minHue) / range : 0.0;
