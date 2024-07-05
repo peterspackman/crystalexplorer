@@ -1,43 +1,47 @@
 #pragma once
 #include "generic_atom_index.h"
-#include <occ/core/linear_algebra.h>
 #include <QDebug>
+#include <occ/core/linear_algebra.h>
+#include <QVector3D>
 
 using Transform = Eigen::Isometry3d;
 struct Fragment {
 
-    struct NearestAtomResult{
-	size_t idx_this;
-	size_t idx_other;
-	double distance;
-    };
+  struct NearestAtomResult {
+    size_t idx_this;
+    size_t idx_other;
+    double distance;
+  };
 
-    std::vector<GenericAtomIndex> atomIndices;
-    std::vector<int> _atomOffset;
+  std::vector<GenericAtomIndex> atomIndices;
+  std::vector<int> _atomOffset;
 
-    occ::IVec atomicNumbers;
-    occ::Mat3N positions;
+  occ::IVec atomicNumbers;
+  occ::Mat3N positions;
 
-    int asymmetricFragmentIndex{-1};
-    Transform asymmetricFragmentTransform = Transform::Identity();
+  int asymmetricFragmentIndex{-1};
+  Transform asymmetricFragmentTransform = Transform::Identity();
 
-    occ::IVec asymmetricUnitIndices;
+  occ::IVec asymmetricUnitIndices;
 
-    NearestAtomResult nearestAtom(const Fragment &other) const;
+  NearestAtomResult nearestAtom(const Fragment &other) const;
+  NearestAtomResult nearestAtomToPoint(const occ::Vec3 &point) const;
 
-    occ::Vec atomicMasses() const;
-    occ::Vec3 centroid() const;
-    occ::Vec3 centerOfMass() const;
+  QVector3D posVector3D(int index) const;
 
-    bool sameAsymmetricIndices(const Fragment &) const;
-    bool isEquivalentTo(const Fragment &) const;
-    bool isComparableTo(const Fragment &) const;
-    occ::Vec interatomicDistances() const;
-    inline size_t size() const { return atomIndices.size(); }
+  occ::Vec atomicMasses() const;
+  occ::Vec3 centroid() const;
+  occ::Vec3 centerOfMass() const;
+
+  bool sameAsymmetricIndices(const Fragment &) const;
+  bool isEquivalentTo(const Fragment &) const;
+  bool isComparableTo(const Fragment &) const;
+  occ::Vec interatomicDistances() const;
+  inline size_t size() const { return atomIndices.size(); }
 };
 
 struct FragmentDimer {
-  FragmentDimer(const Fragment&, const Fragment&);
+  FragmentDimer(const Fragment &, const Fragment &);
 
   Fragment a;
   Fragment b;
@@ -50,4 +54,4 @@ struct FragmentDimer {
   bool operator==(const FragmentDimer &) const;
 };
 
-QDebug operator<<(QDebug debug, const Fragment& fragment);
+QDebug operator<<(QDebug debug, const Fragment &fragment);

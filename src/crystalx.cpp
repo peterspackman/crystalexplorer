@@ -702,7 +702,7 @@ void Crystalx::processRotTransScaleAction(QAction *action) {
 }
 
 void Crystalx::processMeasurementAction(QAction *action) {
-  SelectionMode mode{picking};
+  SelectionMode mode{SelectionMode::Pick};
 
   if (action == undoLastMeasurementAction) {
     glWindow->undoLastMeasurement();
@@ -711,19 +711,19 @@ void Crystalx::processMeasurementAction(QAction *action) {
     }
   } else {
     if (action == distanceAction) {
-      mode = distance;
+      mode = SelectionMode::Distance;
     }
     if (action == angleAction) {
-      mode = angle;
+      mode = SelectionMode::Angle;
     }
     if (action == dihedralAction) {
-      mode = dihedral;
+      mode = SelectionMode::Dihedral;
     }
     if (action == OutOfPlaneBendAction) {
-      mode = outOfPlaneBend;
+      mode = SelectionMode::OutOfPlaneBend;
     }
     if (action == InPlaneBendAction) {
-      mode = inPlaneBend;
+      mode = SelectionMode::InPlaneBend;
     }
     glWindow->setSelectionMode(mode);
     selectAction->setEnabled(true);
@@ -732,7 +732,7 @@ void Crystalx::processMeasurementAction(QAction *action) {
 }
 
 void Crystalx::resetSelectionMode() {
-  glWindow->setSelectionMode(picking);
+  glWindow->setSelectionMode(SelectionMode::Pick);
   project->removeAllMeasurements();
   distanceAction->setChecked(false);
   minDistanceAction->setChecked(false);

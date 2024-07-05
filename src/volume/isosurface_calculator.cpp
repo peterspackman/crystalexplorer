@@ -3,11 +3,19 @@
 #include "load_mesh.h"
 #include "occsurfacetask.h"
 #include "xyzfile.h"
+#include "settings.h"
 #include <occ/core/element.h>
 
 namespace volume {
 
-IsosurfaceCalculator::IsosurfaceCalculator(QObject *parent) : QObject(parent) {}
+IsosurfaceCalculator::IsosurfaceCalculator(QObject *parent) : QObject(parent) {
+  // TODO streamline this
+  m_occExecutable = settings::readSetting(settings::keys::OCC_EXECUTABLE).toString();
+  m_environment = QProcessEnvironment::systemEnvironment();
+  QString dataDir = settings::readSetting(settings::keys::OCC_DATA_DIRECTORY).toString();
+  m_environment.insert("OCC_DATA_PATH", dataDir);
+  m_environment.insert("OCC_BASIS_PATH", dataDir);
+}
 
 void IsosurfaceCalculator::setTaskManager(TaskManager *mgr) {
   m_taskManager = mgr;
@@ -84,6 +92,8 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   QString surfaceName = isosurface::kindToString(params.kind);
   m_defaultProperty = isosurface::defaultPropertyForKind(params.kind);
   OccSurfaceTask *surface_task = new OccSurfaceTask();
+  surface_task->setExecutable(m_occExecutable);
+  surface_task->setEnvironment(m_environment);
   surface_task->setSurfaceParameters(params);
   surface_task->setProperty("name", surfaceName);
   surface_task->setProperty("inputFile", filename);

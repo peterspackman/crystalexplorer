@@ -2,6 +2,7 @@
 #include "chemicalstructure.h"
 #include "isosurface_parameters.h"
 #include "taskmanager.h"
+#include <QProcessEnvironment>
 #include <QObject>
 
 namespace volume {
@@ -23,6 +24,8 @@ private slots:
 private:
   TaskManager *m_taskManager{nullptr};
   ChemicalStructure *m_structure{nullptr};
+  QString m_occExecutable{"occ"};
+  QProcessEnvironment m_environment;
   QString m_name;
   QString m_filename;
   QString m_defaultProperty{"dnorm"};

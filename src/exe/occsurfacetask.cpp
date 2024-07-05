@@ -59,9 +59,6 @@ void OccSurfaceTask::start() {
   setArguments(args);
   setRequirements(reqs);
   setOutputs({FileDependency(outputName, outputName)});
-  auto environment = QProcessEnvironment::systemEnvironment();
-  environment.insert("OCC_BASIS_PATH", QDir::homePath() + "/git/occ/share");
-  setEnvironment(environment);
 
   emit progressText("Starting OCC process");
   ExternalProgramTask::start();

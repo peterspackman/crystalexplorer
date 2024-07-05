@@ -97,9 +97,9 @@ void Scene::setSelectStatusForAllAtoms(bool set) {
 void Scene::addMeasurement(const Measurement &m) {
   auto idx = m_measurementList.size();
   m_measurementList.append(m);
-  auto func = ColorMapFunc(ColorMapName::Github);
+  auto func = ColorMapFunc(ColorMapName::Turbo);
   func.lower = 0.0;
-  func.upper = m_measurementList.size();
+  func.upper = qMax(m_measurementList.size(), 10);
   m_measurementList.back().setColor(func(idx));
 }
 
@@ -356,11 +356,9 @@ bool Scene::processSelectionForInformation(const QColor &color) {
 
 bool Scene::processSelectionSingleClick(const QColor &color) {
   m_selection = m_selectionHandler->getSelectionFromColor(color);
-  qDebug() << "Process selection single click:" << color;
 
   switch (m_selection.type) {
   case SelectionType::Atom: {
-    qDebug() << "Selection type: Atom";
     size_t atom_idx = m_selection.index;
     // TODO handle contact atom
     if (m_structure->testAtomFlag(atom_idx, AtomFlag::Contact)) {
@@ -374,7 +372,6 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     break;
   }
   case SelectionType::Bond: {
-    qDebug() << "Selection type: Bond";
     size_t bond_idx = m_selection.index;
     const auto bondedAtoms = m_structure->atomsForBond(bond_idx);
     auto &flags_a = m_structure->atomFlags(bondedAtoms.first);
@@ -392,10 +389,7 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     break;
   }
   case SelectionType::Surface: {
-    qDebug() << "Selection type: Surface";
     size_t surfaceIndex = m_selection.index;
-    qDebug() << "Surface index clicked:" << surfaceIndex;
-
     MeshInstance *meshInstance =
         m_structureRenderer->getMeshInstance(m_selection.index);
 
@@ -413,7 +407,6 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     break;
   }
   default: {
-    qDebug() << "Selection type: None";
     break;
   }
   }
@@ -502,9 +495,10 @@ void Scene::setTransformationMatrix(const QMatrix4x4 &T) {
 //  }
 //}
 
-QVector4D Scene::processMeasurementSingleClick(const QColor &color,
-                                               bool doubleClick) {
-  QVector4D result(0, 0, 0, -1); // -1 indicates no hit
+MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
+                                                       bool wholeObject) {
+  MeasurementObject result;
+  result.wholeObject = wholeObject;
   m_selection = m_selectionHandler->getSelectionFromColor(color);
 
   switch (m_selection.type) {
@@ -512,14 +506,16 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
     size_t atom_idx = m_selection.index;
     if (m_structure->atomFlagsSet(atom_idx, AtomFlag::Contact))
       break;
-    if (doubleClick)
+    if (wholeObject)
       m_structure->selectFragmentContaining(atom_idx);
     else {
       m_structure->atomFlags(atom_idx) ^= AtomFlag::Selected;
     }
     emit atomSelectionChanged();
     Vector3q pos = m_structure->atomicPositions().col(atom_idx);
-    result = QVector4D(pos.x(), pos.y(), pos.z(), atom_idx);
+    result.position = QVector3D(pos.x(), pos.y(), pos.z());
+    result.selectionType = SelectionType::Atom;
+    result.index = atom_idx;
     break;
   }
   case SelectionType::Bond: {
@@ -529,7 +525,7 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
     auto &flags_b = m_structure->atomFlags(atomsForBond.second);
     if ((flags_a & AtomFlag::Contact) && (flags_b & AtomFlag::Contact))
       break;
-    if (doubleClick)
+    if (wholeObject)
       m_structure->selectFragmentContaining(atomsForBond.first);
     else {
       flags_a ^= AtomFlag::Selected;
@@ -538,16 +534,21 @@ QVector4D Scene::processMeasurementSingleClick(const QColor &color,
     const auto &positions = m_structure->atomicPositions();
     Vector3q pos = 0.5 * (positions.col(atomsForBond.first) +
                           positions.col(atomsForBond.second));
-    result = QVector4D(pos.x(), pos.y(), pos.z(), bond_idx);
+    result.position = QVector3D(pos.x(), pos.y(), pos.z());
+    result.selectionType = SelectionType::Bond;
+    result.index = bond_idx;
     break;
   }
   case SelectionType::Surface: {
     size_t surfaceIndex = m_selection.index;
     auto *meshInstance = m_structureRenderer->getMeshInstance(surfaceIndex);
-    qDebug() << "Found meshInstance:" << meshInstance;
     if (!meshInstance)
       break;
-    // TODO finalize surface picking
+    const auto pos = meshInstance->vertex(m_selection.secondaryIndex);
+    result.position = QVector3D(pos.x(), pos.y(), pos.z());
+    result.selectionType = SelectionType::Surface;
+    result.index = surfaceIndex;
+
     break;
   }
   default:
@@ -644,45 +645,148 @@ QStringList Scene::uniqueElementSymbols() const {
   return {};
 }
 
-QPair<QVector3D, QVector3D> Scene::positionsForDistanceMeasurement(
-    const QPair<SelectionType, int> &object1,
-    const QPair<SelectionType, int> &object2) const {
-  // For convenience, and to make code slightly more readable ...
-  int index1 = object1.second;
-  int index2 = object2.second;
-
-  QPair<QVector3D, QVector3D> result;
-  // TODO fix
-  if (object1.first == SelectionType::Surface &&
-      object2.first == SelectionType::Surface) {
-    // Both objects selected are whole surfaces
-    return result;
-
-  } else if (object1.first == SelectionType::Surface) {
-    // First object is whole surface, second is whole fragment
-    return result;
-
-  } else if (object2.first == SelectionType::Surface) {
-    // First object is whole fragment, second is whole surface
-    return result;
-  } else {
-    // Both objects selected are whole fragments
-    return result;
-  }
-}
-QPair<QVector3D, QVector3D>
-Scene::positionsForDistanceMeasurement(const QPair<SelectionType, int> &object,
+DistanceMeasurementPoints
+Scene::positionsForDistanceMeasurement(const MeasurementObject &object,
                                        const QVector3D &pos) const {
-  // TODO fix
-  QPair<QVector3D, QVector3D> result;
-  if (object.first == SelectionType::Surface) {
-    // First object is whole surface, second is a single atom or
+
+  DistanceMeasurementPoints result;
+  result.a = object.position;
+  result.b = pos;
+  if (!m_structureRenderer)
     return result;
-  } else {
-    // First object is whole fragment, second is single atom or
-    // single triangle
+
+  if (!object.wholeObject) {
+    result.valid = true;
     return result;
   }
+
+  switch (object.selectionType) {
+  case SelectionType::Surface: {
+    auto *meshInstance = m_structureRenderer->getMeshInstance(object.index);
+    if (!meshInstance)
+      break;
+
+    auto res =
+        meshInstance->nearestPoint(Eigen::Vector3d(pos.x(), pos.y(), pos.z()));
+    result.a = meshInstance->vertexVector3D(res.idx_this);
+    result.valid = true;
+    break;
+  }
+  default: {
+    const auto &fragments = m_structure->getFragments();
+    int fragIndex = m_structure->fragmentIndexForAtom(object.index);
+
+    if (fragIndex >= 0 && fragIndex < fragments.size()) {
+      const auto frag = fragments[fragIndex];
+      auto res =
+          frag.nearestAtomToPoint(Eigen::Vector3d(pos.x(), pos.y(), pos.z()));
+      result.a = frag.posVector3D(res.idx_this);
+      result.valid = true;
+      break;
+    }
+  }
+  }
+  return result;
+}
+
+DistanceMeasurementPoints
+Scene::positionsForDistanceMeasurement(const MeasurementObject &object1,
+                                       const MeasurementObject &object2) const {
+  // For convenience, and to make code slightly more readable ...
+
+  // if one object is just a point
+  if (!object1.wholeObject) {
+    return positionsForDistanceMeasurement(object2, object1.position);
+  }
+  if (!object2.wholeObject) {
+    return positionsForDistanceMeasurement(object1, object2.position);
+  }
+
+  DistanceMeasurementPoints result;
+  result.a = object1.position;
+  result.b = object2.position;
+
+  switch (object1.selectionType) {
+  case SelectionType::Surface: {
+    switch (object2.selectionType) {
+    case SelectionType::Surface: {
+      auto *meshInstanceA = m_structureRenderer->getMeshInstance(object1.index);
+      if (!meshInstanceA)
+        break;
+      auto *meshInstanceB = m_structureRenderer->getMeshInstance(object2.index);
+      if (!meshInstanceB)
+        break;
+
+      auto res = meshInstanceA->nearestPoint(meshInstanceB);
+      result.a = meshInstanceA->vertexVector3D(res.idx_this);
+      result.b = meshInstanceB->vertexVector3D(res.idx_other);
+      result.valid = true;
+
+      break;
+    }
+    default: {
+      auto *meshInstance = m_structureRenderer->getMeshInstance(object1.index);
+      if (!meshInstance)
+        break;
+
+      const auto &fragments = m_structure->getFragments();
+      int fragIndex = m_structure->fragmentIndexForAtom(object2.index);
+      const bool validIndex = fragIndex >= 0 && fragIndex < fragments.size();
+      if (!validIndex)
+        break;
+
+      const auto &frag = fragments[fragIndex];
+      auto res = meshInstance->nearestPoint(frag);
+      result.a = meshInstance->vertexVector3D(res.idx_this);
+      result.b = frag.posVector3D(res.idx_other);
+      result.valid = true;
+      break;
+    }
+    }
+    break;
+  }
+  default: {
+    switch (object2.selectionType) {
+    case SelectionType::Surface: {
+      auto *meshInstance = m_structureRenderer->getMeshInstance(object2.index);
+      if (!meshInstance)
+        break;
+
+      const auto &fragments = m_structure->getFragments();
+      int fragIndex = m_structure->fragmentIndexForAtom(object1.index);
+      const bool validIndex = fragIndex >= 0 && fragIndex < fragments.size();
+      if (!validIndex)
+        break;
+
+      const auto &frag = fragments[fragIndex];
+      auto res = meshInstance->nearestPoint(frag);
+      result.b = meshInstance->vertexVector3D(res.idx_this);
+      result.a = frag.posVector3D(res.idx_other);
+      result.valid = true;
+      break;
+    }
+    default: {
+      const auto &fragments = m_structure->getFragments();
+      int fragIndexA = m_structure->fragmentIndexForAtom(object1.index);
+      int fragIndexB = m_structure->fragmentIndexForAtom(object2.index);
+
+      const bool validIndexA = fragIndexA >= 0 && fragIndexA < fragments.size();
+      const bool validIndexB = fragIndexB >= 0 && fragIndexB < fragments.size();
+      if (validIndexA && validIndexB && (fragIndexA != fragIndexB)) {
+        const auto fragA = fragments[fragIndexA];
+        const auto fragB = fragments[fragIndexB];
+        auto res = fragA.nearestAtom(fragB);
+        result.a = fragA.posVector3D(res.idx_this);
+        result.b = fragB.posVector3D(res.idx_other);
+        result.valid = true;
+      }
+      break;
+    }
+    }
+    break;
+  }
+  }
+  return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -951,7 +1055,6 @@ void Scene::lightSettingsChanged() {
       QColor(settings::readSetting(settings::keys::LIGHT_AMBIENT).toString());
   float intensity =
       settings::readSetting(settings::keys::LIGHT_AMBIENT_INTENSITY).toFloat();
-  qDebug() << "Light ambient intensity: " << intensity;
   m_uniforms.u_lightGlobalAmbient = c2v(color) * intensity;
 
   intensity =
@@ -1056,13 +1159,13 @@ void Scene::drawHydrogenBonds() {
   if (m_hydrogenBondLines == nullptr) {
     m_hydrogenBondLines = new LineRenderer();
   } else {
-    if(m_hydrogenBondsNeedUpdate) {
+    if (m_hydrogenBondsNeedUpdate) {
       m_hydrogenBondLines->clear();
     }
   }
   // TODO check if needs update
 
-  if(m_hydrogenBondsNeedUpdate) {
+  if (m_hydrogenBondsNeedUpdate) {
     double radius = contactLineThickness();
     m_hydrogenBondLines->beginUpdates();
 
@@ -1077,8 +1180,8 @@ void Scene::drawHydrogenBonds() {
       }
       QVector3D pos_h(positions(0, h), positions(1, h), positions(2, h));
       QVector3D pos_a(positions(0, a), positions(1, a), positions(2, a));
-      cx::graphics::addDashedLineToLineRenderer(*m_hydrogenBondLines, pos_h,
-                                                pos_a, radius, m_hbondCriteria.color);
+      cx::graphics::addDashedLineToLineRenderer(
+          *m_hydrogenBondLines, pos_h, pos_a, radius, m_hbondCriteria.color);
     }
     m_hydrogenBondLines->endUpdates();
     m_hydrogenBondsNeedUpdate = false;
@@ -1089,8 +1192,8 @@ void Scene::drawHydrogenBonds() {
   m_hydrogenBondLines->release();
 }
 
-
-void Scene::updateCloseContactsCriteria(int index, CloseContactCriteria criteria) {
+void Scene::updateCloseContactsCriteria(int index,
+                                        CloseContactCriteria criteria) {
   m_closeContactCriteria[index] = criteria;
   m_closeContactsNeedUpdate = true;
 }
@@ -1120,8 +1223,8 @@ void Scene::drawCloseContacts() {
           continue;
         QVector3D pos_a(positions(0, a), positions(1, a), positions(2, a));
         QVector3D pos_b(positions(0, b), positions(1, b), positions(2, b));
-        cx::graphics::addDashedLineToLineRenderer(*m_closeContactLines, pos_a,
-                                                  pos_b, radius, criteria.color);
+        cx::graphics::addDashedLineToLineRenderer(
+            *m_closeContactLines, pos_a, pos_b, radius, criteria.color);
       }
     }
     m_closeContactLines->endUpdates();

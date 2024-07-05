@@ -43,7 +43,8 @@ public:
   [[nodiscard]] QString description() const;
   void setDescription(const QString &);
 
-  [[nodiscard]] const auto &vertices() const { return m_vertices; }
+  [[nodiscard]] inline Eigen::Vector3d vertex(int index) const { return m_vertices.col(index); }
+  [[nodiscard]] inline const auto &vertices() const { return m_vertices; }
   [[nodiscard]] inline auto numberOfVertices() const {
     return m_vertices.cols();
   }

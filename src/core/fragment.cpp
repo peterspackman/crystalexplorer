@@ -1,7 +1,7 @@
 #include "fragment.h"
-#include <occ/core/util.h>
-#include <occ/core/element.h>
 #include <cmath>
+#include <occ/core/element.h>
+#include <occ/core/util.h>
 
 occ::Vec Fragment::interatomicDistances() const {
   // upper triangle of distance matrix
@@ -31,7 +31,8 @@ bool Fragment::isEquivalentTo(const Fragment &rhs) const {
   return occ::util::all_close(dists_a, dists_b, 1e-8, 1e-8);
 }
 
-bool FragmentDimer::sameAsymmetricFragmentIndices(const FragmentDimer &rhs) const {
+bool FragmentDimer::sameAsymmetricFragmentIndices(
+    const FragmentDimer &rhs) const {
   bool same_idxs = false;
   const int a1_idx = a.asymmetricFragmentIndex;
   const int b1_idx = b.asymmetricFragmentIndex;
@@ -50,68 +51,69 @@ bool FragmentDimer::sameAsymmetricFragmentIndices(const FragmentDimer &rhs) cons
 }
 
 bool FragmentDimer::operator==(const FragmentDimer &rhs) const {
-    if (!sameAsymmetricFragmentIndices(rhs))
-	return false;
-    constexpr double eps = 1e-7;
-    double centroid_diff = std::abs(centroidDistance - rhs.centroidDistance);
-    if (centroid_diff > eps)
-	return false;
-    double com_diff = std::abs(centerOfMassDistance - rhs.centerOfMassDistance);
-    if (com_diff > eps)
-	return false;
-    double nearest_diff = std::abs(nearestAtomDistance - rhs.nearestAtomDistance);
-    if (nearest_diff > eps)
-	return false;
-    bool aa_eq = a.isEquivalentTo(rhs.a);
-    bool bb_eq = b.isEquivalentTo(rhs.b);
-    if (aa_eq && bb_eq)
-	return true;
-    bool ba_eq = b.isEquivalentTo(rhs.a);
-    bool ab_eq = a.isEquivalentTo(rhs.b);
-    return ab_eq && ba_eq;
+  if (!sameAsymmetricFragmentIndices(rhs))
+    return false;
+  constexpr double eps = 1e-7;
+  double centroid_diff = std::abs(centroidDistance - rhs.centroidDistance);
+  if (centroid_diff > eps)
+    return false;
+  double com_diff = std::abs(centerOfMassDistance - rhs.centerOfMassDistance);
+  if (com_diff > eps)
+    return false;
+  double nearest_diff = std::abs(nearestAtomDistance - rhs.nearestAtomDistance);
+  if (nearest_diff > eps)
+    return false;
+  bool aa_eq = a.isEquivalentTo(rhs.a);
+  bool bb_eq = b.isEquivalentTo(rhs.b);
+  if (aa_eq && bb_eq)
+    return true;
+  bool ba_eq = b.isEquivalentTo(rhs.a);
+  bool ab_eq = a.isEquivalentTo(rhs.b);
+  return ab_eq && ba_eq;
 }
 
+QDebug operator<<(QDebug debug, const Fragment &fragment) {
+  debug.nospace() << "Fragment {\n";
+  debug.nospace() << "  atomIndices: [";
+  for (const auto &index : fragment.atomIndices) {
+    debug.nospace() << index << ", ";
+  }
+  debug.nospace() << "]\n";
 
-QDebug operator<<(QDebug debug, const Fragment& fragment) {
-    debug.nospace() << "Fragment {\n";
-    debug.nospace() << "  atomIndices: [";
-    for (const auto& index : fragment.atomIndices) {
-        debug.nospace() << index << ", ";
-    }
-    debug.nospace() << "]\n";
-    
-    debug.nospace() << "  _atomOffset: [";
-    for (int offset : fragment._atomOffset) {
-        debug.nospace() << offset << ", ";
-    }
-    debug.nospace() << "]\n";
-    
-    debug.nospace() << "  atomicNumbers: [";
-    for(int i = 0; i < fragment.atomicNumbers.rows(); i++) {
-	debug.nospace() << fragment.atomicNumbers(i) << ", ";
-    }
-    debug.nospace() << "]\n";
+  debug.nospace() << "  _atomOffset: [";
+  for (int offset : fragment._atomOffset) {
+    debug.nospace() << offset << ", ";
+  }
+  debug.nospace() << "]\n";
 
-    debug.nospace() << "  positions: [\n";
-    for(int i = 0; i < fragment.positions.cols(); i++) {
-	debug.nospace() << "[" << fragment.positions(0, i) << ", "
-			       << fragment.positions(1, i) << ", "
-			       << fragment.positions(2, i) << "]\n";
-    }
-    debug.nospace() << "]\n";
-    debug.nospace() << "  asymmetricFragmentIndex: " << fragment.asymmetricFragmentIndex << "\n";
-    debug.nospace() << "  size: " << fragment.size() << "\n";
-    debug.nospace() << "}";
-    
-    return debug;
+  debug.nospace() << "  atomicNumbers: [";
+  for (int i = 0; i < fragment.atomicNumbers.rows(); i++) {
+    debug.nospace() << fragment.atomicNumbers(i) << ", ";
+  }
+  debug.nospace() << "]\n";
+
+  debug.nospace() << "  positions: [\n";
+  for (int i = 0; i < fragment.positions.cols(); i++) {
+    debug.nospace() << "[" << fragment.positions(0, i) << ", "
+                    << fragment.positions(1, i) << ", "
+                    << fragment.positions(2, i) << "]\n";
+  }
+  debug.nospace() << "]\n";
+  debug.nospace() << "  asymmetricFragmentIndex: "
+                  << fragment.asymmetricFragmentIndex << "\n";
+  debug.nospace() << "  size: " << fragment.size() << "\n";
+  debug.nospace() << "}";
+
+  return debug;
 }
 
 occ::Vec Fragment::atomicMasses() const {
-    occ::Vec result(size());
-    for(int i = 0; i < size(); i++) {
-	result(i) = static_cast<double>(occ::core::Element(atomicNumbers(i)).mass());
-    }
-    return result;
+  occ::Vec result(size());
+  for (int i = 0; i < size(); i++) {
+    result(i) =
+        static_cast<double>(occ::core::Element(atomicNumbers(i)).mass());
+  }
+  return result;
 }
 
 occ::Vec3 Fragment::centroid() const { return positions.rowwise().mean(); }
@@ -122,22 +124,43 @@ occ::Vec3 Fragment::centerOfMass() const {
   return (positions.array().rowwise() * masses.array()).rowwise().sum();
 }
 
-Fragment::NearestAtomResult Fragment::nearestAtom(const Fragment &other) const {
-    Fragment::NearestAtomResult result{0, 0, std::numeric_limits<double>::max()};
-    for (size_t i = 0; i < size(); i++) {
-	const occ::Vec3 &p1 = positions.col(i);
-	for (size_t j = 0; j < other.size(); j++) {
-	    const occ::Vec3 &p2 = other.positions.col(j);
-	    double d = (p2 - p1).norm();
-	    if (d < result.distance)
-		result = Fragment::NearestAtomResult{i, j, d};
-	}
-    }
-    return result;
+
+QVector3D Fragment::posVector3D(int index) const {
+    if(index < 0 || index >= positions.cols()) return {};
+    return QVector3D(positions(0, index), positions(1, index), positions(2, index));
 }
 
-FragmentDimer::FragmentDimer(const Fragment &fa, const Fragment& fb) : a(fa), b(fb) {
-    nearestAtomDistance = fa.nearestAtom(fb).distance;
-    centerOfMassDistance = (fb.centerOfMass() - fa.centerOfMass()).norm();
-    centroidDistance = (fa.centroid() - fa.centroid()).norm();
+Fragment::NearestAtomResult Fragment::nearestAtom(const Fragment &other) const {
+  Fragment::NearestAtomResult result{0, 0, std::numeric_limits<double>::max()};
+  for (size_t i = 0; i < size(); i++) {
+    const occ::Vec3 &p1 = positions.col(i);
+    for (size_t j = 0; j < other.size(); j++) {
+      const occ::Vec3 &p2 = other.positions.col(j);
+      double d = (p2 - p1).norm();
+      if (d < result.distance) {
+        result = Fragment::NearestAtomResult{i, j, d};
+      }
+    }
+  }
+  return result;
+}
+
+Fragment::NearestAtomResult
+Fragment::nearestAtomToPoint(const occ::Vec3 &point) const {
+  Fragment::NearestAtomResult result{0, 0, std::numeric_limits<double>::max()};
+  for (size_t i = 0; i < size(); i++) {
+    const occ::Vec3 &p1 = positions.col(i);
+    double d = (point - p1).norm();
+    if (d < result.distance) {
+      result = Fragment::NearestAtomResult{i, 0, d};
+    }
+  }
+  return result;
+}
+
+FragmentDimer::FragmentDimer(const Fragment &fa, const Fragment &fb)
+    : a(fa), b(fb) {
+  nearestAtomDistance = fa.nearestAtom(fb).distance;
+  centerOfMassDistance = (fb.centerOfMass() - fa.centerOfMass()).norm();
+  centroidDistance = (fa.centroid() - fa.centroid()).norm();
 }

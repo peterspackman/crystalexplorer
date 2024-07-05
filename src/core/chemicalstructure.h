@@ -1,16 +1,16 @@
 #pragma once
 #include "atomflags.h"
+#include "close_contact_criteria.h"
 #include "fragment.h"
 #include "generic_atom_index.h"
-#include "pair_energy_results.h"
+#include "hbond_criteria.h"
 #include "molecular_wavefunction.h"
 #include "object_tree_model.h"
-#include "hbond_criteria.h"
-#include "close_contact_criteria.h"
+#include "pair_energy_results.h"
 #include <Eigen/Dense>
-#include <QVariant>
 #include <QColor>
 #include <QStringList>
+#include <QVariant>
 #include <QVector3D>
 #include <memory>
 #include <occ/core/bondgraph.h>
@@ -20,8 +20,8 @@ using Transform = Eigen::Isometry3d;
 
 struct FragmentPairs {
   struct SymmetryRelatedPair {
-      FragmentDimer fragments;
-      int uniquePairIndex{-1};
+    FragmentDimer fragments;
+    int uniquePairIndex{-1};
   };
   std::vector<FragmentDimer> uniquePairs;
 
@@ -29,14 +29,12 @@ struct FragmentPairs {
   std::vector<MoleculeNeighbors> pairs;
 };
 
-
 class ChemicalStructure : public QObject {
   Q_OBJECT
 public:
-
   struct FragmentState {
-      int charge{0};
-      int multiplicity{1};
+    int charge{0};
+    int multiplicity{1};
   };
 
   using FragmentSymmetryRelation = std::pair<int, Transform>;
@@ -65,7 +63,9 @@ public:
   QStringList uniqueHydrogenDonorElements() const;
 
   // assumed to be CIF for now
-  inline void setFileContents(const QByteArray &contents) { m_fileContents = contents; }
+  inline void setFileContents(const QByteArray &contents) {
+    m_fileContents = contents;
+  }
   inline const QByteArray &fileContents() const { return m_fileContents; }
 
   inline void setFilename(const QString &filename) { m_filename = filename; }
@@ -92,14 +92,17 @@ public:
     return StructureType::Cluster;
   }
 
-  virtual occ::IVec atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const;
+  virtual occ::IVec
+  atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const;
 
-  virtual occ::Mat3N atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const;
-  virtual std::vector<QString> labelsForIndices(const std::vector<GenericAtomIndex> &) const;
+  virtual occ::Mat3N
+  atomicPositionsForIndices(const std::vector<GenericAtomIndex> &) const;
+  virtual std::vector<QString>
+  labelsForIndices(const std::vector<GenericAtomIndex> &) const;
 
-  virtual bool getTransformation(const std::vector<GenericAtomIndex> &from, const std::vector<GenericAtomIndex> &to,
-				 Eigen::Isometry3d &result) const;
-
+  virtual bool getTransformation(const std::vector<GenericAtomIndex> &from,
+                                 const std::vector<GenericAtomIndex> &to,
+                                 Eigen::Isometry3d &result) const;
 
   // fragments
   virtual void selectFragmentContaining(int);
@@ -120,7 +123,7 @@ public:
   }
 
   inline virtual occ::Vec3 cellAngles() const {
-    return occ::Vec3(M_PI/2, M_PI/2, M_PI/2);
+    return occ::Vec3(M_PI / 2, M_PI / 2, M_PI / 2);
   }
 
   inline virtual occ::Vec3 cellLengths() const {
@@ -134,10 +137,11 @@ public:
   virtual void setSymmetryUniqueFragmentState(int, FragmentState);
 
   virtual const std::vector<Fragment> &symmetryUniqueFragments() const;
-  virtual const std::vector<FragmentState> &symmetryUniqueFragmentStates() const;
+  virtual const std::vector<FragmentState> &
+  symmetryUniqueFragmentStates() const;
 
   virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &) const;
-  virtual const std::vector<Fragment>& getFragments() const;
+  virtual const std::vector<Fragment> &getFragments() const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
@@ -146,17 +150,20 @@ public:
   virtual int fragmentIndexForAtom(int) const;
   virtual void deleteFragmentContainingAtomIndex(int atomIndex);
   virtual void deleteIncompleteFragments();
-  virtual void deleteAtoms(const std::vector<GenericAtomIndex>&);
+  virtual void deleteAtoms(const std::vector<GenericAtomIndex> &);
   virtual bool hasIncompleteFragments() const;
   virtual bool hasIncompleteSelectedFragments() const;
   virtual const std::vector<int> &atomsForFragment(int) const;
   virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
-  virtual std::vector<HBondTriple> hydrogenBonds(const HBondCriteria & = {}) const;
-  virtual std::vector<CloseContactPair> closeContacts(const CloseContactCriteria & = {}) const;
+  virtual std::vector<HBondTriple>
+  hydrogenBonds(const HBondCriteria & = {}) const;
+  virtual std::vector<CloseContactPair>
+  closeContacts(const CloseContactCriteria & = {}) const;
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
 
-  FragmentSymmetryRelation findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
+  FragmentSymmetryRelation
+  findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
   FragmentPairs findFragmentPairs() const;
 
   // flags
@@ -180,16 +187,25 @@ public:
                                bool on = true);
   void toggleFlagForAllAtoms(AtomFlag);
 
-  [[nodiscard]] inline PairInteractionResults *interactions() { return m_interactions; }
+  [[nodiscard]] inline PairInteractionResults *interactions() {
+    return m_interactions;
+  }
 
-  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
-  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &, float radius) const;
-  [[nodiscard]] virtual std::vector<GenericAtomIndex> atomsWithFlags(const AtomFlags &flags, bool set = true) const;
+  [[nodiscard]] virtual std::vector<GenericAtomIndex>
+  atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
+  [[nodiscard]] virtual std::vector<GenericAtomIndex>
+  atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &,
+                        float radius) const;
+  [[nodiscard]] virtual std::vector<GenericAtomIndex>
+  atomsWithFlags(const AtomFlags &flags, bool set = true) const;
 
-  [[nodiscard]] virtual std::vector<WavefunctionAndTransform> wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &);
+  [[nodiscard]] virtual std::vector<WavefunctionAndTransform>
+  wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &);
 
-  [[nodiscard]] inline ObjectTreeModel* treeModel() { return m_treeModel; }
-  [[nodiscard]] QString formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs, bool richText) const;
+  [[nodiscard]] inline ObjectTreeModel *treeModel() { return m_treeModel; }
+  [[nodiscard]] QString
+  formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs,
+                     bool richText) const;
 
   [[nodiscard]] virtual QString chemicalFormula(bool richText = true) const;
 
@@ -243,5 +259,5 @@ private:
   QByteArray m_fileContents;
 
   PairInteractionResults *m_interactions{nullptr};
-  ObjectTreeModel * m_treeModel{nullptr};
+  ObjectTreeModel *m_treeModel{nullptr};
 };

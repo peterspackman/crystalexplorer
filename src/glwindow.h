@@ -32,17 +32,15 @@ static const Qt::CursorShape mouseModeCursorButtonHeld[] = {
     Qt::ClosedHandCursor, Qt::ArrowCursor, Qt::SizeVerCursor};
 static const bool mouseModeAllowsSelection[] = {false, true, false};
 
-enum SelectionMode {
-  picking,
-  distance,
-  angle,
-  dihedral,
-  outOfPlaneBend,
-  inPlaneBend
+enum class SelectionMode {
+  Pick,
+  Distance,
+  Angle,
+  Dihedral,
+  OutOfPlaneBend,
+  InPlaneBend
 };
-static const QColor selectionColors[] = {
-    QColor("yellow"), QColor("green"), QColor("green"), QColor("green"),
-    QColor("green"),  QColor("green"), QColor("green")};
+
 
 const int ANIMATION_REDRAW_WAIT_TIME = 16; // Aim for 60 fps
 
@@ -173,7 +171,7 @@ private:
   void handleLeftMousePressForPicking(QMouseEvent *);
   void handleRightMousePress(QPoint);
   void handleObjectInformationDisplay(QPoint);
-  void handleMousePressForMeasurement(MeasurementType, QPoint);
+  void handleMousePressForMeasurement(MeasurementType, QMouseEvent *);
   QColor pickObjectAt(QPoint);
   void showSelectionSpecificContextMenu(const QPoint &, SelectionType);
   void showGeneralContextMenu(const QPoint &);
@@ -214,17 +212,15 @@ private:
   bool _rightMouseButtonHeld;
   bool _hadHits;
   bool _mouseMoved;
-  SelectionMode selectionMode;
+  SelectionMode m_selectionMode;
   int numberOfSelections;
   Measurement m_currentMeasurement;
   bool m_I_keyHeld{false};
-  bool _shiftKeyHeld;
-  bool _singleMouseClick;
-  bool _doubleMouseClick;
+  bool m_shiftKeyHeld;
+  bool m_singleMouseClick;
+  bool m_doubleMouseClick;
 
-  QVector4D _firstSelectionForMeasurement;
-  bool _firstSelectionWasDoubleClick;
-  bool _secondSelectionWasDoubleClick;
+  MeasurementObject m_firstSelectionForMeasurement;
   QMenu *contextMenu{nullptr};
 
   float m_depthFogEnabled;

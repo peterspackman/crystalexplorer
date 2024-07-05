@@ -60,6 +60,19 @@ struct SelectedSurface {
   QString property{"None"};
 };
 
+struct MeasurementObject {
+  QVector3D position;
+  cx::graphics::SelectionType selectionType;
+  int index{-1};
+  bool wholeObject{false};
+};
+
+struct DistanceMeasurementPoints{
+  bool valid{false};
+  QVector3D a;
+  QVector3D b;
+};
+
 class Scene : public QObject {
   Q_OBJECT
 
@@ -80,8 +93,7 @@ public:
   bool processSelectionSingleClick(const QColor &);
   bool processHitsForSingleClickSelectionWithAltKey(const QColor &color);
   bool processSelectionForInformation(const QColor &);
-  QVector4D processMeasurementSingleClick(const QColor &,
-                                          bool doubleClick = false);
+  MeasurementObject processMeasurementSingleClick(const QColor &, bool wholeObject = false);
   cx::graphics::SelectionType decodeSelectionType(const QColor &);
 
   void selectAtomsSeparatedBySurface(bool inside);
@@ -160,12 +172,14 @@ public:
   const QString &title() const { return m_name; }
   inline void setTitle(const QString &name) { m_name = name; }
 
-  QPair<QVector3D, QVector3D> positionsForDistanceMeasurement(
-      const QPair<cx::graphics::SelectionType, int> &,
-      const QPair<cx::graphics::SelectionType, int> &) const;
-  QPair<QVector3D, QVector3D> positionsForDistanceMeasurement(
-      const QPair<cx::graphics::SelectionType, int> &,
-      const QVector3D &pos) const;
+  DistanceMeasurementPoints positionsForDistanceMeasurement(
+      const MeasurementObject &,
+      const MeasurementObject &) const;
+
+  DistanceMeasurementPoints positionsForDistanceMeasurement(
+      const MeasurementObject &,
+      const QVector3D &) const;
+
 
   QVector<Label> labels();
   QVector<Label> measurementLabels();

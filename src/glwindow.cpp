@@ -42,9 +42,9 @@ void GLWindow::init() {
   _hadHits = false;
   _mouseMoved = false;
 
-  setSelectionMode(picking);
+  setSelectionMode(SelectionMode::Pick);
 
-  _shiftKeyHeld = false;
+  m_shiftKeyHeld = false;
 
   setFocusPolicy(Qt::StrongFocus);
 
@@ -61,8 +61,7 @@ void GLWindow::init() {
   _majorAxisZ = 0;
   _majorSpeed = 0;
 
-  _singleMouseClick = true;
-  _doubleMouseClick = false;
+  m_singleMouseClick = true;
   _elementEditor = nullptr;
   m_textLayer = QImage(size(), QImage::Format_ARGB32);
 }
@@ -80,23 +79,19 @@ void GLWindow::setMouseMode(MouseMode mode) {
 }
 
 void GLWindow::setSelectionMode(SelectionMode mode) {
-  selectionMode = mode;
+  m_selectionMode = mode;
 
-  if (scene) {
-    scene->setSelectionColor(selectionColors[selectionMode]);
-  }
-
-  switch (selectionMode) {
-  case picking:
+  switch (m_selectionMode) {
+  case SelectionMode::Pick:
     if (scene) {
       scene->setSelectStatusForAllAtoms(false);
     }
     break;
-  case distance:
-  case angle:
-  case dihedral:
-  case outOfPlaneBend:
-  case inPlaneBend:
+  case SelectionMode::Distance:
+  case SelectionMode::Angle:
+  case SelectionMode::Dihedral:
+  case SelectionMode::OutOfPlaneBend:
+  case SelectionMode::InPlaneBend:
     numberOfSelections = 0;
     if (scene) {
       scene->setSelectStatusForAllAtoms(false);
@@ -480,7 +475,7 @@ bool GLWindow::event(QEvent *event) {
 void GLWindow::keyPressEvent(QKeyEvent *event) {
   switch (event->key()) {
   case Qt::Key_Shift:
-    _shiftKeyHeld = true;
+    m_shiftKeyHeld = true;
     event->accept();
     break;
   case Qt::Key_I:
@@ -498,7 +493,7 @@ void GLWindow::keyPressEvent(QKeyEvent *event) {
 void GLWindow::keyReleaseEvent(QKeyEvent *event) {
   switch (event->key()) {
   case Qt::Key_Shift:
-    _shiftKeyHeld = false;
+    m_shiftKeyHeld = false;
     event->accept();
     break;
   case Qt::Key_I:
@@ -511,43 +506,41 @@ void GLWindow::keyReleaseEvent(QKeyEvent *event) {
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *event) {
-  _singleMouseClick = true;
+  m_singleMouseClick = true;
 
   if (event->button() == Qt::LeftButton) {
     _leftMouseButtonHeld = true;
     savedMousePosition = event->pos();
 
-    switch (selectionMode) {
-    case picking:
+    switch (m_selectionMode) {
+      case SelectionMode::Pick:
       handleLeftMousePressForPicking(event);
       break;
-    case distance:
-      handleMousePressForMeasurement(MeasurementType::Distance, event->pos());
+      case SelectionMode::Distance:
+      handleMousePressForMeasurement(MeasurementType::Distance, event);
       break;
-    case angle:
-      handleMousePressForMeasurement(MeasurementType::Angle, event->pos());
+      case SelectionMode::Angle:
+      handleMousePressForMeasurement(MeasurementType::Angle, event);
       break;
-    case dihedral:
-      handleMousePressForMeasurement(MeasurementType::Dihedral, event->pos());
+      case SelectionMode::Dihedral:
+      handleMousePressForMeasurement(MeasurementType::Dihedral, event);
       break;
-    case outOfPlaneBend:
-      handleMousePressForMeasurement(MeasurementType::OutOfPlaneBend,
-                                     event->pos());
+      case SelectionMode::OutOfPlaneBend:
+      handleMousePressForMeasurement(MeasurementType::OutOfPlaneBend, event);
       break;
-    case inPlaneBend:
-      handleMousePressForMeasurement(MeasurementType::InPlaneBend,
-                                     event->pos());
+      case SelectionMode::InPlaneBend:
+      handleMousePressForMeasurement(MeasurementType::InPlaneBend, event);
       break;
     }
   } else if (event->button() == Qt::RightButton) {
     _rightMouseButtonHeld = true;
     if (event->modifiers() == Qt::ControlModifier) {
       handleObjectInformationDisplay(event->pos());
-    } else if (selectionMode == picking) {
+    } else if (m_selectionMode == SelectionMode::Pick) {
       handleRightMousePress(event->pos());
     }
   }
-  _singleMouseClick = false;
+  m_singleMouseClick = false;
 }
 
 void GLWindow::handleLeftMousePressForPicking(QMouseEvent *event) {
@@ -628,28 +621,24 @@ void GLWindow::handleObjectInformationDisplay(QPoint pos) {
         auto selection = scene->selectedSurface();
         if (selection.surface) {
           QVector3D centroid(0.0f, 0.0f, 0.0f);
-          auto * mesh = selection.surface->mesh();
+          auto *mesh = selection.surface->mesh();
           QString surfaceName = mesh->objectName();
           QString surfaceInstance = selection.surface->objectName();
           QString property = selection.property;
           double value = selection.propertyValue;
           double area = mesh->surfaceArea();
           double volume = mesh->volume();
-          info = QString::fromStdString(
-              fmt::format("<b>Surface</b>: {}<br/>"
-                          "<b>Instance</b>: {}<br/>"
-                          "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
-                          "<b>Volume</b>:       {:9.3f}<br/>"
-                          "<b>Surface area</b>: {:9.3f}<br/>"
-                          "<b>Property</b>: {}<br/>"
-                          "<b>Property Value</b>: {:9.3f}",
-                          surfaceName.toStdString(), 
-                          surfaceInstance.toStdString(),
-                          centroid.x(), centroid.y(),
-                          centroid.z(), volume, area,
-                          property.toStdString(),
-                          value
-                          ));
+          info = QString::fromStdString(fmt::format(
+              "<b>Surface</b>: {}<br/>"
+              "<b>Instance</b>: {}<br/>"
+              "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
+              "<b>Volume</b>:       {:9.3f}<br/>"
+              "<b>Surface area</b>: {:9.3f}<br/>"
+              "<b>Property</b>: {}<br/>"
+              "<b>Property Value</b>: {:9.3f}",
+              surfaceName.toStdString(), surfaceInstance.toStdString(),
+              centroid.x(), centroid.y(), centroid.z(), volume, area,
+              property.toStdString(), value));
           setObjectInformationTextAndPosition(info, pos);
         }
         break;
@@ -671,96 +660,47 @@ void GLWindow::setObjectInformationTextAndPosition(QString text, QPoint pos) {
 }
 
 void GLWindow::handleMousePressForMeasurement(MeasurementType type,
-                                              QPoint pos) {
-  QVector4D selectionPos;
+                                              QMouseEvent *event) {
 
-  QColor color = pickObjectAt(pos);
+  QColor color = pickObjectAt(event->pos());
 
-  selectionPos = scene->processMeasurementSingleClick(color, _doubleMouseClick);
+  auto selection =
+      scene->processMeasurementSingleClick(color, event->modifiers().testFlag(Qt::ShiftModifier));
 
   // is valid position?
-  if (selectionPos.w() == -1) {
+  if (selection.index == -1) {
     redraw();
     return;
   }
   if (type == MeasurementType::Distance) {
-
-    if (_doubleMouseClick) {
-      // If mouse has been double-clicked,
-      // then this routine has already been run through for the first click.
-      // So, for double-click, we need to reset some things.
-      if (numberOfSelections == 0) {
-        numberOfSelections = 1;
-        m_currentMeasurement.clearPositions();
-        scene->removeLastMeasurement();
-      } else if (numberOfSelections == 1) {
-        numberOfSelections = 0;
-        m_currentMeasurement.removeLastPosition();
-      }
-    }
-
     if (numberOfSelections == 0) {
 
       m_currentMeasurement = Measurement(type);
-      _firstSelectionForMeasurement = selectionPos;
-      _firstSelectionWasDoubleClick = _doubleMouseClick;
+      m_firstSelectionForMeasurement = selection;
       numberOfSelections++;
 
     } else if (numberOfSelections == Measurement::totalPositions(type) - 1) {
-      /*
-
-      _secondSelectionWasDoubleClick = _doubleMouseClick;
 
       if (type == MeasurementType::Distance) {
 
         // For single-click we assume a single atom or single surface
         // triangle has been selected.
-        // For double-click we assume a whole fragment or whole surface has
+        // For shift-click we assume a whole fragment or whole surface has
         // been selected.
         // In the latter case, we find the minimum distances.
 
         // Pair of minimum positions for calculating distance and plotting
         // distance line.
-        QPair<QVector3D, QVector3D> pair;
+        auto d = scene->positionsForDistanceMeasurement(m_firstSelectionForMeasurement, selection);
+        qDebug() << "Valid measurement: " << d.valid;
 
-        // The OpenGL name indices for the two objects chosen == atom, bond,
-        // surface
-        int glName1 = _firstSelectionForMeasurement.w();
-        int glName2 = selectionPos.w();
-
-        // SelectionType == noSelection, atomSelection, bondSelection,
-        // surfaceSelection
-        // int == index of the object; for a bond this will be the first
-        // atom of the bond.
-        QPair<SelectionType, int> object1 =
-            scene->selectionTypeAndIndexOfGraphicalObject(glName1, true);
-        QPair<SelectionType, int> object2 =
-            scene->selectionTypeAndIndexOfGraphicalObject(glName2, true);
-
-        QVector3D pos1 = _firstSelectionForMeasurement.toVector3D();
-        QVector3D pos2 = selectionPos.toVector3D();
-
-        if (_firstSelectionWasDoubleClick && _secondSelectionWasDoubleClick) {
-
-          pair = scene->positionsForDistanceMeasurement(object1, object2);
-        } else if (_firstSelectionWasDoubleClick) {
-
-          pair = scene->positionsForDistanceMeasurement(object1, pos2);
-
-        } else if (_secondSelectionWasDoubleClick) {
-          pair = scene->positionsForDistanceMeasurement(object2, pos1);
-        } else {
-
-          // No double clicks, so no whole fragments or surfaces
-          // The objects are each single atom or single triangle only.
-          pair = QPair<QVector3D, QVector3D>(pos1, pos2);
+        if(d.valid) {
+          m_currentMeasurement.addPosition(d.a);
+          m_currentMeasurement.addPosition(d.b);
+          scene->addMeasurement(m_currentMeasurement);
+          scene->setSelectStatusForAllAtoms(false);
         }
-        m_currentMeasurement.addPosition(pair.first);
-        m_currentMeasurement.addPosition(pair.second);
-        scene->addMeasurement(m_currentMeasurement);
-        scene->setSelectStatusForAllAtoms(false);
       }
-      */
       numberOfSelections = 0;
     }
 
@@ -768,15 +708,15 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 
     if (numberOfSelections == 0) {
       m_currentMeasurement = Measurement(type);
-      m_currentMeasurement.addPosition(selectionPos.toVector3D());
+      m_currentMeasurement.addPosition(selection.position);
       numberOfSelections++;
     } else if (numberOfSelections == Measurement::totalPositions(type) - 1) {
-      m_currentMeasurement.addPosition(selectionPos.toVector3D());
+      m_currentMeasurement.addPosition(selection.position);
       scene->addMeasurement(m_currentMeasurement);
       scene->setSelectStatusForAllAtoms(false);
       numberOfSelections = 0;
     } else {
-      m_currentMeasurement.addPosition(selectionPos.toVector3D());
+      m_currentMeasurement.addPosition(selection.position);
       numberOfSelections++;
     }
   }
@@ -785,19 +725,10 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 }
 
 void GLWindow::mouseDoubleClickEvent(QMouseEvent *event) {
-  _doubleMouseClick = true;
   if (event->button() == Qt::LeftButton) {
     savedMousePosition = event->pos();
 
-    if (selectionMode == distance) {
-      // For double-click, allow a distance measurement
-      // For single-click we assume a single atom or single surface triangle has
-      // been selected.
-      // For double-click we assume a whole fragment or whole surface has been
-      // selected.
-      // In the latter case, we find the minimum distances.
-      handleMousePressForMeasurement(MeasurementType::Distance, event->pos());
-    } else if (mouseModeAllowsSelection[mouseMode]) {
+    if (mouseModeAllowsSelection[mouseMode]) {
       QColor color = pickObjectAt(event->pos());
       _hadHits = scene->processSelectionDoubleClick(color);
       if (_hadHits) {
@@ -805,7 +736,6 @@ void GLWindow::mouseDoubleClickEvent(QMouseEvent *event) {
       }
     }
   }
-  _doubleMouseClick = false;
 }
 
 /*
@@ -1423,7 +1353,7 @@ void GLWindow::mouseReleaseEvent(QMouseEvent *event) {
 
     // Clear selection when clicking on background
     if (mouseModeAllowsSelection[mouseMode] && !_hadHits && !_mouseMoved &&
-        selectionMode == picking) {
+        m_selectionMode == SelectionMode::Pick) {
       scene->setSelectStatusForAllAtoms(false);
     }
 
@@ -1560,7 +1490,6 @@ void GLWindow::setCurrentCrystal(Project *project) {
   scene = project->currentScene();
 
   if (scene) {
-    scene->setSelectionColor(selectionColors[selectionMode]);
     scene->screenGammaChanged();
     scene->materialChanged();
     getViewAngleAndScaleFromScene();
