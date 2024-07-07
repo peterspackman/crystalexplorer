@@ -178,6 +178,7 @@ const ScalarPropertyValues &Mesh::vertexProperty(const QString &name) const {
   if (loc != m_vertexProperties.end()) {
     return loc->second;
   }
+  qDebug() << "Empty property" << name;
   return m_emptyProperty;
 }
 

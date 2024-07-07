@@ -29,6 +29,7 @@ private:
   QString m_name;
   QString m_filename;
   QString m_defaultProperty{"dnorm"};
+  isosurface::Parameters m_parameters;
   std::vector<GenericAtomIndex> m_atomsInside;
   std::vector<GenericAtomIndex> m_atomsOutside;
   occ::IVec m_nums_inside;

@@ -70,7 +70,9 @@ double MeshPropertyModel::asphericity() const {
 }
 
 bool MeshPropertyModel::isFingerprintable() const {
-    return false;
+    if(!m_mesh) return false;
+    const auto &params = m_mesh->parameters();
+    return params.kind == isosurface::Kind::Hirshfeld && params.separation < 0.21;
 }
 
 QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {

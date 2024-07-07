@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
   parser.process(app);
 
   // ensure default settings are written
+  /*
   settings::writeAllDefaultSettings(false);
   if (parser.isSet(resourcesOption)) {
     QString resourcesPath = parser.value(resourcesOption);
@@ -121,6 +122,7 @@ int main(int argc, char *argv[]) {
   } else {
     writePathsToResourcesInSettings(getPathToResources());
   }
+  */
   auto * config = GlobalConfiguration::getInstance();
   config->load();
 

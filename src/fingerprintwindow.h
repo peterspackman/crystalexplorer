@@ -20,6 +20,7 @@ public:
 public slots:
   void show();
   void setScene(Scene *);
+  void setMesh(Mesh *);
   void resetCrystal();
 
 protected slots:
@@ -36,7 +37,8 @@ private:
   void createFingerprintPlot();
   void createOptionsDockWidget();
   void setTitle(Scene *);
-  Scene *m_scene;
+  Scene *m_scene{nullptr};
+  Mesh *m_mesh{nullptr};
   FingerprintPlot *fingerprintPlot;
   FingerprintOptions *fingerprintOptions;
   QDockWidget *optionsDockWidget;

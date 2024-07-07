@@ -51,15 +51,18 @@ void FingerprintWindow::createOptionsDockWidget() {
 }
 
 void FingerprintWindow::show() {
-  Mesh *mesh{nullptr};
-  fingerprintPlot->setMesh(mesh);
+  fingerprintPlot->setMesh(m_mesh);
 
-  auto *structure = qobject_cast<ChemicalStructure *>(mesh->parent());
+  auto *structure = qobject_cast<ChemicalStructure *>(m_mesh->parent());
   if (structure != nullptr) {
     fingerprintOptions->setElementList(structure->uniqueElementSymbols());
   }
   fingerprintPlot->updateFingerprintPlot();
   QWidget::show();
+}
+
+void FingerprintWindow::setMesh(Mesh * mesh) {
+  m_mesh = mesh;
 }
 
 void FingerprintWindow::setScene(Scene *scene) {

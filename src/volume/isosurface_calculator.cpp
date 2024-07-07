@@ -105,6 +105,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   auto taskId = m_taskManager->add(surface_task);
   m_name = surfaceName;
   m_filename = "surface.ply";
+  m_parameters = params;
 
   connect(surface_task, &Task::completed, this,
           &IsosurfaceCalculator::surfaceComplete);
@@ -114,6 +115,7 @@ void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
   Mesh *mesh = io::loadMesh(m_filename);
   mesh->setObjectName(m_name);
+  mesh->setParameters(m_parameters);
   mesh->setSelectedProperty(m_defaultProperty);
   mesh->setAtomsInside(m_atomsInside);
   mesh->setAtomsOutside(m_atomsOutside);

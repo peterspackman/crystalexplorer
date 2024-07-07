@@ -68,7 +68,9 @@ void FingerprintPlot::setMesh(Mesh *mesh) {
 }
 
 void FingerprintPlot::setPropertiesToPlot() {
+  qDebug() << "vertex property di";
   m_x = m_mesh->vertexProperty("di").cast<double>();
+  qDebug() << "vertex property de";
   m_y = m_mesh->vertexProperty("de").cast<double>();
 
   m_xmin = m_x.minCoeff();
@@ -76,31 +78,41 @@ void FingerprintPlot::setPropertiesToPlot() {
   m_ymin = m_y.minCoeff();
   m_ymax = m_y.maxCoeff();
 
+  qDebug() << "face property di";
   m_xFace = m_mesh->averagedFaceProperty("di").cast<double>();
-  m_xFace = m_mesh->averagedFaceProperty("de").cast<double>();
+  qDebug() << "face property de";
+  m_yFace = m_mesh->averagedFaceProperty("de").cast<double>();
 
   m_xFaceMin = m_xFace.minCoeff();
   m_xFaceMax = m_xFace.maxCoeff();
   m_yFaceMin = m_yFace.minCoeff();
   m_yFaceMax = m_yFace.maxCoeff();
 
+  qDebug() << "Set axis labels";
   setAxisLabels();
 }
 
 void FingerprintPlot::setAxisLabels() {
-  m_xAxisLabel = "de";
-  m_yAxisLabel = "di";
+  m_xAxisLabel = "di";
+  m_yAxisLabel = "de";
 }
 
 void FingerprintPlot::updateFingerprintPlot() {
-  if (m_mesh != nullptr && m_mesh->kind() == isosurface::Kind::Hirshfeld) {
+  if (m_mesh) {
+    qDebug() << "Set properties to plot";
+    setPropertiesToPlot();
+    qDebug() << "Init binned areas";
     initBinnedAreas();
+    qDebug() << "Init binned filter flags";
     initBinnedFilterFlags();
+    qDebug() << "calculate binned areas";
     calculateBinnedAreas();
+    qDebug() << "draw fingerprint";
     drawFingerprint();
   } else {
     drawEmptyFingerprint();
   }
+  qDebug() << "Set fixed size";
   setFixedSize(plotSize());
   parentWidget()->adjustSize();
   update();
@@ -120,8 +132,10 @@ void FingerprintPlot::initBinnedFilterFlags() {
 }
 
 double FingerprintPlot::calculateBinnedAreasNoFilter() {
+  qDebug() << "Mesh" << m_mesh;
   // unmask all faces if any
   m_mesh->resetFaceMask(false);
+  qDebug() << "resetFaceMask";
 
   double nx = numUsedxBins();
   double ny = numUsedyBins();
@@ -132,21 +146,34 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
   double ymax = usedyPlotMax();
   double normy = ny / (ymax - ymin);
 
+  qDebug() << "Face areas";
   const auto &face_areas = m_mesh->faceAreas();
+  qDebug() << "Face areas calc";
+  double total_area = 0.0;
   for (int f = 0; f < face_areas.rows(); ++f) {
     double x = m_xFace(f);
     double y = m_yFace(f);
 
     if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
       int xIndex = static_cast<int>((x - xmin) * normx);
-      int yIndex = static_cast<int>((y - xmin) * normy);
+      int yIndex = static_cast<int>((y - ymin) * normy);
       double area = face_areas(f);
+      total_area += area;
       if (area > 0.0) {
         binUsed(xIndex, yIndex) = true;
         binnedAreas(xIndex, yIndex) += area;
       }
     }
   }
+  qDebug() << "Bin size" << binSize();
+  qDebug() << "x" << m_xmin << m_xmax;
+  qDebug() << "x" << m_xFaceMin << m_xFaceMax;
+  qDebug() << "y" << m_ymin << m_ymax;
+  qDebug() << "y" << m_yFaceMin << m_yFaceMax;
+  qDebug() << nx << ny << xmax << xmin << normx << ymin << ymax << normy;
+  qDebug() << "Face areas done";
+  qDebug() << "Total surface area" << total_area;
+  qDebug() << "Total surface area" << m_mesh->surfaceArea();
   return m_mesh->surfaceArea();
 }
 
@@ -586,7 +613,7 @@ void FingerprintPlot::drawBins(QPainter *painter) {
   const double enhancementFactor = 1.0;
 
   int nBins = numberOfBins();
-  double pointRatio = graphRect().size().width() / (double)nBins;
+  double pointRatio = graphRect().size().width() / static_cast<double>(nBins);
   double maxValue =
       (stdAreaForSaturatedColor / enhancementFactor) * m_mesh->surfaceArea();
 
@@ -604,6 +631,8 @@ void FingerprintPlot::drawBins(QPainter *painter) {
   auto func = ColorMapFunc(m_colorScheme);
   func.lower = 0.0;
   func.upper = maxValue;
+  func.reverse = true;
+  qDebug() << "Pixels per bin" << m_settings.pixelsPerBin;
 
   for (int i = 0; i < numxBins; ++i) {
     for (int j = 0; j < numyBins; ++j) {
@@ -1134,19 +1163,19 @@ double FingerprintPlot::findLowerBound(double value, double min,
 }
 
 double FingerprintPlot::usedxPlotMin() {
-  return findLowerBound(m_xmin, 0.0, binSize());
+  return findLowerBound(m_xFaceMin, 0.0, binSize());
 }
 
 double FingerprintPlot::usedxPlotMax() {
-  return findLowerBound(m_xmax, usedxPlotMin(), binSize()) + binSize();
+  return findLowerBound(m_xFaceMax, usedxPlotMin(), binSize()) + binSize();
 }
 
 double FingerprintPlot::usedyPlotMin() {
-  return findLowerBound(m_ymin, 0.0, binSize());
+  return findLowerBound(m_yFaceMin, 0.0, binSize());
 }
 
 double FingerprintPlot::usedyPlotMax() {
-  return findLowerBound(m_ymax, usedyPlotMin(), binSize()) + binSize();
+  return findLowerBound(m_yFaceMax, usedyPlotMin(), binSize()) + binSize();
 }
 
 int FingerprintPlot::numUsedxBins() {

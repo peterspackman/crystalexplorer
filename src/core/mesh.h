@@ -88,8 +88,10 @@ public:
   void setFaceProperty(const QString &name, const ScalarPropertyValues &values);
   [[nodiscard]] const ScalarPropertyValues &faceProperty(const QString &) const;
 
-  [[nodiscard]] inline const auto &kind() const { return m_kind; }
-  inline void setKind(isosurface::Kind kind) { m_kind = kind; }
+  [[nodiscard]] inline const auto &kind() const { return m_params.kind; }
+
+  [[nodiscard]] inline const auto &parameters() const { return m_params; }
+  inline void setParameters(isosurface::Parameters params) { m_params = params; }
 
   static Mesh *newFromJson(const QJsonObject &, QObject *parent = nullptr);
   static Mesh *newFromJsonFile(const QString &, QObject *parent = nullptr);
@@ -169,5 +171,5 @@ private:
 
   QString m_selectedProperty;
   ScalarPropertyValues m_emptyProperty;
-  isosurface::Kind m_kind{isosurface::Kind::Promolecule};
+  isosurface::Parameters m_params;
 };
