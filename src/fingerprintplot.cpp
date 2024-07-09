@@ -1,17 +1,18 @@
 #include "fingerprintplot.h"
 
+#include <QFile>
+#include <QFileInfo>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPen>
 #include <QRegularExpression>
+#include <QStack>
 #include <QStylePainter>
 #include <QTime>
 #include <QtDebug>
-#include <QFile>
-#include <QFileInfo>
-#include <QMouseEvent>
-#include <QStack>
 
+#include "fingerprint_eps.h"
 #include "settings.h"
 
 FingerprintPlot::FingerprintPlot(QWidget *parent) : QWidget(parent) { init(); }
@@ -131,11 +132,122 @@ void FingerprintPlot::initBinnedFilterFlags() {
                                                                       numyBins);
 }
 
+inline double gaussianKernel(double x, double y, double h) {
+  double r2 = x * x + y * y;
+  return std::exp(-r2 / (2 * h * h)) / (2 * M_PI * h * h);
+}
+
+double FingerprintPlot::calculateBinnedAreasKDE() {
+  double nx = numUsedxBins();
+  double ny = numUsedyBins();
+  double xmax = usedxPlotMax();
+  double xmin = usedxPlotMin();
+  double ymax = usedyPlotMax();
+  double ymin = usedyPlotMin();
+  double dx = (xmax - xmin) / nx;
+  double dy = (ymax - ymin) / ny;
+
+  binnedAreas = Eigen::MatrixXd::Zero(nx, ny);
+  binUsed = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>::Zero(nx, ny);
+
+  const auto &vertexAreas = m_mesh->vertexAreas();
+  double totalArea = vertexAreas.sum();
+
+  // Calculate bandwidth (you may need to adjust this based on your data)
+  double bandwidth = 0.01;
+
+  // Apply KDE
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      double x = xmin + (i + 0.5) * dx;
+      double y = ymin + (j + 0.5) * dy;
+      double density = 0.0;
+
+      for (int v = 0; v < m_mesh->numberOfVertices(); ++v) {
+        double kx = x - m_x(v);
+        double ky = y - m_y(v);
+        density += vertexAreas(v) * gaussianKernel(kx, ky, bandwidth);
+      }
+
+      binnedAreas(i, j) = density * dx * dy;
+      binUsed(i, j) = density > 1e-3;
+    }
+  }
+
+  // Normalize to preserve total area
+  double scaleFactor = totalArea / binnedAreas.sum();
+  binnedAreas *= scaleFactor;
+
+  qDebug() << "Total surface area:" << totalArea;
+  qDebug() << "Total binned area:" << binnedAreas.sum();
+  qDebug() << "Mesh surface area:" << m_mesh->surfaceArea();
+
+  return m_mesh->surfaceArea();
+}
+
+double FingerprintPlot::calculateBinnedAreasNoFilter() {
+  // barycentric subsampling, samplesPerEdge = 1 reduces to just the points
+  double nx = numUsedxBins();
+  double ny = numUsedyBins();
+  double xmax = usedxPlotMax();
+  double xmin = usedxPlotMin();
+  double normx = nx / (xmax - xmin);
+  double ymin = usedyPlotMin();
+  double ymax = usedyPlotMax();
+  double normy = ny / (ymax - ymin);
+
+  binnedAreas = Eigen::MatrixXd::Zero(nx, ny);
+  binUsed = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>::Zero(nx, ny);
+
+  double totalArea = 0.0;
+
+  for (int faceIdx = 0; faceIdx < m_mesh->numberOfFaces(); ++faceIdx) {
+    Eigen::Vector3i faceIndices = m_mesh->faces().col(faceIdx);
+
+    double x1 = m_x(faceIndices[0]), y1 = m_y(faceIndices[0]);
+    double x2 = m_x(faceIndices[1]), y2 = m_y(faceIndices[1]);
+    double x3 = m_x(faceIndices[2]), y3 = m_y(faceIndices[2]);
+
+    double faceArea = m_mesh->faceAreas()(faceIdx);
+    totalArea += faceArea;
+
+    // Interpolate points within the face
+    for (int i = 0; i <= m_settings.samplesPerEdge; ++i) {
+      for (int j = 0; j <= m_settings.samplesPerEdge - i; ++j) {
+        double a = static_cast<double>(i) / m_settings.samplesPerEdge;
+        double b = static_cast<double>(j) / m_settings.samplesPerEdge;
+        double c = 1.0 - a - b;
+
+        double x = a * x1 + b * x2 + c * x3;
+        double y = a * y1 + b * y2 + c * y3;
+
+        if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
+          int xIndex = static_cast<int>((x - xmin) * normx);
+          int yIndex = static_cast<int>((y - ymin) * normy);
+
+          double sampleArea = faceArea / ((m_settings.samplesPerEdge + 1) *
+                                          (m_settings.samplesPerEdge + 2) / 2);
+
+          binUsed(xIndex, yIndex) = true;
+          binnedAreas(xIndex, yIndex) += sampleArea;
+        }
+      }
+    }
+  }
+
+  qDebug() << "Total surface area (interpolated):" << totalArea;
+  qDebug() << "Total binned area:" << binnedAreas.sum();
+  qDebug() << "Mesh surface area:" << m_mesh->surfaceArea();
+
+  return m_mesh->surfaceArea();
+}
+
+/*
 double FingerprintPlot::calculateBinnedAreasNoFilter() {
   qDebug() << "Mesh" << m_mesh;
   // unmask all faces if any
-  m_mesh->resetFaceMask(false);
-  qDebug() << "resetFaceMask";
+  m_mesh->resetVertexMask(false);
+  qDebug() << "resetVertexMask";
 
   double nx = numUsedxBins();
   double ny = numUsedyBins();
@@ -146,19 +258,19 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
   double ymax = usedyPlotMax();
   double normy = ny / (ymax - ymin);
 
-  qDebug() << "Face areas";
-  const auto &face_areas = m_mesh->faceAreas();
-  qDebug() << "Face areas calc";
-  double total_area = 0.0;
-  for (int f = 0; f < face_areas.rows(); ++f) {
-    double x = m_xFace(f);
-    double y = m_yFace(f);
+  qDebug() << "Vertex areas";
+  const auto &vertexAreas = m_mesh->vertexAreas();
+  qDebug() << "Vertex areas calc" << vertexAreas.rows();
+  double totalArea = 0.0;
+  for (int i = 0; i < vertexAreas.rows(); i++) {
+    double x = m_x(i);
+    double y = m_y(i);
 
     if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
       int xIndex = static_cast<int>((x - xmin) * normx);
       int yIndex = static_cast<int>((y - ymin) * normy);
-      double area = face_areas(f);
-      total_area += area;
+      double area = vertexAreas(i);
+      totalArea += area;
       if (area > 0.0) {
         binUsed(xIndex, yIndex) = true;
         binnedAreas(xIndex, yIndex) += area;
@@ -172,10 +284,11 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
   qDebug() << "y" << m_yFaceMin << m_yFaceMax;
   qDebug() << nx << ny << xmax << xmin << normx << ymin << ymax << normy;
   qDebug() << "Face areas done";
-  qDebug() << "Total surface area" << total_area;
+  qDebug() << "Total surface area" << totalArea << binnedAreas.sum();
   qDebug() << "Total surface area" << m_mesh->surfaceArea();
   return m_mesh->surfaceArea();
 }
+*/
 
 double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double totalFilteredArea = 0.0;
@@ -192,23 +305,23 @@ double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double ymax = usedyPlotMax();
   double normy = ny / (ymax - ymin);
 
-  auto &faceMask = m_mesh->faceMask();
+  auto &vertexMask = m_mesh->vertexMask();
 
-  const auto &face_areas = m_mesh->faceAreas();
-  for (int f = 0; f < face_areas.rows(); ++f) {
-    double x = m_xFace(f);
-    double y = m_yFace(f);
+  const auto &vertexAreas = m_mesh->vertexAreas();
+  for (int i = 0; i < vertexAreas.rows(); i++) {
+    double x = m_x(i);
+    double y = m_y(i);
 
     if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
       int xIndex = static_cast<int>((x - xmin) * normx);
       int yIndex = static_cast<int>((y - xmin) * normy);
-      double area = face_areas(f);
+      double area = vertexAreas(i);
       if (area > 0.0) {
         binUsed(xIndex, yIndex) = true;
-        if (includeArea(f)) {
+        if (includeArea(i)) {
           totalFilteredArea += area;
           binnedAreas(xIndex, yIndex) += area;
-          faceMask(f) = false;
+          vertexMask(i) = false;
         }
       }
     }
@@ -364,8 +477,8 @@ void FingerprintPlot::outputFingerprintAsTable() {
        << m_mesh->surfaceArea() << Qt::endl;
     ts << "Min value (used for scaling): " << 0.0 << Qt::endl;
     ts << "Max value (used for scaling): " << maxValue << Qt::endl;
-    ts << "Number of pixels per bin (in each direction): " << m_settings.pixelsPerBin 
-       << Qt::endl;
+    ts << "Number of pixels per bin (in each direction): "
+       << m_settings.pixelsPerBin << Qt::endl;
     ts << "Number of bins in de: " << numyBins << Qt::endl;
     ts << "Number of bins in di: " << numxBins << Qt::endl;
     ts << "Min di in table: " << usedxPlotMin();
@@ -633,6 +746,9 @@ void FingerprintPlot::drawBins(QPainter *painter) {
   func.upper = maxValue;
   func.reverse = true;
   qDebug() << "Pixels per bin" << m_settings.pixelsPerBin;
+  qDebug() << "Surface area" << m_mesh->surfaceArea();
+  qDebug() << "Surface area (faces)" << m_mesh->faceAreas().sum();
+  qDebug() << "Surface area (verts)" << m_mesh->vertexAreas().sum();
 
   for (int i = 0; i < numxBins; ++i) {
     for (int j = 0; j < numyBins; ++j) {
@@ -711,10 +827,10 @@ void FingerprintPlot::paintEvent(QPaintEvent *event) {
 
 void FingerprintPlot::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton) {
-    m_mesh->resetFaceHighlights();
+    m_mesh->resetVertexHighlights();
     QPair<int, int> indices = binIndicesAtMousePosition(event->pos());
     if (indices.first != -1 && indices.second != -1) {
-      highlightFacesWithPropertyValues(indices);
+      highlightVerticesWithPropertyValues(indices);
     }
   }
 }
@@ -741,58 +857,58 @@ QPair<int, int> FingerprintPlot::binIndicesAtGraphPos(QPoint graphPos) {
   return binIndices;
 }
 
-// The logic of this routine was taken from the previous version of
-// CrystalExplorer
-// from function FingerprintPlot::setOnFacesFromXY
-// Comments below may not be correct
-void FingerprintPlot::highlightFacesWithPropertyValues(
+void FingerprintPlot::highlightVerticesWithPropertyValues(
     QPair<int, int> binIndicesAtMousePos) {
 
   double const D2_THRESHOLD = 4.1;
 
-  // Consider the first face (index 0) of the surface and calculate the squared
-  // distance of the bin indices
-  // to where the mouse click occurred. Keep the face if it's less than
-  // D2_THRESHOLD.
-  int face;
-  double dx = xBinIndex(m_xFace(0)) - binIndicesAtMousePos.first;
-  double dy = yBinIndex(m_yFace(0)) - binIndicesAtMousePos.second;
+  // Consider the first vertex (index 0) of the surface and calculate the
+  // squared distance of the bin indices to where the mouse click occurred. Keep
+  // the face if it's less than D2_THRESHOLD.
+  int vertex{-1};
+  double dx = xBinIndex(m_x(0)) - binIndicesAtMousePos.first;
+  double dy = yBinIndex(m_y(0)) - binIndicesAtMousePos.second;
   double d2min = dx * dx + dy * dy;
   if (d2min < D2_THRESHOLD) {
-    face = 0;
+    vertex = 0;
   } else {
-    face = -1;
+    vertex = -1;
     d2min = D2_THRESHOLD;
   }
 
-  // Find the face with the smallest squared distance
-  // and store it's index in "face"
-  for (int f = 0; f < m_mesh->numberOfFaces(); ++f) {
-    double dx = xBinIndex(m_xFace(f)) - binIndicesAtMousePos.first;
-    double dy = yBinIndex(m_yFace(f)) - binIndicesAtMousePos.second;
+  // Find the vertex with the smallest squared distance
+  // and store it's index in "vertex"
+  for (int v = 0; v < m_x.rows(); ++v) {
+    double dx = xBinIndex(m_x(v)) - binIndicesAtMousePos.first;
+    double dy = yBinIndex(m_y(v)) - binIndicesAtMousePos.second;
     double d2 = dx * dx + dy * dy;
     if (d2 < d2min) {
       d2min = d2;
-      face = f;
+      vertex = v;
     }
   }
-  // Turn on all faces that have the same bin indices as "face"
-  if (face != -1) {
-    int xBin = xBinIndex(m_xFace(face));
-    int yBin = yBinIndex(m_yFace(face));
+  // Turn on all vertex that have the same bin indices as "vertex"
+  if (vertex != -1) {
+    int xBin = xBinIndex(m_x(vertex));
+    int yBin = yBinIndex(m_y(vertex));
 
-    for (int f = 0; f < m_mesh->numberOfFaces(); ++f) {
-      bool xBinTest = xBinIndex(m_xFace(f)) == xBin;
-      bool yBinTest = yBinIndex(m_yFace(f)) == yBin;
+    for (int v = 0; v < m_x.rows(); ++v) {
+      bool xBinTest = xBinIndex(m_x(v)) == xBin;
+      bool yBinTest = yBinIndex(m_y(v)) == yBin;
       if (xBinTest && yBinTest) {
-        m_mesh->highlightFace(f);
+        m_mesh->highlightVertex(v);
       }
     }
     emit surfaceFeatureChanged();
-  } else if (face == -1) {
-    // Switch of all face highlights if blank area of fingerprint plot is
-    // clicked on.
-    emit resetSurfaceFeatures();
+  } else if (vertex == -1) {
+    resetSurfaceFeatures();
+  }
+}
+
+void FingerprintPlot::resetSurfaceFeatures() {
+  if (m_mesh) {
+    m_mesh->resetVertexHighlights();
+    emit surfaceFeatureChanged();
   }
 }
 
@@ -865,270 +981,21 @@ void FingerprintPlot::saveFingerprintAsCSV(QString filename) {
   }
 }
 
-////////////////////////////////////////////// Postscript functions
-/////////////////////////////////////////////////////////////
-
-/*! Save the fingerprint as Encapsulated Postscript to filename
- */
 void FingerprintPlot::saveFingerprintAsEps(QString filename, QString title) {
-  QFile epsfile(filename);
-  if (epsfile.open(QIODevice::WriteOnly)) {
-    QTextStream ts(&epsfile);
+  QFile file(filename);
+  if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    QTextStream ts(&file);
 
-    writeEpsHeader(ts, title);
-    writeEpsTitle(ts, title);
-    writeEpsGridBoundary(ts);
-    writeEpsAxisLabels(ts);
-    writeEpsGridlinesAndScaleLabels(ts);
-    writeEpsBins(ts);
-    writeEpsFooter(ts);
+    FingerprintEpsWriter epsWriter(numberOfBins(), plotMin(), plotMax(),
+                                   binSize(), numberOfGridlines(), gridSize());
 
-    epsfile.close();
+
+    epsWriter.setXOffset(xOffsetForCurrentPlotRange());
+    epsWriter.setYOffset(yOffsetForCurrentPlotRange());
+    epsWriter.writeEpsFile(ts, title, binnedAreas, MASKED_BIN_COLOR);
+
+    file.close();
   }
-}
-
-void FingerprintPlot::writeEpsHeader(QTextStream &ts, QString title) {
-  // Create title that goes into EPS header
-  QString shortTitle = title;
-  shortTitle.remove(QRegularExpression("[_^{}]"));
-
-  // Calculating bounding box dimensions
-  int x0 = int((EPS_OFFSETX - EPS_MARGIN_LEFT) * EPS_DPCM);
-  int y0 = int((EPS_OFFSETY - EPS_MARGIN_BOTTOM) * EPS_DPCM);
-  int x1 = int((EPS_OFFSETX + EPS_SIZE + EPS_MARGIN_RIGHT) * EPS_DPCM);
-  int y1 = int((EPS_OFFSETY + EPS_SIZE + EPS_MARGIN_TOP) * EPS_DPCM);
-
-  ts << "%!PS-Adobe-3.0 EPSF-3.0" << Qt::endl;
-  ts << "%%Creator: CrystalExplorer" << Qt::endl;
-  ts << "%%Title: " << shortTitle.toLatin1() << Qt::endl;
-  ts << "%%BoundingBox: " << x0 << " " << y0 << " " << x1 << " " << y1
-     << Qt::endl;
-  ts << "%%LanguageLevel: 2" << Qt::endl;
-  ts << "%%Pages: 1" << Qt::endl;
-  ts << "%%EndComments" << Qt::endl;
-  ts << "%%EndProlog" << Qt::endl;
-  ts << "%%Page: 1 1" << Qt::endl;
-  ts << "gsave" << Qt::endl;
-  ts << Qt::endl;
-
-  ts << "% Use the ISOLatin1 encoding to get the Angstrom symbol" << Qt::endl;
-  ts << "/LucidaSansLatin-Italic" << Qt::endl;
-  ts << " << /LucidaSans-Italic findfont {} forall >>" << Qt::endl;
-  ts << " begin" << Qt::endl;
-  ts << "  /Encoding ISOLatin1Encoding 256 array copy def currentdict"
-     << Qt::endl;
-  ts << " end" << Qt::endl;
-  ts << "definefont pop" << Qt::endl;
-  ts << "/LucidaSansLatin" << Qt::endl;
-  ts << " << /LucidaSans findfont {} forall >>" << Qt::endl;
-  ts << " begin" << Qt::endl;
-  ts << "  /Encoding ISOLatin1Encoding 256 array copy def currentdict"
-     << Qt::endl;
-  ts << " end" << Qt::endl;
-  ts << "definefont pop" << Qt::endl;
-  ts << Qt::endl;
-
-  ts << "% Macros" << Qt::endl;
-  ts << "/a {stroke} bind def" << Qt::endl;
-  ts << "/b {sethsbcolor} bind def" << Qt::endl;
-
-  double rectSize = EPS_SIZE / double(numberOfBins());
-  ts << "/c {" << rectSize << " " << rectSize << " rectfill newpath} bind def"
-     << Qt::endl;
-  ts << "/d {closepath stroke} bind def" << Qt::endl;
-  ts << "/e {newpath moveto} bind def" << Qt::endl;
-  ts << "/f {lineto} bind def" << Qt::endl;
-  ts << "/g {rlineto stroke} bind def" << Qt::endl;
-
-  ts << EPS_DPCM << " " << EPS_DPCM << " scale" << Qt::endl;
-}
-
-void FingerprintPlot::writeEpsTitle(QTextStream &ts, QString title) {
-  if (title.isEmpty()) {
-    return;
-  }
-
-  QStack<EpsTitleState> stack;
-  double fontSize = EPS_TITLE_FONT_SIZE;
-
-  ts << "% Fingerprint title" << Qt::endl;
-  ts << "0 0 0 setrgbcolor" << Qt::endl;
-  ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-  ts << fontSize << " scalefont setfont" << Qt::endl;
-  ts << EPS_OFFSETX + 0.3 << " " << EPS_OFFSETY + 0.3 << " e " << Qt::endl;
-
-  ts << "(";
-  for (int i = 0; i < title.length(); ++i) {
-    QChar c = title[i];
-    if (c == '_') { // Start new level of subscripting
-      stack.push(SUBSCRIPT);
-      fontSize = EPS_TITLE_FONT_SIZE * pow(0.6, stack.size());
-      ts << ") show" << Qt::endl;
-      ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-      ts << fontSize << " scalefont setfont" << Qt::endl;
-      ts << "0 -" << fontSize * 0.3 << " rmoveto" << Qt::endl;
-      ts << "(";
-    } else if (c == '^') { // Start new level of superscripting
-      stack.push(SUPERSCRIPT);
-      fontSize = EPS_TITLE_FONT_SIZE * pow(0.6, stack.size());
-      ts << ") show" << Qt::endl;
-      ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-      ts << fontSize << " scalefont setfont" << Qt::endl;
-      ts << "0 " << fontSize * 0.7 << " rmoveto" << Qt::endl;
-      ts << "(";
-    } else if (c == '}') { // revert to previous level of super-/sub-scripting
-      ts << ") show" << Qt::endl;
-      if (!stack.isEmpty()) {
-        switch (stack.pop()) {
-        case SUBSCRIPT:
-          ts << "0 " << fontSize * 0.3 << " rmoveto" << Qt::endl;
-          break;
-        case SUPERSCRIPT:
-          ts << "0 " << -fontSize * 0.7 << " rmoveto" << Qt::endl;
-          break;
-        }
-      }
-      fontSize = EPS_TITLE_FONT_SIZE * pow(0.6, stack.size());
-      if (stack.size() == 0) {
-        ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-        ts << fontSize << " scalefont setfont" << Qt::endl;
-      }
-      ts << "(";
-    } else if (c == '{') { // ignore this
-    } else {               // print character
-      ts << c;
-    }
-  }
-  ts << ") show" << Qt::endl;
-}
-
-void FingerprintPlot::writeEpsGridBoundary(QTextStream &ts) {
-  double lowx = EPS_OFFSETX;
-  double lowy = EPS_OFFSETY;
-  double highx = lowx + EPS_SIZE;
-  double highy = lowy + EPS_SIZE;
-
-  ts << "% Grid boundary" << Qt::endl;
-  ts << "0 0 0 setrgbcolor" << Qt::endl;
-  ts << EPS_GRIDBOUNDARY_LINEWIDTH << " setlinewidth" << Qt::endl;
-  ts << lowx << " " << lowy << " e" << Qt::endl;
-  ts << highx << " " << lowy << " f" << Qt::endl;
-  ts << highx << " " << highy << " f" << Qt::endl;
-  ts << lowx << " " << highy << " f" << Qt::endl;
-  ts << lowx << " " << lowy << " f d" << Qt::endl;
-}
-
-void FingerprintPlot::writeEpsAxisLabels(QTextStream &ts) {
-  double scale_cm = EPS_SIZE / (plotMax() - plotMin());
-
-  // Angstrom symbol
-  ts << "% Angstrom symbol" << Qt::endl;
-  ts << "0 0 0 setrgbcolor" << Qt::endl;
-  ts << "/LucidaSansLatin findfont" << Qt::endl;
-  ts << EPS_ANGSTROM_FONT_SIZE << " scalefont setfont" << Qt::endl;
-  ts << EPS_OFFSETX - 0.5 << " " << EPS_OFFSETY - 0.5 << " e ((\305)) show"
-     << Qt::endl;
-
-  // x-axis Label
-  double x = EPS_OFFSETX + EPS_SIZE - 0.15 * scale_cm;
-  ts << "% x-axis label" << Qt::endl;
-  ts << "0 0 0 setrgbcolor" << Qt::endl;
-  ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-  ts << EPS_AXIS_LABEL_FONT_SIZE << " scalefont setfont" << Qt::endl;
-  ts << x << " " << EPS_OFFSETY + 0.25 << " e ";
-  ts << "(d) show" << Qt::endl;
-  ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-  ts << EPS_AXIS_LABEL_FONT_SIZE * 0.6 << " scalefont setfont" << Qt::endl;
-  ts << "0 -0.08 rmoveto (i) show" << Qt::endl;
-
-  // y-axis Label
-  double y = EPS_OFFSETY + EPS_SIZE - 0.15 * scale_cm;
-  ts << "% y-axis label" << Qt::endl;
-  ts << "0 0 0 setrgbcolor" << Qt::endl;
-  ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-  ts << EPS_AXIS_LABEL_FONT_SIZE << " scalefont setfont" << Qt::endl;
-  ts << EPS_OFFSETX + 0.15 << " " << y << " e ";
-  ts << "(d) show" << Qt::endl;
-  ts << "/LucidaSansLatin-Italic findfont" << Qt::endl;
-  ts << EPS_AXIS_LABEL_FONT_SIZE * 0.6 << " scalefont setfont" << Qt::endl;
-  ts << "0 -0.08 rmoveto (e) show" << Qt::endl;
-}
-
-void FingerprintPlot::writeEpsGridlinesAndScaleLabels(QTextStream &ts) {
-  double scale_cm = EPS_SIZE / (plotMax() - plotMin());
-
-  ts << "% Scale label font" << Qt::endl;
-  ts << "/LucidaSans findfont" << Qt::endl;
-  ts << EPS_AXIS_SCALE_FONT_SIZE << " scalefont setfont" << Qt::endl;
-  ts << "0 0 0 setrgbcolor" << Qt::endl;
-  ts << "% x gridlines and scale labels" << Qt::endl;
-  ts << EPS_GRID_LINEWIDTH << " setlinewidth" << Qt::endl;
-
-  for (int i = 1; i < numberOfGridlines(); ++i) {
-    double x = i * gridSize() * scale_cm + EPS_OFFSETX;
-    double y = i * gridSize() * scale_cm + EPS_OFFSETY;
-
-    ts << x << " " << EPS_OFFSETY << " e 0 " << EPS_SIZE << " g"
-       << Qt::endl; // x-axis gridlines
-    ts << EPS_OFFSETX << " " << y << " e " << EPS_SIZE << " 0 g"
-       << Qt::endl; // y-axis gridlines
-
-    QString scaleLabel = QString::number(plotMin() + i * gridSize(), 'f', 1);
-    ts << x - EPS_AXIS_SCALE_FONT_SIZE * scaleLabel.length() * 0.25 << " "
-       << EPS_OFFSETY - 0.5 << " e ";
-    ts << "(" << scaleLabel << ") show" << Qt::endl; // x-axis scale labels
-    ts << EPS_OFFSETX - EPS_AXIS_SCALE_FONT_SIZE * scaleLabel.length() + 0.25
-       << " " << y - 0.10 << " e ";
-    ts << "(" << scaleLabel << ") show" << Qt::endl; // y-axis scale labels
-  }
-}
-
-void FingerprintPlot::writeEpsBins(QTextStream &ts) {
-  double binScale = EPS_SIZE / ((plotMax() - plotMin()) / binSize());
-
-  QColor color;
-  const double stdAreaForSaturatedColor = 0.001;
-  const double enhancementFactor = 1.0;
-  double maxValue =
-      (stdAreaForSaturatedColor / enhancementFactor) * m_mesh->surfaceArea();
-
-  int min_i = smallestxBinInCurrentPlotRange();
-  int min_j = smallestyBinInCurrentPlotRange();
-
-  int numxBins = numxBinsInCurrentPlotRange();
-  int numyBins = numyBinsInCurrentPlotRange();
-
-  int xOffset = xOffsetForCurrentPlotRange();
-  int yOffset = yOffsetForCurrentPlotRange();
-
-  auto func = ColorMapFunc(m_colorScheme);
-  func.lower = 0.0;
-  func.upper = maxValue;
-
-  for (int i = 0; i < numxBins; ++i) {
-    for (int j = 0; j < numyBins; ++j) {
-      int iBin = i + min_i;
-      int jBin = j + min_j;
-
-      if (binUsed(iBin, jBin)) {
-        if (binnedAreas(iBin, jBin) > 0.0) {
-          color = func(binnedAreas(iBin, jBin));
-        } else {
-          color = MASKED_BIN_COLOR;
-        }
-        double x = (xOffset + i) * binScale + EPS_OFFSETX;
-        double y = (yOffset + j) * binScale + EPS_OFFSETY;
-        ts << x << " " << y << " " << color.hue() / 359.0 << " "
-           << color.saturation() / 255.0 << " " << color.value() / 255.0
-           << " b c" << Qt::endl;
-      }
-    }
-  }
-}
-
-void FingerprintPlot::writeEpsFooter(QTextStream &ts) {
-  ts << "grestore" << Qt::endl;
-  ts << "%%EOF" << Qt::endl;
 }
 
 ////////////////////////////////////////////// SVG functions
@@ -1163,19 +1030,19 @@ double FingerprintPlot::findLowerBound(double value, double min,
 }
 
 double FingerprintPlot::usedxPlotMin() {
-  return findLowerBound(m_xFaceMin, 0.0, binSize());
+  return findLowerBound(m_xmin, 0.0, binSize());
 }
 
 double FingerprintPlot::usedxPlotMax() {
-  return findLowerBound(m_xFaceMax, usedxPlotMin(), binSize()) + binSize();
+  return findLowerBound(m_xmax, usedxPlotMin(), binSize()) + binSize();
 }
 
 double FingerprintPlot::usedyPlotMin() {
-  return findLowerBound(m_yFaceMin, 0.0, binSize());
+  return findLowerBound(m_ymin, 0.0, binSize());
 }
 
 double FingerprintPlot::usedyPlotMax() {
-  return findLowerBound(m_yFaceMax, usedyPlotMin(), binSize()) + binSize();
+  return findLowerBound(m_ymax, usedyPlotMin(), binSize()) + binSize();
 }
 
 int FingerprintPlot::numUsedxBins() {

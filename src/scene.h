@@ -117,7 +117,6 @@ public:
   }
 
   inline void setNeedsUpdate() {
-    m_surfacesNeedUpdate = true;
     m_labelsNeedUpdate = true;
   }
 
@@ -299,9 +298,9 @@ public slots:
 
   void updateHydrogenBondCriteria(HBondCriteria);
   void updateCloseContactsCriteria(int, CloseContactCriteria);
+  void handleSurfacesNeedUpdate();
 
 private slots:
-  void handleSurfacesNeedUpdate();
   void handleLabelsNeedUpdate();
 
 private:
@@ -402,7 +401,6 @@ private:
   bool _drawHydrogenEllipsoids;
   bool _drawMultipleCellBoxes;
 
-  bool m_surfacesNeedUpdate{true};
   bool m_labelsNeedUpdate{true};
   bool m_crystalPlanesNeedUpdate{true};
   bool m_hydrogenBondsNeedUpdate{true};

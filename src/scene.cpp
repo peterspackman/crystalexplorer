@@ -249,7 +249,9 @@ QVector<Label> Scene::energyLabels() {
 void Scene::updateNoneProperties() {
   // TODO update none properties
   // surfaceHandler()->updateAllSurfaceNoneProperties();
-  m_surfacesNeedUpdate = true;
+  if(m_structureRenderer) {
+    m_structureRenderer->updateMeshes();
+  }
 }
 
 /*!
@@ -331,7 +333,9 @@ bool Scene::processSelectionDoubleClick(const QColor &color) {
   return false;
 }
 
-void Scene::handleSurfacesNeedUpdate() { m_surfacesNeedUpdate = true; }
+void Scene::handleSurfacesNeedUpdate() { 
+  if(m_structureRenderer) m_structureRenderer->updateMeshes();
+}
 
 void Scene::handleLabelsNeedUpdate() { m_labelsNeedUpdate = true; }
 

@@ -61,6 +61,7 @@ public:
   [[nodiscard]] inline const auto &vertexNormals() const {
     return m_vertexNormals;
   }
+  [[nodiscard]] inline Eigen::Vector3d vertexNormal(int index) const { return m_vertexNormals.col(index); }
 
   [[nodiscard]] VertexList computeFaceNormals() const;
   [[nodiscard]] VertexList
@@ -122,14 +123,19 @@ public:
   bool haveChildMatchingTransform(const Eigen::Isometry3d &transform) const;
 
   inline const auto &faceAreas() const { return m_faceAreas; }
+  inline const auto &vertexAreas() const { return m_vertexAreas; }
 
   void resetFaceMask(bool value = false);
   [[nodiscard]] inline const auto &faceMask() const { return m_faceMask; }
   [[nodiscard]] inline auto &faceMask() { return m_faceMask; }
 
-  inline void resetFaceHighlights() { m_faceHighlights.array() = false; }
+  void resetVertexMask(bool value = false);
+  [[nodiscard]] inline const auto &vertexMask() const { return m_vertexMask; }
+  [[nodiscard]] inline auto &vertexMask() { return m_vertexMask; }
 
-  inline void highlightFace(int f) { m_faceHighlights(f) = true; }
+  inline void resetVertexHighlights() { m_vertexHighlights.clear(); }
+  inline void highlightVertex(int v) { m_vertexHighlights.insert(v); }
+  [[nodiscard]] const auto &vertexHighlights() const { return m_vertexHighlights; }
 
 signals:
   void visibilityChanged();
@@ -137,6 +143,7 @@ signals:
   void selectedPropertyChanged();
 
 private:
+  [[nodiscard]] ScalarPropertyValues computeVertexAreas() const;
   void updateVertexFaceMapping();
   void updateFaceProperties();
   void updateAsphericity();
@@ -152,6 +159,7 @@ private:
 
   VertexList m_faceNormals;
   ScalarPropertyValues m_faceAreas;
+  ScalarPropertyValues m_vertexAreas;
   ScalarPropertyValues m_faceVolumeContributions;
 
   std::vector<std::vector<int>> m_facesUsingVertex;
@@ -164,7 +172,9 @@ private:
   ScalarProperties m_faceProperties;
 
   Eigen::Matrix<bool, Eigen::Dynamic, 1> m_faceMask;
-  Eigen::Matrix<bool, Eigen::Dynamic, 1> m_faceHighlights;
+  ankerl::unordered_dense::set<int> m_vertexHighlights;
+
+  Eigen::Matrix<bool, Eigen::Dynamic, 1> m_vertexMask;
 
   bool m_transparent{false};
   size_t m_rendererIndex{0};

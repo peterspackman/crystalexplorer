@@ -96,6 +96,7 @@ private:
 
     RenderSelection * m_selectionHandler{nullptr};
     LineRenderer * m_lineRenderer{nullptr};
+    LineRenderer * m_highlightRenderer{nullptr};
     EllipsoidRenderer * m_ellipsoidRenderer{nullptr};
     CylinderRenderer * m_cylinderRenderer{nullptr};
     std::vector<MeshInstanceRenderer *> m_meshRenderers;

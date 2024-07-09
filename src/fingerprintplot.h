@@ -21,6 +21,7 @@ struct FingerprintPlotSettings {
     double binSize{0.01};
     double gridSize{0.2};
     int pixelsPerBin{2};
+    int samplesPerEdge{3};
 };
 
 enum class FingerprintPlotRange { Standard, Translated, Expanded};
@@ -115,55 +116,6 @@ inline const QVector<FingerprintFilterMode> requestableFilters{
 
 const QString NO_FINGERPRINT_MESSAGE = "Fingerprint Plot Unavailable";
 
-// Encapsulated Postscript parameters
-const double EPS_SIZE = 11.0; // Overall size of "graph" on paper in cm
-const double EPS_DPI = 300;   // dots per inch
-const double EPS_DPCM = EPS_DPI / 2.54; // dots per cm
-const double EPS_MARGIN_LEFT = 1.0;
-const double EPS_MARGIN_RIGHT = 0.5;
-const double EPS_MARGIN_TOP = 0.5;
-const double EPS_MARGIN_BOTTOM = 1.0;
-const double EPS_OFFSETX =
-    4; // The choice of these offsets is *completely* arbitrary
-const double EPS_OFFSETY = 2;
-const double EPS_GRIDBOUNDARY_LINEWIDTH = 0.02;
-const double EPS_GRID_LINEWIDTH = 0.0025;
-const double EPS_AXIS_SCALE_FONT_SIZE = 0.4;
-const double EPS_ANGSTROM_FONT_SIZE = EPS_AXIS_SCALE_FONT_SIZE;
-const double EPS_AXIS_LABEL_FONT_SIZE = 0.8;
-const double EPS_TITLE_FONT_SIZE = 0.6;
-enum EpsTitleState { SUBSCRIPT, SUPERSCRIPT };
-
-//      <---------- PW -------------->
-//     |------------------------------|
-//  ^  |            TM     "Plot"     |
-//  |  |                              |
-//  |  |    |--------------------|    |
-//     |    |      ^             |    |
-//  PH | LM |      |             | RM |
-//  |  |    |      |             |    |
-//  |  |    | <------- GW -----> |    |
-//  |  |    |      |             |    |
-//  |  |    |     GH             |    |
-//  |  |    |      |    "Graph"  |    |
-//  |  |    |      |             |    |
-//  |  |    |      v             |    |
-//  |  |    |--------------------|    |
-//  |  |             BM               |
-//  v  |------------------------------|
-//
-//
-// Plot = Whole area of the plot (i.e. Graph + four margins).
-// plotSize() = PW x PH. See also plotRect()
-//
-// Graph = area where we draw the grid and plot the fingerprint bins
-// graphSize() = GW x GH. See also graphRect()
-//
-// LM = left margin given by leftMargin()
-// RM = right margin given by rightMargin()
-// TM = top margin given by topMargin()
-// BM = bottom margin given by bottomMargin()
-
 class FingerprintPlot : public QWidget {
   Q_OBJECT
 
@@ -177,11 +129,11 @@ public slots:
   void updateFilter(FingerprintFilterMode, bool, bool, bool, QString, QString);
   void updatePlotRange(FingerprintPlotRange);
   void saveFingerprint(QString);
+  void resetSurfaceFeatures();
 
 signals:
   void surfaceAreaPercentageChanged(double);
   void surfaceFeatureChanged();
-  void resetSurfaceFeatures();
 
 protected:
   void paintEvent(QPaintEvent *);
@@ -201,6 +153,7 @@ private:
   void drawFingerprint();
   double calculateBinnedAreasNoFilter();
   double calculateBinnedAreasWithFilter();
+  double calculateBinnedAreasKDE();
   void calculateBinnedAreas();
   int binIndex(double, double, double, int);
   int xBinIndex(double);
@@ -222,17 +175,10 @@ private:
   QPair<int, int> binIndicesAtMousePosition(QPoint);
   QPair<int, int> binIndicesAtGraphPos(QPoint);
 
-  void highlightFacesWithPropertyValues(QPair<int, int>);
+  void highlightVerticesWithPropertyValues(QPair<int, int>);
 
   // Postscript functions
   void saveFingerprintAsEps(QString, QString);
-  void writeEpsHeader(QTextStream &, QString);
-  void writeEpsTitle(QTextStream &, QString);
-  void writeEpsGridBoundary(QTextStream &);
-  void writeEpsAxisLabels(QTextStream &);
-  void writeEpsGridlinesAndScaleLabels(QTextStream &);
-  void writeEpsBins(QTextStream &);
-  void writeEpsFooter(QTextStream &);
 
   void saveFingerprintAsSVG(QString);
   void saveFingerprintAsCSV(QString);

@@ -18,6 +18,8 @@ Mesh::Mesh(Eigen::Ref<const VertexList> vertices,
     : QObject(parent), m_vertices(vertices), m_faces(faces) {
   updateVertexFaceMapping();
   updateFaceProperties();
+  m_vertexAreas = computeVertexAreas();
+
 }
 
 Mesh::Mesh(Eigen::Ref<const VertexList> vertices, QObject *parent)
@@ -79,6 +81,7 @@ void Mesh::updateFaceProperties() {
   m_faceAreas.resize(N);
   m_faceVolumeContributions.resize(N);
   m_faceNormals.resize(3, N);
+  m_faceMask = Eigen::Matrix<bool, Eigen::Dynamic, 1>::Zero(N);
 
   for (int i = 0; i < N; i++) {
     Eigen::Vector3d v0 = m_vertices.col(m_faces(0, i));
@@ -390,4 +393,20 @@ bool Mesh::haveChildMatchingTransform(
 
 void Mesh::resetFaceMask(bool value) {
     m_faceMask.array() = value;
+}
+
+void Mesh::resetVertexMask(bool value) {
+    m_vertexMask.array() = value;
+}
+
+ScalarPropertyValues Mesh::computeVertexAreas() const {
+  ScalarPropertyValues vertexAreas = ScalarPropertyValues::Zero(m_vertices.cols());
+
+  for (int i = 0; i < m_faces.cols(); ++i) {
+        float v = m_faceAreas(i) / 3.0f;
+        vertexAreas(m_faces(0, i)) += v;
+        vertexAreas(m_faces(1, i)) += v;
+        vertexAreas(m_faces(2, i)) += v;
+  }
+  return vertexAreas;
 }

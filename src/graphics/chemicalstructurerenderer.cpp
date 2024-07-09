@@ -12,6 +12,7 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   m_ellipsoidRenderer = new EllipsoidRenderer();
   m_cylinderRenderer = new CylinderRenderer();
   m_lineRenderer = new LineRenderer();
+  m_highlightRenderer = new LineRenderer();
   m_pointCloudRenderer = new PointCloudRenderer();
   connect(m_structure, &ChemicalStructure::childAdded, this,
           &ChemicalStructureRenderer::childAddedToStructure);
@@ -228,20 +229,25 @@ void ChemicalStructureRenderer::beginUpdates() {
   m_lineRenderer->beginUpdates();
   m_cylinderRenderer->beginUpdates();
   m_ellipsoidRenderer->beginUpdates();
+  m_highlightRenderer->beginUpdates();
 }
 
 void ChemicalStructureRenderer::endUpdates() {
   m_lineRenderer->endUpdates();
   m_cylinderRenderer->endUpdates();
   m_ellipsoidRenderer->endUpdates();
+  m_highlightRenderer->endUpdates();
 }
 
 void ChemicalStructureRenderer::draw(bool forPicking) {
-  if(m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate) {
+  if (m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate) {
     beginUpdates();
-    if(m_atomsNeedsUpdate) updateAtoms();
-    if(m_bondsNeedsUpdate) updateBonds();
-    if(m_meshesNeedsUpdate) updateMeshes();
+    if (m_atomsNeedsUpdate)
+      updateAtoms();
+    if (m_bondsNeedsUpdate)
+      updateBonds();
+    if (m_meshesNeedsUpdate)
+      updateMeshes();
     endUpdates();
   }
 
@@ -268,6 +274,12 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
   m_lineRenderer->release();
 
   handleMeshesUpdate();
+
+  m_highlightRenderer->bind();
+  m_uniforms.apply(m_highlightRenderer);
+  m_highlightRenderer->draw();
+  m_highlightRenderer->release();
+
   for (auto *meshRenderer : m_meshRenderers) {
     meshRenderer->bind();
     m_uniforms.apply(meshRenderer);
@@ -306,6 +318,8 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
   m_meshRenderers.clear();
   m_meshIndexToMesh.clear();
   m_pointCloudRenderer->clear();
+  m_highlightRenderer->clear();
+
   if (m_selectionHandler) {
     m_selectionHandler->clear(SelectionType::Surface);
   }
@@ -313,6 +327,7 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
     auto *mesh = qobject_cast<Mesh *>(child);
     if (!mesh)
       continue;
+
     if (mesh->numberOfFaces() == 0) {
       m_pointCloudRenderer->addPoints(
           cx::graphics::makePointCloudVertices(*mesh));
@@ -343,10 +358,21 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
                              meshInstance->rotationMatrix(), selectionColor,
                              propertyIndex, alpha);
         instanceRenderer->addInstance(v);
+
+        {
+          // face highlights
+          QColor color = Qt::red;
+          for (const int v : mesh->vertexHighlights()) {
+            const auto vertex = meshInstance->vertexVector3D(v);
+            const auto normal = meshInstance->vertexNormalVector3D(v);
+            cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
+                                                vertex + normal, 1.0, color);
+          }
+        }
+        instanceRenderer->endUpdates();
+        mesh->setRendererIndex(m_meshRenderers.size());
+        m_meshRenderers.push_back(instanceRenderer);
       }
-      instanceRenderer->endUpdates();
-      mesh->setRendererIndex(m_meshRenderers.size());
-      m_meshRenderers.push_back(instanceRenderer);
     }
   }
   m_meshesNeedsUpdate = false;

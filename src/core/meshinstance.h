@@ -31,6 +31,9 @@ public:
     [[nodiscard]] Eigen::Vector3d vertex(int index) const;
     [[nodiscard]] QVector3D vertexVector3D(int index) const;
     [[nodiscard]] Mesh::VertexList vertices() const;
+
+    [[nodiscard]] Eigen::Vector3d vertexNormal(int index) const;
+    [[nodiscard]] QVector3D vertexNormalVector3D(int index) const;
     [[nodiscard]] Mesh::VertexList vertexNormals() const;
 
     [[nodiscard]] const MeshTransform &transform() const;

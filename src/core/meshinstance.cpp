@@ -38,6 +38,17 @@ Mesh::VertexList MeshInstance::vertices() const {
          m_transform.translation();
 }
 
+Eigen::Vector3d MeshInstance::vertexNormal(int index) const {
+  if (!m_mesh)
+    return {};
+  return (m_transform.rotation() * m_mesh->vertexNormal(index));
+}
+
+QVector3D MeshInstance::vertexNormalVector3D(int index) const {
+    auto v = vertexNormal(index);
+    return QVector3D(v.x(), v.y(), v.z());
+}
+
 Mesh::VertexList MeshInstance::vertexNormals() const {
   if (!m_mesh)
     return {};

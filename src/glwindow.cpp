@@ -1125,9 +1125,9 @@ void GLWindow::updateBackgroundColor(QColor color) {
 
 void GLWindow::updateSurfacesForFingerprintWindow() {
   if (scene) {
-    scene->setNeedsUpdate();
+    scene->handleSurfacesNeedUpdate();
+    redraw();
   }
-  redraw();
 }
 
 void GLWindow::screenGammaChanged() {

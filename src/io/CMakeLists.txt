@@ -1,5 +1,6 @@
 add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/ciffile.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_eps.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/genericxyzfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_wavefunction.cpp"
@@ -13,6 +14,7 @@ add_library(cx_io
 target_link_libraries(
     cx_io PUBLIC 
     cx_core
+    cx_graphics
     Qt6::Core Qt6::Gui
     Eigen3::Eigen sbf_cpp fmt::fmt
     unordered_dense::unordered_dense

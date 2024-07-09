@@ -26,8 +26,6 @@ void FingerprintWindow::initConnections() {
           this, &FingerprintWindow::close);
 
   // Fingerprint plot connections
-  connect(fingerprintPlot, &FingerprintPlot::resetSurfaceFeatures, this,
-          &FingerprintWindow::resetSurfaceFeatures);
   connect(fingerprintPlot, &FingerprintPlot::surfaceFeatureChanged, this,
           &FingerprintWindow::surfaceFeatureChanged);
   connect(fingerprintPlot, &FingerprintPlot::surfaceAreaPercentageChanged,
@@ -80,7 +78,7 @@ void FingerprintWindow::resetSurfaceFeatures() {
 
 void FingerprintWindow::close() {
   fingerprintOptions->resetOptions();
-  resetSurfaceFeatures();
+  fingerprintPlot->resetSurfaceFeatures();
   hide();
 }
 
