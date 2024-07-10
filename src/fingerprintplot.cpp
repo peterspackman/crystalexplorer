@@ -12,6 +12,7 @@
 #include <QTime>
 #include <QtDebug>
 
+#include "elementdata.h"
 #include "fingerprint_eps.h"
 #include "settings.h"
 
@@ -38,10 +39,22 @@ void FingerprintPlot::setFilter(FingerprintFilterMode filterMode,
                                 QString outsideFilterElementSymbol) {
   m_filterMode = filterMode;
   m_includeReciprocalContacts = includeReciprocalContacts;
-  m_filterInsideElement = filterInsideElement;
-  m_filterOutsideElement = filterOutsideElement;
   m_insideFilterElementSymbol = insideFilterElementSymbol;
   m_outsideFilterElementSymbol = outsideFilterElementSymbol;
+  m_filterInsideElement = -1;
+  m_filterOutsideElement = -1;
+
+  if (filterInsideElement) {
+    auto *el = ElementData::elementFromSymbol(m_insideFilterElementSymbol);
+    if (el)
+      m_filterInsideElement = el->number();
+  }
+
+  if (filterOutsideElement) {
+    auto *el = ElementData::elementFromSymbol(m_outsideFilterElementSymbol);
+    if (el)
+      m_filterOutsideElement = el->number();
+  }
 }
 
 void FingerprintPlot::updateFilter(FingerprintFilterMode filterMode,
@@ -293,9 +306,6 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
 double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double totalFilteredArea = 0.0;
 
-  // mask all faces
-  m_mesh->resetFaceMask(true);
-
   double nx = numUsedxBins();
   double ny = numUsedyBins();
   double xmax = usedxPlotMax();
@@ -305,23 +315,44 @@ double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double ymax = usedyPlotMax();
   double normy = ny / (ymax - ymin);
 
-  auto &vertexMask = m_mesh->vertexMask();
+  binnedAreas = Eigen::MatrixXd::Zero(nx, ny);
+  binUsed = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>::Zero(nx, ny);
 
-  const auto &vertexAreas = m_mesh->vertexAreas();
-  for (int i = 0; i < vertexAreas.rows(); i++) {
-    double x = m_x(i);
-    double y = m_y(i);
+  computeFaceMask();
 
-    if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
-      int xIndex = static_cast<int>((x - xmin) * normx);
-      int yIndex = static_cast<int>((y - xmin) * normy);
-      double area = vertexAreas(i);
-      if (area > 0.0) {
-        binUsed(xIndex, yIndex) = true;
-        if (includeArea(i)) {
-          totalFilteredArea += area;
-          binnedAreas(xIndex, yIndex) += area;
-          vertexMask(i) = false;
+  auto &faceMask = m_mesh->faceMask();
+
+  for (int faceIdx = 0; faceIdx < m_mesh->numberOfFaces(); ++faceIdx) {
+    Eigen::Vector3i faceIndices = m_mesh->faces().col(faceIdx);
+
+    double x1 = m_x(faceIndices[0]), y1 = m_y(faceIndices[0]);
+    double x2 = m_x(faceIndices[1]), y2 = m_y(faceIndices[1]);
+    double x3 = m_x(faceIndices[2]), y3 = m_y(faceIndices[2]);
+
+    double faceArea = m_mesh->faceAreas()(faceIdx);
+
+    // Interpolate points within the face
+    for (int i = 0; i <= m_settings.samplesPerEdge; ++i) {
+      for (int j = 0; j <= m_settings.samplesPerEdge - i; ++j) {
+        double a = static_cast<double>(i) / m_settings.samplesPerEdge;
+        double b = static_cast<double>(j) / m_settings.samplesPerEdge;
+        double c = 1.0 - a - b;
+
+        double x = a * x1 + b * x2 + c * x3;
+        double y = a * y1 + b * y2 + c * y3;
+
+        if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
+          int xIndex = static_cast<int>((x - xmin) * normx);
+          int yIndex = static_cast<int>((y - ymin) * normy);
+
+          double sampleArea = faceArea / ((m_settings.samplesPerEdge + 1) *
+                                          (m_settings.samplesPerEdge + 2) / 2);
+
+          binUsed(xIndex, yIndex) = true;
+          if (faceMask(faceIdx)) {
+            totalFilteredArea += sampleArea;
+            binnedAreas(xIndex, yIndex) += sampleArea;
+          }
         }
       }
     }
@@ -339,8 +370,8 @@ QVector<double> FingerprintPlot::filteredAreas(QString insideElementSymbol,
   // Save existing filter options
   auto savedFilterMode = m_filterMode;
   bool savedIncludeReciprocalContacts = m_includeReciprocalContacts;
-  bool savedFilterInsideElement = m_filterInsideElement;
-  bool savedFilterOutsideElement = m_filterOutsideElement;
+  int savedFilterInsideElement = m_filterInsideElement;
+  int savedFilterOutsideElement = m_filterOutsideElement;
   QString savedInsideFilterElementSymbol = m_insideFilterElementSymbol;
   QString savedOutsideFilterElementSymbol = m_outsideFilterElementSymbol;
 
@@ -356,11 +387,13 @@ QVector<double> FingerprintPlot::filteredAreas(QString insideElementSymbol,
   totalFilteredArea.fill(0.0);
 
   const auto &faceAreas = m_mesh->faceAreas();
-  // Sum all the areas of the faces which contribute to a particular bin
-  for (int f = 0; f < faceAreas.rows(); f++) {
-    for (int i = 0; i < symbolListSize; ++i) {
-      m_outsideFilterElementSymbol = elementSymbolList[i];
-      if (includeArea(f)) {
+  for (int i = 0; i < symbolListSize; ++i) {
+    // Sum all the areas of the faces which contribute to a particular bin
+    m_outsideFilterElementSymbol = elementSymbolList[i];
+    computeFaceMask();
+    const auto &mask = m_mesh->faceMask();
+    for (int f = 0; f < faceAreas.rows(); f++) {
+      if (mask(f)) {
         totalFilteredArea[i] += faceAreas(f);
       }
     }
@@ -380,6 +413,7 @@ QVector<double> FingerprintPlot::filteredAreas(QString insideElementSymbol,
   m_filterOutsideElement = savedFilterOutsideElement;
   m_insideFilterElementSymbol = savedInsideFilterElementSymbol;
   m_outsideFilterElementSymbol = savedOutsideFilterElementSymbol;
+  computeFaceMask();
 
   return result;
 }
@@ -563,59 +597,63 @@ int FingerprintPlot::tolerant_yBinIndex(double value) {
   return binIndex(value, usedyPlotMin(), usedyPlotMax(), numUsedyBins());
 }
 
-bool FingerprintPlot::includeArea(int face) {
-  bool incArea = true;
+void FingerprintPlot::computeFaceMask() {
+  if (!m_mesh)
+    return;
+  auto &mask = m_mesh->faceMask();
+  auto &vmask = m_mesh->vertexMask();
+  mask.setConstant(true);
+  vmask.setConstant(true);
 
   switch (m_filterMode) {
   case FingerprintFilterMode::None:
     break;
-  case FingerprintFilterMode::Element:
-    incArea = includeAreaFilteredByElement(face);
+  case FingerprintFilterMode::Element: {
+    auto *structure = qobject_cast<ChemicalStructure *>(m_mesh->parent());
+    if (!structure)
+      break;
+
+    auto insideNums = structure->atomicNumbersForIndices(m_mesh->atomsInside());
+    auto outsideNums =
+        structure->atomicNumbersForIndices(m_mesh->atomsOutside());
+
+    Eigen::VectorXi di_idx = m_mesh->vertexProperty("di_idx").cast<int>();
+    Eigen::VectorXi de_idx = m_mesh->vertexProperty("de_idx").cast<int>();
+
+    const auto &faces = m_mesh->faces();
+    const auto &v2f = m_mesh->vertexToFace();
+
+    if (di_idx.rows() == 0 || de_idx.rows() == 0) {
+      qDebug() << "Have no interior/exterior atom infor";
+      break;
+    }
+
+    auto check = [](int ref, int value) {
+      return (ref == -1) || (value == ref);
+    };
+
+    const int m_i = m_filterInsideElement;
+    const int m_o = m_filterOutsideElement;
+
+    for(int v = 0; v < di_idx.rows(); v++) {
+        int i = insideNums(di_idx(v));
+        int o = outsideNums(de_idx(v));
+
+        vmask(v) = check(m_i, i) && check(m_o, o);
+        if (m_includeReciprocalContacts) {
+          vmask(v) |= (check(m_i, o) && check(m_o, i));
+        }
+
+        // if any vertex isn't in, mask it
+        if(!vmask(v)) {
+          for(int f: v2f[v]) {
+            mask(f) = false;
+          }
+        }
+    }
     break;
   }
-  return incArea;
-}
-
-bool FingerprintPlot::includeAreaFilteredByElement(int face) {
-  return false;
-  /*
-  bool incArea{false};
-
-  auto * structure = qobject_cast<ChemicalStructure *>(m_mesh->parent());
-  if(!structure) return false;
-
-  auto insideNums = structure->atomicNumbersForIndices(m_mesh->atomsInside());
-  auto outsideNums = structure->atomicNumbersForIndices(m_mesh->atomsInside());
-  const QVector<Atom> &unitCellAtoms = _crystal->unitCellAtoms();
-
-  QString insideElement =
-      unitCellAtoms[_surface->insideAtomIdForFace(face).unitCellIndex].symbol();
-  QString outsideElement =
-      unitCellAtoms[_surface->outsideAtomIdForFace(face).unitCellIndex]
-          .symbol();
-
-  bool insideMatch = m_insideFilterElementSymbol == insideElement;
-  bool outsideMatch = m_outsideFilterElementSymbol == outsideElement;
-
-  if (m_includeReciprocalContacts) {
-
-    incArea = (insideMatch && outsideMatch) ||
-              (outsideElement == m_insideFilterElementSymbol &&
-               insideElement == m_outsideFilterElementSymbol);
-
-  } else {
-    if (m_filterInsideElement && m_filterOutsideElement) {
-      incArea = insideMatch && outsideMatch;
-    } else if (m_filterInsideElement && !m_filterOutsideElement) {
-      incArea = insideMatch;
-    } else if (!m_filterInsideElement && m_filterOutsideElement) {
-      incArea = outsideMatch;
-    } else { // filter neither inside or outside element
-      incArea = true;
-    }
   }
-  return incArea;
-  */
 }
 
 void FingerprintPlot::drawEmptyFingerprint() {
@@ -919,8 +957,6 @@ void FingerprintPlot::saveFingerprint(QString filename) {
         nullptr, tr("Enter fingerprint title"),
         tr("(Leave blank for no title)"), QLineEdit::Normal);
     saveFingerprintAsEps(filename, title);
-  } else if (fi.suffix() == "svg") {
-    saveFingerprintAsSVG(filename);
   } else if (fi.suffix() == "png") {
     saveFingerprintAsPNG(filename);
   } else if (fi.suffix() == "csv") {
@@ -989,22 +1025,12 @@ void FingerprintPlot::saveFingerprintAsEps(QString filename, QString title) {
     FingerprintEpsWriter epsWriter(numberOfBins(), plotMin(), plotMax(),
                                    binSize(), numberOfGridlines(), gridSize());
 
-
     epsWriter.setXOffset(xOffsetForCurrentPlotRange());
     epsWriter.setYOffset(yOffsetForCurrentPlotRange());
     epsWriter.writeEpsFile(ts, title, binnedAreas, MASKED_BIN_COLOR);
 
     file.close();
   }
-}
-
-////////////////////////////////////////////// SVG functions
-/////////////////////////////////////////////////////////////
-
-/*! Save the fingerprint as Scalable Vector Graphic to filename
- */
-void FingerprintPlot::saveFingerprintAsSVG(QString filename) {
-  Q_UNUSED(filename);
 }
 
 /////////////////////////////////////////// Determining actual plot size

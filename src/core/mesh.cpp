@@ -19,6 +19,8 @@ Mesh::Mesh(Eigen::Ref<const VertexList> vertices,
   updateVertexFaceMapping();
   updateFaceProperties();
   m_vertexAreas = computeVertexAreas();
+  m_vertexMask = Eigen::Matrix<bool, Eigen::Dynamic, 1>(m_vertices.cols());
+  resetVertexMask(true);
 
 }
 
@@ -81,7 +83,8 @@ void Mesh::updateFaceProperties() {
   m_faceAreas.resize(N);
   m_faceVolumeContributions.resize(N);
   m_faceNormals.resize(3, N);
-  m_faceMask = Eigen::Matrix<bool, Eigen::Dynamic, 1>::Zero(N);
+  m_faceMask = Eigen::Matrix<bool, Eigen::Dynamic, 1>(N);
+  resetFaceMask(true);
 
   for (int i = 0; i < N; i++) {
     Eigen::Vector3d v0 = m_vertices.col(m_faces(0, i));

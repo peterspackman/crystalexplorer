@@ -182,6 +182,20 @@ Mesh *read_ply_file(const QString &filepath, bool preload_into_memory = true) {
         mesh->setVertexProperty(displayName, v);
         break;
       }
+      case tinyply::Type::INT32: {
+        qDebug() << "i32 count =" << prop->count << prop->buffer.get();
+        const int *buf = reinterpret_cast<const int *>(prop->buffer.get());
+        if (!buf) {
+          qDebug() << "Failed reading property values";
+          break;
+        }
+        Eigen::VectorXi v = Eigen::Map<const Eigen::VectorXi>(buf, prop->count);
+        QString displayName =
+            isosurface::getDisplayName(QString::fromStdString(prop_name));
+        mesh->setVertexProperty(displayName, v.cast<float>());
+        break;
+      }
+
       default:
         break;
       }

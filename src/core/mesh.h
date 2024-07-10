@@ -52,6 +52,7 @@ public:
   [[nodiscard]] const auto &faces() const { return m_faces; }
   [[nodiscard]] inline auto numberOfFaces() const { return m_faces.cols(); }
 
+  [[nodiscard]] inline const auto &vertexToFace() const { return m_facesUsingVertex;}
   // normals
   [[nodiscard]] inline bool haveVertexNormals() const {
     return m_vertexNormals.cols() == m_vertices.cols();

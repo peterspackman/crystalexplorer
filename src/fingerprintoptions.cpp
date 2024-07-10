@@ -203,11 +203,11 @@ void FingerprintOptions::getFilenameAndSaveFingerprint() {
           .toBool()) {
     filename = QFileDialog::getSaveFileName(
         nullptr, tr("Save Fingerprint"), "untitled.eps",
-        tr("Postscript (*.eps);;Comma Separated Values (*.csv)"));
+        tr("Encapsulated Postscript (*.eps);; Portable Network Graphics (*.png);; Comma Separated Values (*.csv)"));
   } else {
     filename = QFileDialog::getSaveFileName(
         nullptr, tr("Save Fingerprint"), "untitled.eps",
-        tr("Postscript (*.eps);;PNG (*.png)"));
+        tr("Encapsulated Postscript (*.eps);; Portable Network Graphics (*.png)"));
   }
   if (!filename.isEmpty()) {
     emit saveFingerprint(filename);

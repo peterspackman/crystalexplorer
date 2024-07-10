@@ -160,6 +160,9 @@ private:
   int yBinIndex(double);
   int tolerant_xBinIndex(double);
   int tolerant_yBinIndex(double);
+
+  void computeFaceMask();
+
   bool includeArea(int);
   bool includeAreaFilteredByElement(int);
   void drawGrid(QPainter *);
@@ -180,7 +183,6 @@ private:
   // Postscript functions
   void saveFingerprintAsEps(QString, QString);
 
-  void saveFingerprintAsSVG(QString);
   void saveFingerprintAsCSV(QString);
   void saveFingerprintAsPNG(QString);
 
@@ -247,8 +249,8 @@ private:
   // Filter options
   FingerprintFilterMode m_filterMode{FingerprintFilterMode::None};
   bool m_includeReciprocalContacts{false};
-  bool m_filterInsideElement{false};
-  bool m_filterOutsideElement{false};
+  int m_filterInsideElement{-1};
+  int m_filterOutsideElement{-1};
   QString m_insideFilterElementSymbol{"H"};
   QString m_outsideFilterElementSymbol{"H"};
 
