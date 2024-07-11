@@ -69,7 +69,11 @@ void FingerprintPlot::updateFilter(FingerprintFilterMode filterMode,
   updateFingerprintPlot();
 }
 
-void FingerprintPlot::setRange(FingerprintPlotRange range) { m_range = range; }
+void FingerprintPlot::setRange(FingerprintPlotRange range) { 
+  m_range = range; 
+  m_settings = plotRangeSettings(m_range);
+
+}
 
 void FingerprintPlot::updatePlotRange(FingerprintPlotRange range) {
   setRange(range);
@@ -939,13 +943,17 @@ void FingerprintPlot::highlightVerticesWithPropertyValues(
     }
     emit surfaceFeatureChanged();
   } else if (vertex == -1) {
-    resetSurfaceFeatures();
+    resetSurfaceFeatures(false);
   }
 }
 
-void FingerprintPlot::resetSurfaceFeatures() {
+void FingerprintPlot::resetSurfaceFeatures(bool mask) {
   if (m_mesh) {
     m_mesh->resetVertexHighlights();
+    if(mask) {
+      m_mesh->resetFaceMask(true);
+      m_mesh->resetVertexMask(true);
+    }
     emit surfaceFeatureChanged();
   }
 }

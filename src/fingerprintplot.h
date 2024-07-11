@@ -129,7 +129,7 @@ public slots:
   void updateFilter(FingerprintFilterMode, bool, bool, bool, QString, QString);
   void updatePlotRange(FingerprintPlotRange);
   void saveFingerprint(QString);
-  void resetSurfaceFeatures();
+  void resetSurfaceFeatures(bool);
 
 signals:
   void surfaceAreaPercentageChanged(double);

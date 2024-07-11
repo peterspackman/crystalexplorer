@@ -20,6 +20,8 @@ void FingerprintWindow::initConnections() {
   // Fingerprint option connections
   connect(fingerprintOptions, &FingerprintOptions::filterChanged,
           fingerprintPlot, &FingerprintPlot::updateFilter);
+  connect(fingerprintOptions, &FingerprintOptions::plotRangeChanged,
+          fingerprintPlot, &FingerprintPlot::updatePlotRange);
   connect(fingerprintOptions, &FingerprintOptions::saveFingerprint,
           fingerprintPlot, &FingerprintPlot::saveFingerprint);
   connect(fingerprintOptions, &FingerprintOptions::closeClicked,
@@ -72,13 +74,14 @@ void FingerprintWindow::resetCrystal() { setScene(nullptr); }
 
 void FingerprintWindow::resetSurfaceFeatures() {
   // TODO
-  // m_scene->resetSurfaceFeatures();
+  fingerprintPlot->resetSurfaceFeatures(false);
   emit surfaceFeatureChanged();
 }
 
 void FingerprintWindow::close() {
   fingerprintOptions->resetOptions();
-  fingerprintPlot->resetSurfaceFeatures();
+  fingerprintPlot->resetSurfaceFeatures(true);
+  emit surfaceFeatureChanged();
   hide();
 }
 
