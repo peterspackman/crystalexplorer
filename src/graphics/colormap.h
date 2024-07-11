@@ -30,4 +30,5 @@ struct ColorMapFunc {
     double lower{0.0};
     double upper{1.0};
     bool reverse{false};
+    QColor noneColor{Qt::white};
 };

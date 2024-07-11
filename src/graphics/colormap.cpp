@@ -1,4 +1,5 @@
 #include "colormap.h"
+#include "settings.h"
 #include <QDebug>
 
 namespace impl {
@@ -2471,15 +2472,20 @@ QColor quantizedLinearColorMap(double x, unsigned int num_levels,
   return linearColorMap(impl::quantize(x, num_levels), name);
 }
 
-ColorMapFunc::ColorMapFunc(ColorMapName n) : name(n) {}
+ColorMapFunc::ColorMapFunc(ColorMapName n) : name(n) {
+  noneColor = QColor(
+      settings::readSetting(settings::keys::NONE_PROPERTY_COLOR).toString());
+}
 ColorMapFunc::ColorMapFunc(ColorMapName n, double minValue, double maxValue)
-    : name(n), lower(minValue), upper(maxValue) {}
+    : name(n), lower(minValue), upper(maxValue) {
+  noneColor = QColor(
+      settings::readSetting(settings::keys::NONE_PROPERTY_COLOR).toString());
+}
 
 QColor ColorMapFunc::operator()(double x) const {
   switch (name) {
   case ColorMapName::CE_None:
-    // TODO fetch color from settings
-    return Qt::white;
+    return noneColor;
     break;
   case ColorMapName::CE_bwr:
     return triColorMap(x, lower, upper, Qt::red, Qt::white, Qt::blue);
@@ -2497,53 +2503,59 @@ QColor ColorMapFunc::operator()(double x) const {
 }
 
 std::vector<ColorMapName> availableColorMaps() {
-    return std::vector<ColorMapName>{
-        ColorMapName::Parula,
-        ColorMapName::Heat,
-        ColorMapName::Jet,
-        ColorMapName::Turbo,
-        ColorMapName::Hot,
-        ColorMapName::Gray,
-        ColorMapName::Magma,
-        ColorMapName::Inferno,
-        ColorMapName::Plasma,
-        ColorMapName::Viridis,
-        ColorMapName::Cividis,
-        ColorMapName::Github,
-        ColorMapName::Cubehelix,
-        ColorMapName::HSV,
-        ColorMapName::CE_bwr,
-        ColorMapName::CE_rgb,
-        ColorMapName::CE_None
-    };
+  return std::vector<ColorMapName>{
+      ColorMapName::Parula,    ColorMapName::Heat,    ColorMapName::Jet,
+      ColorMapName::Turbo,     ColorMapName::Hot,     ColorMapName::Gray,
+      ColorMapName::Magma,     ColorMapName::Inferno, ColorMapName::Plasma,
+      ColorMapName::Viridis,   ColorMapName::Cividis, ColorMapName::Github,
+      ColorMapName::Cubehelix, ColorMapName::HSV,     ColorMapName::CE_bwr,
+      ColorMapName::CE_rgb,    ColorMapName::CE_None};
 }
 
 ColorMapName colorMapFromString(const QString &s) {
-    const auto &maps = availableColorMaps();
-    for(int i = 0; i < maps.size(); i++) {
-        if(s == colorMapToString(maps[i])) return maps[i];
-    }
-    return ColorMapName::CE_None;
+  const auto &maps = availableColorMaps();
+  for (int i = 0; i < maps.size(); i++) {
+    if (s == colorMapToString(maps[i]))
+      return maps[i];
+  }
+  return ColorMapName::CE_None;
 }
 
-const char * colorMapToString(ColorMapName name) {
-    switch(name) {
-        case ColorMapName::Parula: return "Parula";
-        case ColorMapName::Heat: return "Heat";
-        case ColorMapName::Jet: return "Jet";
-        case ColorMapName::Turbo: return "Turbo";
-        case ColorMapName::Hot: return "Hot";
-        case ColorMapName::Gray: return "Gray";
-        case ColorMapName::Magma: return "Magma";
-        case ColorMapName::Inferno: return "Inferno";
-        case ColorMapName::Plasma: return "Plasma";
-        case ColorMapName::Viridis: return "Viridis";
-        case ColorMapName::Cividis: return "Cividis";
-        case ColorMapName::Github: return "Github";
-        case ColorMapName::Cubehelix: return "Cubehelix";
-        case ColorMapName::HSV: return "HSV";
-        case ColorMapName::CE_bwr: return "CE Blue-White-Red";
-        case ColorMapName::CE_rgb: return "CE Red-Green-Blue";
-        default: return "None";
-    }
+const char *colorMapToString(ColorMapName name) {
+  switch (name) {
+  case ColorMapName::Parula:
+    return "Parula";
+  case ColorMapName::Heat:
+    return "Heat";
+  case ColorMapName::Jet:
+    return "Jet";
+  case ColorMapName::Turbo:
+    return "Turbo";
+  case ColorMapName::Hot:
+    return "Hot";
+  case ColorMapName::Gray:
+    return "Gray";
+  case ColorMapName::Magma:
+    return "Magma";
+  case ColorMapName::Inferno:
+    return "Inferno";
+  case ColorMapName::Plasma:
+    return "Plasma";
+  case ColorMapName::Viridis:
+    return "Viridis";
+  case ColorMapName::Cividis:
+    return "Cividis";
+  case ColorMapName::Github:
+    return "Github";
+  case ColorMapName::Cubehelix:
+    return "Cubehelix";
+  case ColorMapName::HSV:
+    return "HSV";
+  case ColorMapName::CE_bwr:
+    return "CE Blue-White-Red";
+  case ColorMapName::CE_rgb:
+    return "CE Red-Green-Blue";
+  default:
+    return "None";
+  }
 }

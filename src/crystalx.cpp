@@ -1454,8 +1454,8 @@ void Crystalx::initPreferencesDialog() {
             &PreferencesDialog::redrawCrystalForPreferencesChange, project,
             &Project::updateCurrentCrystalContents);
     // TODO fix None property color
-    // connect(preferencesDialog, &PreferencesDialog::nonePropertyColorChanged,
-    //       project, &Project::updateNonePropertiesForAllCrystals);
+    connect(preferencesDialog, &PreferencesDialog::nonePropertyColorChanged,
+            project, &Project::updateCurrentCrystalContents);
 
     connect(preferencesDialog,
             &PreferencesDialog::redrawCloseContactsForPreferencesChange,

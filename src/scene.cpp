@@ -638,6 +638,7 @@ const SelectedSurface &Scene::selectedSurface() const {
 
 void Scene::updateForPreferencesChange() {
   if (m_structure) {
+    updateNoneProperties();
     setNeedsUpdate();
   }
 }
