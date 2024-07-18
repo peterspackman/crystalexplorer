@@ -72,9 +72,6 @@ void OccWavefunctionTask::start() {
     setArguments({"scf", inputName});
     setRequirements({FileDependency(inputName)});
     setOutputs({FileDependency(outputName, outputName)});
-    auto environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("OCC_DATA_PATH", QDir::homePath() + "/git/occ/share");
-    setEnvironment(environment);
 
 
     emit progressText("Starting OCC process");

@@ -14,6 +14,7 @@ public:
 
   void setTaskManager(TaskManager *);
   void start(isosurface::Parameters);
+  QString surfaceName();
 
 signals:
   void calculationComplete(isosurface::Result);

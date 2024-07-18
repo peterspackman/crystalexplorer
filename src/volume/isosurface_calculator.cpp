@@ -70,7 +70,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       XYZFile xyz;
       xyz.setElements(nums);
       xyz.setAtomPositions(pos);
-      xyz.writeToFile(filename);
+      if(!xyz.writeToFile(filename)) return;
     }
     filename_outside = m_structure->name() + "_" +
                        isosurface::kindToString(params.kind) + "_outside.xyz";
@@ -85,17 +85,18 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
       XYZFile xyz;
       xyz.setElements(nums_outside);
       xyz.setAtomPositions(pos_outside);
-      xyz.writeToFile(filename_outside);
+      if(!xyz.writeToFile(filename_outside)) return;
     }
   }
+  m_parameters = params;
+  m_name = surfaceName();
 
-  QString surfaceName = isosurface::kindToString(params.kind);
   m_defaultProperty = isosurface::defaultPropertyForKind(params.kind);
   OccSurfaceTask *surface_task = new OccSurfaceTask();
   surface_task->setExecutable(m_occExecutable);
   surface_task->setEnvironment(m_environment);
   surface_task->setSurfaceParameters(params);
-  surface_task->setProperty("name", surfaceName);
+  surface_task->setProperty("name", m_name);
   surface_task->setProperty("inputFile", filename);
   surface_task->setProperty("environmentFile", filename_outside);
   qDebug() << "Generating " << isosurface::kindToString(params.kind)
@@ -103,12 +104,15 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   surface_task->setProperty("isovalue", params.isovalue);
 
   auto taskId = m_taskManager->add(surface_task);
-  m_name = surfaceName;
   m_filename = "surface.ply";
-  m_parameters = params;
 
   connect(surface_task, &Task::completed, this,
           &IsosurfaceCalculator::surfaceComplete);
+}
+
+QString IsosurfaceCalculator::surfaceName() {
+    isosurface::SurfaceDescription desc = isosurface::getSurfaceDescription(m_parameters.kind);
+    return QString("%1 (%2) [isovalue = %3]").arg(desc.displayName).arg(m_parameters.separation).arg(m_parameters.isovalue);
 }
 
 void IsosurfaceCalculator::surfaceComplete() {

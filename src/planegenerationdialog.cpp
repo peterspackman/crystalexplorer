@@ -232,6 +232,7 @@ void CrystalPlanesModel::removePlane(int row) {
 }
 
 void CrystalPlanesModel::clear() {
+  if(rowCount() <= 0) return;
   beginRemoveRows(QModelIndex(), 0, rowCount() - 1);
   planes.clear();
   endRemoveRows();

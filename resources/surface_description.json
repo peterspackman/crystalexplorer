@@ -147,7 +147,7 @@
 		"electric_potential", "orbital"
 	    ]
 	},
-	"crystal_void": {
+        "void": {
 	    "displayName": "Crystal Void",
 	    "occName": "void",
 	    "defaultIsovalue": 0.002,
@@ -165,7 +165,7 @@
 	    "defaultIsovalue": 0.008,
 	    "description": "<p>The difference between the <i>ab-initio</i> Electron density, and the Promolecule (sum of spherical atoms) electron density, calculated from the  wavefunction in the previous energy calculation.</p>"
 	},
-	"electric_potential": {
+        "esp": {
 	    "displayName": "Electrostatic Potential",
 	    "occName": "esp",
 	    "units": "au",
