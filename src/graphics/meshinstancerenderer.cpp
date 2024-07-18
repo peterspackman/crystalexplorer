@@ -10,6 +10,7 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh *mesh)
       {"None", ColorMapName::CE_None},   {"dnorm", ColorMapName::CE_bwr},
       {"di", ColorMapName::CE_rgb},      {"de", ColorMapName::CE_rgb},
       {"di_norm", ColorMapName::CE_bwr}, {"de_norm", ColorMapName::CE_bwr},
+      {"eeq_esp", ColorMapName:: CE_bwr}
   };
 
   m_program = new QOpenGLShaderProgram();

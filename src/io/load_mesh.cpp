@@ -104,6 +104,7 @@ Mesh *read_ply_file(const QString &filepath, bool preload_into_memory = true) {
                                                "di_norm",
                                                "de",
                                                "de_norm",
+                                               "eeq_esp",
                                                "esp",
                                                "electron_density",
                                                "shape_index",
