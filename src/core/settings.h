@@ -37,11 +37,11 @@ const QString GLOBAL_ELEMENTDATA_FILE = ":/resources/elementdata.json";
 const QString GLOBAL_OCC_PATH = "/usr/bin/";
 const QString GLOBAL_OCC_EXECUTABLE = "occ"; // linux
 #elif defined(Q_OS_WIN)
-const QString GLOBAL_OCC_EXECUTABLE = "occ.exe"; // Windows
+const QString GLOBAL_OCC_EXECUTABLE = "bin/occ.exe"; // Windows
 #elif defined(Q_OS_MACOS)
 const QString GLOBAL_OCC_EXECUTABLE = "occ"; // MacOS
 #endif
-const QString GLOBAL_OCC_DATA_DIRECTORY = "share";
+const QString GLOBAL_OCC_DATA_DIRECTORY = "share/occ";
 
 const bool GLOBAL_DEPTH_FOG_ENABLED = false;
 const float GLOBAL_DEPTH_FOG_DENSITY = 10.0f;

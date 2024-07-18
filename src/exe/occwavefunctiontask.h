@@ -5,8 +5,8 @@
 class OccWavefunctionTask : public ExternalProgramTask {
 
 public:
-    inline static constexpr char wavefunctionSuffixDefault[] = {".owf.json"};
-    inline static constexpr char inputSuffixDefault[] = {".json"};
+    inline static  char wavefunctionSuffixDefault[10] = {".owf.json"};
+    inline static  char inputSuffixDefault[6] = {".json"};
 
     explicit OccWavefunctionTask(QObject * parent = nullptr);
 

@@ -5,8 +5,8 @@
 class OccSurfaceTask: public ExternalProgramTask {
 
 public:
-    inline static constexpr char wavefunctionSuffixDefault[] = {".owf.json"};
-    inline static constexpr char surfaceSuffixDefault[] = {".ply"};
+    inline static constexpr char wavefunctionSuffixDefault[10] = {".owf.json"};
+    inline static constexpr char surfaceSuffixDefault[5] = {".ply"};
 
     explicit OccSurfaceTask(QObject * parent = nullptr);
 

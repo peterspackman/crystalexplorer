@@ -4,7 +4,7 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 translation;
 layout(location = 3) in mat3 rotation;
 layout(location = 6) in vec3 selection_id;
-layout(location = 7) in int property_index;
+layout(location = 7) in float property_index;
 layout(location = 8) in float alpha;
 
 out highp vec4 v_color;
@@ -31,7 +31,7 @@ void main()
   uint mesh_id, vertex_id, type_id;
   decodeVec3ToId(selection_id, type_id, mesh_id, vertex_id);
 
-  int offset = u_numVertices * property_index + gl_VertexID;
+  int offset = u_numVertices * int(property_index) + gl_VertexID;
   vec4 color = texelFetch(u_propertyBuffer, offset);
 
   v_color = vec4(color.rgb, alpha);

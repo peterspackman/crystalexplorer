@@ -1,7 +1,6 @@
 #include "renderselection.h"
 #include <QRandomGenerator>
 #include <QDebug>
-#include <sys/wait.h>
 
 namespace cx::graphics {
 

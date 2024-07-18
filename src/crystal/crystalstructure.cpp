@@ -389,7 +389,6 @@ void CrystalStructure::deleteAtomsByOffset(
   std::vector<occ::Vec3> newPositions;
   std::vector<QString> newLabels;
   std::vector<GenericAtomIndex> unitCellOffsets;
-  m_unitCellOffsets.clear();
   m_atomMap.clear();
   const auto &currentPositions = atomicPositions();
   const auto &currentLabels = labels();

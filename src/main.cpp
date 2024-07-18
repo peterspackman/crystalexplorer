@@ -29,22 +29,6 @@ void copySelectSettingsFromPreviousToCurrent() {
   copySettingFromPreviousToCurrent(settings::keys::GAUSSIAN_EXECUTABLE);
 }
 
-void writePathsToResourcesInSettings(const QString pathToResources) {
-  settings::writeSettings({
-    {settings::keys::ELEMENTDATA_FILE, settings::GLOBAL_ELEMENTDATA_FILE},
-#if defined(Q_OS_LINUX)
-        {settings::keys::OCC_EXECUTABLE,
-         settings::GLOBAL_OCC_PATH + settings::GLOBAL_OCC_EXECUTABLE},
-#else
-        {settings::keys::OCC_EXECUTABLE,
-         pathToResources + settings::GLOBAL_OCC_EXECUTABLE},
-#endif
-        {settings::keys::OCC_DATA_DIRECTORY,
-         pathToResources +
-             settings::GLOBAL_OCC_DATA_DIRECTORY}, // location of occ share
-  });
-}
-
 QString getPathToResources() {
   QString pathToCrystalExplorer = QCoreApplication::applicationDirPath();
 #if defined(Q_OS_MACOS)
@@ -113,16 +97,9 @@ int main(int argc, char *argv[]) {
   parser.process(app);
 
   // ensure default settings are written
-  /*
+
   settings::writeAllDefaultSettings(false);
-  if (parser.isSet(resourcesOption)) {
-    QString resourcesPath = parser.value(resourcesOption);
-    resourcesPath = QFileInfo(resourcesPath).canonicalFilePath() + "/";
-    writePathsToResourcesInSettings(resourcesPath);
-  } else {
-    writePathsToResourcesInSettings(getPathToResources());
-  }
-  */
+
   auto * config = GlobalConfiguration::getInstance();
   config->load();
 

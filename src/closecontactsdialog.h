@@ -7,8 +7,8 @@
 #include "hbond_criteria.h"
 #include "ui_closecontactsdialog.h"
 
-const int HBOND_TAB = 0;
-const int CLOSE_CONTACTS_TAB = 1;
+constexpr int HBOND_TAB = 0;
+constexpr int CLOSE_CONTACTS_TAB = 1;
 
 
 class CloseContactDialog : public QDialog, public Ui::CloseContactsDialog {

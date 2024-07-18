@@ -310,6 +310,7 @@ void PreferencesDialog::getValueForExternalProgramSetting(QStandardItem *item) {
     return;
   }
   const QString &setting = settingItem->text();
+  qDebug() << "Setting is" << setting;
   if (setting == "executablePath") {
     QString path = QFileDialog::getOpenFileName(
         0, QString("Executable path for %1").arg(item->parent()->text()),

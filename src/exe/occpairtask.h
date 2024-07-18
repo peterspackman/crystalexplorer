@@ -5,8 +5,8 @@
 class OccPairTask: public ExternalProgramTask {
 
 public:
-    inline static constexpr char wavefunctionSuffixDefault[] = {".owf.json"};
-    inline static constexpr char pairOutputSuffixDefault[] = {".json"};
+    inline static constexpr char wavefunctionSuffixDefault[10] = {".owf.json"};
+    inline static constexpr char pairOutputSuffixDefault[6] = {".json"};
 
     explicit OccPairTask(QObject * parent = nullptr);
 

@@ -92,7 +92,7 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh *mesh)
   this->glVertexAttribDivisor(6, 1);
 
   m_program->setAttributeBuffer(
-      7, GL_INT, MeshInstanceVertex::propertyIndexOffset(),
+      7, GL_FLOAT, MeshInstanceVertex::propertyIndexOffset(),
       MeshInstanceVertex::PropertyIndexSize, MeshInstanceVertex::stride());
   this->glVertexAttribDivisor(7, 1);
 

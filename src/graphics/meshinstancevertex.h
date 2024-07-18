@@ -59,7 +59,7 @@ private:
     QVector3D m_rotation2;
     QVector3D m_rotation3;
     QVector3D m_selection_id;
-    GLint m_propertyIndex{0};
+    float m_propertyIndex{0};
     float m_alpha{1.0};
 };
 
