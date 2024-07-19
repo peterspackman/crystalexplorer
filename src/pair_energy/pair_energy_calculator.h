@@ -28,6 +28,9 @@ private:
     ChemicalStructure * m_structure{nullptr};
     MolecularWavefunction * m_wavefunctionA{nullptr};
     MolecularWavefunction * m_wavefunctionB{nullptr};
-    int completedTaskCount{0};
+    int m_completedTaskCount{0};
+    int m_totalTasks{0};
     bool m_complete{false};
+    QString m_occExecutable{"occ"};
+    QProcessEnvironment m_environment;
 };

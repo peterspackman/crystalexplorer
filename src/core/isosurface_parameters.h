@@ -15,14 +15,14 @@ inline float resolutionValue(Resolution res) {
     return 0.8f;
   case Resolution::Medium:
     return 0.5f;
-  case Resolution::High:
-    return 0.2f;
   case Resolution::VeryHigh:
     return 0.15f;
   case Resolution::Absurd:
     return 0.05f;
   case Resolution::Custom:
     return 0.0f;
+  default: // Resolution::High:
+    return 0.2f;
   }
 }
 

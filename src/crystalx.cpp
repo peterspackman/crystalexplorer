@@ -1267,9 +1267,15 @@ void Crystalx::enableCalculateEnergiesAction(bool enable) {
   if (!structure)
     return;
 
-  bool selectionOk = (!structure->hasIncompleteSelectedFragments()) &&
-                     (structure->selectedFragments().size() >= 1);
+
+  const bool incompleteFragments = structure->hasIncompleteSelectedFragments();
+  const size_t selectedFragmentCount = structure->selectedFragments().size();
+  qDebug() << "Incomplete fragments" << incompleteFragments << "selectedFragments" << selectedFragmentCount;
+
+  bool selectionOk = (!incompleteFragments) && (selectedFragmentCount >= 1);
   bool reallyEnable = enable && selectionOk;
+  qDebug() << "Have scene and structure, selectionOk: " << selectionOk << reallyEnable;
+
   calculateEnergiesAction->setEnabled(reallyEnable);
 }
 
@@ -1735,6 +1741,7 @@ void Crystalx::calculateEnergiesWithExistingWavefunctions(
     p.structure = structure;
     p.atomsA = pair.a.atomIndices;
     p.atomsB = pair.b.atomIndices;
+    p.model = modelParameters.model;
 
     bool foundA = false;
     bool foundB = false;
@@ -1791,6 +1798,7 @@ void Crystalx::calculateEnergies(
 
   qDebug() << "Wavefunctions needed:" << modelParameters.wavefunctions.size();
   qDebug() << "Pairs needed:" << modelParameters.pairs.size();
+  qDebug() << "Model" << modelParameters.model;
 
   std::vector<wfn::Parameters> wavefunctionsToCalculate;
   for (auto &wfn : modelParameters.wavefunctions) {

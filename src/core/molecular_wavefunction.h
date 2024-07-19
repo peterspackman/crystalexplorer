@@ -48,7 +48,7 @@ public:
 private:
     int m_nbf{0};
     double m_totalEnergy{0.0};
-    wfn::FileFormat m_fileFormat;
+    wfn::FileFormat m_fileFormat{wfn::FileFormat::OccWavefunction};
     QByteArray m_rawContents;
     wfn::Parameters m_parameters;
 };

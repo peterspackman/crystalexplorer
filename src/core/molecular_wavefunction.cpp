@@ -109,5 +109,6 @@ QString MolecularWavefunction::fileSuffix() const {
 	case wfn::FileFormat::OccWavefunction: return ".owf.json";
 	case wfn::FileFormat::Fchk: return ".fchk";
 	case wfn::FileFormat::Molden: return ".molden";
+    default: return ".owf.json";
     }
 }

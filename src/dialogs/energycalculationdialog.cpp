@@ -188,7 +188,7 @@ void EnergyCalculationDialog::validate() {
   calculate();
   */
   emit energyParametersChosen(pair_energy::EnergyModelParameters{
-    "ce-1p",
+    "ce-hf",
     m_requiredWavefunctions,
     m_fragmentPairsToCalculate
   });

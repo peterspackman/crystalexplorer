@@ -319,12 +319,14 @@ bool Scene::processSelectionDoubleClick(const QColor &color) {
   switch (m_selection.type) {
   case SelectionType::Atom: {
     setSelectStatusForAtomDoubleClick(m_selection.index);
+    emit atomSelectionChanged();
     return true;
   }
   case SelectionType::Bond: {
     int bondIndex = m_selection.index;
     int atomIndex = m_structure->atomsForBond(bondIndex).first;
     setSelectStatusForAtomDoubleClick(atomIndex);
+    emit atomSelectionChanged();
     return true;
   }
   default:

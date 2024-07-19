@@ -63,6 +63,7 @@ MolecularWavefunction * loadWavefunction(const QString &filename) {
 
 	wfn->setRawContents(std::move(contents));
     }
+    wfn->setFileFormat(wfn::fileFormatFromFilename(filename));
 
     return wfn;
 }

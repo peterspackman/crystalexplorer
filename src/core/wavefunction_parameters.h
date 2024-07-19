@@ -47,5 +47,7 @@ struct Result {
 
 
 QString fileFormatString(FileFormat);
+QString fileFormatSuffix(FileFormat);
+FileFormat fileFormatFromFilename(const QString &filename);
 
 }

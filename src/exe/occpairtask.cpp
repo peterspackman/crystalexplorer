@@ -94,9 +94,7 @@ void OccPairTask::start() {
     setArguments(args);
     setRequirements(reqs);
     setOutputs({FileDependency(m_jsonFilename, m_jsonFilename)});
-    auto environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("OCC_DATA_PATH", QDir::homePath() + "/git/occ/share");
-    setEnvironment(environment);
+
 
     emit progressText("Starting OCC process");
     ExternalProgramTask::start();

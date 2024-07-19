@@ -29,14 +29,7 @@ enum class FingerprintPlotRange { Standard, Translated, Expanded};
 
 inline FingerprintPlotSettings plotRangeSettings(FingerprintPlotRange r) {
     switch(r) {
-        case FingerprintPlotRange::Standard: 
-            return FingerprintPlotSettings{
-                "Standard",
-                0.4,
-                2.6,
-                0.01,
-                0.2
-            };
+
         case FingerprintPlotRange::Translated:
             return FingerprintPlotSettings{
                 "Translated",
@@ -53,6 +46,14 @@ inline FingerprintPlotSettings plotRangeSettings(FingerprintPlotRange r) {
                 0.01,
                 0.2
             };
+        default:
+        return FingerprintPlotSettings{
+            "Standard",
+            0.4,
+            2.6,
+            0.01,
+            0.2
+        };
     }
 }
 
