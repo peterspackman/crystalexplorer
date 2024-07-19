@@ -200,7 +200,7 @@ void ExternalProgramTask::start() {
     }
     promise.setProgressValueAndText(100, "Task complete");
     promise.finish();
-    qDebug() << "Finished" << errorMessage();
+    qDebug() << "Task " << property("name").toString() << " finished" <<  errorMessage();
   };
 
   Task::run(taskLogic);

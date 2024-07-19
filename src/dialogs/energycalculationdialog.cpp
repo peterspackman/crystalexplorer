@@ -105,19 +105,27 @@ bool EnergyCalculationDialog::handleStructureChange() {
   qDebug() << "Found" << m_fragmentPairs.uniquePairs.size() << "unique pairs";
 
   m_fragmentPairsToCalculate.clear();
-  int asymIndex = fragments[selectedFragments[0]].asymmetricFragmentIndex;
-  auto asymTransform = fragments[selectedFragments[0]].asymmetricFragmentTransform;
+  const auto &keyFragment = fragments[selectedFragments[0]];
+  int asymIndex = keyFragment.asymmetricFragmentIndex;
+  auto asymTransform = keyFragment.asymmetricFragmentTransform;
 
   ankerl::unordered_dense::set<int> wavefunctionsNeeded;
   wavefunctionsNeeded.insert(asymIndex);
 
   for(const auto &pair: m_fragmentPairs.uniquePairs) {
-      if(pair.a.asymmetricFragmentIndex == asymIndex ||
-	 pair.b.asymmetricFragmentIndex == asymIndex) {
-	  m_fragmentPairsToCalculate.push_back(pair);
-	  qDebug() << pair.a.asymmetricFragmentIndex << pair.b.asymmetricFragmentIndex;
-	  wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
-	  wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);
+      const bool lhs = (
+        (pair.a.asymmetricFragmentIndex == asymIndex) &&
+        (pair.a.atomIndices == keyFragment.atomIndices)
+      );
+      const bool rhs = (
+        (pair.b.asymmetricFragmentIndex == asymIndex) &&
+        (pair.b.atomIndices == keyFragment.atomIndices)
+      );
+      if(lhs || rhs) {
+        m_fragmentPairsToCalculate.push_back(pair);
+        qDebug() << pair.a.asymmetricFragmentIndex << pair.b.asymmetricFragmentIndex;
+        wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
+        wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);
       }
   }
 

@@ -5,7 +5,6 @@
 
 OccPairTask::OccPairTask(QObject * parent) : ExternalProgramTask(parent) {
     setExecutable(exe::findProgramInPath("occ"));
-    qDebug() << "Executable" << executable();
 }
 
 void OccPairTask::setParameters(const pair_energy::Parameters &params) {

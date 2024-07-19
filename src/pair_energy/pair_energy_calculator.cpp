@@ -61,6 +61,7 @@ void PairEnergyCalculator::start_batch(const std::vector<pair_energy::Parameters
         task->setExecutable(m_occExecutable);
         task->setEnvironment(m_environment);
         QString name = QString("pair_%1").arg(idx++);
+        task->setProperty("name", name);
         task->setProperty("basename", name);
         task->setJsonFilename(QString("%1_energies.json").arg(name));
 

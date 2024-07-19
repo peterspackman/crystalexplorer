@@ -904,13 +904,16 @@ FragmentPairs ChemicalStructure::findFragmentPairs() const {
   const auto &fragments = getFragments();
   const auto &uniqueFragments = symmetryUniqueFragments();
 
-  size_t asymIndex = 0;
-  for (const auto &afrag : uniqueFragments) {
-    molPairs.push_back({});
-    for (const auto &ofrag : fragments) {
-      double distance = (afrag.nearestAtom(ofrag).distance);
+  molPairs.resize(uniqueFragments.size());
+
+  for (size_t fragIndexA = 0; fragIndexA < fragments.size(); fragIndexA++) {
+    const auto &fragA = fragments[fragIndexA];
+    const size_t asymIndex = fragA.asymmetricFragmentIndex;
+    for (size_t fragIndexB = fragIndexA + 1; fragIndexB < fragments.size(); fragIndexB++) {
+      const auto &fragB = fragments[fragIndexB];
+      double distance = (fragA.nearestAtom(fragB).distance);
       if (distance > tolerance) {
-        FragmentDimer d(afrag, ofrag);
+        FragmentDimer d(fragA, fragB);
         molPairs[asymIndex].push_back({d, -1});
         if (std::any_of(pairs.begin(), pairs.end(),
                         [&d](const FragmentDimer &d2) { return d == d2; }))
@@ -918,7 +921,6 @@ FragmentPairs ChemicalStructure::findFragmentPairs() const {
         pairs.push_back(d);
       }
     }
-    asymIndex++;
   }
 
   auto fragmentDimerSortFunc = [](const FragmentDimer &a,
@@ -939,6 +941,10 @@ FragmentPairs ChemicalStructure::findFragmentPairs() const {
           pairs.begin(), std::find(pairs.begin(), pairs.end(), d.fragments));
       d.uniquePairIndex = idx;
     }
+  }
+  qDebug() << "Unique pairs: " << pairs.size();
+  for(const auto &x: molPairs) {
+    qDebug() << "Total pairs" << x.size();
   }
   return result;
 }
