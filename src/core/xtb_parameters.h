@@ -5,22 +5,25 @@
 
 class ChemicalStructure;
 
-namespace wfn {
+namespace xtb {
 
-enum class FileFormat { OccWavefunction, Fchk, Molden };
+enum class Method {
+  GFN0_xTB,
+  GFN1_xTB,
+  GFN2_xTB,
+  GFN_FF
+};
 
 struct Parameters {
   int charge{0};
   int multiplicity{1};
-  QString method{"b3lyp"};
-  QString basis{"def2-qzvp"};
+  Method method{Method::GFN2_xTB};
   ChemicalStructure *structure{nullptr};
   std::vector<GenericAtomIndex> atoms;
   bool accepted{false};
 
   inline bool hasEquivalentMethodTo(const Parameters &rhs) const {
-    return (method.toLower() == rhs.method.toLower()) &&
-           (basis.toLower() == rhs.basis.toLower());
+    return (method == rhs.method);
   }
 
   inline bool operator==(const Parameters &rhs) const {
@@ -32,8 +35,6 @@ struct Parameters {
       return false;
     if (method != rhs.method)
       return false;
-    if (basis != rhs.basis)
-      return false;
     if (atoms != rhs.atoms)
       return false;
     return true;
@@ -42,13 +43,11 @@ struct Parameters {
 
 struct Result {
   QString filename;
-  QString stdoutContents;
+  QString jsonContents;
   ankerl::unordered_dense::map<QString, double> energy;
   bool success{false};
 };
 
-QString fileFormatString(FileFormat);
-QString fileFormatSuffix(FileFormat);
-FileFormat fileFormatFromFilename(const QString &filename);
+inline QString methodToString(Method) { return "GFN2-xTB"; }
 
 } // namespace wfn

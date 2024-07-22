@@ -5,10 +5,12 @@ add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_wavefunction.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_pair_energy_json.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/load_xtb_json.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pdbfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyply.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefrontobjfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/xyzfile.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xtbcoord.cpp"
 )
 
 target_link_libraries(
