@@ -408,7 +408,7 @@ void GLWindow::setModelView() {
     GLfloat scale = scene->scale();
     m_view.scale(scale, scale, scale);
     m_view = m_view * scene->orientation().transformationMatrix();
-    Vector3q origin = scene->origin();
+    occ::Vec3 origin = scene->origin();
 
     m_view.translate(-origin.x(), -origin.y(), -origin.z());
     if (animateScene) {
@@ -1387,8 +1387,8 @@ void GLWindow::mouseMoveEvent(QMouseEvent *event) {
     float dx = 15 * delta.x() / winHeight;
     float dy = 15 * delta.y() / winWidth;
     auto T = scene->orientation().transformationMatrix();
-    Vector3q upVector(T(0, 0), T(0, 1), T(0, 2));
-    Vector3q rightVector(T(1, 0), T(1, 1), T(1, 2));
+    occ::Vec3 upVector(T(0, 0), T(0, 1), T(0, 2));
+    occ::Vec3 rightVector(T(1, 0), T(1, 1), T(1, 2));
     scene->translateOrigin(-dx * upVector + dy * rightVector);
     savedMousePosition = mousePosition;
     break;
@@ -1593,8 +1593,8 @@ inline std::string axis_string(float a, float b, float c) {
 void GLWindow::viewMillerDirection(float x, float y, float z) {
   if (!scene)
     return;
-  Vector3q direction =
-      scene->convertToCartesian(Vector3q(x, y, z)).normalized();
+  occ::Vec3 direction =
+      scene->convertToCartesian(occ::Vec3(x, y, z)).normalized();
   viewDownVector(direction);
   std::string view_string = axis_string(x, y, z);
   showMessage(QString::fromStdString(
@@ -1602,7 +1602,7 @@ void GLWindow::viewMillerDirection(float x, float y, float z) {
   emit transformationMatrixChanged();
 }
 
-void GLWindow::viewDownVector(const Vector3q v) {
+void GLWindow::viewDownVector(const occ::Vec3 &v) {
   if (!scene)
     return;
   auto t = scene->orientation().transformationMatrix();

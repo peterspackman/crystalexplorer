@@ -22,7 +22,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
 )
 
 set(CRYSTALEXPLORER_HEADER_FILES
-    chargemultiplicitypair.h
     childpropertycontroller.h
     confirmationbox.h
     crystalcontroller.h
@@ -31,7 +30,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     glwindow.h
     preferencesdialog.h
     project.h
-    stldatastream.h
     viewtoolbar.h
 )
 

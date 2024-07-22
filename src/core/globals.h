@@ -5,12 +5,12 @@ inline const char *GLOBAL_MAINWINDOW_TITLE = CE_NAME;
 inline const char *CE_AUTHORS =
     "P.R. Spackman, M. J. Turner, J. J. McKinnon,<br>S. K. Wolff, D. "
     "J. Grimwood, <br>D. Jayatilaka and M. A. Spackman";
-inline const char *CE_URL = "http://crystalexplorer.net";
+inline const char *CE_URL = "https://crystalexplorer.net";
 inline const char *CE_CITATION_URL =
-    "https://wiki.crystalexplorer.net/en/how-to-cite";
+    "https://crystalexplorer.net/docs/how-to-cite.html";
 inline const char *CE_EMAIL = "support@crystalexplorer.net";
 inline const char *COPYRIGHT_NOTICE =
-    "&copy;2005-%1 University of Western Australia"; // Insert current year at
+    "&copy;2005-%1 CrystalExplorer authors"; // Insert current year at
                                                      // %1
 inline const char *OCC_URL = "https://github.com/peterspackman/occ";
 

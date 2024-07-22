@@ -2,7 +2,6 @@
 #include <occ/crystal/unitcell.h>
 #include "crystalplane.h"
 #include "chemicalstructure.h"
-#include "qeigen.h"
 #include <QVector>
 
 class CrystalPlaneGenerator {
@@ -16,8 +15,6 @@ public:
   inline double depth() const { return m_depthVector.norm(); }
 
   double interplanarSpacing() const;
-
-  Matrix3q basisMatrix(double depth_scale = 1.0) const;
 
   inline const auto &aVector() const { return m_aVector; }
   inline const auto &bVector() const { return m_bVector; }

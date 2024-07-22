@@ -167,9 +167,9 @@ void Crystalx::handleTransformationMatrixUpdate() {
     auto e = o.eulerAngles();
     viewToolbar->setRotations(e.x, e.y, e.z);
     auto t = o.transformationMatrix();
-    Vector3q cameraDirection(t.data()[2], t.data()[6], t.data()[10]);
+    occ::Vec3 cameraDirection(t.data()[2], t.data()[6], t.data()[10]);
     auto inverse = scene->inverseCellMatrix();
-    Vector3q miller = inverse * cameraDirection;
+    occ::Vec3 miller = inverse * cameraDirection;
     float minD = 1.0f;
     for (size_t i = 0; i < 3; i++) {
       if (std::abs(miller(i)) < 0.001)

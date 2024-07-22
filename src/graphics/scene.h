@@ -5,7 +5,6 @@
 #include <QtOpenGL>
 
 #include "orientation.h"
-#include "qeigen.h"
 
 #include "billboardrenderer.h"
 #include "chemicalstructure.h"
@@ -107,10 +106,10 @@ public:
 
   QStringList uniqueElementSymbols() const;
 
-  inline Matrix3q directCellMatrix() const {
+  inline occ::Mat3 directCellMatrix() const {
     return m_structure->cellVectors();
   }
-  inline Matrix3q inverseCellMatrix() const {
+  inline occ::Mat3  inverseCellMatrix() const {
     return m_structure->cellVectors().inverse();
   }
 
@@ -162,7 +161,7 @@ public:
   void removeAllMeasurements();
   bool hasMeasurements() const;
 
-  inline Vector3q origin() const { return m_structure->origin(); }
+  inline auto origin() const { return m_structure->origin(); }
 
   bool hasVisibleAtoms() const;
 
@@ -232,9 +231,9 @@ public:
   // fingerprints
   void toggleAtomsForFingerprintSelectionFilter(bool show);
 
-  Vector3q convertToCartesian(const Vector3q &) const;
+  occ::Vec3 convertToCartesian(const occ::Vec3 &) const;
   void resetOrigin();
-  void translateOrigin(const Vector3q &);
+  void translateOrigin(const occ::Vec3 &);
   float radius() const;
 
   void deleteFragmentContainingAtomIndex(int);

@@ -182,7 +182,7 @@ private:
   void applyRotationToTMatrix(GLfloat, GLfloat, GLfloat);
   void applyTranslationToTMatrix(GLfloat, GLfloat);
   void setRotationValues(GLfloat, GLfloat, GLfloat, bool doEmit = true);
-  void viewDownVector(const Vector3q);
+  void viewDownVector(const occ::Vec3&);
   void applyAnimationRotation();
   void applyRotationAboutVectorToTMatrix(float theta, float n1, float n2,
                                          float n3);

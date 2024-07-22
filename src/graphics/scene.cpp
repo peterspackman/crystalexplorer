@@ -510,7 +510,7 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
       m_structure->atomFlags(atom_idx) ^= AtomFlag::Selected;
     }
     emit atomSelectionChanged();
-    Vector3q pos = m_structure->atomicPositions().col(atom_idx);
+    occ::Vec3 pos = m_structure->atomicPositions().col(atom_idx);
     result.position = QVector3D(pos.x(), pos.y(), pos.z());
     result.selectionType = SelectionType::Atom;
     result.index = atom_idx;
@@ -530,7 +530,7 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
       flags_b ^= AtomFlag::Selected;
     }
     const auto &positions = m_structure->atomicPositions();
-    Vector3q pos = 0.5 * (positions.col(atomsForBond.first) +
+    occ::Vec3 pos = 0.5 * (positions.col(atomsForBond.first) +
                           positions.col(atomsForBond.second));
     result.position = QVector3D(pos.x(), pos.y(), pos.z());
     result.selectionType = SelectionType::Bond;
@@ -1479,14 +1479,14 @@ bool Scene::hasAllAtomsSelected() {
   return m_structure->allAtomsHaveFlags(AtomFlag::Selected);
 }
 
-Vector3q Scene::convertToCartesian(const Vector3q &vec) const {
+occ::Vec3 Scene::convertToCartesian(const occ::Vec3 &vec) const {
   auto direct = m_structure->cellVectors();
   return direct * vec;
 }
 
 void Scene::resetOrigin() { m_structure->resetOrigin(); }
 
-void Scene::translateOrigin(const Vector3q &t) {
+void Scene::translateOrigin(const occ::Vec3 &t) {
   m_structure->setOrigin(m_structure->origin() + t);
 }
 
