@@ -10,19 +10,12 @@ add_subdirectory(dialogs)
 
 # Source files
 set(CRYSTALEXPLORER_SOURCE_FILES
-    animationsettingsdialog.cpp
-    celllimitsdialog.cpp
     childpropertycontroller.cpp
-    closecontactsdialog.cpp
-    closecontactcriteriawidget.cpp
-    colordelegate.cpp
     confirmationbox.cpp
     crystalcontroller.cpp
     crystalplanegenerator.cpp
     crystalx.cpp
-    depthfadingandclippingdialog.cpp
     dialoghtml.cpp
-    elementeditor.cpp
     fileeditor.cpp
     fingerprintoptions.cpp
     fingerprintplot.cpp
@@ -33,35 +26,22 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     measurement.cpp
     orbitcamera.cpp
     orientation.cpp
-    packingdialog.cpp
-    planegenerationdialog.cpp
-    periodictabledialog.cpp
     preferencesdialog.cpp
     project.cpp
     scene.cpp
     spacegroup.cpp
-    surfacedropdown.cpp
-    surfacegenerationdialog.cpp
     viewtoolbar.cpp
-    wavefunctioncalculationdialog.cpp
 )
 
 set(CRYSTALEXPLORER_HEADER_FILES
-    animationsettingsdialog.h
     cameraoptions.h
-    celllimitsdialog.h
     chargemultiplicitypair.h
     childpropertycontroller.h
-    closecontactsdialog.h
-    closecontactcriteriawidget.h
-    colordelegate.h
     confirmationbox.h
     crystalcontroller.h
     crystalplanegenerator.h
     crystalx.h
-    depthfadingandclippingdialog.h
     dialoghtml.h
-    elementeditor.h
     fileeditor.h
     fingerprintoptions.h
     fingerprintplot.h
@@ -72,41 +52,25 @@ set(CRYSTALEXPLORER_HEADER_FILES
     measurement.h
     orbitcamera.h
     orientation.h
-    packingdialog.h
-    periodictabledialog.h
-    planegenerationdialog.h
     preferencesdialog.h
     project.h
     qeigen.h
     scene.h
     spacegroup.h
     stldatastream.h
-    surfacedropdown.h
-    surfacegenerationdialog.h
     viewtoolbar.h
-    wavefunctioncalculationdialog.h
 )
 
 
 set(CRYSTALEXPLORER_UI_FILES 
-    animationsettingsdialog.ui
-    celllimitsdialog.ui
     childpropertycontroller.ui
-    closecontactsdialog.ui
     crystalcontroller.ui
     crystalx.ui
-    depthfadingandclippingdialog.ui
-    elementeditor.ui
     fileeditor.ui
     fingerprintoptions.ui
     infochooserdialog.ui
     infoviewer.ui
-    packingdialog.ui
-    periodictabledialog.ui
-    planegenerationdialog.ui
     preferencesdialog.ui
-    surfacegenerationdialog.ui
-    wavefunctioncalculationdialog.ui
 )
 
 

@@ -1,5 +1,4 @@
 #include "surfacegenerationdialog.h"
-#include "crystalx.h"
 #include "globals.h" // only NEW_WAVEFUNCTION_ITEM
 #include "settings.h"
 #include "globalconfiguration.h"
