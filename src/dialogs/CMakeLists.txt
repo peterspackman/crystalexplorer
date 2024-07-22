@@ -14,6 +14,8 @@ qt_add_library(cx_dialogs STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/elementeditor.ui"
     "${CMAKE_CURRENT_SOURCE_DIR}/energycalculationdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/energycalculationdialog.ui"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fileeditor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fileeditor.ui"
     "${CMAKE_CURRENT_SOURCE_DIR}/fragmentstatedialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fragmentstatedialog.ui"
     "${CMAKE_CURRENT_SOURCE_DIR}/packingdialog.cpp"

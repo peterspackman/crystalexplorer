@@ -16,13 +16,11 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     crystalcontroller.cpp
     crystalx.cpp
     dialoghtml.cpp
-    fileeditor.cpp
     glwindow.cpp
     infodocuments.cpp
     infoviewer.cpp
     preferencesdialog.cpp
     project.cpp
-    spacegroup.cpp
     viewtoolbar.cpp
 )
 
@@ -33,13 +31,11 @@ set(CRYSTALEXPLORER_HEADER_FILES
     crystalcontroller.h
     crystalx.h
     dialoghtml.h
-    fileeditor.h
     glwindow.h
     infodocuments.h
     infoviewer.h
     preferencesdialog.h
     project.h
-    spacegroup.h
     stldatastream.h
     viewtoolbar.h
 )
@@ -49,7 +45,6 @@ set(CRYSTALEXPLORER_UI_FILES
     childpropertycontroller.ui
     crystalcontroller.ui
     crystalx.ui
-    fileeditor.ui
     infochooserdialog.ui
     infoviewer.ui
     preferencesdialog.ui
