@@ -6,7 +6,6 @@ add_subdirectory(crystal)
 add_subdirectory(graphics)
 add_subdirectory(pair_energy)
 add_subdirectory(volume)
-add_subdirectory(fingerprint)
 add_subdirectory(dialogs)
 
 # Source files
@@ -17,8 +16,6 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     crystalx.cpp
     dialoghtml.cpp
     glwindow.cpp
-    infodocuments.cpp
-    infoviewer.cpp
     preferencesdialog.cpp
     project.cpp
     viewtoolbar.cpp
@@ -32,8 +29,6 @@ set(CRYSTALEXPLORER_HEADER_FILES
     crystalx.h
     dialoghtml.h
     glwindow.h
-    infodocuments.h
-    infoviewer.h
     preferencesdialog.h
     project.h
     stldatastream.h
@@ -41,12 +36,10 @@ set(CRYSTALEXPLORER_HEADER_FILES
 )
 
 
-set(CRYSTALEXPLORER_UI_FILES 
+qt_wrap_ui(CRYSTALEXPLORER_UI_FILES 
     childpropertycontroller.ui
     crystalcontroller.ui
     crystalx.ui
-    infochooserdialog.ui
-    infoviewer.ui
     preferencesdialog.ui
 )
 
@@ -55,7 +48,7 @@ if(WIN32)
     set(CRYSTALEXPLORER_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/windows_metafile.rc")
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/windows_metafile.rc.in"
-	"${CRYSTALEXPLORER_RC_FILE}"
+        "${CRYSTALEXPLORER_RC_FILE}"
     )
 endif()
 
@@ -81,7 +74,6 @@ target_link_libraries(
     cx_crystal
     cx_graphics
     cx_pair_energy
-    cx_fingerprint
     cx_dialogs
     Qt6::Widgets Qt6::Concurrent
     Qt6::OpenGLWidgets Qt6::DBus
