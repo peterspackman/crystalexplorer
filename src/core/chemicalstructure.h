@@ -164,7 +164,7 @@ public:
 
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
-  FragmentPairs findFragmentPairs() const;
+  FragmentPairs findFragmentPairs(int keyFragment = -1) const;
 
   // flags
   const AtomFlags &atomFlags(int) const;
@@ -187,7 +187,11 @@ public:
                                bool on = true);
   void toggleFlagForAllAtoms(AtomFlag);
 
-  [[nodiscard]] inline PairInteractionResults *interactions() {
+  [[nodiscard]] inline const PairInteractions *pairInteractions() const {
+    return m_interactions;
+  }
+
+  [[nodiscard]] inline PairInteractions *pairInteractions() {
     return m_interactions;
   }
 
@@ -258,6 +262,6 @@ private:
   QString m_filename;
   QByteArray m_fileContents;
 
-  PairInteractionResults *m_interactions{nullptr};
+  PairInteractions *m_interactions{nullptr};
   ObjectTreeModel *m_treeModel{nullptr};
 };

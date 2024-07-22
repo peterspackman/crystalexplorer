@@ -26,6 +26,10 @@ struct Parameters {
     Eigen::Isometry3d transformA = Eigen::Isometry3d::Identity();
     Eigen::Isometry3d transformB = Eigen::Isometry3d::Identity();
 
+    QString symmetry{"-"};
+    double centroidDistance{0.0};
+    double nearestAtomDistance{0.0};
+
     MolecularWavefunction * wfnA{nullptr};
     MolecularWavefunction * wfnB{nullptr};
     ChemicalStructure * structure{nullptr};

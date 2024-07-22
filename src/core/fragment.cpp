@@ -173,5 +173,5 @@ FragmentDimer::FragmentDimer(const Fragment &fa, const Fragment &fb)
     : a(fa), b(fb) {
   nearestAtomDistance = fa.nearestAtom(fb).distance;
   centerOfMassDistance = (fb.centerOfMass() - fa.centerOfMass()).norm();
-  centroidDistance = (fa.centroid() - fa.centroid()).norm();
+  centroidDistance = (fa.centroid() - fb.centroid()).norm();
 }

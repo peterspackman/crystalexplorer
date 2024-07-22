@@ -9,7 +9,9 @@
 #include <occ/core/kdtree.h>
 
 ChemicalStructure::ChemicalStructure(QObject *parent)
-    : QObject(parent), m_interactions(new PairInteractionResults()) {
+    : QObject(parent), m_interactions(new PairInteractions()) {
+  // PairInteractions are not set with parent as this, otherwise it will
+  // appear in the child list display on the right
   this->installEventFilter(this);
 
   m_treeModel = new ObjectTreeModel(this);
@@ -895,7 +897,7 @@ ChemicalStructure::findUniqueFragment(
   return {result, transform};
 }
 
-FragmentPairs ChemicalStructure::findFragmentPairs() const {
+FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
   FragmentPairs result;
   constexpr double tolerance = 1e-1;
 
@@ -904,12 +906,23 @@ FragmentPairs ChemicalStructure::findFragmentPairs() const {
   const auto &fragments = getFragments();
   const auto &uniqueFragments = symmetryUniqueFragments();
 
+  std::vector<size_t> candidateFragments;
+  if(keyFragment < 0) {
+    for (size_t fragIndexA = 0; fragIndexA < fragments.size(); fragIndexA++) {
+      candidateFragments.push_back(fragIndexA);
+    }
+  }
+  else {
+    candidateFragments.push_back(keyFragment);
+  }
+
   molPairs.resize(uniqueFragments.size());
 
-  for (size_t fragIndexA = 0; fragIndexA < fragments.size(); fragIndexA++) {
+  for (size_t fragIndexA: candidateFragments) {
     const auto &fragA = fragments[fragIndexA];
     const size_t asymIndex = fragA.asymmetricFragmentIndex;
-    for (size_t fragIndexB = fragIndexA + 1; fragIndexB < fragments.size(); fragIndexB++) {
+    for (size_t fragIndexB = 0; fragIndexB < fragments.size(); fragIndexB++) {
+      if((keyFragment < 0) && (fragIndexB <= fragIndexA)) continue;
       const auto &fragB = fragments[fragIndexB];
       double distance = (fragA.nearestAtom(fragB).distance);
       if (distance > tolerance) {
@@ -918,6 +931,8 @@ FragmentPairs ChemicalStructure::findFragmentPairs() const {
         if (std::any_of(pairs.begin(), pairs.end(),
                         [&d](const FragmentDimer &d2) { return d == d2; }))
           continue;
+        qDebug() << d.symmetry;
+        qDebug() << d.centroidDistance;
         pairs.push_back(d);
       }
     }

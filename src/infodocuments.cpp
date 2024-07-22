@@ -568,7 +568,7 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
 
   QTextCursor cursor = QTextCursor(document);
   qDebug() << "Made cursor";
-  auto *interactions = structure->interactions();
+  auto *interactions = structure->pairInteractions();
 
   qDebug() << "have interactions";
 
@@ -705,7 +705,8 @@ QList<QString> getOrderedComponents(QSet<QString> uniqueComponents) {
 }
 
 void InfoDocuments::insertInteractionEnergiesGroupedByPair(
-    PairInteractionResults *results, QTextCursor cursor) {
+    PairInteractions *results, QTextCursor cursor) {
+  if(!results) return;
   const int eprec =
       settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt();
 
@@ -726,44 +727,32 @@ void InfoDocuments::insertInteractionEnergiesGroupedByPair(
   }
 
   QList<QString> sortedComponents = getOrderedComponents(uniqueComponents);
-  // Define table header
   QStringList tableHeader{"Color", "Model", "Distance", "Symmetry"};
   tableHeader.append(sortedComponents);
 
-  // Create table
   int numHeaderLines = 1;
   int totalResults = results->getCount();
   int numLines = numHeaderLines + totalResults;
   QTextTable *table = createTable(cursor, numLines, tableHeader.size());
 
-  // Insert Table Header
   insertTableHeader(table, cursor, tableHeader);
 
-  // Create ColorMapFunc instance
   ColorMapFunc colorMap(ColorMapName::Viridis, 0, totalResults - 1);
 
   int row = 1;
   int interactionIndex = 0;
   for (const QString &model : sortedModels) {
-
     for (const auto *result : results->filterByModel(model)) {
-      // Insert color cell
       QColor cellColor = colorMap(interactionIndex);
       insertColorBlock(table, cursor, row, 0, cellColor);
 
-      // Insert model
       insertRightAlignedCellValue(table, cursor, row, 1, model);
 
-      // Insert distance and symmetry
-      // Adjust these lines based on how you actually store/access this
-      // information
       insertRightAlignedCellValue(
           table, cursor, row, 2,
-          QString::number(3.8, 'f', 2));
-      insertRightAlignedCellValue(table, cursor, row, 3,
-                                  "Symmetry Placeholder");
+          QString::number(result->centroidDistance(), 'f', 2));
+      insertRightAlignedCellValue(table, cursor, row, 3, result->symmetry());
 
-      // Insert component values
       int column = 4;
       for (const QString &component : sortedComponents) {
         bool found = false;

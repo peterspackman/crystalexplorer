@@ -81,14 +81,14 @@ void PairEnergyCalculator::start_batch(const std::vector<pair_energy::Parameters
 void PairEnergyCalculator::pairEnergyComplete(pair_energy::Parameters params, OccPairTask * task) {
     qDebug() << "Task" << task->baseName() << "finished in PairEnergyCalculator";
     if(params.structure) {
-        auto * interactions = params.structure->interactions();
-        PairInteractionResult * result = load_pair_energy_json(task->jsonFilename());
+        auto * interactions = params.structure->pairInteractions();
+        auto * result = load_pair_energy_json(task->jsonFilename());
         result->setParameters(params);
         qDebug() << "Loaded interaction energies from" << task->jsonFilename() << result;
         if(result) {
             qDebug() << result->components();
         }
-        interactions->addPairInteractionResult(result);
+        interactions->add(result);
         m_completedTaskCount++;
         if (m_completedTaskCount == m_totalTasks) {
             m_complete = true;

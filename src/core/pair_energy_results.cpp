@@ -1,103 +1,103 @@
 #include "pair_energy_results.h"
 
-PairInteractionResult::PairInteractionResult(const QString& interactionModel, QObject* parent)
+PairInteraction::PairInteraction(const QString& interactionModel, QObject* parent)
         : QObject(parent), m_interactionModel(interactionModel) {}
 
-void PairInteractionResult::addComponent(const QString& component, double value) {
+void PairInteraction::addComponent(const QString& component, double value) {
     m_components.append(qMakePair(component, value));
 }
 
-QList<QPair<QString, double>> PairInteractionResult::components() const {
+QList<QPair<QString, double>> PairInteraction::components() const {
     return m_components; 
 }
 
-QString PairInteractionResult::interactionModel() const {
+QString PairInteraction::interactionModel() const {
     return m_interactionModel;
 }
 
-void PairInteractionResult::setParameters(const pair_energy::Parameters &params) {
+void PairInteraction::setParameters(const pair_energy::Parameters &params) {
     m_parameters = params;
 }
-const pair_energy::Parameters& PairInteractionResult::parameters() const {
+const pair_energy::Parameters& PairInteraction::parameters() const {
     return m_parameters;
 }
 
-PairInteractionResults::PairInteractionResults(QObject* parent) : QObject(parent) {}
+PairInteractions::PairInteractions(QObject* parent) : QObject(parent) {}
 
 
-int PairInteractionResults::getCount(const QString &model) const {
+int PairInteractions::getCount(const QString &model) const {
     int result = 0;
     if(model.isEmpty()) {
-        for(const auto &l: m_pairInteractionResults.values()) {
+        for(const auto &l: m_pairInteractions.values()) {
             result += l.size();
         }
     }
     else {
-        result = m_pairInteractionResults.value(model, {}).size();
+        result = m_pairInteractions.value(model, {}).size();
     }
     return result;
 }
 
-QList<QString> PairInteractionResults::interactionModels() const {
-    return m_pairInteractionResults.keys();
+QList<QString> PairInteractions::interactionModels() const {
+    return m_pairInteractions.keys();
 }
 
-void PairInteractionResults::addPairInteractionResult(PairInteractionResult* result)
+void PairInteractions::add(PairInteraction* result)
 {
-    qDebug() << "Adding result" << result;
+    qDebug() << "Adding interaction" << result;
     QString model = result->interactionModel();
-    m_pairInteractionResults[model].append(result);
-    emit resultAdded();
+    m_pairInteractions[model].append(result);
+    emit interactionAdded();
 }
 
-QList<PairInteractionResult*> PairInteractionResults::filterByModel(const QString& model) const
+QList<PairInteraction*> PairInteractions::filterByModel(const QString& model) const
 {
-    return m_pairInteractionResults.value(model);
+    return m_pairInteractions.value(model);
 }
 
-void PairInteractionResults::removePairInteractionResult(PairInteractionResult* result)
+void PairInteractions::remove(PairInteraction* result)
 {
     QString model = result->interactionModel();
-    QList<PairInteractionResult*>& modelResults = m_pairInteractionResults[model];
-    int index = modelResults.indexOf(result);
+    QList<PairInteraction*>& models = m_pairInteractions[model];
+    int index = models.indexOf(result);
     if (index >= 0) {
-        modelResults.removeAt(index);
-        if (modelResults.isEmpty()) {
-            m_pairInteractionResults.remove(model);
+        models.removeAt(index);
+        if (models.isEmpty()) {
+            m_pairInteractions.remove(model);
         }
-        emit resultRemoved();
+        emit interactionRemoved();
     }
 }
 
-QList<PairInteractionResult*> PairInteractionResults::filterByComponent(const QString& component) const
+QList<PairInteraction*> PairInteractions::filterByComponent(const QString& component) const
 {
-    QList<PairInteractionResult*> filteredResults;
-    for (const auto& modelResults : m_pairInteractionResults) {
-        for (PairInteractionResult* result : modelResults) {
+    QList<PairInteraction*> filtereds;
+    for (const auto& models : m_pairInteractions) {
+        for (PairInteraction* result : models) {
             for (const auto& pair : result->components()) {
                 if (pair.first == component) {
-                    filteredResults.append(result);
+                    filtereds.append(result);
                     break;
                 }
             }
         }
     }
-    return filteredResults;
+    return filtereds;
 }
 
-QList<PairInteractionResult*> PairInteractionResults::filterByModelAndComponent(const QString& model, const QString& component) const
+QList<PairInteraction*> PairInteractions::filterByModelAndComponent(const QString& model, const QString& component) const
 {
-    QList<PairInteractionResult*> filteredResults;
-    const auto& modelResults = m_pairInteractionResults.value(model);
-    for (PairInteractionResult* result : modelResults) {
+    QList<PairInteraction*> filtereds;
+    const auto& models = m_pairInteractions.value(model);
+    for (PairInteraction* result : models) {
         for (const auto& pair : result->components()) {
             if (pair.first == component) {
-                filteredResults.append(result);
+                filtereds.append(result);
                 break;
             }
         }
     }
-    return filteredResults;
+    return filtereds;
 }
 
 

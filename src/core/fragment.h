@@ -45,10 +45,10 @@ struct FragmentDimer {
 
   Fragment a;
   Fragment b;
-
   double centroidDistance{0.0};
   double nearestAtomDistance{0.0};
   double centerOfMassDistance{0.0};
+  QString symmetry{"-"};
 
   bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
   bool operator==(const FragmentDimer &) const;
