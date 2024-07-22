@@ -22,34 +22,49 @@ const pair_energy::Parameters& PairInteractionResult::parameters() const {
     return m_parameters;
 }
 
+PairInteractionResults::PairInteractionResults(QObject* parent) : QObject(parent) {}
+
+
+int PairInteractionResults::getCount(const QString &model) const {
+    int result = 0;
+    if(model.isEmpty()) {
+        for(const auto &l: m_pairInteractionResults.values()) {
+            result += l.size();
+        }
+    }
+    else {
+        result = m_pairInteractionResults.value(model, {}).size();
+    }
+    return result;
+}
+
+QList<QString> PairInteractionResults::interactionModels() const {
+    return m_pairInteractionResults.keys();
+}
+
 void PairInteractionResults::addPairInteractionResult(PairInteractionResult* result)
 {
     qDebug() << "Adding result" << result;
-    beginInsertRows(QModelIndex(), rowCount(), rowCount());
-    m_pairInteractionResults.append(result);
-    result->setParent(this);
-    endInsertRows();
+    QString model = result->interactionModel();
+    m_pairInteractionResults[model].append(result);
     emit resultAdded();
 }
 
 QList<PairInteractionResult*> PairInteractionResults::filterByModel(const QString& model) const
 {
-    QList<PairInteractionResult*> filteredResults;
-    for (PairInteractionResult* result : m_pairInteractionResults) {
-        if (result->interactionModel() == model) {
-            filteredResults.append(result);
-        }
-    }
-    return filteredResults;
+    return m_pairInteractionResults.value(model);
 }
 
 void PairInteractionResults::removePairInteractionResult(PairInteractionResult* result)
 {
-    int index = m_pairInteractionResults.indexOf(result);
+    QString model = result->interactionModel();
+    QList<PairInteractionResult*>& modelResults = m_pairInteractionResults[model];
+    int index = modelResults.indexOf(result);
     if (index >= 0) {
-        beginRemoveRows(QModelIndex(), index, index);
-        m_pairInteractionResults.removeAt(index);
-        endRemoveRows();
+        modelResults.removeAt(index);
+        if (modelResults.isEmpty()) {
+            m_pairInteractionResults.remove(model);
+        }
         emit resultRemoved();
     }
 }
@@ -57,22 +72,8 @@ void PairInteractionResults::removePairInteractionResult(PairInteractionResult* 
 QList<PairInteractionResult*> PairInteractionResults::filterByComponent(const QString& component) const
 {
     QList<PairInteractionResult*> filteredResults;
-    for (PairInteractionResult* result : m_pairInteractionResults) {
-        for (const auto& pair : result->components()) {
-            if (pair.first == component) {
-                filteredResults.append(result);
-                break;
-            }
-        }
-    }
-    return filteredResults;
-}
-
-QList<PairInteractionResult*> PairInteractionResults::filterByModelAndComponent(const QString& model, const QString& component) const
-{
-    QList<PairInteractionResult*> filteredResults;
-    for (PairInteractionResult* result : m_pairInteractionResults) {
-        if (result->interactionModel() == model) {
+    for (const auto& modelResults : m_pairInteractionResults) {
+        for (PairInteractionResult* result : modelResults) {
             for (const auto& pair : result->components()) {
                 if (pair.first == component) {
                     filteredResults.append(result);
@@ -84,99 +85,19 @@ QList<PairInteractionResult*> PairInteractionResults::filterByModelAndComponent(
     return filteredResults;
 }
 
-PairInteractionResults::PairInteractionResults(QObject* parent) : QAbstractItemModel(parent) {}
-
-QModelIndex PairInteractionResults::index(int row, int column, const QModelIndex& parent) const
+QList<PairInteractionResult*> PairInteractionResults::filterByModelAndComponent(const QString& model, const QString& component) const
 {
-    if (!hasIndex(row, column, parent)) {
-        return QModelIndex();
-    }
-
-    if (!parent.isValid()) {
-        // Top-level item
-        if (row < m_pairInteractionResults.size()) {
-            return createIndex(row, column, m_pairInteractionResults[row]);
-        }
-    } else {
-        // Child item
-        PairInteractionResult* parentResult = static_cast<PairInteractionResult*>(parent.internalPointer());
-        if (parentResult) {
-            if (row < parentResult->components().size()) {
-                return createIndex(row, column, &(parentResult->components()[row]));
+    QList<PairInteractionResult*> filteredResults;
+    const auto& modelResults = m_pairInteractionResults.value(model);
+    for (PairInteractionResult* result : modelResults) {
+        for (const auto& pair : result->components()) {
+            if (pair.first == component) {
+                filteredResults.append(result);
+                break;
             }
         }
     }
-
-    return QModelIndex();
+    return filteredResults;
 }
 
-QModelIndex PairInteractionResults::parent(const QModelIndex& child) const
-{
-    if (!child.isValid()) {
-        return QModelIndex();
-    }
 
-    if (PairInteractionResult* childResult = static_cast<PairInteractionResult*>(child.internalPointer())) {
-        // Child item, find its parent result
-        for (int i = 0; i < m_pairInteractionResults.size(); ++i) {
-            if (m_pairInteractionResults[i] == childResult) {
-                return createIndex(i, 0, m_pairInteractionResults[i]);
-            }
-        }
-    }
-
-    return QModelIndex();
-}
-
-int PairInteractionResults::rowCount(const QModelIndex& parent) const
-{
-    if (!parent.isValid()) {
-        // Top-level item count
-        if (m_pairInteractionResults.isEmpty()) {
-            return 0; // Hide the pair interaction results if there are none
-        } else {
-            return 1; // Show a single top-level item for the pair interaction results
-        }
-    } else {
-        // Child item count
-        if (PairInteractionResult* parentResult = static_cast<PairInteractionResult*>(parent.internalPointer())) {
-            return parentResult->components().size();
-        }
-    }
-
-    return 0;
-}
-
-int PairInteractionResults::columnCount(const QModelIndex& parent) const
-{
-    Q_UNUSED(parent);
-    return 2; // Assuming we have two columns: component name and value
-}
-
-QVariant PairInteractionResults::data(const QModelIndex& index, int role) const
-{
-    if (!index.isValid()) {
-        return QVariant();
-    }
-
-    if (role == Qt::DisplayRole) {
-        if (!index.parent().isValid()) {
-            // Top-level item
-            if (index.row() == 0) {
-                return "Pair Interactions"; // Display a custom label for the top-level item
-            }
-        } else {
-            // Child item (component)
-            if (PairInteractionResult* result = static_cast<PairInteractionResult*>(index.parent().internalPointer())) {
-                QPair<QString, double> component = result->components()[index.row()];
-                if (index.column() == 0) {
-                    return component.first; // Component name
-                } else if (index.column() == 1) {
-                    return component.second; // Component value
-                }
-            }
-        }
-    }
-
-    return QVariant();
-}

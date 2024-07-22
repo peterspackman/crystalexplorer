@@ -2,8 +2,8 @@
 #include "globals.h"
 #include "molecular_wavefunction.h" // For levelOfTheoryString
 #include "settings.h"
-#include <occ/core/element.h>
 #include <fmt/core.h>
+#include <occ/core/element.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General Crystal Info
@@ -81,7 +81,8 @@ void InfoDocuments::insertAtomicCoordinatesWithAtomDescription(
   if (!structure)
     return;
   const auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
-  const auto unselectedAtoms = structure->atomsWithFlags(AtomFlag::Selected, false);
+  const auto unselectedAtoms =
+      structure->atomsWithFlags(AtomFlag::Selected, false);
   qDebug() << "Selected atoms: " << selectedAtoms.size();
   if (selectedAtoms.size() > 0) {
     insertAtomicCoordinatesSection(cursor, "Selected Atoms", structure,
@@ -150,8 +151,8 @@ void InfoDocuments::insertAtomicCoordinatesHeader(
                         .arg(numAtoms > 1 ? "s" : "")
                         .arg(coords));
   cursor.insertText(QString::fromStdString(
-    fmt::format("{:<6s} {:<6s} {:>20s} {:>20s} {:>20s} {:>4s}\n",
-                "Label", "Symbol", "x", "y", "z", "Occ.")));
+      fmt::format("{:<6s} {:<6s} {:>20s} {:>20s} {:>20s} {:>4s}\n", "Label",
+                  "Symbol", "x", "y", "z", "Occ.")));
   cursor.insertText(INFO_HORIZONTAL_RULE);
 }
 
@@ -170,8 +171,10 @@ void InfoDocuments::insertAtomicCoordinates(
 
     for (int i = 0; i < nums.rows(); i++) {
       std::string symbol = occ::core::Element(nums(i)).symbol();
-      std::string s = fmt::format("{:<6s} {:<6s} {: 20.12f} {: 20.12f} {: 20.12f} {:4.3f}\n",
-            labels[i].toStdString(), symbol, pos(0, i), pos(1, i), pos(2, i), 1.0);
+      std::string s = fmt::format(
+          "{:<6s} {:<6s} {: 20.12f} {: 20.12f} {: 20.12f} {:4.3f}\n",
+          labels[i].toStdString(), symbol, pos(0, i), pos(1, i), pos(2, i),
+          1.0);
       cursor.insertText(QString::fromStdString(s));
     }
     break;
@@ -569,7 +572,7 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
 
   qDebug() << "have interactions";
 
-  if (interactions->rowCount() > 0) {
+  if (interactions->getCount() > 0) {
     // These must be here for performance!
     cursor.beginEditBlock();
     insertInteractionEnergiesGroupedByPair(interactions, cursor);
@@ -703,7 +706,6 @@ QList<QString> getOrderedComponents(QSet<QString> uniqueComponents) {
 
 void InfoDocuments::insertInteractionEnergiesGroupedByPair(
     PairInteractionResults *results, QTextCursor cursor) {
-  qDebug() << "Cursor" << &cursor;
   const int eprec =
       settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt();
 
@@ -711,67 +713,78 @@ void InfoDocuments::insertInteractionEnergiesGroupedByPair(
   cursor.insertHtml("<h1>Interaction Energies</h1>");
   insertEnergyScalingPreamble(cursor);
 
-  // Get unique components from the results
+  QList<QString> sortedModels = results->interactionModels();
+  std::sort(sortedModels.begin(), sortedModels.end());
+
   QSet<QString> uniqueComponents;
-  for (const auto &result : results->pairInteractionResults()) {
-    for (const auto &component : result->components()) {
-      uniqueComponents.insert(component.first);
+  for (const QString &model : sortedModels) {
+    for (const auto &result : results->filterByModel(model)) {
+      for (const auto &component : result->components()) {
+        uniqueComponents.insert(component.first);
+      }
     }
   }
 
   QList<QString> sortedComponents = getOrderedComponents(uniqueComponents);
-
   // Define table header
-  QStringList tableHeader{"Interaction Model"};
+  QStringList tableHeader{"Color", "Model", "Distance", "Symmetry"};
   tableHeader.append(sortedComponents);
-  int numHeaderLines = 1;
-  int numLines = numHeaderLines + results->pairInteractionResults().size();
 
   // Create table
+  int numHeaderLines = 1;
+  int totalResults = results->getCount();
+  int numLines = numHeaderLines + totalResults;
   QTextTable *table = createTable(cursor, numLines, tableHeader.size());
 
   // Insert Table Header
   insertTableHeader(table, cursor, tableHeader);
 
+  // Create ColorMapFunc instance
+  ColorMapFunc colorMap(ColorMapName::Viridis, 0, totalResults - 1);
+
   int row = 1;
+  int interactionIndex = 0;
+  for (const QString &model : sortedModels) {
 
-  for (const auto &result : results->pairInteractionResults()) {
-    QString interactionModel = result->interactionModel();
+    for (const auto *result : results->filterByModel(model)) {
+      // Insert color cell
+      QColor cellColor = colorMap(interactionIndex);
+      insertColorBlock(table, cursor, row, 0, cellColor);
 
-    // Insert interaction model into the first cell
-    QTextTableCell interactionModelCell = table->cellAt(row, 0);
-    QTextCursor interactionModelCursor =
-        interactionModelCell.firstCursorPosition();
-    interactionModelCursor.insertText(interactionModel);
+      // Insert model
+      insertRightAlignedCellValue(table, cursor, row, 1, model);
 
-    // Insert component values into the corresponding cells
-    int column = 1;
-    for (const QString &component : sortedComponents) {
-      QTextTableCell componentCell = table->cellAt(row, column);
-      QTextCursor componentCursor = componentCell.firstCursorPosition();
+      // Insert distance and symmetry
+      // Adjust these lines based on how you actually store/access this
+      // information
+      insertRightAlignedCellValue(
+          table, cursor, row, 2,
+          QString::number(3.8, 'f', 2));
+      insertRightAlignedCellValue(table, cursor, row, 3,
+                                  "Symmetry Placeholder");
 
-      bool found = false;
-      for (const auto &pair : result->components()) {
-        if (pair.first == component) {
-          insertRightAlignedCellValue(
-              table, cursor, row, column,
-              QString("%1").arg(pair.second, 6, 'f', eprec));
-
-          found = true;
-          break;
+      // Insert component values
+      int column = 4;
+      for (const QString &component : sortedComponents) {
+        bool found = false;
+        for (const auto &pair : result->components()) {
+          if (pair.first == component) {
+            insertRightAlignedCellValue(
+                table, cursor, row, column,
+                QString("%1").arg(pair.second, 6, 'f', eprec));
+            found = true;
+            break;
+          }
         }
+        if (!found) {
+          insertRightAlignedCellValue(table, cursor, row, column, "-");
+        }
+        column++;
       }
-
-      if (!found) {
-        insertRightAlignedCellValue(table, cursor, row, column, "-");
-      }
-
-      column++;
+      row++;
+      interactionIndex++;
     }
-
-    row++;
   }
-
   cursor.movePosition(QTextCursor::End);
   cursor.insertText("\n\n");
 }
