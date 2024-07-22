@@ -139,7 +139,7 @@ void FingerprintPlot::updateFingerprintPlot() {
 void FingerprintPlot::initBinnedAreas() {
   int numxBins = numUsedxBins();
   int numyBins = numUsedyBins();
-  binnedAreas = MatrixXq::Zero(numxBins, numyBins);
+  binnedAreas = Eigen::MatrixXd::Zero(numxBins, numyBins);
 }
 
 void FingerprintPlot::initBinnedFilterFlags() {

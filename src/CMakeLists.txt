@@ -6,6 +6,7 @@ add_subdirectory(crystal)
 add_subdirectory(graphics)
 add_subdirectory(pair_energy)
 add_subdirectory(volume)
+add_subdirectory(fingerprint)
 add_subdirectory(dialogs)
 
 # Source files
@@ -13,49 +14,31 @@ set(CRYSTALEXPLORER_SOURCE_FILES
     childpropertycontroller.cpp
     confirmationbox.cpp
     crystalcontroller.cpp
-    crystalplanegenerator.cpp
     crystalx.cpp
     dialoghtml.cpp
     fileeditor.cpp
-    fingerprintoptions.cpp
-    fingerprintplot.cpp
-    fingerprintwindow.cpp
     glwindow.cpp
     infodocuments.cpp
     infoviewer.cpp
-    measurement.cpp
-    orbitcamera.cpp
-    orientation.cpp
     preferencesdialog.cpp
     project.cpp
-    scene.cpp
     spacegroup.cpp
     viewtoolbar.cpp
 )
 
 set(CRYSTALEXPLORER_HEADER_FILES
-    cameraoptions.h
     chargemultiplicitypair.h
     childpropertycontroller.h
     confirmationbox.h
     crystalcontroller.h
-    crystalplanegenerator.h
     crystalx.h
     dialoghtml.h
     fileeditor.h
-    fingerprintoptions.h
-    fingerprintplot.h
-    fingerprintwindow.h
     glwindow.h
     infodocuments.h
     infoviewer.h
-    measurement.h
-    orbitcamera.h
-    orientation.h
     preferencesdialog.h
     project.h
-    qeigen.h
-    scene.h
     spacegroup.h
     stldatastream.h
     viewtoolbar.h
@@ -67,7 +50,6 @@ set(CRYSTALEXPLORER_UI_FILES
     crystalcontroller.ui
     crystalx.ui
     fileeditor.ui
-    fingerprintoptions.ui
     infochooserdialog.ui
     infoviewer.ui
     preferencesdialog.ui
@@ -104,6 +86,7 @@ target_link_libraries(
     cx_crystal
     cx_graphics
     cx_pair_energy
+    cx_fingerprint
     cx_dialogs
     Qt6::Widgets Qt6::Concurrent
     Qt6::OpenGLWidgets Qt6::DBus

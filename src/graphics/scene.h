@@ -37,7 +37,6 @@ enum class ScenePeriodicity {
   ThreeDimensions
 };
 
-class XYZFile;
 
 struct SelectedAtom {
   int index{-1};
@@ -81,7 +80,6 @@ class Scene : public QObject {
 
 public:
   Scene();
-  Scene(const XYZFile &);
   Scene(ChemicalStructure *);
 
   inline ChemicalStructure *chemicalStructure() { return m_structure; }

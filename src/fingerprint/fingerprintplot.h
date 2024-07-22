@@ -4,7 +4,6 @@
 #include <QVector>
 #include <QWidget>
 
-#include "qeigen.h"
 #include "meshinstance.h"
 #include "colormap.h"
 

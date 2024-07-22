@@ -249,7 +249,10 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
   if (!success)
     return false;
 
-  Scene *scene = new Scene(xyzReader);
+  auto * structure = new ChemicalStructure();
+  structure->setAtoms(xyzReader.getAtomSymbols(), xyzReader.getAtomPositions());
+  structure->updateBondGraph();
+  Scene *scene = new Scene(structure);
   scene->setTitle(QFileInfo(filename).baseName());
   int position = m_scenes.size();
   beginInsertRows(QModelIndex(), position, position);

@@ -11,16 +11,8 @@
 #include "mathconstants.h"
 #include "scene.h"
 #include "settings.h"
-#include "wavefrontobjfile.h"
-#include "xyzfile.h"
 
 using cx::graphics::SelectionType;
-
-Scene::Scene(const XYZFile &xyz) : m_structure(new ChemicalStructure()) {
-  m_structure->setAtoms(xyz.getAtomSymbols(), xyz.getAtomPositions());
-  m_structure->updateBondGraph();
-  init();
-}
 
 Scene::Scene(ChemicalStructure *structure) : m_structure(structure) { init(); }
 
