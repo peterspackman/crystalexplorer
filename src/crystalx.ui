@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>24</height>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -96,6 +96,9 @@
     <addaction name="separator"/>
     <addaction name="calculateVoidDomainsAction"/>
     <addaction name="setFragmentChargesAction"/>
+    <addaction name="separator"/>
+    <addaction name="nextFrameAction"/>
+    <addaction name="previousFrameAction"/>
    </widget>
    <widget class="QMenu" name="helpMenu">
     <property name="title">
@@ -1091,6 +1094,34 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+G</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="nextFrameAction">
+   <property name="text">
+    <string>Next Frame</string>
+   </property>
+   <property name="toolTip">
+    <string>Cycle to the next frame of the trajectory</string>
+   </property>
+   <property name="shortcut">
+    <string>N</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="previousFrameAction">
+   <property name="text">
+    <string>Previous Frame</string>
+   </property>
+   <property name="toolTip">
+    <string>Cycle to the previous frame of the trajectory</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>

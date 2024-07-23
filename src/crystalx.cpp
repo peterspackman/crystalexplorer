@@ -272,6 +272,9 @@ void Crystalx::initConnections() {
   connect(project, &Project::structureChanged, this,
           &Crystalx::handleStructureChange, Qt::QueuedConnection);
 
+  connect(m_taskManager, &TaskManager::busyStateChanged,
+          this, &Crystalx::handleBusyStateChange);
+
   // Project connections - current crystal changed in some way
   connect(project, &Project::selectedSceneChanged, crystalController,
           &CrystalController::handleSceneSelectionChange);
@@ -329,12 +332,6 @@ void Crystalx::initConnections() {
   */
   connect(glWindow, &GLWindow::resetCurrentCrystal, project,
           &Project::resetCurrentCrystal);
-
-  // background task watcher
-  connect(&m_futureWatcher, &QFutureWatcher<bool>::finished, this,
-          &Crystalx::backgroundTaskFinished);
-  connect(&m_futureWatcher, &QFutureWatcher<bool>::started, this,
-          [&]() { setBusy(true); });
 
   connect(m_taskManager, &TaskManager::taskComplete, this,
           &Crystalx::taskManagerTaskComplete);
@@ -463,6 +460,15 @@ void Crystalx::initMenuConnections() {
 
   connect(generateWavefunctionAction, &QAction::triggered, this,
           &Crystalx::handleGenerateWavefunctionAction);
+
+  // animation frames
+  connect(nextFrameAction, &QAction::triggered, [this]() {
+    project->nextFrame(true);
+  });
+  connect(previousFrameAction, &QAction::triggered, [this]() {
+    project->nextFrame(false);
+  });
+
 }
 
 void Crystalx::initCloseContactsDialog() {
@@ -905,6 +911,11 @@ void Crystalx::processPdb(QString &filename) {
   project->loadCrystalStructuresFromPdbFile(filename);
 }
 
+
+void Crystalx::handleBusyStateChange(bool busy) {
+  setBusy(busy);
+}
+
 void Crystalx::jobRunning() { setBusy(true); }
 
 void Crystalx::jobCancelled(QString message) {
@@ -912,11 +923,6 @@ void Crystalx::jobCancelled(QString message) {
   setBusy(false);
 }
 
-/*!
- Called whenever Tonto is executed to:
- (i) Change the program icon
- (ii) Disable parts of the GUI to prevent mishaps
- */
 void Crystalx::setBusy(bool busy) {
   setBusyIcon(busy);
   disableActionsWhenBusy(busy);
@@ -960,7 +966,10 @@ void Crystalx::updateStatusMessage(QString s) { statusBar()->showMessage(s); }
 void Crystalx::clearStatusMessage() { statusBar()->clearMessage(); }
 
 void Crystalx::updateProgressBar(int current_step, int max_steps) {
-  if (max_steps >= 1) {
+  if(current_step >= max_steps) {
+    _jobProgress->setVisible(false);
+  }
+  else if (max_steps >= 1) {
     _jobProgress->setVisible(true);
     _jobProgress->setMaximum(max_steps);
     _jobProgress->setValue(current_step);
@@ -1666,7 +1675,7 @@ void Crystalx::showEnergyCalculationDialog() {
 
     connect(m_energyCalculationDialog,
             &EnergyCalculationDialog::energyParametersChosen, this,
-            &Crystalx::calculateEnergies, Qt::UniqueConnection);
+            &Crystalx::calculatePairEnergies, Qt::UniqueConnection);
   }
   m_energyCalculationDialog->setChemicalStructure(structure);
 
@@ -1706,7 +1715,7 @@ void Crystalx::showEnergyCalculationDialog() {
   }
 }
 
-void Crystalx::calculateEnergiesWithExistingWavefunctions(
+void Crystalx::calculatePairEnergiesWithExistingWavefunctions(
     pair_energy::EnergyModelParameters modelParameters) {
   qDebug() << "Pairs needed:" << modelParameters.pairs.size();
   qDebug() << "Wavefunctions assumed to exist";
@@ -1788,7 +1797,7 @@ void Crystalx::calculateEnergiesWithExistingWavefunctions(
   calc->start_batch(energies);
 }
 
-void Crystalx::calculateEnergies(
+void Crystalx::calculatePairEnergies(
     pair_energy::EnergyModelParameters modelParameters) {
 
   Scene *scene = project->currentScene();
@@ -1797,7 +1806,7 @@ void Crystalx::calculateEnergies(
   auto *structure = scene->chemicalStructure();
   if (!structure)
     return;
-  qDebug() << "In calculateEnergies";
+  qDebug() << "In calculatePairEnergies";
 
   qDebug() << "Wavefunctions needed:" << modelParameters.wavefunctions.size();
   qDebug() << "Pairs needed:" << modelParameters.pairs.size();
@@ -1836,13 +1845,13 @@ void Crystalx::calculateEnergies(
 
     connect(wavefunctionCalc, &WavefunctionCalculator::calculationComplete,
             this, [modelParameters, this, wavefunctionCalc]() {
-              calculateEnergiesWithExistingWavefunctions(modelParameters);
+              calculatePairEnergiesWithExistingWavefunctions(modelParameters);
               wavefunctionCalc->deleteLater();
             });
 
     wavefunctionCalc->start_batch(modelParameters.wavefunctions);
   } else {
-    calculateEnergiesWithExistingWavefunctions(modelParameters);
+    calculatePairEnergiesWithExistingWavefunctions(modelParameters);
   }
 }
 
@@ -2055,19 +2064,11 @@ bool Crystalx::getFragmentStatesFromUser(ChemicalStructure *structure) {
   return success;
 }
 
-void Crystalx::backgroundTaskFinished() {
-  bool success = m_futureWatcher.result();
-  showStatusMessage(QString("Job %1").arg(success ? "complete" : "failed"));
-  setBusy(false);
-}
-
 void Crystalx::taskManagerTaskComplete(TaskID id) {
   showStatusMessage(QString("Task %1 complete").arg(id.toString()));
   int finished = m_taskManager->numFinished();
   int numTasks = m_taskManager->numTasks();
   updateProgressBar(finished, numTasks);
-  if (finished == numTasks)
-    setBusy(false);
 }
 
 void Crystalx::taskManagerTaskError(TaskID id, QString errorMessage) {
@@ -2077,8 +2078,6 @@ void Crystalx::taskManagerTaskError(TaskID id, QString errorMessage) {
   int finished = m_taskManager->numFinished();
   int numTasks = m_taskManager->numTasks();
   updateProgressBar(finished, numTasks);
-  if (finished == numTasks)
-    setBusy(false);
 }
 
 void Crystalx::taskManagerTaskAdded(TaskID id) {
@@ -2092,8 +2091,6 @@ void Crystalx::taskManagerTaskRemoved(TaskID id) {
   int finished = m_taskManager->numFinished();
   int numTasks = m_taskManager->numTasks();
   updateProgressBar(m_taskManager->numFinished(), m_taskManager->numTasks());
-  if (finished == numTasks)
-    setBusy(false);
 }
 
 void Crystalx::showTaskManagerWidget() { m_taskManagerWidget->show(); }

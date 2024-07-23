@@ -29,6 +29,8 @@ struct FragmentPairs {
   std::vector<MoleculeNeighbors> pairs;
 };
 
+struct StructureFrame;
+
 class ChemicalStructure : public QObject {
   Q_OBJECT
 public:
@@ -118,6 +120,7 @@ public:
   virtual void setOrigin(const occ::Vec3 &);
   virtual float radius() const;
 
+  virtual void setCellVectors(const occ::Mat3 &) {}
   inline virtual occ::Mat3 cellVectors() const {
     return occ::Mat3::Identity(3, 3);
   }
@@ -165,6 +168,16 @@ public:
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
   FragmentPairs findFragmentPairs(int keyFragment = -1) const;
+
+  // dynamics data
+  inline bool hasFrameData() const { return frameCount() > 0; }
+
+  inline virtual int frameCount() const { return 0; }
+  inline virtual void addFrame(const StructureFrame &) {}
+
+  inline virtual void removeFrame(int index) {}
+  inline virtual void setCurrentFrameIndex(int index) {}
+  inline virtual int getCurrentFrameIndex() const { return 0; }
 
   // flags
   const AtomFlags &atomFlags(int) const;

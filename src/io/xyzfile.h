@@ -32,3 +32,16 @@ private:
   QString m_comment;
   std::vector<occ::Vec3> m_atomPositions;
 };
+
+class TrajFile {
+public:
+  TrajFile() = default;
+
+  bool readFromFile(const QString &fileName);
+  bool readFromString(const QString &content);
+
+  inline const QList<XYZFile> &frames() const { return m_frames; }
+
+private:
+  QList<XYZFile> m_frames;
+};

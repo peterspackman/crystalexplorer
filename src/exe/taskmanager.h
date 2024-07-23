@@ -29,6 +29,7 @@ signals:
     void taskError(TaskID, QString);
     void taskAdded(TaskID);
     void taskRemoved(TaskID);
+    void busyStateChanged(bool);
 
 private:
     int getTaskThreadCount(Task* task) const;

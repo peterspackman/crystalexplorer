@@ -38,6 +38,10 @@ public:
   bool loadCrystalStructuresFromCifFile(const QString &);
   bool loadCrystalStructuresFromPdbFile(const QString &);
 
+  bool hasFrames();
+  int nextFrame(bool forward);
+  bool setCurrentFrame(int frame);
+
   bool previouslySaved();
   QString saveFilename();
   int numberOfCrystals() { return m_scenes.size(); }

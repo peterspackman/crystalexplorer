@@ -59,6 +59,7 @@ public:
   void loadExternalFileData(QString);
 
 public slots:
+  void handleBusyStateChange(bool);
   void generateSurface(isosurface::Parameters);
   void generateSurfaceRequiringWavefunction(isosurface::Parameters, wfn::Parameters);
   wfn::Parameters getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex>&, int, int);
@@ -69,8 +70,8 @@ public slots:
   void displayFingerprint();
   void passCurrentCrystalToFingerprintWindow();
 
-  void calculateEnergies(pair_energy::EnergyModelParameters);
-  void calculateEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters);
+  void calculatePairEnergies(pair_energy::EnergyModelParameters);
+  void calculatePairEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters);
 
   void showInfo(InfoType);
   void showTaskManagerWidget();
@@ -141,7 +142,6 @@ private slots:
 
   void setFragmentStates();
 
-  void backgroundTaskFinished();
   void handleTransformationMatrixUpdate();
 
   void taskManagerTaskComplete(TaskID);
@@ -244,7 +244,6 @@ private:
 
   QPair<QVector3D, QVector3D> _savedCellLimits;
   QMap<QString, DrawingStyle> m_drawingStyleLabelToDrawingStyle;
-  QFutureWatcher<bool> m_futureWatcher;
 
   TaskManager * m_taskManager{nullptr};
   TaskManagerWidget * m_taskManagerWidget{nullptr};

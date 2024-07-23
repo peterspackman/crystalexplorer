@@ -24,8 +24,12 @@ TaskID TaskManager::add(Task* task, bool start) {
 
     if(start) {
         if (getCurrentConcurrency() + getTaskThreadCount(task) <= m_maxConcurrentTasks) {
+            bool nowBusy = m_currentConcurrentTasks == 0;
             m_currentConcurrentTasks += getTaskThreadCount(task);
             task->start();
+            if(nowBusy) {
+                emit busyStateChanged(true);
+            }
         } else {
             m_pendingTasks.enqueue(id);
         }
@@ -41,6 +45,9 @@ void TaskManager::remove(TaskID taskId) {
         m_tasks.remove(taskId);
         if(task->isRunning()) {
             m_currentConcurrentTasks -= getTaskThreadCount(task);
+            if(m_currentConcurrentTasks == 0) {
+                emit busyStateChanged(false);
+            }
         }
         task->deleteLater();
         if(task->isFinished()) {
@@ -60,6 +67,9 @@ void TaskManager::handleTaskComplete(TaskID id) {
     Task* task = get(id);
     if (task) {
         m_currentConcurrentTasks -= getTaskThreadCount(task);
+        if(m_currentConcurrentTasks == 0) {
+            emit busyStateChanged(false);
+        }
     }
     m_completeCount++;
     emit taskComplete(id);
@@ -70,6 +80,9 @@ void TaskManager::handleTaskError(TaskID id, QString err) {
     Task* task = get(id);
     if (task) {
         m_currentConcurrentTasks -= getTaskThreadCount(task);
+        if(m_currentConcurrentTasks == 0) {
+            emit busyStateChanged(false);
+        }
     }
     m_completeCount++;
     emit taskError(id, err);
@@ -99,7 +112,11 @@ void TaskManager::startNextTask() {
         Task* nextTask = get(nextTaskId);
         if (nextTask && getCurrentConcurrency() + getTaskThreadCount(nextTask) <= m_maxConcurrentTasks) {
             m_pendingTasks.dequeue();
+            bool nowBusy = m_currentConcurrentTasks == 0;
             m_currentConcurrentTasks += getTaskThreadCount(nextTask);
+            if(nowBusy) {
+                emit busyStateChanged(true);
+            }
             nextTask->start();
         } else {
             break;

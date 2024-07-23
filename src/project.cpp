@@ -1,6 +1,7 @@
 #include <QMessageBox>
 #include <QtDebug>
 
+#include "dynamicstructure.h"
 #include "ciffile.h"
 #include "confirmationbox.h"
 #include "dialoghtml.h"
@@ -244,22 +245,46 @@ bool Project::saveToFile(QString filename) {
 }
 
 bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
-  XYZFile xyzReader;
-  bool success = xyzReader.readFromFile(filename);
+
+  TrajFile trajReader;
+  bool success = trajReader.readFromFile(filename);
   if (!success)
     return false;
 
-  auto * structure = new ChemicalStructure();
-  structure->setAtoms(xyzReader.getAtomSymbols(), xyzReader.getAtomPositions());
-  structure->updateBondGraph();
-  Scene *scene = new Scene(structure);
-  scene->setTitle(QFileInfo(filename).baseName());
-  int position = m_scenes.size();
-  beginInsertRows(QModelIndex(), position, position);
-  m_scenes.append(scene);
-  endInsertRows();
-  setUnsavedChangesExists();
-  setCurrentCrystal(position);
+  const auto &frames = trajReader.frames();
+  qDebug() << "Read" << trajReader.frames().size() << "frames" << success;
+  if(frames.size() == 0) return false;
+  if(frames.size() == 1) {
+    const auto &xyzReader = frames[0];
+    auto * structure = new ChemicalStructure();
+    structure->setAtoms(xyzReader.getAtomSymbols(), xyzReader.getAtomPositions());
+    structure->updateBondGraph();
+    Scene *scene = new Scene(structure);
+    scene->setTitle(QFileInfo(filename).baseName());
+    int position = m_scenes.size();
+    beginInsertRows(QModelIndex(), position, position);
+    m_scenes.append(scene);
+    endInsertRows();
+    setUnsavedChangesExists();
+    setCurrentCrystal(position);
+  }
+  else {
+    auto * structure = new DynamicStructure();
+    for(const auto &frame: frames) {
+      auto * s = new ChemicalStructure();
+      s->setAtoms(frame.getAtomSymbols(), frame.getAtomPositions());
+      s->updateBondGraph();
+      structure->addFrame(s);
+    }
+    Scene *scene = new Scene(structure);
+    scene->setTitle(QFileInfo(filename).baseName());
+    int position = m_scenes.size();
+    beginInsertRows(QModelIndex(), position, position);
+    m_scenes.append(scene);
+    endInsertRows();
+    setUnsavedChangesExists();
+    setCurrentCrystal(position);
+  }
   return true;
 }
 
@@ -720,4 +745,40 @@ void Project::onSelectionChanged(const QItemSelection &selected,
     QModelIndex currentIndex = indexes.first();
     setCurrentCrystal(currentIndex.row());
   }
+}
+
+bool Project::hasFrames() {
+  auto * structure = currentStructure();
+  if(!structure) return false;
+
+  auto *dynamicStructure = qobject_cast<DynamicStructure*>(structure);
+  if(!dynamicStructure) return false;
+  return true;
+}
+
+int Project::nextFrame(bool forward) {
+  auto * structure = currentStructure();
+  if(!structure) return 0;
+
+  int count = structure->frameCount();
+  int current = structure->getCurrentFrameIndex();
+  if(forward) current++;
+  else current--;
+  current = std::clamp(current, 0, count - 1);
+  structure->setCurrentFrameIndex(current);
+  emit currentSceneChanged();
+  return current;
+}
+
+bool Project::setCurrentFrame(int frame) {
+  auto * structure = currentStructure();
+  if(!structure) return false;
+
+  int count = structure->frameCount();
+  int current = structure->getCurrentFrameIndex();
+  if(count >= frame) return false;
+  if(frame < 0) return false;
+  structure->setCurrentFrameIndex(current);
+  emit currentSceneChanged();
+  return true;
 }

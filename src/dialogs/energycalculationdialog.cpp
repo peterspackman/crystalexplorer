@@ -1,5 +1,6 @@
 #include "energycalculationdialog.h"
 #include <ankerl/unordered_dense.h>
+#include "settings.h"
 
 EnergyCalculationDialog::EnergyCalculationDialog(QWidget *parent)
     : QDialog(parent) {
@@ -56,14 +57,12 @@ bool orcaVisible = show_experimental &&
                    !settings::readSetting(settings::keys::ORCA_EXECUTABLE)
                         .toString()
                         .isEmpty();
-bool xtbVisible = show_experimental &&
-                  !settings::readSetting(settings::keys::XTB_EXECUTABLE)
-                       .toString()
-                       .isEmpty();
                        */
+  bool xtbVisible = !settings::readSetting(settings::keys::XTB_EXECUTABLE)
+                         .toString()
+                         .isEmpty();
 
   bool orcaVisible = false;
-  bool xtbVisible = false;
   gfnRadioButton->setVisible(xtbVisible);
   gfnComboBox->setVisible(xtbVisible);
   orcaRadioButton->setVisible(orcaVisible);
