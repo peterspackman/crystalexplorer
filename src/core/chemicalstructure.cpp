@@ -884,14 +884,12 @@ ChemicalStructure::findUniqueFragment(
   return {result, transform};
 }
 
-// Updated findFragmentPairs method
 FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
     FragmentPairs result;
     constexpr double tolerance = 1e-1;
     const auto &fragments = getFragments();
     const auto &uniqueFragments = symmetryUniqueFragments();
 
-    // Initialize DynamicKDTree
     occ::core::DynamicKDTree<double> tree(occ::core::max_leaf);
 
     auto &pairs = result.uniquePairs;
@@ -928,7 +926,6 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
             if (tree.size() > 0) {
                 auto [ret_index, out_dist_sqr] = tree.nearest(point);
                 if (out_dist_sqr <= tolerance * tolerance) {
-                    // Perform exact comparison
                     if (pairs[ret_index] == d) {
                         found_identical = true;
                     }
@@ -936,9 +933,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
             }
 
             if (!found_identical) {
-                // Add the new pair
                 pairs.push_back(d);
-                // Add the point to the DynamicKDTree
                 tree.addPoint(point);
             }
             molPairs[asymIndex].push_back({d, -1});
@@ -956,7 +951,6 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
 
     std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
 
-  // Update the KD-tree after sorting
     occ::core::DynamicKDTree<double> sortedTree(occ::core::max_leaf);
     for (size_t i = 0; i < pairs.size(); ++i) {
         Eigen::Vector3d point(pairs[i].nearestAtomDistance, pairs[i].centroidDistance, pairs[i].centerOfMassDistance);
@@ -968,85 +962,14 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
         for (auto &d : vec) {
             Eigen::Vector3d query(d.fragments.nearestAtomDistance, d.fragments.centroidDistance, d.fragments.centerOfMassDistance);
             auto [idx, dist_sqr] = sortedTree.nearest(query);
+            if(dist_sqr > tolerance * tolerance) continue;
             if(pairs[idx] == d.fragments) {
               d.uniquePairIndex = idx;
             }
         }
     }
-    qDebug() << "Unique pairs: " << pairs.size();
-    for (const auto &x : molPairs) {
-        qDebug() << "Total pairs" << x.size();
-    }
     return result;
 }
-
-/*
-FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
-  // TODO urgently need to speed this up - the brute force search is super slow
-  FragmentPairs result;
-  constexpr double tolerance = 1e-1;
-
-  auto &pairs = result.uniquePairs;
-  auto &molPairs = result.pairs;
-  const auto &fragments = getFragments();
-  const auto &uniqueFragments = symmetryUniqueFragments();
-
-  std::vector<size_t> candidateFragments;
-  if(keyFragment < 0) {
-    for (size_t fragIndexA = 0; fragIndexA < fragments.size(); fragIndexA++) {
-      candidateFragments.push_back(fragIndexA);
-    }
-  }
-  else {
-    candidateFragments.push_back(keyFragment);
-  }
-
-  molPairs.resize(uniqueFragments.size());
-
-  for (size_t fragIndexA: candidateFragments) {
-    const auto &fragA = fragments[fragIndexA];
-    const size_t asymIndex = fragA.asymmetricFragmentIndex;
-    for (size_t fragIndexB = 0; fragIndexB < fragments.size(); fragIndexB++) {
-      if((keyFragment < 0) && (fragIndexB <= fragIndexA)) continue;
-      const auto &fragB = fragments[fragIndexB];
-      double distance = (fragA.nearestAtom(fragB).distance);
-      if (distance > tolerance) {
-        FragmentDimer d(fragA, fragB);
-        molPairs[asymIndex].push_back({d, -1});
-        if (std::any_of(pairs.begin(), pairs.end(),
-                        [&d](const FragmentDimer &d2) { return d == d2; }))
-          continue;
-        pairs.push_back(d);
-      }
-    }
-  }
-
-  auto fragmentDimerSortFunc = [](const FragmentDimer &a,
-                                  const FragmentDimer &b) {
-    return a.nearestAtomDistance < b.nearestAtomDistance;
-  };
-
-  auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
-                            const FragmentPairs::SymmetryRelatedPair &b) {
-    return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
-  };
-
-  std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
-  for (auto &vec : molPairs) {
-    std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
-    for (auto &d : vec) {
-      size_t idx = std::distance(
-          pairs.begin(), std::find(pairs.begin(), pairs.end(), d.fragments));
-      d.uniquePairIndex = idx;
-    }
-  }
-  qDebug() << "Unique pairs: " << pairs.size();
-  for(const auto &x: molPairs) {
-    qDebug() << "Total pairs" << x.size();
-  }
-  return result;
-}
-*/
 
 const std::vector<Fragment> &ChemicalStructure::getFragments() const {
   return m_fragments;

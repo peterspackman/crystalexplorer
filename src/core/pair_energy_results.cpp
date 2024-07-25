@@ -141,16 +141,13 @@ PairInteractions::getInteractionsMatchingFragments(
 PairInteraction *PairInteractions::getInteraction(const QString &model,
                                                   const FragmentDimer &frag) {
   const auto &interactions = m_pairInteractions.value(model);
-  qDebug() << "checkdimer" << frag;
   for (auto *result : interactions) {
     if (!result) {
       qWarning() << "Null pointer in stored pair interactions results... "
                     "should not happen";
       continue;
     }
-    qDebug() << "result" << result;
     const auto &params = result->parameters();
-    qDebug() << "fragment dimer" << params.fragmentDimer;
     if (params.fragmentDimer == frag)
       return result;
   }

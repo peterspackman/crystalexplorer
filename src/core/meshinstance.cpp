@@ -26,9 +26,16 @@ Eigen::Vector3d MeshInstance::vertex(int index) const {
          m_transform.translation();
 }
 
+Eigen::Vector3d MeshInstance::centroid() const {
+  if (!m_mesh)
+    return {};
+  return (m_transform.rotation() * m_mesh->centroid()) +
+         m_transform.translation();
+}
+
 QVector3D MeshInstance::vertexVector3D(int index) const {
-    auto v = vertex(index);
-    return QVector3D(v.x(), v.y(), v.z());
+  auto v = vertex(index);
+  return QVector3D(v.x(), v.y(), v.z());
 }
 
 Mesh::VertexList MeshInstance::vertices() const {
@@ -45,8 +52,8 @@ Eigen::Vector3d MeshInstance::vertexNormal(int index) const {
 }
 
 QVector3D MeshInstance::vertexNormalVector3D(int index) const {
-    auto v = vertexNormal(index);
-    return QVector3D(v.x(), v.y(), v.z());
+  auto v = vertexNormal(index);
+  return QVector3D(v.x(), v.y(), v.z());
 }
 
 Mesh::VertexList MeshInstance::vertexNormals() const {
@@ -142,8 +149,15 @@ MeshInstance *MeshInstance::newInstanceFromSelectedAtoms(
     return nullptr;
   Eigen::AngleAxisd aa(transform.rotation());
   auto instance = new MeshInstance(mesh, transform);
-  std::string desc = fmt::format("+ {{{:.3f},{:.3f},{:.3f}}}, [0,0,0]",
-                                 aa.axis()(0), aa.axis()(1), aa.axis()(2));
+  const auto &axis = aa.axis();
+  float angle = aa.angle();
+  const auto &t = transform.translation();
+  std::string desc{""};
+  if (angle > 1e-3)
+    desc += fmt::format(" Rot {:.3f}° @ [{:.3f},{:.3f},{:.3f}]",
+                       angle * 180 / M_PI, axis(0), axis(1), axis(2));
+  desc += fmt::format(" + [{:.3f},{:.3f},{:.3f}]", t(0), t(1), t(2));
+
   instance->setObjectName(QString::fromStdString(desc));
   return instance;
 }
@@ -177,12 +191,12 @@ MeshInstance::nearestPoint(const occ::Vec3 &p2) const {
 
   for (size_t i = 0; i < v.cols(); i++) {
     const occ::Vec3 &p1 = v.col(i);
-      double d = (p2 - p1).norm();
-      if (d < result.distance) {
-        result.idx_this = i;
-        result.idx_other = 0;
-        result.distance = d;
-      }
+    double d = (p2 - p1).norm();
+    if (d < result.distance) {
+      result.idx_this = i;
+      result.idx_other = 0;
+      result.distance = d;
+    }
   }
   return result;
 }

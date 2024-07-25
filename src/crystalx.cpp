@@ -236,6 +236,7 @@ void Crystalx::createChildPropertyControllerDockWidget() {
         auto *wfn = crystalController->getChild<MolecularWavefunction>(index);
         auto *pairInteractions =
             crystalController->getChild<PairInteractions>(index);
+        auto *chemicalStructure = crystalController->getChild<ChemicalStructure>(index);
 
         // check for mesh instance first
         if (mesh) {
@@ -251,6 +252,13 @@ void Crystalx::createChildPropertyControllerDockWidget() {
         } else if (pairInteractions) {
           qDebug() << "Setting pair interactions to" << pairInteractions;
           childPropertyController->setCurrentPairInteractions(pairInteractions);
+        }
+        else if (chemicalStructure) {
+          int frame = 0;
+          auto prop = chemicalStructure->property("frame");
+          if(prop.isValid()) frame = prop.toInt();
+          qDebug() << "Setting frame to " << frame;
+          project->setCurrentFrame(frame);
         }
       });
 }

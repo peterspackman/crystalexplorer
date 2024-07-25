@@ -52,23 +52,19 @@ bool FragmentDimer::sameAsymmetricFragmentIndices(
 
 bool FragmentDimer::operator==(const FragmentDimer &rhs) const {
   if (!sameAsymmetricFragmentIndices(rhs)) {
-    qDebug() << "Different idxs";
     return false;
   }
   constexpr double eps = 1e-7;
   double centroid_diff = std::abs(centroidDistance - rhs.centroidDistance);
   if (centroid_diff > eps) {
-    qDebug() << "Centroid diff:" << centroid_diff;
     return false;
   }
   double com_diff = std::abs(centerOfMassDistance - rhs.centerOfMassDistance);
   if (com_diff > eps) {
-    qDebug() << "COM diff:" << com_diff;
     return false;
   }
   double nearest_diff = std::abs(nearestAtomDistance - rhs.nearestAtomDistance);
   if (nearest_diff > eps) {
-    qDebug() << "Nearest diff:" << nearest_diff;
     return false;
   }
   bool aa_eq = a.isEquivalentTo(rhs.a);
@@ -77,10 +73,6 @@ bool FragmentDimer::operator==(const FragmentDimer &rhs) const {
     return true;
   bool ba_eq = b.isEquivalentTo(rhs.a);
   bool ab_eq = a.isEquivalentTo(rhs.b);
-  if (!(ab_eq && ba_eq)) {
-    qDebug() << "Different dimers: " << centroid_diff << com_diff
-             << nearest_diff << aa_eq << ab_eq << bb_eq << ba_eq;
-  }
   return ab_eq && ba_eq;
 }
 

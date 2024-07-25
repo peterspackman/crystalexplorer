@@ -41,7 +41,7 @@ public:
 
   bool hasFrames();
   int nextFrame(bool forward);
-  bool setCurrentFrame(int frame);
+  int setCurrentFrame(int frame);
 
   bool previouslySaved();
   QString saveFilename();

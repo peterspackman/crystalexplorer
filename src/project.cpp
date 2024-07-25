@@ -257,6 +257,7 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
   if(frames.size() == 1) {
     const auto &xyzReader = frames[0];
     auto * structure = new ChemicalStructure();
+    structure->setObjectName(xyzReader.getComment());
     structure->setAtoms(xyzReader.getAtomSymbols(), xyzReader.getAtomPositions());
     structure->updateBondGraph();
     Scene *scene = new Scene(structure);
@@ -270,9 +271,12 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
   }
   else {
     auto * structure = new DynamicStructure();
+    int frameNumber = 1;
     for(const auto &frame: frames) {
       auto * s = new ChemicalStructure();
+      s->setObjectName(frame.getComment());
       s->setAtoms(frame.getAtomSymbols(), frame.getAtomPositions());
+      s->setProperty("frame", frameNumber++);
       s->updateBondGraph();
       structure->addFrame(s);
     }
@@ -770,25 +774,20 @@ int Project::nextFrame(bool forward) {
   auto * structure = currentStructure();
   if(!structure) return 0;
 
-  int count = structure->frameCount();
   int current = structure->getCurrentFrameIndex();
   if(forward) current++;
   else current--;
+  return setCurrentFrame(current);
+}
+
+int Project::setCurrentFrame(int current) {
+  auto * structure = currentStructure();
+  if(!structure) return 0;
+
+  int count = structure->frameCount();
   current = std::clamp(current, 0, count - 1);
   structure->setCurrentFrameIndex(current);
   emit currentSceneChanged();
   return current;
 }
 
-bool Project::setCurrentFrame(int frame) {
-  auto * structure = currentStructure();
-  if(!structure) return false;
-
-  int count = structure->frameCount();
-  int current = structure->getCurrentFrameIndex();
-  if(count >= frame) return false;
-  if(frame < 0) return false;
-  structure->setCurrentFrameIndex(current);
-  emit currentSceneChanged();
-  return true;
-}

@@ -49,6 +49,8 @@ public:
     return m_vertices.cols();
   }
 
+  [[nodiscard]] inline Eigen::Vector3d centroid() const { return m_centroid; }
+
   [[nodiscard]] const auto &faces() const { return m_faces; }
   [[nodiscard]] inline auto numberOfFaces() const { return m_faces.cols(); }
 
@@ -168,6 +170,7 @@ private:
   std::vector<GenericAtomIndex> m_atomsInside;
   std::vector<GenericAtomIndex> m_atomsOutside;
 
+  Eigen::Vector3d m_centroid;
   ScalarProperties m_vertexProperties;
   ScalarPropertyRanges m_vertexPropertyRanges;
   ScalarProperties m_faceProperties;

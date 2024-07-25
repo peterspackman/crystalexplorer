@@ -70,27 +70,10 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   if (m_options.display == FrameworkOptions::Display::None)
     return;
 
-  QElapsedTimer timer;
-
-  // Timing fragment pairs
-  timer.start();
-  qDebug() << "Fragment pairs";
   auto fragmentPairs = m_structure->findFragmentPairs();
-  qint64 fragmentPairsTime = timer.elapsed();
-  qDebug() << "Time taken for findFragmentPairs:" << fragmentPairsTime << "ms";
-
-  // Timing fragment matching fragments
-  timer.restart();
-  qDebug() << "Fragment matching fragments";
   auto interactionMap = m_interactions->getInteractionsMatchingFragments(
       fragmentPairs.uniquePairs);
-  qint64 interactionMapTime = timer.elapsed();
-  qDebug() << "Time taken for getInteractionsMatchingFragments:"
-           << interactionMapTime << "ms";
 
-  // Compare times
-  qDebug() << "Ratio (interactionMap / fragmentPairs):"
-           << static_cast<double>(interactionMapTime) / fragmentPairsTime;
 
   auto uniqueInteractions = interactionMap.value(m_options.model, {});
   if (uniqueInteractions.size() < fragmentPairs.uniquePairs.size())
@@ -114,15 +97,19 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
       QColor color(Qt::red);
 
-      qDebug() << "Centroids: " << va << vb;
-      cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va, color,
-                                                 scale);
+      if (m_options.display == FrameworkOptions::Display::Tubes) {
+        cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
+                                                   color, scale);
 
-      cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb, color,
-                                                 scale);
+        cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
+                                                   color, scale);
 
-      cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, vb,
-                                                  color, color, scale);
+        cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, vb,
+                                                    color, color, scale);
+      } else if (m_options.display == FrameworkOptions::Display::Lines) {
+        cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb, scale,
+                                            color);
+      }
     }
   }
   endUpdates();

@@ -1,5 +1,4 @@
 #include "crystalstructure.h"
-#include <QDebug>
 
 using VertexDesc =
     typename occ::core::graph::PeriodicBondGraph::VertexDescriptor;
@@ -143,9 +142,7 @@ void CrystalStructure::updateBondGraph() {
 
     std::sort(g.begin(), g.end());
     m_fragments.push_back(makeFragment(g));
-    qDebug() << "Made fragment with" << idxs.size() << "atoms";
   }
-  qDebug() << "Now have" << m_fragments.size() << "fragments";
 }
 
 void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
@@ -203,11 +200,6 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
 
   m_symmetryUniqueFragments.clear();
   const auto &uc_atoms = m_crystal.unit_cell_atoms();
-  qDebug() << "Crystal has " << uc_atoms.size() << "uc atoms";
-  qDebug() << "Crystal has " << m_crystal.unit_cell_molecules().size()
-           << "uc mols";
-  qDebug() << "Crystal has " << m_crystal.symmetry_unique_molecules().size()
-           << "sym mols";
   for (const auto &mol : m_crystal.symmetry_unique_molecules()) {
     std::vector<GenericAtomIndex> idxs;
     occ::Mat3N pos_frac = m_crystal.to_fractional(mol.positions());
@@ -222,8 +214,6 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     m_symmetryUniqueFragments.push_back(makeAsymFragment(idxs));
     m_symmetryUniqueFragments.back().asymmetricFragmentIndex =
         m_symmetryUniqueFragments.size() - 1;
-    qDebug() << "Made symmetry unique fragment\n"
-             << m_symmetryUniqueFragments.back();
     m_symmetryUniqueFragmentStates.push_back({});
   }
 

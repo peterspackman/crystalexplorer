@@ -16,6 +16,7 @@ Mesh::Mesh(QObject *parent) : QObject(parent) {}
 Mesh::Mesh(Eigen::Ref<const VertexList> vertices,
            Eigen::Ref<const FaceList> faces, QObject *parent)
     : QObject(parent), m_vertices(vertices), m_faces(faces) {
+  m_centroid = m_vertices.rowwise().mean();
   updateVertexFaceMapping();
   updateFaceProperties();
   m_vertexAreas = computeVertexAreas();
@@ -377,18 +378,20 @@ const std::vector<GenericAtomIndex> &Mesh::atomsOutside() const {
 
 bool Mesh::haveChildMatchingTransform(
     const Eigen::Isometry3d &transform) const {
-  auto check = [](const Eigen::Isometry3d &a, const Eigen::Isometry3d &b,
-                  double tolerance = 1e-6) {
-    bool r = a.linear().isApprox(b.linear(), tolerance);
-    bool t = a.translation().isApprox(b.translation(), tolerance);
-    return r && t;
+  // TODO do this in bulk
+
+  auto check = [](occ::Vec3 a, occ::Vec3 b,
+                  double tolerance = 1e-1) {
+      return (a - b).norm() < tolerance;
   };
+
+  auto candidateCentroid = transform.rotation() * m_centroid + transform.translation();
 
   for (auto *child : children()) {
     auto *instance = qobject_cast<MeshInstance *>(child);
     if (!instance)
       continue;
-    if (check(instance->transform(), transform))
+    if (check(instance->centroid(), candidateCentroid))
       return true;
   }
   return false;
