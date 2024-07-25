@@ -1,16 +1,19 @@
 #pragma once
+#include <QMap>
 #include <QTableWidget>
 #include <QTextDocument>
-#include <QMap>
 #include <QWidget>
 
 #include "mesh.h"
 #include "meshinstance.h"
-#include "molecular_wavefunction.h"
 #include "meshpropertymodel.h"
+#include "molecular_wavefunction.h"
+#include "pair_energy_results.h"
+#include "frameworkoptions.h"
 #include "ui_childpropertycontroller.h"
 
-class ChildPropertyController : public QWidget, public Ui::ChildPropertyController {
+class ChildPropertyController : public QWidget,
+                                public Ui::ChildPropertyController {
   Q_OBJECT
 
 public:
@@ -18,11 +21,13 @@ public:
   void enableFingerprintButton(bool);
   void currentSurfaceVisibilityChanged(bool);
   Mesh *getCurrentMesh();
+  void setShowEnergyFramework(bool);
 
 public slots:
   void setCurrentMesh(Mesh *);
   void setCurrentMeshInstance(MeshInstance *);
   void setCurrentWavefunction(MolecularWavefunction *);
+  void setCurrentPairInteractions(PairInteractions *);
   void setSelectedPropertyValue(float);
 
 protected slots:
@@ -38,18 +43,24 @@ signals:
   void surfacePropertyChosen(int);
   void showFingerprint();
   void exportCurrentSurface();
+  void frameworkOptionsChanged(FrameworkOptions);
 
 private:
 
   enum class DisplayState {
-      None,
-      Mesh,
-      Wavefunction,
+    None,
+    Mesh,
+    Wavefunction,
+    Framework,
   };
+
+  void setFrameworkDisplay(FrameworkOptions::Display);
 
   void showSurfaceTabs(bool);
   void showWavefunctionTabs(bool);
+  void showFrameworkTabs(bool);
   void showTab(QWidget *, bool, QString);
+  void emitFrameworkOptions();
 
   void setup();
   void setScale(Mesh::ScalarPropertyRange);
@@ -60,10 +71,13 @@ private:
   void clearPropertyInfo();
   void enableSurfaceControls(bool);
 
-  bool _updateSurfacePropertyRange;
+  void updatePairInteractionModels();
+  void updatePairInteractionComponents();
 
   DisplayState m_state{DisplayState::None};
+  FrameworkOptions::Display m_frameworkDisplay{FrameworkOptions::Display::None};
 
   MeshPropertyModel *m_meshPropertyModel{nullptr};
+  PairInteractions *m_pairInteractions{nullptr};
   QMap<QString, Mesh::ScalarPropertyRange> m_clampedProperties;
 };

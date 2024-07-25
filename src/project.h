@@ -7,6 +7,7 @@
 
 #include "packingdialog.h" // access to enum UnitCellPackingCriteria
 #include "scene.h"
+#include "frameworkoptions.h"
 
 /*!
  \class Project
@@ -57,6 +58,7 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
 public slots:
+  void frameworkOptionsChanged(FrameworkOptions);
   void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
   void setCurrentCrystal(int);
   void setCurrentCrystal(int, bool);

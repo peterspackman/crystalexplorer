@@ -1,7 +1,6 @@
 #include "chemicalstructurerenderer.h"
 #include "elementdata.h"
 #include "graphics.h"
-#include "interactions.h"
 #include "mesh.h"
 
 namespace cx::graphics {
@@ -14,6 +13,8 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   m_lineRenderer = new LineRenderer();
   m_highlightRenderer = new LineRenderer();
   m_pointCloudRenderer = new PointCloudRenderer();
+  m_frameworkRenderer = new FrameworkRenderer(m_structure);
+
   connect(m_structure, &ChemicalStructure::childAdded, this,
           &ChemicalStructureRenderer::childAddedToStructure);
   connect(m_structure, &ChemicalStructure::childRemoved, this,
@@ -296,11 +297,14 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_uniforms.u_renderMode = storedRenderMode;
     m_uniforms.u_selectionMode = false;
   }
+
+  m_frameworkRenderer->draw();
 }
 
 void ChemicalStructureRenderer::updateRendererUniforms(
     const RendererUniforms &uniforms) {
   m_uniforms = uniforms;
+  m_frameworkRenderer->updateRendererUniforms(uniforms);
 }
 
 void ChemicalStructureRenderer::clearMeshRenderers() {
@@ -417,6 +421,12 @@ void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
                &ChemicalStructureRenderer::childVisibilityChanged);
     m_meshesNeedsUpdate = true;
   }
+}
+
+
+void ChemicalStructureRenderer::setFrameworkOptions(const FrameworkOptions &options) {
+  m_frameworkOptions = options;
+  m_frameworkRenderer->setOptions(m_frameworkOptions);
 }
 
 MeshInstance *ChemicalStructureRenderer::getMeshInstance(size_t index) const {

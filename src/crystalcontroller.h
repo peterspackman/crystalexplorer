@@ -3,6 +3,7 @@
 
 #include "project.h"
 #include "meshinstance.h"
+#include "pair_energy_results.h"
 #include "molecular_wavefunction.h"
 
 #include "ui_crystalcontroller.h"
@@ -16,9 +17,16 @@ class CrystalController : public QWidget, public Ui::CrystalController {
 public:
   CrystalController(QWidget *parent = 0);
 
-  Mesh *getChildMesh(const QModelIndex &index) const;
-  MeshInstance *getChildMeshInstance(const QModelIndex &index) const;
-  MolecularWavefunction *getChildWavefunction(const QModelIndex &index) const;
+  template<typename T>
+  T* getChild(const QModelIndex &index) {
+      if (!index.isValid()) return nullptr;
+
+      ObjectTreeModel * tree = qobject_cast<ObjectTreeModel*>(structureTreeView->model());
+      if (!tree) return nullptr;
+
+      QObject* item = static_cast<QObject*>(index.internalPointer());
+      return qobject_cast<T*>(item);
+  }
 
 public slots:
   void update(Project *);

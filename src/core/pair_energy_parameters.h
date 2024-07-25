@@ -21,10 +21,13 @@ struct EnergyModelParameters {
 
 struct Parameters {
     QString model{"ce-1p"};
+
     std::vector<GenericAtomIndex> atomsA;
     std::vector<GenericAtomIndex> atomsB;
     Eigen::Isometry3d transformA = Eigen::Isometry3d::Identity();
     Eigen::Isometry3d transformB = Eigen::Isometry3d::Identity();
+
+    FragmentDimer fragmentDimer;
 
     QString symmetry{"-"};
     double centroidDistance{0.0};

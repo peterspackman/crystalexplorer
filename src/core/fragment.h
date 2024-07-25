@@ -41,7 +41,8 @@ struct Fragment {
 };
 
 struct FragmentDimer {
-  FragmentDimer(const Fragment &, const Fragment &);
+  explicit FragmentDimer() {};
+  explicit FragmentDimer(const Fragment &, const Fragment &);
 
   Fragment a;
   Fragment b;
@@ -55,3 +56,4 @@ struct FragmentDimer {
 };
 
 QDebug operator<<(QDebug debug, const Fragment &fragment);
+QDebug operator<<(QDebug debug, const FragmentDimer &dimer);

@@ -478,6 +478,16 @@ void Project::updateCloseContactsCriteria(int contactIndex, CloseContactCriteria
   }
 }
 
+
+void Project::frameworkOptionsChanged(FrameworkOptions options) {
+  auto * scene = currentScene();
+  qDebug() << "Project::frameworkOptionsChanged";
+  if (scene) {
+    scene->setFrameworkOptions(options);
+    emit currentSceneChanged();
+  }
+}
+
 void Project::removeIncompleteFragmentsForCurrentCrystal() {
   if (currentScene()) {
     currentScene()->deleteIncompleteFragments();

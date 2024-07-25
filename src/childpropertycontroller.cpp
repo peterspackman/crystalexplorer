@@ -18,7 +18,6 @@ ChildPropertyController::ChildPropertyController(QWidget *parent)
 }
 
 void ChildPropertyController::setup() {
-  _updateSurfacePropertyRange = true;
 
   surfacePropertyComboBox->setModel(m_meshPropertyModel);
   surfacePropertyComboBox2->setModel(m_meshPropertyModel);
@@ -57,8 +56,31 @@ void ChildPropertyController::setup() {
   connect(exportSurfaceButton, &QPushButton::clicked, this,
           &ChildPropertyController::exportButtonClicked);
 
+  // framework
+  connect(showLinesButton, &QRadioButton::clicked,
+          [this]() { setFrameworkDisplay(FrameworkOptions::Display::Lines); });
+
+  connect(showNoneButton, &QRadioButton::clicked,
+          [this]() { setFrameworkDisplay(FrameworkOptions::Display::None); });
+
+  connect(showTubesButton, &QRadioButton::clicked,
+          [this]() { setFrameworkDisplay(FrameworkOptions::Display::Tubes); });
+
+  connect(modelComboBox, &QComboBox::currentIndexChanged,
+          [this]() { emitFrameworkOptions();});
+
+  connect(frameworkTubeSizeSpinBox, &QSpinBox::valueChanged,
+          [this]() { emitFrameworkOptions();});
+
+  connect(frameworkCutoffSpinBox, &QDoubleSpinBox::valueChanged,
+          [this]() { emitFrameworkOptions();});
+
+  connect(componentComboBox, &QComboBox::currentIndexChanged,
+          [this]() { emitFrameworkOptions();});
+
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
+  showFrameworkTabs(false);
 
   enableFingerprintButton(false);
 }
@@ -104,6 +126,12 @@ void ChildPropertyController::showTab(QWidget *tab, bool show, QString title) {
   }
 }
 
+void ChildPropertyController::showFrameworkTabs(bool show) {
+  // inserted at 0, so show them in reverse order
+  showTab(frameworkTab, show, "Framework");
+  tabWidget->setCurrentIndex(0);
+}
+
 void ChildPropertyController::showSurfaceTabs(bool show) {
   // inserted at 0, so show them in reverse order
   showTab(surfacePropertyTab, show, "Property");
@@ -126,14 +154,83 @@ void ChildPropertyController::setUnitLabels(QString units) {
 void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
   showSurfaceTabs(true);
   showWavefunctionTabs(false);
+  showFrameworkTabs(false);
   m_state = ChildPropertyController::DisplayState::Mesh;
 
   m_meshPropertyModel->setMesh(mesh);
 }
 
+void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
+  showSurfaceTabs(false);
+  showWavefunctionTabs(false);
+  showFrameworkTabs(true);
+  m_pairInteractions = p;
+  m_state = ChildPropertyController::DisplayState::Framework;
+
+  if (m_pairInteractions) {
+    setEnabled(m_pairInteractions->getCount() > 0);
+    updatePairInteractionModels();
+  }
+}
+
+void ChildPropertyController::updatePairInteractionModels() {
+  if (!m_pairInteractions)
+    return;
+  QString currentModel = modelComboBox->currentText();
+  modelComboBox->blockSignals(true);
+  auto values = m_pairInteractions->interactionModels();
+  modelComboBox->clear();
+  modelComboBox->insertItems(0, values);
+  auto idx = values.indexOf(currentModel);
+  modelComboBox->setCurrentIndex((idx >= 0) ? idx : 0);
+  modelComboBox->blockSignals(false);
+  updatePairInteractionComponents();
+}
+
+void ChildPropertyController::updatePairInteractionComponents() {
+  if (!m_pairInteractions)
+    return;
+  QString currentComponent = componentComboBox->currentText();
+  componentComboBox->blockSignals(true);
+  auto values =
+      m_pairInteractions->interactionComponents(modelComboBox->currentText());
+  componentComboBox->clear();
+  componentComboBox->insertItems(0, values);
+  auto idx = values.indexOf(currentComponent);
+  componentComboBox->setCurrentIndex((idx >= 0) ? idx : 0);
+  componentComboBox->blockSignals(false);
+  emitFrameworkOptions();
+}
+
+void ChildPropertyController::setShowEnergyFramework(bool show) {
+  if (!m_pairInteractions)
+    return;
+
+  if (show) {
+    if (m_frameworkDisplay == FrameworkOptions::Display::None) {
+      setFrameworkDisplay(FrameworkOptions::Display::Tubes);
+    } else {
+      if (m_frameworkDisplay != FrameworkOptions::Display::None) {
+        setFrameworkDisplay(FrameworkOptions::Display::Tubes);
+      }
+    }
+  }
+}
+
+void ChildPropertyController::emitFrameworkOptions() {
+  FrameworkOptions options;
+  options.model = modelComboBox->currentText();
+  options.component = componentComboBox->currentText();
+  options.scale = 0.001 * frameworkTubeSizeSpinBox->value(); // convert to A per kJ/mol
+  options.cutoff = frameworkCutoffSpinBox->value();
+  options.display = m_frameworkDisplay;
+  emit frameworkOptionsChanged(options);
+}
+
 void ChildPropertyController::setCurrentMeshInstance(MeshInstance *mi) {
   showSurfaceTabs(true);
   showWavefunctionTabs(false);
+  showFrameworkTabs(false);
 
   m_state = ChildPropertyController::DisplayState::Mesh;
   m_meshPropertyModel->setMeshInstance(mi);
@@ -143,6 +240,7 @@ void ChildPropertyController::setCurrentWavefunction(
     MolecularWavefunction *wfn) {
   showWavefunctionTabs(true);
   showSurfaceTabs(false);
+  showFrameworkTabs(false);
 
   m_state = ChildPropertyController::DisplayState::Wavefunction;
 
@@ -193,6 +291,7 @@ void ChildPropertyController::onModelPropertySelectionChanged(
 }
 
 void ChildPropertyController::enableFingerprintButton(bool enable) {
+  // TODO add a tooltip to show why it's not enabled
   showFingerprintButton->setEnabled(enable);
 }
 
@@ -255,4 +354,34 @@ Mesh *ChildPropertyController::getCurrentMesh() {
   if (m_state != ChildPropertyController::DisplayState::Mesh)
     return nullptr;
   return m_meshPropertyModel->getMesh();
+}
+
+void ChildPropertyController::setFrameworkDisplay(
+    FrameworkOptions::Display choice) {
+  showNoneButton->blockSignals(true);
+  showTubesButton->blockSignals(true);
+  showLinesButton->blockSignals(true);
+  bool noneState = false;
+  bool tubeState = false;
+  bool lineState = false;
+  switch (choice) {
+  case FrameworkOptions::Display::Tubes:
+    tubeState = true;
+    break;
+  case FrameworkOptions::Display::Lines:
+    lineState = true;
+    break;
+  default:
+    // None
+    noneState = true;
+    break;
+  }
+  showNoneButton->setChecked(noneState);
+  showTubesButton->setChecked(tubeState);
+  showLinesButton->setChecked(lineState);
+  showNoneButton->blockSignals(false);
+  showTubesButton->blockSignals(false);
+  showLinesButton->blockSignals(false);
+  m_frameworkDisplay = choice;
+  emitFrameworkOptions();
 }

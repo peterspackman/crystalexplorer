@@ -9,7 +9,7 @@
 #include <occ/core/kdtree.h>
 
 ChemicalStructure::ChemicalStructure(QObject *parent)
-    : QObject(parent), m_interactions(new PairInteractions()) {
+    : QObject(parent), m_interactions(new PairInteractions(this)) {
   // PairInteractions are not set with parent as this, otherwise it will
   // appear in the child list display on the right
   this->installEventFilter(this);
@@ -779,19 +779,12 @@ bool ChemicalStructure::getTransformation(
   pos_a = (rot * pos_a).eval();
 
   double rmsd = (pos_a - pos_b).norm();
-  qDebug() << "RMSD: " << rmsd;
-  qDebug() << "Rotation:";
-  for (int i = 0; i < 3; i++) {
-    qDebug() << rot(i, 0) << rot(i, 1) << rot(i, 2);
-  }
   // tolerance
   if (rmsd > 1e-3)
     return false;
 
   // Compute the translation
   occ::Vec3 translation = centroid_b - (rot * centroid_a);
-  qDebug() << "Translation:" << translation(0) << translation(1)
-           << translation(2);
 
   // Construct the final transformation
   result = Eigen::Isometry3d::Identity();
@@ -804,22 +797,16 @@ bool ChemicalStructure::getTransformation(
 std::vector<WavefunctionAndTransform>
 ChemicalStructure::wavefunctionsAndTransformsForAtoms(
     const std::vector<GenericAtomIndex> &idxs) {
-  for (const auto &idx : idxs) {
-    qDebug() << idx.unique << idx.x << idx.y << idx.z;
-  }
   std::vector<WavefunctionAndTransform> result;
   for (auto *child : children()) {
     MolecularWavefunction *wfn = qobject_cast<MolecularWavefunction *>(child);
     if (wfn) {
-      qDebug() << "Testing candidate wavefunction" << wfn->atomIndices().size();
       WavefunctionAndTransform t{wfn};
       for (const auto &idx : wfn->atomIndices()) {
-        qDebug() << idx.unique << idx.x << idx.y << idx.z;
       }
       bool valid = getTransformation(wfn->atomIndices(), idxs, t.transform);
 
       if (valid) {
-        qDebug() << "Found valid wavefunction";
         result.push_back(t);
       }
     }
@@ -897,7 +884,105 @@ ChemicalStructure::findUniqueFragment(
   return {result, transform};
 }
 
+// Updated findFragmentPairs method
 FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
+    FragmentPairs result;
+    constexpr double tolerance = 1e-1;
+    const auto &fragments = getFragments();
+    const auto &uniqueFragments = symmetryUniqueFragments();
+
+    // Initialize DynamicKDTree
+    occ::core::DynamicKDTree<double> tree(occ::core::max_leaf);
+
+    auto &pairs = result.uniquePairs;
+    auto &molPairs = result.pairs;
+    molPairs.resize(uniqueFragments.size());
+
+    std::vector<size_t> candidateFragments;
+    if (keyFragment < 0) {
+        for (size_t fragIndexA = 0; fragIndexA < fragments.size(); fragIndexA++) {
+            candidateFragments.push_back(fragIndexA);
+        }
+    } else {
+        candidateFragments.push_back(keyFragment);
+    }
+
+    for (size_t fragIndexA : candidateFragments) {
+        const auto &fragA = fragments[fragIndexA];
+        const size_t asymIndex = fragA.asymmetricFragmentIndex;
+
+        for (size_t fragIndexB = 0; fragIndexB < fragments.size(); fragIndexB++) {
+            if ((keyFragment < 0) && (fragIndexB <= fragIndexA)) continue;
+
+            const auto &fragB = fragments[fragIndexB];
+            double distance = (fragA.nearestAtom(fragB).distance);
+            if (distance <= tolerance) continue;
+
+            FragmentDimer d(fragA, fragB);
+
+            // Create a 3D point for the current pair
+            Eigen::Vector3d point(d.nearestAtomDistance, d.centroidDistance, d.centerOfMassDistance);
+
+            // Check if a similar pair already exists using the KD-tree
+            bool found_identical = false;
+            if (tree.size() > 0) {
+                auto [ret_index, out_dist_sqr] = tree.nearest(point);
+                if (out_dist_sqr <= tolerance * tolerance) {
+                    // Perform exact comparison
+                    if (pairs[ret_index] == d) {
+                        found_identical = true;
+                    }
+                }
+            }
+
+            if (!found_identical) {
+                // Add the new pair
+                pairs.push_back(d);
+                // Add the point to the DynamicKDTree
+                tree.addPoint(point);
+            }
+            molPairs[asymIndex].push_back({d, -1});
+        }
+    }
+
+    // Sort the pairs
+    auto fragmentDimerSortFunc = [](const FragmentDimer &a, const FragmentDimer &b) {
+        return a.nearestAtomDistance < b.nearestAtomDistance;
+    };
+    auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
+                              const FragmentPairs::SymmetryRelatedPair &b) {
+        return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
+    };
+
+    std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
+
+  // Update the KD-tree after sorting
+    occ::core::DynamicKDTree<double> sortedTree(occ::core::max_leaf);
+    for (size_t i = 0; i < pairs.size(); ++i) {
+        Eigen::Vector3d point(pairs[i].nearestAtomDistance, pairs[i].centroidDistance, pairs[i].centerOfMassDistance);
+        sortedTree.addPoint(point);
+    }
+
+    for (auto &vec : molPairs) {
+        std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
+        for (auto &d : vec) {
+            Eigen::Vector3d query(d.fragments.nearestAtomDistance, d.fragments.centroidDistance, d.fragments.centerOfMassDistance);
+            auto [idx, dist_sqr] = sortedTree.nearest(query);
+            if(pairs[idx] == d.fragments) {
+              d.uniquePairIndex = idx;
+            }
+        }
+    }
+    qDebug() << "Unique pairs: " << pairs.size();
+    for (const auto &x : molPairs) {
+        qDebug() << "Total pairs" << x.size();
+    }
+    return result;
+}
+
+/*
+FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
+  // TODO urgently need to speed this up - the brute force search is super slow
   FragmentPairs result;
   constexpr double tolerance = 1e-1;
 
@@ -931,8 +1016,6 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
         if (std::any_of(pairs.begin(), pairs.end(),
                         [&d](const FragmentDimer &d2) { return d == d2; }))
           continue;
-        qDebug() << d.symmetry;
-        qDebug() << d.centroidDistance;
         pairs.push_back(d);
       }
     }
@@ -963,6 +1046,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
   }
   return result;
 }
+*/
 
 const std::vector<Fragment> &ChemicalStructure::getFragments() const {
   return m_fragments;

@@ -8,6 +8,7 @@
 #include "meshinstancerenderer.h"
 #include "pointcloudrenderer.h"
 #include "chemicalstructure.h"
+#include "frameworkrenderer.h"
 #include "drawingstyle.h"
 #include "renderselection.h"
 #include "rendereruniforms.h"
@@ -42,6 +43,9 @@ public:
     [[nodiscard]] float bondThickness() const;
 
     void updateRendererUniforms(const RendererUniforms &);
+
+    [[nodiscard]] inline const auto &frameworkOptions() const { return m_frameworkOptions; }
+    void setFrameworkOptions(const FrameworkOptions &);
 
     void updateAtoms();
     void updateBonds();
@@ -101,12 +105,14 @@ private:
     CylinderRenderer * m_cylinderRenderer{nullptr};
     std::vector<MeshInstanceRenderer *> m_meshRenderers;
     PointCloudRenderer *m_pointCloudRenderer{nullptr};
+    FrameworkRenderer *m_frameworkRenderer{nullptr};
 
     ChemicalStructure * m_structure{nullptr};
 
     QMap<QString, ColorMapName> m_propertyColorMaps;
 
     RendererUniforms m_uniforms;
+    FrameworkOptions m_frameworkOptions;
 };
 
 }

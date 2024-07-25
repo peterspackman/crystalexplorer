@@ -85,9 +85,6 @@ void PairEnergyCalculator::pairEnergyComplete(pair_energy::Parameters params, Oc
         auto * result = load_pair_energy_json(task->jsonFilename());
         result->setParameters(params);
         qDebug() << "Loaded interaction energies from" << task->jsonFilename() << result;
-        if(result) {
-            qDebug() << result->components();
-        }
         interactions->add(result);
         m_completedTaskCount++;
         if (m_completedTaskCount == m_totalTasks) {

@@ -225,25 +225,34 @@ void Crystalx::createChildPropertyControllerDockWidget() {
           childPropertyController,
           &ChildPropertyController::setSelectedPropertyValue);
 
-  connect(crystalController, &CrystalController::childSelectionChanged,
-          [&](QModelIndex index) {
-            auto *mesh = crystalController->getChildMesh(index);
-            auto *meshinstance = crystalController->getChildMeshInstance(index);
-            auto *wfn = crystalController->getChildWavefunction(index);
+  connect(childPropertyController, &ChildPropertyController::frameworkOptionsChanged,
+          project, &Project::frameworkOptionsChanged);
 
-            // check for mesh instance first
-            if (mesh) {
-              qDebug() << "Setting current mesh to " << mesh;
-              childPropertyController->setCurrentMesh(mesh);
-            } else if (meshinstance) {
-              qDebug() << "Setting current mesh instance to " << meshinstance;
-              childPropertyController->setCurrentMeshInstance(meshinstance);
-              
-            } else if (wfn) {
-              qDebug() << "Setting current wfn to " << wfn;
-              childPropertyController->setCurrentWavefunction(wfn);
-            }
-          });
+  connect(
+      crystalController, &CrystalController::childSelectionChanged,
+      [&](QModelIndex index) {
+        auto *mesh = crystalController->getChild<Mesh>(index);
+        auto *meshinstance = crystalController->getChild<MeshInstance>(index);
+        auto *wfn = crystalController->getChild<MolecularWavefunction>(index);
+        auto *pairInteractions =
+            crystalController->getChild<PairInteractions>(index);
+
+        // check for mesh instance first
+        if (mesh) {
+          qDebug() << "Setting current mesh to " << mesh;
+          childPropertyController->setCurrentMesh(mesh);
+        } else if (meshinstance) {
+          qDebug() << "Setting current mesh instance to " << meshinstance;
+          childPropertyController->setCurrentMeshInstance(meshinstance);
+
+        } else if (wfn) {
+          qDebug() << "Setting current wfn to " << wfn;
+          childPropertyController->setCurrentWavefunction(wfn);
+        } else if (pairInteractions) {
+          qDebug() << "Setting pair interactions to" << pairInteractions;
+          childPropertyController->setCurrentPairInteractions(pairInteractions);
+        }
+      });
 }
 
 void Crystalx::createCrystalControllerDockWidget() {
@@ -272,8 +281,8 @@ void Crystalx::initConnections() {
   connect(project, &Project::structureChanged, this,
           &Crystalx::handleStructureChange, Qt::QueuedConnection);
 
-  connect(m_taskManager, &TaskManager::busyStateChanged,
-          this, &Crystalx::handleBusyStateChange);
+  connect(m_taskManager, &TaskManager::busyStateChanged, this,
+          &Crystalx::handleBusyStateChange);
 
   // Project connections - current crystal changed in some way
   connect(project, &Project::selectedSceneChanged, crystalController,
@@ -462,13 +471,10 @@ void Crystalx::initMenuConnections() {
           &Crystalx::handleGenerateWavefunctionAction);
 
   // animation frames
-  connect(nextFrameAction, &QAction::triggered, [this]() {
-    project->nextFrame(true);
-  });
-  connect(previousFrameAction, &QAction::triggered, [this]() {
-    project->nextFrame(false);
-  });
-
+  connect(nextFrameAction, &QAction::triggered,
+          [this]() { project->nextFrame(true); });
+  connect(previousFrameAction, &QAction::triggered,
+          [this]() { project->nextFrame(false); });
 }
 
 void Crystalx::initCloseContactsDialog() {
@@ -911,10 +917,7 @@ void Crystalx::processPdb(QString &filename) {
   project->loadCrystalStructuresFromPdbFile(filename);
 }
 
-
-void Crystalx::handleBusyStateChange(bool busy) {
-  setBusy(busy);
-}
+void Crystalx::handleBusyStateChange(bool busy) { setBusy(busy); }
 
 void Crystalx::jobRunning() { setBusy(true); }
 
@@ -966,10 +969,9 @@ void Crystalx::updateStatusMessage(QString s) { statusBar()->showMessage(s); }
 void Crystalx::clearStatusMessage() { statusBar()->clearMessage(); }
 
 void Crystalx::updateProgressBar(int current_step, int max_steps) {
-  if(current_step >= max_steps) {
+  if (current_step >= max_steps) {
     _jobProgress->setVisible(false);
-  }
-  else if (max_steps >= 1) {
+  } else if (max_steps >= 1) {
     _jobProgress->setVisible(true);
     _jobProgress->setMaximum(max_steps);
     _jobProgress->setValue(current_step);
@@ -1276,15 +1278,19 @@ void Crystalx::enableCalculateEnergiesAction(bool enable) {
   if (!structure)
     return;
 
+  QString tooltip = "Calculate pairwise interaction energies...";
 
   const bool incompleteFragments = structure->hasIncompleteSelectedFragments();
+  if (incompleteFragments)
+    tooltip += "\nComplete all fragments to enable this action.";
   const size_t selectedFragmentCount = structure->selectedFragments().size();
-  qDebug() << "Incomplete fragments" << incompleteFragments << "selectedFragments" << selectedFragmentCount;
+  if (selectedFragmentCount < 1)
+    tooltip += "\nSelect one or more fragments to enable this action.";
 
   bool selectionOk = (!incompleteFragments) && (selectedFragmentCount >= 1);
   bool reallyEnable = enable && selectionOk;
-  qDebug() << "Have scene and structure, selectionOk: " << selectionOk << reallyEnable;
 
+  calculateEnergiesAction->setToolTip(tooltip);
   calculateEnergiesAction->setEnabled(reallyEnable);
 }
 
@@ -1307,7 +1313,6 @@ void Crystalx::updateCloseContactOptions() {
 
 void Crystalx::displayFingerprint() {
   passCurrentCrystalToFingerprintWindow();
-  qDebug() << "FingerprintWindow" << fingerprintWindow;
   fingerprintWindow->show();
 }
 
@@ -1745,8 +1750,10 @@ void Crystalx::calculatePairEnergiesWithExistingWavefunctions(
 
   std::vector<pair_energy::Parameters> energies;
 
+  auto *pairInteractions = structure->pairInteractions();
   for (const auto &pair : modelParameters.pairs) {
     pair_energy::Parameters p;
+    p.fragmentDimer = pair;
     p.structure = structure;
     p.atomsA = pair.a.atomIndices;
     p.atomsB = pair.b.atomIndices;
@@ -1781,7 +1788,14 @@ void Crystalx::calculatePairEnergiesWithExistingWavefunctions(
       qDebug() << "Unable to find wavefunctions for A and B";
       return;
     }
-    energies.push_back(p);
+
+    QString model = modelParameters.model.toUpper();
+    auto *existingInteraction = pairInteractions->getInteraction(model, pair);
+    if (!existingInteraction) {
+      energies.push_back(p);
+    } else {
+      qDebug() << "Found matching interaction:" << existingInteraction;
+    }
   }
 
   PairEnergyCalculator *calc = new PairEnergyCalculator(this);
@@ -1951,6 +1965,10 @@ void Crystalx::tidyUpAfterInfoViewerClosed() {
 ////////////////////////////////////////////////////////////////////////////////////
 
 void Crystalx::showEnergyFrameworkDialog() {
+  Scene *scene = project->currentScene();
+  if (!scene)
+    return;
+  if(childPropertyController) childPropertyController->setShowEnergyFramework(true);
   qDebug() << "Todo show energy framework dialog";
   /*
   if (frameworkDialog == nullptr) {

@@ -24,6 +24,7 @@
 #include "orbitcamera.h"
 #include "rendereruniforms.h"
 #include "renderselection.h"
+#include "frameworkoptions.h"
 #include "settings.h"
 #include "sphereimpostorrenderer.h"
 
@@ -142,6 +143,9 @@ public:
   }
   inline bool atomicLabelsVisible() const { return _showAtomicLabels; }
   inline void setAtomicLabelsVisible(bool show) { _showAtomicLabels = show; }
+
+
+  void setFrameworkOptions(const FrameworkOptions &options);
 
   void setShowHydrogens(bool show);
   inline bool hydrogensAreVisible() const { return _showHydrogens; }

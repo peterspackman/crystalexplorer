@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>43</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -466,7 +466,7 @@
     <string>Complete fragments</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+C</string>
+    <string>C</string>
    </property>
   </action>
   <action name="toggleContactAtomsAction">

@@ -7,7 +7,6 @@
 #include "fmt/core.h"
 #include "globals.h"
 #include "graphics.h"
-#include "interactions.h"
 #include "mathconstants.h"
 #include "scene.h"
 #include "settings.h"
@@ -80,6 +79,13 @@ void Scene::setShowStatusesToDefaults() {
 
 void Scene::setShowCloseContacts(bool set) {
   m_structure->setShowVanDerWaalsContactAtoms(set);
+}
+
+
+void Scene::setFrameworkOptions(const FrameworkOptions &options) {
+  if(m_structureRenderer) {
+    m_structureRenderer->setFrameworkOptions(options);
+  }
 }
 
 void Scene::setSelectStatusForAllAtoms(bool set) {
