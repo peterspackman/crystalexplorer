@@ -26,7 +26,7 @@ inline float resolutionValue(Resolution res) {
   }
 }
 
-inline const char *resolutionName(Resolution res) {
+inline const char *resolutionToString(Resolution res) {
   switch (res) {
   case Resolution::VeryLow:
     return "Very Low";
@@ -40,9 +40,19 @@ inline const char *resolutionName(Resolution res) {
     return "Very High";
   case Resolution::Absurd:
     return "Absurd";
-  case Resolution::Custom:
+  default:
     return "Custom";
   }
+}
+
+inline Resolution stringToResolution(const QString &res) {
+    if (res.compare("Very Low", Qt::CaseInsensitive) == 0) return Resolution::VeryLow;
+    if (res.compare("Low", Qt::CaseInsensitive) == 0) return Resolution::Low;
+    if (res.compare("Medium", Qt::CaseInsensitive) == 0) return Resolution::Medium;
+    if (res.compare("High", Qt::CaseInsensitive) == 0) return Resolution::High;
+    if (res.compare("Very High", Qt::CaseInsensitive) == 0) return Resolution::VeryHigh;
+    if (res.compare("Absurd", Qt::CaseInsensitive) == 0) return Resolution::Absurd;
+    return Resolution::Custom; // Default case
 }
 
 enum class Kind {

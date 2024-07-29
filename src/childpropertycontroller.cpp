@@ -161,6 +161,10 @@ void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
 }
 
 void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
+  if(m_pairInteractions) {
+      disconnect(m_pairInteractions, &PairInteractions::interactionAdded, this, &ChildPropertyController::updatePairInteractionModels);
+      disconnect(m_pairInteractions, &PairInteractions::interactionRemoved, this, &ChildPropertyController::updatePairInteractionModels);
+  }
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
   showFrameworkTabs(true);
@@ -169,6 +173,10 @@ void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
 
   if (m_pairInteractions) {
     setEnabled(m_pairInteractions->getCount() > 0);
+    if(m_pairInteractions) {
+        connect(m_pairInteractions, &PairInteractions::interactionAdded, this, &ChildPropertyController::updatePairInteractionModels);
+        connect(m_pairInteractions, &PairInteractions::interactionRemoved, this, &ChildPropertyController::updatePairInteractionModels);
+    }
     updatePairInteractionModels();
   }
 }

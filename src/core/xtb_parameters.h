@@ -52,7 +52,20 @@ struct Result {
   bool success{false};
 };
 
-inline QString methodToString(Method) { return "GFN2-xTB"; }
-inline Method stringToMethod(const QString &s) { return Method::GFN2_xTB; }
+inline QString methodToString(Method method) {
+    switch(method) {
+    default: return "GFN2-xTB";
+    case Method::GFN0_xTB: return "GFN0-xTB";
+    case Method::GFN1_xTB: return "GFN1-xTB";
+    case Method::GFN_FF: return "GFN-FF";
+    }
+}
+
+inline Method stringToMethod(const QString &s) {
+    if (s.compare("GFN0-xTB", Qt::CaseInsensitive) == 0) return Method::GFN0_xTB;
+    if (s.compare("GFN1-xTB", Qt::CaseInsensitive) == 0) return Method::GFN1_xTB;
+    if (s.compare("GFN-FF", Qt::CaseInsensitive) == 0) return Method::GFN_FF;
+    return Method::GFN2_xTB; // Default case
+}
 
 } // namespace wfn

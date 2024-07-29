@@ -123,7 +123,7 @@ void ResolutionDropdown::populateDropdown() {
       isosurface::Resolution::VeryHigh, isosurface::Resolution::Absurd,
   };
   for (const auto &l : levels) {
-    addItem(isosurface::resolutionName(l), static_cast<int>(l));
+    addItem(isosurface::resolutionToString(l), static_cast<int>(l));
   }
   blockSignals(false);
 }

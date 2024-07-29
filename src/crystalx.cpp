@@ -1976,7 +1976,10 @@ void Crystalx::showEnergyFrameworkDialog() {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  if(childPropertyController) childPropertyController->setShowEnergyFramework(true);
+  if(childPropertyController) {
+      childPropertyController->setCurrentPairInteractions(scene->chemicalStructure()->pairInteractions());
+      childPropertyController->setShowEnergyFramework(true);
+  }
   qDebug() << "Todo show energy framework dialog";
   /*
   if (frameworkDialog == nullptr) {
