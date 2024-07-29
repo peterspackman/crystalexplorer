@@ -7,7 +7,7 @@ class ChemicalStructure;
 
 namespace wfn {
 
-enum class FileFormat { OccWavefunction, Fchk, Molden };
+enum class FileFormat { OccWavefunction, Fchk, Molden, XtbJson };
 
 struct Parameters {
   int charge{0};
@@ -38,6 +38,8 @@ struct Parameters {
       return false;
     return true;
   }
+
+  bool isXtbMethod() const;
 };
 
 struct Result {

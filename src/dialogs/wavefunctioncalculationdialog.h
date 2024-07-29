@@ -18,6 +18,7 @@ public:
 
   int charge() const;
   void setCharge(int charge);
+  bool isXtbMethod() const;
 
   int multiplicity() const;
   void setMultiplicity(int mult);

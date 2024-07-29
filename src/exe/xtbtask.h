@@ -13,6 +13,7 @@ public:
   const xtb::Parameters &getParameters() const;
 
   QString inputSuffix() const;
+  QString jsonFilename() const;
 
 private:
   xtb::Parameters m_parameters;

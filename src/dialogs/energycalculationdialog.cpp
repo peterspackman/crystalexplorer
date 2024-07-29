@@ -79,6 +79,12 @@ bool EnergyCalculationDialog::methodIsDefined() const {
 void EnergyCalculationDialog::handleModelChange() {
   m_method = (quantitativeRadioButton->isChecked()) ? "b3lyp" : "hf";
   m_basis = (quantitativeRadioButton->isChecked()) ? "def2-svp" : "3-21g";
+
+  if(gfnRadioButton->isChecked()) {
+    m_method = "GFN2-xTB";
+    m_basis = "N/A";
+  }
+
   wavefunctionCombobox->setEnabled(userWavefunctionRadioButton->isChecked());
   for (auto &wfn : m_requiredWavefunctions) {
     wfn.method = m_method;
@@ -144,6 +150,7 @@ bool EnergyCalculationDialog::handleStructureChange() {
 
 QString EnergyCalculationDialog::selectedEnergyModel() const {
   // TODO add support for more energy models
+  if(gfnRadioButton->isChecked()) return "GFN2-xTB";
   if(quantitativeRadioButton->isChecked()) return "ce-1p";
   if(qualitativeRadioButton->isChecked()) return "ce-hf";
   return "ce-1p";

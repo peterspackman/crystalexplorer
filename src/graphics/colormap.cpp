@@ -47,6 +47,7 @@ inline double quantize(double x, uint_fast8_t levels) {
 }
 
 namespace colors {
+// TODO move this to JSON, indexing by QString
 inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.2081, 0.1663, 0.5292),
     QColor::fromRgbF(0.2091, 0.1721, 0.5411),
@@ -2388,6 +2389,256 @@ inline const std::vector<QColor> HSV{
     QColor::fromRgbF(1.0000, 0.0000, 0.0469),
     QColor::fromRgbF(1.0000, 0.0000, 0.0234),
 };
+inline const std::vector<QColor> Archambault{
+    QColor("#381a61"), QColor("#f9d14a"), QColor("#ab3329"), QColor("#88a0dc"),
+    QColor("#e78429"), QColor("#ed968c"), QColor("#7c4b73"),
+};
+inline const std::vector<QColor> Austria{
+    QColor("#a40000"), QColor("#16317d"), QColor("#007e2f"), QColor("#ffcd12"),
+    QColor("#721b3e"), QColor("#b86092"), QColor("#00b7a7"),
+};
+inline const std::vector<QColor> Benedictus{
+    QColor("#c5daf6"), QColor("#f9b4c9"), QColor("#6996e3"), QColor("#9a133d"),
+    QColor("#ffffff"), QColor("#d8527c"), QColor("#1a318b"), QColor("#f28aaa"),
+    QColor("#eaf3ff"), QColor("#b93961"), QColor("#4060c8"), QColor("#f9e0e8"),
+    QColor("#a1c2ed"),
+};
+inline const std::vector<QColor> Cassatt1{
+    QColor("#e3aba7"), QColor("#9d9dc7"), QColor("#b1615c"), QColor("#5a5a83"),
+    QColor("#edd7d9"), QColor("#c9c9dd"), QColor("#d88782"), QColor("#8282aa"),
+};
+inline const std::vector<QColor> Cassatt2{
+    QColor("#7fa074"), QColor("#90719f"), QColor("#2c4b27"), QColor("#2d223c"),
+    QColor("#dec5da"), QColor("#c1d1aa"), QColor("#574571"), QColor("#0e2810"),
+    QColor("#b695bc"), QColor("#466c4b"),
+};
+inline const std::vector<QColor> Cross{
+    QColor("#eb7926"), QColor("#62929a"), QColor("#c969a1"),
+    QColor("#004f63"), QColor("#ce4441"), QColor("#859b6c"),
+    QColor("#ee8577"), QColor("#ffbb44"), QColor("#122451"),
+};
+inline const std::vector<QColor> Degas{
+    QColor("#418979"), QColor("#96410e"), QColor("#591d06"), QColor("#e5a335"),
+    QColor("#556219"), QColor("#053c29"), QColor("#2b614e"),
+};
+inline const std::vector<QColor> Demuth{
+    QColor("#41485f"), QColor("#f7c267"), QColor("#591c19"), QColor("#8b8b99"),
+    QColor("#b64f32"), QColor("#d39a2d"), QColor("#5d6174"), QColor("#9b332b"),
+    QColor("#b9b9b8"), QColor("#262d42"),
+};
+inline const std::vector<QColor> Derain{
+    QColor("#aab5d5"), QColor("#97c684"), QColor("#808fe1"), QColor("#454a74"),
+    QColor("#efc86e"), QColor("#6f9969"), QColor("#5c66a8"),
+};
+inline const std::vector<QColor> Egypt{
+    QColor("#dd5129"),
+    QColor("#0f7ba2"),
+    QColor("#43b284"),
+    QColor("#fab255"),
+};
+inline const std::vector<QColor> Gauguin{
+    QColor("#811e18"), QColor("#4c6216"), QColor("#c88a2c"),
+    QColor("#9e4013"), QColor("#b04948"), QColor("#1a472a"),
+};
+inline const std::vector<QColor> Greek{
+    QColor("#8d1c06"), QColor("#e67424"), QColor("#f5c34d"),
+    QColor("#3c0d03"), QColor("#ed9b49"),
+};
+inline const std::vector<QColor> Hiroshige{
+    QColor("#aadce0"), QColor("#ef8a47"), QColor("#376795"), QColor("#f7aa58"),
+    QColor("#72bcd5"), QColor("#ffe6b7"), QColor("#e76254"), QColor("#1e466e"),
+    QColor("#ffd06f"), QColor("#528fad"),
+};
+inline const std::vector<QColor> Hokusai1{
+    QColor("#b75347"), QColor("#224b5e"), QColor("#e09351"), QColor("#94b594"),
+    QColor("#edc775"), QColor("#6d2f20"), QColor("#df7e66"),
+};
+inline const std::vector<QColor> Hokusai2{
+    QColor("#134b73"), QColor("#72aeb6"), QColor("#2f70a1"),
+    QColor("#abc9c8"), QColor("#0a3351"), QColor("#4692b0"),
+};
+inline const std::vector<QColor> Hokusai3{
+    QColor("#5a97c1"), QColor("#95c36e"), QColor("#295384"),
+    QColor("#74c8c3"), QColor("#d8d97a"), QColor("#0a2e57"),
+};
+inline const std::vector<QColor> Homer1{
+    QColor("#c3f4f6"), QColor("#df7700"), QColor("#a62f00"), QColor("#6ad5e8"),
+    QColor("#f5b642"), QColor("#32b2da"), QColor("#fff179"), QColor("#551f00"),
+};
+inline const std::vector<QColor> Homer2{
+    QColor("#e9851d"), QColor("#165d43"), QColor("#bf3626"), QColor("#f9c53b"),
+    QColor("#788f33"), QColor("#e9724c"), QColor("#aeac4c"),
+};
+inline const std::vector<QColor> Ingres{
+    QColor("#2e77ab"), QColor("#d1b252"), QColor("#18527e"), QColor("#a97f2f"),
+    QColor("#06314e"), QColor("#7e5522"), QColor("#041d2c"), QColor("#472c0b"),
+};
+inline const std::vector<QColor> Isfahan1{
+    QColor("#178f92"), QColor("#845d29"), QColor("#4fb6ca"), QColor("#175f5d"),
+    QColor("#4e3910"), QColor("#1d1f54"), QColor("#d8c29d"),
+};
+inline const std::vector<QColor> Isfahan2{
+    QColor("#34b6c6"), QColor("#ddc000"), QColor("#79ad41"),
+    QColor("#4063a3"), QColor("#d7aca1"),
+};
+inline const std::vector<QColor> Java{
+    QColor("#663171"), QColor("#e2998a"), QColor("#cf3a36"),
+    QColor("#0c7156"), QColor("#ea7428"),
+};
+inline const std::vector<QColor> Johnson{
+    QColor("#f6c200"), QColor("#a00e00"), QColor("#0086a8"),
+    QColor("#d04e00"), QColor("#132b69"),
+};
+inline const std::vector<QColor> Juarez{
+    QColor("#a82203"), QColor("#208cc0"), QColor("#f1af3a"),
+    QColor("#cf5e4e"), QColor("#637b31"), QColor("#003967"),
+};
+inline const std::vector<QColor> Kandinsky{
+    QColor("#3b7c70"),
+    QColor("#ce9642"),
+    QColor("#898e9f"),
+    QColor("#3b3a3e"),
+};
+inline const std::vector<QColor> Klimt{
+    QColor("#3c4b99"), QColor("#c93f55"), QColor("#eacc62"),
+    QColor("#469d76"), QColor("#924099"), QColor("#df9ed4"),
+};
+inline const std::vector<QColor> Lakota{
+    QColor("#04a3bd"), QColor("#f0be3d"), QColor("#931e18"),
+    QColor("#da7901"), QColor("#247d3f"), QColor("#20235b"),
+};
+inline const std::vector<QColor> Manet{
+    QColor("#225e92"), QColor("#d29c44"), QColor("#43429b"), QColor("#ebc174"),
+    QColor("#4585b7"), QColor("#183571"), QColor("#5e65be"), QColor("#80521c"),
+    QColor("#7ec5f4"), QColor("#3b2319"), QColor("#ede2cc"),
+};
+inline const std::vector<QColor> Monet{
+    QColor("#749e89"), QColor("#c399a2"), QColor("#7d87b2"),
+    QColor("#abccbe"), QColor("#e3cacf"), QColor("#c2cae3"),
+    QColor("#4e6d58"), QColor("#9f6e71"), QColor("#41507b"),
+};
+inline const std::vector<QColor> Moreau{
+    QColor("#792504"), QColor("#527baa"), QColor("#bc7524"), QColor("#8dadca"),
+    QColor("#082844"), QColor("#421600"), QColor("#104839"),
+};
+inline const std::vector<QColor> Morgenstern{
+    QColor("#a56457"), QColor("#ffb178"), QColor("#ffc680"), QColor("#db8872"),
+    QColor("#dfbbc8"), QColor("#b08ba5"), QColor("#7c668c"),
+};
+inline const std::vector<QColor> Nattier{
+    QColor("#52271c"), QColor("#184948"), QColor("#c08e39"), QColor("#7f793c"),
+    QColor("#022a2a"), QColor("#944839"), QColor("#565c33"),
+};
+inline const std::vector<QColor> Navajo{
+    QColor("#660d20"), QColor("#e59a52"), QColor("#edce79"),
+    QColor("#094568"), QColor("#e1c59a"),
+};
+inline const std::vector<QColor> NewKingdom{
+    QColor("#9eb4e0"), QColor("#e1846c"), QColor("#e6bb9e"),
+    QColor("#9c6849"), QColor("#735852"),
+};
+inline const std::vector<QColor> Nizami{
+    QColor("#8cc8bc"), QColor("#b83326"), QColor("#7da7ea"), QColor("#1d4497"),
+    QColor("#c8570d"), QColor("#5773c0"), QColor("#edb144"), QColor("#dd7867"),
+};
+inline const std::vector<QColor> OKeeffe1{
+    QColor("#7db0ea"), QColor("#f6f2ee"), QColor("#6b200c"), QColor("#ee956a"),
+    QColor("#225bb2"), QColor("#da6c42"), QColor("#133e7e"), QColor("#fbc2a9"),
+    QColor("#973d21"), QColor("#bad6f9"), QColor("#447fdd"),
+};
+inline const std::vector<QColor> OKeeffe2{
+    QColor("#92351e"), QColor("#fbe3c2"), QColor("#b9563f"), QColor("#e69c6b"),
+    QColor("#f2c88f"), QColor("#d37750"), QColor("#ecb27d"),
+};
+inline const std::vector<QColor> Paquin{
+    QColor("#47632a"), QColor("#f7dea3"), QColor("#831818"), QColor("#98ab76"),
+    QColor("#f78462"), QColor("#f05b43"), QColor("#feac81"), QColor("#748f46"),
+    QColor("#c62320"), QColor("#ced1af"), QColor("#275024"),
+};
+inline const std::vector<QColor> Peru1{
+    QColor("#1c9d7c"), QColor("#b5361c"), QColor("#369cc9"),
+    QColor("#e35e28"), QColor("#31c7ba"), QColor("#3a507f"),
+};
+inline const std::vector<QColor> Peru2{
+    QColor("#b36c06"), QColor("#65150b"), QColor("#c0431f"), QColor("#f19425"),
+    QColor("#961f1f"), QColor("#533d14"), QColor("#c59349"),
+};
+inline const std::vector<QColor> Pillement{
+    QColor("#44636f"), QColor("#738e8e"), QColor("#697852"),
+    QColor("#2b4655"), QColor("#a9845b"), QColor("#0f252f"),
+};
+inline const std::vector<QColor> Pissaro{
+    QColor("#1a5270"), QColor("#4c825d"), QColor("#8dc7dc"), QColor("#134130"),
+    QColor("#0e2a4d"), QColor("#508ca7"), QColor("#8cae9e"),
+};
+inline const std::vector<QColor> Redon{
+    QColor("#5b859e"), QColor("#1e395f"), QColor("#75884b"), QColor("#1e5a46"),
+    QColor("#df8d71"), QColor("#af4f2f"), QColor("#d48f90"), QColor("#732f30"),
+    QColor("#ab84a5"), QColor("#59385c"), QColor("#d8b847"), QColor("#b38711"),
+};
+inline const std::vector<QColor> Renoir{
+    QColor("#2f357c"), QColor("#b0799a"), QColor("#e69b00"), QColor("#355828"),
+    QColor("#6c5d9e"), QColor("#bf3729"), QColor("#e48171"), QColor("#f5bb50"),
+    QColor("#9d9cd5"), QColor("#17154f"), QColor("#f6b3b0"), QColor("#ada43b"),
+};
+inline const std::vector<QColor> Robert{
+    QColor("#375624"), QColor("#18505f"), QColor("#6ca4a0"),
+    QColor("#11341a"), QColor("#062e3d"), QColor("#487a7c"),
+};
+inline const std::vector<QColor> Signac{
+    QColor("#2b9b81"), QColor("#fe9b00"), QColor("#f4c40f"), QColor("#fbe183"),
+    QColor("#633372"), QColor("#9b3441"), QColor("#e6a2a6"), QColor("#92c051"),
+    QColor("#1f6e9c"), QColor("#9f5691"), QColor("#e87b89"), QColor("#d8443c"),
+    QColor("#de597c"), QColor("#aa7aa1"),
+};
+inline const std::vector<QColor> Stevens{
+    QColor("#ba5c3f"), QColor("#307d7f"), QColor("#598c4c"),
+    QColor("#a13213"), QColor("#042e4e"), QColor("#470c00"),
+};
+inline const std::vector<QColor> Tam{
+    QColor("#ef8737"), QColor("#341648"), QColor("#ffd353"), QColor("#9f2d55"),
+    QColor("#ffb242"), QColor("#62205f"), QColor("#de4f33"), QColor("#bb292c"),
+};
+inline const std::vector<QColor> Tara{
+    QColor("#eab1c6"), QColor("#e18a1f"), QColor("#d35e17"),
+    QColor("#829d44"), QColor("#e9b109"),
+};
+inline const std::vector<QColor> Thomas{
+    QColor("#4457a5"), QColor("#c44d76"), QColor("#7caf5c"), QColor("#59386c"),
+    QColor("#b24422"), QColor("#13315f"), QColor("#447861"), QColor("#b1a1cc"),
+};
+inline const std::vector<QColor> Tiepolo{
+    QColor("#802417"), QColor("#c06636"), QColor("#17486f"), QColor("#e8b960"),
+    QColor("#ce9344"), QColor("#646e3b"), QColor("#508ea2"), QColor("#2b5851"),
+};
+inline const std::vector<QColor> Troy{
+    QColor("#6c1d0e"), QColor("#235070"), QColor("#c27668"), QColor("#7ba0b4"),
+    QColor("#421401"), QColor("#0a2d46"), QColor("#8b3a2b"), QColor("#44728c"),
+};
+inline const std::vector<QColor> Tsimshian{
+    QColor("#2673a3"), QColor("#582310"), QColor("#473d7d"), QColor("#318f49"),
+    QColor("#582310"), QColor("#0cb4bb"), QColor("#82c45f"),
+};
+inline const std::vector<QColor> VanGogh1{
+    QColor("#6b6ca3"), QColor("#87bcbd"), QColor("#6f9954"), QColor("#969bc7"),
+    QColor("#89ab7c"), QColor("#434475"), QColor("#2c2d54"),
+};
+inline const std::vector<QColor> VanGogh2{
+    QColor("#bd3106"), QColor("#5b7314"), QColor("#454b87"), QColor("#d9700e"),
+    QColor("#89a6bb"), QColor("#eebe04"), QColor("#c3d6ce"), QColor("#e9a00e"),
+};
+inline const std::vector<QColor> VanGogh3{
+    QColor("#1e3d14"), QColor("#447243"), QColor("#e7e5cc"), QColor("#669d62"),
+    QColor("#192813"), QColor("#c2d6a4"), QColor("#9cc184"), QColor("#1f5b25"),
+};
+inline const std::vector<QColor> Veronese{
+    QColor("#2c6b67"), QColor("#67322e"), QColor("#122c43"), QColor("#99610a"),
+    QColor("#c38f16"), QColor("#175449"), QColor("#6e948c"),
+};
+inline const std::vector<QColor> Wissing{
+    QColor("#7c291e"), QColor("#ba7233"), QColor("#2d5380"),
+    QColor("#3a4421"), QColor("#4b1d0d"),
+};
 } // namespace colors
 
 } // namespace impl
@@ -2435,36 +2686,153 @@ QColor colorMappedFromHueRange(double value, double minValue, double maxValue,
   return QColor::fromHsvF(h, 1.0, 1.0).toRgb();
 }
 
-QColor linearColorMap(double x, ColorMapName name) {
+// Use the macro in the function
+inline const std::vector<QColor> &colorsFromName(ColorMapName name) {
   switch (name) {
   case ColorMapName::Parula:
-    return impl::linearColorMap(x, impl::colors::Parula);
+    return impl::colors::Parula;
   case ColorMapName::Heat:
-    return impl::linearColorMap(x, impl::colors::Heat);
+    return impl::colors::Heat;
   case ColorMapName::Jet:
-    return impl::linearColorMap(x, impl::colors::Jet);
+    return impl::colors::Jet;
   case ColorMapName::Turbo:
-    return impl::linearColorMap(x, impl::colors::Turbo);
+    return impl::colors::Turbo;
   case ColorMapName::Magma:
-    return impl::linearColorMap(x, impl::colors::Magma);
+    return impl::colors::Magma;
   case ColorMapName::Inferno:
-    return impl::linearColorMap(x, impl::colors::Inferno);
+    return impl::colors::Inferno;
   case ColorMapName::Plasma:
-    return impl::linearColorMap(x, impl::colors::Plasma);
+    return impl::colors::Plasma;
   case ColorMapName::Viridis:
-    return impl::linearColorMap(x, impl::colors::Viridis);
+    return impl::colors::Viridis;
   case ColorMapName::Cividis:
-    return impl::linearColorMap(x, impl::colors::Cividis);
+    return impl::colors::Cividis;
   case ColorMapName::Github:
-    return impl::linearColorMap(x, impl::colors::Github);
-  case ColorMapName::Cubehelix:
-    return impl::linearColorMap(x, impl::colors::CubeHelix);
-  case ColorMapName::HSV:
-    return impl::linearColorMap(x, impl::colors::HSV);
+    return impl::colors::Github;
+  case ColorMapName::Archambault:
+    return impl::colors::Archambault;
+  case ColorMapName::Austria:
+    return impl::colors::Austria;
+  case ColorMapName::Benedictus:
+    return impl::colors::Benedictus;
+  case ColorMapName::Cassatt1:
+    return impl::colors::Cassatt1;
+  case ColorMapName::Cassatt2:
+    return impl::colors::Cassatt2;
+  case ColorMapName::Cross:
+    return impl::colors::Cross;
+  case ColorMapName::Degas:
+    return impl::colors::Degas;
+  case ColorMapName::Demuth:
+    return impl::colors::Demuth;
+  case ColorMapName::Derain:
+    return impl::colors::Derain;
+  case ColorMapName::Egypt:
+    return impl::colors::Egypt;
+  case ColorMapName::Gauguin:
+    return impl::colors::Gauguin;
+  case ColorMapName::Greek:
+    return impl::colors::Greek;
+  case ColorMapName::Hiroshige:
+    return impl::colors::Hiroshige;
+  case ColorMapName::Hokusai1:
+    return impl::colors::Hokusai1;
+  case ColorMapName::Hokusai2:
+    return impl::colors::Hokusai2;
+  case ColorMapName::Hokusai3:
+    return impl::colors::Hokusai3;
+  case ColorMapName::Homer1:
+    return impl::colors::Homer1;
+  case ColorMapName::Homer2:
+    return impl::colors::Homer2;
+  case ColorMapName::Ingres:
+    return impl::colors::Ingres;
+  case ColorMapName::Isfahan1:
+    return impl::colors::Isfahan1;
+  case ColorMapName::Isfahan2:
+    return impl::colors::Isfahan2;
+  case ColorMapName::Java:
+    return impl::colors::Java;
+  case ColorMapName::Johnson:
+    return impl::colors::Johnson;
+  case ColorMapName::Juarez:
+    return impl::colors::Juarez;
+  case ColorMapName::Kandinsky:
+    return impl::colors::Kandinsky;
+  case ColorMapName::Klimt:
+    return impl::colors::Klimt;
+  case ColorMapName::Lakota:
+    return impl::colors::Lakota;
+  case ColorMapName::Manet:
+    return impl::colors::Manet;
+  case ColorMapName::Monet:
+    return impl::colors::Monet;
+  case ColorMapName::Moreau:
+    return impl::colors::Moreau;
+  case ColorMapName::Morgenstern:
+    return impl::colors::Morgenstern;
+  case ColorMapName::Nattier:
+    return impl::colors::Nattier;
+  case ColorMapName::Navajo:
+    return impl::colors::Navajo;
+  case ColorMapName::NewKingdom:
+    return impl::colors::NewKingdom;
+  case ColorMapName::Nizami:
+    return impl::colors::Nizami;
+  case ColorMapName::OKeeffe1:
+    return impl::colors::OKeeffe1;
+  case ColorMapName::OKeeffe2:
+    return impl::colors::OKeeffe2;
+  case ColorMapName::Paquin:
+    return impl::colors::Paquin;
+  case ColorMapName::Peru1:
+    return impl::colors::Peru1;
+  case ColorMapName::Peru2:
+    return impl::colors::Peru2;
+  case ColorMapName::Pillement:
+    return impl::colors::Pillement;
+  case ColorMapName::Pissaro:
+    return impl::colors::Pissaro;
+  case ColorMapName::Redon:
+    return impl::colors::Redon;
+  case ColorMapName::Renoir:
+    return impl::colors::Renoir;
+  case ColorMapName::Robert:
+    return impl::colors::Robert;
+  case ColorMapName::Signac:
+    return impl::colors::Signac;
+  case ColorMapName::Stevens:
+    return impl::colors::Stevens;
+  case ColorMapName::Tam:
+    return impl::colors::Tam;
+  case ColorMapName::Tara:
+    return impl::colors::Tara;
+  case ColorMapName::Thomas:
+    return impl::colors::Thomas;
+  case ColorMapName::Tiepolo:
+    return impl::colors::Tiepolo;
+  case ColorMapName::Troy:
+    return impl::colors::Troy;
+  case ColorMapName::Tsimshian:
+    return impl::colors::Tsimshian;
+  case ColorMapName::VanGogh1:
+    return impl::colors::VanGogh1;
+  case ColorMapName::VanGogh2:
+    return impl::colors::VanGogh2;
+  case ColorMapName::VanGogh3:
+    return impl::colors::VanGogh3;
+  case ColorMapName::Veronese:
+    return impl::colors::Veronese;
+  case ColorMapName::Wissing:
+    return impl::colors::Wissing;
+  // Add more cases as needed
   default:
-    break;
+    return impl::colors::Viridis;
   }
-  return impl::linearColorMap(x, impl::colors::Viridis);
+}
+
+QColor linearColorMap(double x, ColorMapName name) {
+  return impl::linearColorMap(x, colorsFromName(name));
 }
 
 QColor quantizedLinearColorMap(double x, unsigned int num_levels,

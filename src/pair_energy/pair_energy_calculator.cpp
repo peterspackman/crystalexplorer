@@ -1,10 +1,27 @@
 #include "pair_energy_calculator.h"
 #include "load_pair_energy_json.h"
+#include "load_wavefunction.h"
 #include "occpairtask.h"
 #include <occ/core/element.h>
 #include <QFile>
 #include <QTextStream>
 #include "settings.h"
+
+inline xtb::Parameters pair2xtb(const pair_energy::Parameters &params) {
+  xtb::Parameters result;
+  result.charge = params.charge();
+  result.multiplicity = params.multiplicity();
+  result.method = xtb::stringToMethod(params.model);
+  result.structure = params.structure;
+  qDebug() << params.wfnA << params.wfnB;
+  if(params.wfnA && params.wfnB) {
+    result.reference_energy = params.wfnA->totalEnergy() + params.wfnB->totalEnergy();
+  }
+  result.atoms = params.atomsA;
+  result.atoms.insert(result.atoms.end(), params.atomsB.begin(), params.atomsB.end());
+  result.name = params.deriveName();
+  return result;
+}
 
 PairEnergyCalculator::PairEnergyCalculator(QObject * parent) : QObject(parent) {
     m_occExecutable =
@@ -14,10 +31,15 @@ PairEnergyCalculator::PairEnergyCalculator(QObject * parent) : QObject(parent) {
             settings::readSetting(settings::keys::OCC_DATA_DIRECTORY).toString();
     m_environment.insert("OCC_DATA_PATH", dataDir);
     m_environment.insert("OCC_BASIS_PATH", dataDir);
+
+    m_xtb = new XtbEnergyCalculator(this);
+    connect(m_xtb, &XtbEnergyCalculator::calculationComplete, this,
+          &PairEnergyCalculator::handleXtbTaskComplete);
 }
 
 void PairEnergyCalculator::setTaskManager(TaskManager *mgr) {
     m_taskManager = mgr;
+    m_xtb->setTaskManager(mgr);
 }
 
 void PairEnergyCalculator::start(pair_energy::Parameters params) {
@@ -27,19 +49,27 @@ void PairEnergyCalculator::start(pair_energy::Parameters params) {
     }
     m_structure = qobject_cast<ChemicalStructure *>(params.wfnA->parent());
 
-    auto * task = new OccPairTask();
-    task->setParameters(params);
-    QString name = "pair";
-    task->setProperty("basename", name);
-    task->setJsonFilename(QString("%1_energies.json").arg(name));
-    task->setExecutable(m_occExecutable);
-    task->setEnvironment(m_environment);
-    QString jsonFilename = task->jsonFilename();
+    if(params.isXtbModel()) {
+        xtb::Parameters xtb_params = pair2xtb(params);
+        m_parameters[xtb_params.name] = params;
+        m_xtb->start(xtb_params);
+        return;
+    }
+    else {
+        auto * task = new OccPairTask();
+        task->setParameters(params);
+        QString name = "pair";
+        task->setProperty("basename", name);
+        task->setJsonFilename(QString("%1_energies.json").arg(name));
+        task->setExecutable(m_occExecutable);
+        task->setEnvironment(m_environment);
+        QString jsonFilename = task->jsonFilename();
 
-    auto taskId = m_taskManager->add(task);
-    connect(task, &Task::completed, [&, task, params, jsonFilename, name]() {
-        this->pairEnergyComplete(params, task);
-    });
+        auto taskId = m_taskManager->add(task);
+        connect(task, &Task::completed, [&, task, params, jsonFilename, name]() {
+            this->pairEnergyComplete(params, task);
+        });
+    }
 
 }
 
@@ -48,6 +78,7 @@ void PairEnergyCalculator::start_batch(const std::vector<pair_energy::Parameters
     m_completedTaskCount = 0;
 
     int idx = 0;
+    m_totalTasks = energies.size();
     for (const auto &params : energies) {
         if (!params.structure) {
             qDebug() << "Found nullptr for chemical structure in WavefunctionCalculator";
@@ -55,6 +86,13 @@ void PairEnergyCalculator::start_batch(const std::vector<pair_energy::Parameters
         }
         // assume they're all for the same structure.
         m_structure = params.structure;
+
+        if(params.isXtbModel()) {
+            xtb::Parameters xtb_params = pair2xtb(params);
+            m_parameters[xtb_params.name] = params;
+            m_xtb->start(xtb_params);
+            continue;;
+        }
 
         auto *task = new OccPairTask();
         task->setParameters(params);
@@ -71,7 +109,6 @@ void PairEnergyCalculator::start_batch(const std::vector<pair_energy::Parameters
             this->pairEnergyComplete(params, task);
         });
     }
-    m_totalTasks = tasks.size();
 
     for(auto * task: tasks) {
         auto taskId = m_taskManager->add(task);
@@ -91,6 +128,30 @@ void PairEnergyCalculator::pairEnergyComplete(pair_energy::Parameters params, Oc
             m_complete = true;
         }
 
+    }
+    if(m_complete) {
+        qDebug() << "Calculation complete";
+        emit calculationComplete();
+    }
+}
+
+void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params, xtb::Result result) {
+    if(params.structure) {
+        auto * interactions = params.structure->pairInteractions();
+        auto * wfn = new MolecularWavefunction();
+        bool success = io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
+        auto pair = new PairInteraction("GFN2-xTB");
+        qDebug() << success << "wfn->totalEnergy" << wfn->totalEnergy() << "ref" << params.reference_energy;
+        double e = wfn->totalEnergy() - params.reference_energy;
+        pair->addComponent("total", e * 2625.5);
+        pair->setParameters(m_parameters[result.name]);
+        interactions->add(pair);
+
+        delete wfn;
+        m_completedTaskCount++;
+        if (m_completedTaskCount == m_totalTasks) {
+            m_complete = true;
+        }
     }
     if(m_complete) {
         qDebug() << "Calculation complete";

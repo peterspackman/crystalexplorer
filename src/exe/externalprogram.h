@@ -53,6 +53,9 @@ public:
     void setOutputs(const FileDependencyList&);
     inline const auto &outputs() const { return m_outputs; }
 
+    void setDeleteWorkingFiles(bool shouldDelete) { m_deleteRequirements = shouldDelete; }
+    inline bool deleteWorkingFiles() const { return m_deleteRequirements; }
+
     inline const auto exitCode() const { return m_exitCode; }
 
     virtual void start() override;
@@ -70,11 +73,13 @@ private:
     void updateStdoutStderr(QProcess&);
     bool copyRequirements(const QString &path);
     bool copyResults(const QString &path);
+    bool deleteRequirements();
     void setupProcessConnectionsPrivate(QProcess&);
 
     int m_exitCode{-1};
     int m_timeout{0};
     int m_timeIncrement{100};
+    bool m_deleteRequirements{false};
     QProcessEnvironment m_environment;
 
     FileDependencyList m_requirements;

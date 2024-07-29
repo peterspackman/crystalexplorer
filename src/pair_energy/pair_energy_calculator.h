@@ -3,6 +3,7 @@
 #include "taskmanager.h"
 #include "chemicalstructure.h"
 #include "pair_energy_parameters.h"
+#include "xtb_energy_calculator.h"
 
 class OccPairTask;
 
@@ -20,6 +21,7 @@ signals:
 
 private slots:
     void pairEnergyComplete(pair_energy::Parameters, OccPairTask *);
+    void handleXtbTaskComplete(xtb::Parameters, xtb::Result);
 
 private:
     std::vector<GenericAtomIndex> m_atomsA;
@@ -28,9 +30,11 @@ private:
     ChemicalStructure * m_structure{nullptr};
     MolecularWavefunction * m_wavefunctionA{nullptr};
     MolecularWavefunction * m_wavefunctionB{nullptr};
+    XtbEnergyCalculator *m_xtb{nullptr};
     int m_completedTaskCount{0};
     int m_totalTasks{0};
     bool m_complete{false};
     QString m_occExecutable{"occ"};
+    QMap<QString, pair_energy::Parameters> m_parameters;
     QProcessEnvironment m_environment;
 };

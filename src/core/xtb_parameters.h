@@ -1,5 +1,6 @@
 #pragma once
 #include "generic_atom_index.h"
+#include "wavefunction_parameters.h"
 #include <QString>
 #include <ankerl/unordered_dense.h>
 
@@ -20,7 +21,9 @@ struct Parameters {
   Method method{Method::GFN2_xTB};
   ChemicalStructure *structure{nullptr};
   std::vector<GenericAtomIndex> atoms;
+  double reference_energy{0.0};
   bool accepted{false};
+  QString name{"XtbCalculation"};
 
   inline bool hasEquivalentMethodTo(const Parameters &rhs) const {
     return (method == rhs.method);
@@ -42,12 +45,14 @@ struct Parameters {
 };
 
 struct Result {
+  QString name;
   QString filename;
-  QString jsonContents;
+  QByteArray jsonContents;
   ankerl::unordered_dense::map<QString, double> energy;
   bool success{false};
 };
 
 inline QString methodToString(Method) { return "GFN2-xTB"; }
+inline Method stringToMethod(const QString &s) { return Method::GFN2_xTB; }
 
 } // namespace wfn

@@ -12,14 +12,8 @@ xtb::Result load_xtb_json(const QString &filename) {
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     return result;
 
-  QByteArray jsonData = file.readAll();
+  result.jsonContents = file.readAll();
   file.close();
-
-  QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
-  if (!jsonDoc.isObject())
-    return result;
-
-  QJsonObject jsonObj = jsonDoc.object();
 
   return result;
 }

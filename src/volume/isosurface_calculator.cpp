@@ -1,4 +1,5 @@
 #include "isosurface_calculator.h"
+#include "exefileutilities.h"
 #include "crystalstructure.h"
 #include "load_mesh.h"
 #include "occsurfacetask.h"
@@ -13,6 +14,7 @@ IsosurfaceCalculator::IsosurfaceCalculator(QObject *parent) : QObject(parent) {
   m_occExecutable = settings::readSetting(settings::keys::OCC_EXECUTABLE).toString();
   m_environment = QProcessEnvironment::systemEnvironment();
   QString dataDir = settings::readSetting(settings::keys::OCC_DATA_DIRECTORY).toString();
+  m_deleteWorkingFiles = settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool();
   m_environment.insert("OCC_DATA_PATH", dataDir);
   m_environment.insert("OCC_BASIS_PATH", dataDir);
 }
@@ -99,6 +101,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   surface_task->setProperty("name", m_name);
   surface_task->setProperty("inputFile", filename);
   surface_task->setProperty("environmentFile", filename_outside);
+  surface_task->setDeleteWorkingFiles(m_deleteWorkingFiles);
   qDebug() << "Generating " << isosurface::kindToString(params.kind)
            << "surface with isovalue: " << params.isovalue;
   surface_task->setProperty("isovalue", params.isovalue);
@@ -118,6 +121,9 @@ QString IsosurfaceCalculator::surfaceName() {
 void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
   Mesh *mesh = io::loadMesh(m_filename);
+  if(m_deleteWorkingFiles) {
+    exe::deleteFile(m_filename);
+  }
   mesh->setObjectName(m_name);
   mesh->setParameters(m_parameters);
   mesh->setSelectedProperty(m_defaultProperty);

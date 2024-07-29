@@ -14,7 +14,7 @@ QString xtbCoordString(const xtb::Parameters &params) {
 
   // should be in angstroms
   for (int i = 0; i < nums.rows(); i++) {
-    ts << pos(0, i) << " " << pos(1, i) << " " << pos(2, i) << 
+    ts << pos(0, i) << " " << pos(1, i) << " " << pos(2, i) <<  " " << 
       QString::fromStdString(occ::core::Element(nums(i)).symbol()) << Qt::endl;
   }
 

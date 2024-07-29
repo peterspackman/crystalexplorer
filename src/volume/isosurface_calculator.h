@@ -25,6 +25,7 @@ private slots:
 private:
   TaskManager *m_taskManager{nullptr};
   ChemicalStructure *m_structure{nullptr};
+  bool m_deleteWorkingFiles{false};
   QString m_occExecutable{"occ"};
   QProcessEnvironment m_environment;
   QString m_name;

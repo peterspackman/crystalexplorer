@@ -191,13 +191,15 @@ bool TrajFile::readFromFile(const QString &fileName) {
 }
 
 bool TrajFile::readFromString(const QString &content) {
-  QStringList lines = content.split('\n', Qt::SkipEmptyParts);
+  QStringList lines = content.split('\n');
+  qDebug() << "Found" << lines.size() << "lines in file";
 
   for (int i = 0; i < lines.size();) {
     if (i + 1 >= lines.size())
       break;
 
     int numAtoms = lines[i].toInt();
+    qDebug() << numAtoms << "atoms";
     if (numAtoms <= 0 || i + numAtoms + 1 >= lines.size())
       break;
 

@@ -41,6 +41,18 @@ QString readFileContents(const QString &filePath,
   return contents;
 }
 
+bool deleteFile(const QString &filePath) {
+  // return true if the file does not exist at the end of this function
+  if (QFileInfo(filePath).exists()) {
+    if (!QFile::remove(filePath)) {
+      qDebug() << "Could not delete file..." << filePath;
+      return false;
+    }
+    qDebug() << "File deleted: " << !QFileInfo(filePath).exists();
+  }
+  return true;
+}
+
 bool copyFile(const QString &sourcePath, const QString &targetPath,
               bool overwrite) {
   // if they're the same file just do nothing.

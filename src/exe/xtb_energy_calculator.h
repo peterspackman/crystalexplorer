@@ -14,10 +14,10 @@ public:
   xtb::Result getResult(int index = 0) const;
 
 signals:
-  void calculationComplete();
+  void calculationComplete(xtb::Parameters, xtb::Result);
 
 private slots:
-  void calculationComplete(xtb::Parameters, QString filename, QString name);
+  void handleFinishedTask(xtb::Parameters, QString filename, QString name);
 
 private:
   TaskManager *m_taskManager{nullptr};
@@ -27,5 +27,6 @@ private:
   QProcessEnvironment m_environment;
 
   bool m_complete{false};
+  bool m_deleteWorkingFiles{false};
   int completedTaskCount{0};
 };

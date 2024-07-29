@@ -7,94 +7,82 @@ const QString WavefunctionCalculationDialog::customEntry{"Custom..."};
 
 WavefunctionCalculationDialog::WavefunctionCalculationDialog(QWidget *parent)
     : QDialog(parent) {
-	setupUi(this);
-	init();
-    }
+  setupUi(this);
+  init();
+}
 
 void WavefunctionCalculationDialog::init() {
-    setWindowTitle("Wavefunction Calculation");
-    setModal(true);
+  setWindowTitle("Wavefunction Calculation");
+  setModal(true);
 
-    // put available options in the dialog
-    initPrograms();
-    initMethod();
-    initBasis();
-    adjustSize();
+  // put available options in the dialog
+  initPrograms();
+  initMethod();
+  initBasis();
+  adjustSize();
 }
 
 void WavefunctionCalculationDialog::initPrograms() {
-    programComboBox->clear();
+  programComboBox->clear();
 
-    QStringList programs{
-	"OCC", "Gaussian", "ORCA"
-    };
+  QStringList programs{"OCC", "Gaussian", "ORCA"};
 
-    QString preferred = "OCC";
-    for (const auto &source:programs) {
-	programComboBox->addItem(source);
-	if (source == preferred) {
-	    programComboBox->setCurrentText(source);
-	}
+  QString preferred = "OCC";
+  for (const auto &source : programs) {
+    programComboBox->addItem(source);
+    if (source == preferred) {
+      programComboBox->setCurrentText(source);
     }
+  }
 }
 
 void WavefunctionCalculationDialog::initMethod() {
-    QStringList methods{
-	"HF", "B3LYP", "WB97M-V"
-    };
+  QStringList methods{"HF", "B3LYP", "WB97M-V", "GFN2-xTB"};
 
+  for (const auto &method : methods) {
+    methodComboBox->addItem(method);
+  }
+  methodComboBox->addItem(customEntry);
 
-    for (const auto &method : methods) {
-	methodComboBox->addItem(method);
-    }
-    methodComboBox->addItem(customEntry);
-
-    connect(methodComboBox, QOverload<int>::of(&QComboBox::activated),
-	    [&](int index){
-	if (methodComboBox->itemText(index) == customEntry) {
-	    methodComboBox->setEditable(true);
-	    methodComboBox->clearEditText();
-	    methodComboBox->setFocus();
-	    methodComboBox->showPopup();
-	    methodComboBox->setToolTip(tr("Type here to enter a custom value"));
-	} else {
-	    methodComboBox->setEditable(false);
-	}
-    });
-
+  connect(methodComboBox, QOverload<int>::of(&QComboBox::activated),
+          [&](int index) {
+            if (methodComboBox->itemText(index) == customEntry) {
+              methodComboBox->setEditable(true);
+              methodComboBox->clearEditText();
+              methodComboBox->setFocus();
+              methodComboBox->showPopup();
+              methodComboBox->setToolTip(
+                  tr("Type here to enter a custom value"));
+            } else {
+              methodComboBox->setEditable(false);
+            }
+          });
 }
 
 void WavefunctionCalculationDialog::initBasis() {
-    QStringList basisSets{
-	"def2-svp",
-	"def2-tzvp",
-	"6-31G(d,p)",
-	"DGDZVP",
-	"3-21G",
-	"STO-3G",
-    };
+  QStringList basisSets{
+      "def2-svp", "def2-tzvp", "6-31G(d,p)", "DGDZVP", "3-21G", "STO-3G",
+  };
 
-    for (const auto &basis : basisSets) {
-	basisComboBox->addItem(basis);
-    }
+  for (const auto &basis : basisSets) {
+    basisComboBox->addItem(basis);
+  }
 
-    basisComboBox->addItem(customEntry);
+  basisComboBox->addItem(customEntry);
 
-    connect(basisComboBox, QOverload<int>::of(&QComboBox::activated),
-	    [&](int index){
-	if (basisComboBox->itemText(index) == customEntry) {
-	    basisComboBox->setEditable(true);
-	    basisComboBox->clearEditText();
-	    basisComboBox->setFocus();
-	    basisComboBox->showPopup();
-	    basisComboBox->setToolTip(tr("Type here to enter a custom value"));
-	} else {
-	    basisComboBox->setEditable(false);
-	}
-    });
-
+  connect(
+      basisComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index) {
+        if (basisComboBox->itemText(index) == customEntry) {
+          basisComboBox->setEditable(true);
+          basisComboBox->clearEditText();
+          basisComboBox->setFocus();
+          basisComboBox->showPopup();
+          basisComboBox->setToolTip(tr("Type here to enter a custom value"));
+        } else {
+          basisComboBox->setEditable(false);
+        }
+      });
 }
-
 
 void WavefunctionCalculationDialog::show() {
   initPrograms(); // wavefunction program availability might have changed so
@@ -102,20 +90,23 @@ void WavefunctionCalculationDialog::show() {
   QWidget::show();
 }
 
+const wfn::Parameters &WavefunctionCalculationDialog::getParameters() const {
+  return m_parameters;
+}
 
-const wfn::Parameters& WavefunctionCalculationDialog::getParameters() const {
-    return m_parameters;
+bool WavefunctionCalculationDialog::isXtbMethod() const {
+  return method() == "GFN2-xTB";
 }
 
 void WavefunctionCalculationDialog::accept() {
-    m_parameters.charge = charge();
-    m_parameters.multiplicity = multiplicity();
-    m_parameters.method = method();
-    m_parameters.basis = basis();
+  m_parameters.charge = charge();
+  m_parameters.multiplicity = multiplicity();
+  m_parameters.method = method();
+  m_parameters.basis = basis();
 
-    emit wavefunctionParametersChosen(m_parameters);
+  emit wavefunctionParametersChosen(m_parameters);
 
-    QDialog::accept();
+  QDialog::accept();
 }
 
 QString WavefunctionCalculationDialog::program() const {
@@ -130,28 +121,30 @@ QString WavefunctionCalculationDialog::basis() const {
   return basisComboBox->currentText();
 }
 
-void WavefunctionCalculationDialog::setAtomIndices(const std::vector<GenericAtomIndex> &idxs) {
-    m_parameters.atoms = idxs;
+void WavefunctionCalculationDialog::setAtomIndices(
+    const std::vector<GenericAtomIndex> &idxs) {
+  m_parameters.atoms = idxs;
 }
 
-const std::vector<GenericAtomIndex>& WavefunctionCalculationDialog::atomIndices() const {
-    return m_parameters.atoms;
+const std::vector<GenericAtomIndex> &
+WavefunctionCalculationDialog::atomIndices() const {
+  return m_parameters.atoms;
 }
 
-int WavefunctionCalculationDialog::charge() const { 
-    return chargeSpinBox->value();
+int WavefunctionCalculationDialog::charge() const {
+  return chargeSpinBox->value();
 }
 
-void WavefunctionCalculationDialog::setCharge(int charge) { 
-    chargeSpinBox->setValue(charge);
-    m_parameters.charge = charge;
+void WavefunctionCalculationDialog::setCharge(int charge) {
+  chargeSpinBox->setValue(charge);
+  m_parameters.charge = charge;
 }
 
-int WavefunctionCalculationDialog::multiplicity() const { 
-    return multiplicitySpinBox->value();
+int WavefunctionCalculationDialog::multiplicity() const {
+  return multiplicitySpinBox->value();
 }
 
-void WavefunctionCalculationDialog::setMultiplicity(int mult) { 
-    multiplicitySpinBox->setValue(mult);
-    m_parameters.multiplicity = mult;
+void WavefunctionCalculationDialog::setMultiplicity(int mult) {
+  multiplicitySpinBox->setValue(mult);
+  m_parameters.multiplicity = mult;
 }

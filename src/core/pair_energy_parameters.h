@@ -16,6 +16,7 @@ struct EnergyModelParameters {
     std::vector<wfn::Parameters> wavefunctions;
     std::vector<FragmentDimer> pairs;
     bool operator==(const EnergyModelParameters& rhs) const;
+    bool isXtbModel() const;
 };
 
 
@@ -39,7 +40,10 @@ struct Parameters {
 
     QString deriveName() const;
 
+    int multiplicity() const;
+    int charge() const;
     bool operator==(const Parameters& rhs) const;
+    bool isXtbModel() const;
 };
 
 struct Result {

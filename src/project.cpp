@@ -248,8 +248,10 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
 
   TrajFile trajReader;
   bool success = trajReader.readFromFile(filename);
-  if (!success)
+  if (!success) {
+    qDebug() << "Failed reading from" << filename;
     return false;
+  }
 
   const auto &frames = trajReader.frames();
   qDebug() << "Read" << trajReader.frames().size() << "frames" << success;

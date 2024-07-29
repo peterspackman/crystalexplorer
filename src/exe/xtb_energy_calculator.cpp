@@ -1,5 +1,6 @@
 #include "xtb_energy_calculator.h"
 #include "load_xtb_json.h"
+#include "exefileutilities.h"
 #include "xtbtask.h"
 #include "settings.h"
 #include <QFile>
@@ -12,6 +13,7 @@ XtbEnergyCalculator::XtbEnergyCalculator(QObject *parent)
       settings::readSetting(settings::keys::XTB_EXECUTABLE).toString();
   m_environment = QProcessEnvironment::systemEnvironment();
   m_environment.insert("OMP_NUM_THREADS", "1");
+  m_deleteWorkingFiles = settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool();
 }
 
 void XtbEnergyCalculator::setTaskManager(TaskManager *mgr) {
@@ -31,35 +33,36 @@ void XtbEnergyCalculator::start(xtb::Parameters params) {
   occ::IVec nums = params.structure->atomicNumbers()(idx);
   occ::Mat3N pos = params.structure->atomicPositions()(Eigen::all, idx);
 
-  QString methodName =
-      QString("XTB/%2").arg(xtb::methodToString(params.method));
+  if(params.name == "XtbCalculation") {
+    params.name = xtb::methodToString(params.method);
+  }
   auto *task = new XtbTask();
   task->setParameters(params);
-  task->setProperty("name", methodName);
+  task->setProperty("name", params.name);
+  task->setProperty("basename", params.name);
   task->setExecutable(m_xtbExecutable);
   task->setEnvironment(m_environment);
-  QString outputFilename = "xtbout.json";
+  QString outputFilename = task->jsonFilename();
 
   auto taskId = m_taskManager->add(task);
   connect(task, &Task::completed,
-          [&, params, methodName, outputFilename]() {
-            m_complete = true;
-            this->calculationComplete(params, outputFilename,
-                                       methodName);
+          [&, params, outputFilename]() {
+            this->handleFinishedTask(params, outputFilename, params.name);
           });
 }
 
-void XtbEnergyCalculator::calculationComplete(xtb::Parameters params,
-                                              QString filename,
-                                              QString name) {
+void XtbEnergyCalculator::handleFinishedTask(xtb::Parameters params,
+                                             QString filename,
+                                             QString name) {
   qDebug() << "Task" << name << "finished in XtbEnergyCalculator";
   auto result = load_xtb_json(filename);
+  result.name = name;
   qDebug() << "Loaded result from" << filename << result.success
            << params.atoms.size();
-  m_results.push_back(result);
-  if (result.success) {
-      emit calculationComplete();
+  if(m_deleteWorkingFiles) {
+    exe::deleteFile(filename);
   }
+  emit calculationComplete(params, result);
 }
 
 xtb::Result XtbEnergyCalculator::getResult(int index) const {

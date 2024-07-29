@@ -120,6 +120,19 @@ bool ExternalProgramTask::copyResults(const QString &path) {
   return true;
 }
 
+bool ExternalProgramTask::deleteRequirements() {
+  for (const auto &[input, input_dest] : m_requirements) {
+    if (!exe::deleteFile(input)) {
+      setErrorMessage(
+          QString("Failed to delete working files %1")
+              .arg(input));
+      qDebug() << errorMessage();
+      return false;
+    }
+  }
+  return true;
+}
+
 void ExternalProgramTask::start() {
   QString exe = m_executable;
   QStringList args = m_arguments;
@@ -201,6 +214,7 @@ void ExternalProgramTask::start() {
     promise.setProgressValueAndText(100, "Task complete");
     promise.finish();
     qDebug() << "Task " << property("name").toString() << " finished" <<  errorMessage();
+    if(m_deleteRequirements) deleteRequirements();
   };
 
   Task::run(taskLogic);

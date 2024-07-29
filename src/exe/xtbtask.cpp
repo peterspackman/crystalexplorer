@@ -20,13 +20,18 @@ const xtb::Parameters &XtbTask::getParameters() const {
   return m_parameters;
 }
 
+
+QString XtbTask::jsonFilename() const {
+  return QString("%1.xtbout.json").arg(baseName());
+}
+
 void XtbTask::start() {
   QString coord = xtbCoordString(m_parameters);
   emit progressText("Generated coord input");
 
   QString name = baseName();
   QString inputName = name + inputSuffix();
-  QString outputName = "xtbout.json";
+  QString outputName = jsonFilename();
 
   if (!exe::writeTextFile(inputName, coord)) {
     emit errorOccurred("Could not write input file");
@@ -36,7 +41,7 @@ void XtbTask::start() {
 
   setArguments({inputName});
   setRequirements({FileDependency(inputName)});
-  setOutputs({FileDependency(outputName)});
+  setOutputs({FileDependency("xtbout.json", outputName)});
 
   emit progressText("Starting XTB process");
   ExternalProgramTask::start();
