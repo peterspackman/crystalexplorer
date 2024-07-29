@@ -67,7 +67,7 @@ void ChildPropertyController::setup() {
           [this]() { setFrameworkDisplay(FrameworkOptions::Display::Tubes); });
 
   connect(modelComboBox, &QComboBox::currentIndexChanged,
-          [this]() { emitFrameworkOptions();});
+          [this]() { updatePairInteractionComponents();});
 
   connect(frameworkTubeSizeSpinBox, &QSpinBox::valueChanged,
           [this]() { emitFrameworkOptions();});
@@ -194,6 +194,7 @@ void ChildPropertyController::updatePairInteractionComponents() {
   componentComboBox->blockSignals(true);
   auto values =
       m_pairInteractions->interactionComponents(modelComboBox->currentText());
+  qDebug() << "Available components" << values;
   componentComboBox->clear();
   componentComboBox->insertItems(0, values);
   auto idx = values.indexOf(currentComponent);
@@ -214,6 +215,9 @@ void ChildPropertyController::setShowEnergyFramework(bool show) {
         setFrameworkDisplay(FrameworkOptions::Display::Tubes);
       }
     }
+  }
+  else {
+    setFrameworkDisplay(FrameworkOptions::Display::None);
   }
 }
 

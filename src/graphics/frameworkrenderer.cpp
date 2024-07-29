@@ -11,6 +11,16 @@ FrameworkRenderer::FrameworkRenderer(ChemicalStructure *structure,
   m_cylinderRenderer = new CylinderRenderer();
   m_lineRenderer = new LineRenderer();
 
+  m_interactionComponentColors = {
+    {"coulomb", QColor("#a40000")},
+    {"polarization", QColor("#b86092")},
+    {"exchange", QColor("#721b3e")},
+    {"repulsion", QColor("#ffcd12")},
+    {"dispersion", QColor("#007e2f")},
+    {"total", QColor("#16317d")}
+  };
+  m_defaultInteractionComponentColor = QColor("#00b7a7");
+
   update(structure);
 }
 
@@ -79,6 +89,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   if (uniqueInteractions.size() < fragmentPairs.uniquePairs.size())
     return;
 
+  auto color = m_interactionComponentColors.value(m_options.component, m_defaultInteractionComponentColor);
   for (const auto &molPairs : fragmentPairs.pairs) {
     for (const auto &[pair, uniqueIndex] : molPairs) {
       auto *interaction = uniqueInteractions[uniqueIndex];
@@ -94,8 +105,6 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       double scale = std::abs(energy * thickness());
       if (scale < 1e-4)
         continue;
-
-      QColor color(Qt::red);
 
       if (m_options.display == FrameworkOptions::Display::Tubes) {
         cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,

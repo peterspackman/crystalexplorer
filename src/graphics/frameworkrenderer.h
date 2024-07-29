@@ -63,6 +63,9 @@ private:
   RendererUniforms m_uniforms;
 
   FrameworkOptions m_options;
+
+  QMap<QString, QColor> m_interactionComponentColors;
+  QColor m_defaultInteractionComponentColor;
 };
 
 } // namespace cx::graphics
