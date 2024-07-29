@@ -1,6 +1,7 @@
 #pragma once
 #include "generic_atom_index.h"
 #include <QDebug>
+#include <QColor>
 #include <occ/core/linear_algebra.h>
 #include <QVector3D>
 
@@ -23,12 +24,12 @@ struct Fragment {
   Transform asymmetricFragmentTransform = Transform::Identity();
 
   occ::IVec asymmetricUnitIndices;
+  QColor color{Qt::gray};
 
   NearestAtomResult nearestAtom(const Fragment &other) const;
   NearestAtomResult nearestAtomToPoint(const occ::Vec3 &point) const;
 
   QVector3D posVector3D(int index) const;
-
   occ::Vec atomicMasses() const;
   occ::Vec3 centroid() const;
   occ::Vec3 centerOfMass() const;
@@ -50,6 +51,8 @@ struct FragmentDimer {
   double nearestAtomDistance{0.0};
   double centerOfMassDistance{0.0};
   QString symmetry{"-"};
+  int fragmentIndexA{-1};
+  int fragmentIndexB{-1};
 
   bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
   bool operator==(const FragmentDimer &) const;

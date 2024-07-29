@@ -533,6 +533,11 @@ int ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
   return m_fragmentForAtom[atomIndex];
 }
 
+int ChemicalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
+    return m_fragmentForAtom[idx.unique];
+}
+
+
 std::vector<HBondTriple>
 ChemicalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
   return criteria.filter(m_atomicPositions, m_atomicNumbers, m_covalentBonds, m_hydrogenBonds);
@@ -578,8 +583,13 @@ QColor ChemicalStructure::atomColor(int atomIndex) const {
     } else
       return m_atomColors[atomIndex];
   }
-  case AtomColoring::Fragment:
+  case AtomColoring::Fragment: {
+    int frag = fragmentIndexForAtom(atomIndex);
+    if(frag >= 0 && frag <= m_fragments.size()) {
+        return m_fragments[frag].color;
+    }
     return Qt::white;
+  }
   case AtomColoring::Index:
     return Qt::black;
   }
@@ -917,6 +927,8 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
             if (distance <= tolerance) continue;
 
             FragmentDimer d(fragA, fragB);
+            d.fragmentIndexA = fragIndexA;
+            d.fragmentIndexB = fragIndexB;
 
             // Create a 3D point for the current pair
             Eigen::Vector3d point(d.nearestAtomDistance, d.centroidDistance, d.centerOfMassDistance);
@@ -970,6 +982,12 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
     }
     return result;
 }
+
+void ChemicalStructure::setFragmentColor(int fragment, const QColor &color)  {
+    if(fragment < 0 || fragment >= m_fragments.size()) return;
+    m_fragments[fragment].color = color;
+}
+
 
 const std::vector<Fragment> &ChemicalStructure::getFragments() const {
   return m_fragments;

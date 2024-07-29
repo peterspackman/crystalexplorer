@@ -116,6 +116,7 @@ protected:
   bool event(QEvent *event) override;
 
 private slots:
+  void updateAtomColoring(ChemicalStructure::AtomColoring);
   void contextualSelectAtomsInsideSurface();
   void contextualSelectAtomsOutsideSurface();
   void contextualGenerateInternalFragment();
@@ -153,7 +154,7 @@ private slots:
   void contextualUnsuppressAllAtoms();
   void contextualBondSelectedAtoms();
   void contextualUnbondSelectedAtoms();
-  void contextualColorSelectedAtoms();
+  void contextualColorSelection(bool fragments);
   void contextualResetCustomAtomColors();
   void contextualRemoveSelectedAtoms();
   void forcedRedraw();
@@ -176,6 +177,7 @@ private:
   void showSelectionSpecificContextMenu(const QPoint &, SelectionType);
   void showGeneralContextMenu(const QPoint &);
   void addGeneralActionsToContextMenu(QMenu *);
+  void addColorBySubmenu(QMenu *);
   void updateScale(GLfloat, bool doEmit = true);
   float scaleEstimateFromCrystalRadius(float);
   void getViewAngleAndScaleFromScene();

@@ -10,6 +10,18 @@
     <height>291</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>405</width>
+    <height>0</height>
+   </size>
+  </property>
   <property name="maximumSize">
    <size>
     <width>16777215</width>
@@ -26,7 +38,7 @@
       <string/>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="surfaceOptionsTab">
       <attribute name="title">
@@ -851,6 +863,7 @@
   </layout>
  </widget>
  <resources>
+  <include location="../icons/crystalexplorer.qrc"/>
   <include location="../icons/crystalexplorer.qrc"/>
  </resources>
  <connections/>

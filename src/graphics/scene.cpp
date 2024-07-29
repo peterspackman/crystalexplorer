@@ -1551,8 +1551,18 @@ void Scene::deleteSelectedAtoms() {
 
 void Scene::completeAllFragments() { m_structure->completeAllFragments(); }
 
-void Scene::colorSelectedAtoms(const QColor &color) {
-  // TODO color selected atoms
+void Scene::colorSelectedAtoms(const QColor &color, bool fragments) {
+    auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
+    if(fragments) {
+        for(const auto &idx: idxs) {
+            int frag = m_structure->fragmentIndexForAtom(idx);
+            m_structure->setFragmentColor(frag, color);
+        }
+    }
+    else {
+        // TODO color selected atoms
+
+    }
 }
 
 bool Scene::hasHydrogens() const {

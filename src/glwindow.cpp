@@ -1079,13 +1079,18 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
     if (scene->hasSelectedAtoms()) {
       contextMenu->addAction(tr("Remove Selected Atoms"), this,
                              &GLWindow::contextualRemoveSelectedAtoms);
-      contextMenu->addAction(tr("Set Color of Selected Atoms"), this,
-                             &GLWindow::contextualColorSelectedAtoms);
+      contextMenu->addAction(tr("Set Color of Selected Atoms"), [this]() {
+          contextualColorSelection(false);
+      });      contextMenu->addAction(tr("Set Color of Selected Fragments"), [this]() {
+          contextualColorSelection(true);
+      });
     }
+
     if (scene->hasAtomsWithCustomColor()) {
       contextMenu->addAction(tr("Reset All Atom Colors"), this,
                              &GLWindow::contextualResetCustomAtomColors);
     }
+    addColorBySubmenu(contextMenu);
 
     // TODO handle surface case
     /*
@@ -1106,6 +1111,20 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
   }
 
   // Add general actions that don't depend on having a crystal here
+}
+
+void GLWindow::addColorBySubmenu(QMenu *menu) {
+    QMenu* colorByMenu = menu->addMenu(tr("Color Atoms By..."));
+    colorByMenu->addAction(tr("Element"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Element); });
+    colorByMenu->addAction(tr("Fragment"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Fragment); });
+}
+
+void GLWindow::updateAtomColoring(ChemicalStructure::AtomColoring coloring) {
+    if(!scene) return;
+    auto * structure = scene->chemicalStructure();
+    if(!structure) return;
+    structure->setAtomColoring(coloring);
+    redraw();
 }
 
 void GLWindow::getNewBackgroundColor() {
@@ -1301,11 +1320,11 @@ void GLWindow::contextualUnbondSelectedAtoms() {
   redraw();
 }
 
-void GLWindow::contextualColorSelectedAtoms() {
+void GLWindow::contextualColorSelection(bool fragments) {
   Q_ASSERT(scene);
   QColor color = QColorDialog::getColor(Qt::red, 0);
   if (color.isValid()) {
-    scene->colorSelectedAtoms(color);
+    scene->colorSelectedAtoms(color, fragments);
     redraw();
   }
 }

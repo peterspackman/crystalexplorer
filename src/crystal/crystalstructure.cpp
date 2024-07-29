@@ -230,6 +230,15 @@ int CrystalStructure::fragmentIndexForAtom(int atomIndex) const {
   return m_fragmentForAtom[atomIndex];
 }
 
+int CrystalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
+    const auto loc = m_atomMap.find(idx);
+    if(loc != m_atomMap.end()) {
+        return m_fragmentForAtom[loc->second];
+    }
+    return -1;
+}
+
+
 std::vector<HBondTriple>
 CrystalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
   return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds, m_hydrogenBonds);

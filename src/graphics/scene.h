@@ -261,7 +261,7 @@ public:
   void completeAllFragments();
   void completeFragmentContainingAtom(int atomIndex);
 
-  void colorSelectedAtoms(const QColor &);
+  void colorSelectedAtoms(const QColor &, bool fragments=false);
 
   bool hasHydrogens() const;
   bool hasSelectedAtoms() const;

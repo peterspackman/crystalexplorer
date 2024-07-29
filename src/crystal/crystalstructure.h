@@ -36,6 +36,7 @@ public:
   inline const auto &spaceGroup() const { return m_crystal.space_group(); }
 
   int fragmentIndexForAtom(int) const override;
+  int fragmentIndexForAtom(GenericAtomIndex) const override;
   void deleteFragmentContainingAtomIndex(int atomIndex) override;
 
   const std::vector<Fragment> &getFragments() const override;

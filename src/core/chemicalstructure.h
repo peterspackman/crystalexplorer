@@ -151,6 +151,7 @@ public:
 
   virtual inline size_t numberOfFragments() const { return m_fragments.size(); }
   virtual int fragmentIndexForAtom(int) const;
+  virtual int fragmentIndexForAtom(GenericAtomIndex) const;
   virtual void deleteFragmentContainingAtomIndex(int atomIndex);
   virtual void deleteIncompleteFragments();
   virtual void deleteAtoms(const std::vector<GenericAtomIndex> &);
@@ -168,6 +169,8 @@ public:
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
   FragmentPairs findFragmentPairs(int keyFragment = -1) const;
+
+  virtual void setFragmentColor(int fragment, const QColor &color);
 
   // dynamics data
   inline bool hasFrameData() const { return frameCount() > 0; }
