@@ -569,13 +569,13 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
   QTextCursor cursor = QTextCursor(document);
   qDebug() << "Made cursor";
   auto *interactions = structure->pairInteractions();
-
   qDebug() << "have interactions";
 
   if (interactions->getCount() > 0) {
+    scene->colorFragmentsByEnergyPair();
     // These must be here for performance!
     cursor.beginEditBlock();
-    insertInteractionEnergiesGroupedByPair(structure, interactions, cursor);
+    insertInteractionEnergiesGroupedByPair(interactions, cursor);
     insertEnergyModelScalingInfo(cursor);
     cursor.endEditBlock();
   } else {
@@ -704,31 +704,10 @@ QList<QString> getOrderedComponents(QSet<QString> uniqueComponents) {
   return sortedComponents;
 }
 
-void InfoDocuments::insertInteractionEnergiesGroupedByPair(
-    ChemicalStructure *structure, PairInteractions *results, QTextCursor cursor) {
-  if(!results || !structure) return;
+void InfoDocuments::insertInteractionEnergiesGroupedByPair(PairInteractions *results, QTextCursor cursor) {
+  if(!results) return;
   const int eprec =
       settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt();
-
-  auto selectedFragments = structure->selectedFragments();
-  if(selectedFragments.size() == 1) {
-    auto fragmentPairs = structure->findFragmentPairs(selectedFragments[0]);
-    ColorMapFunc colorMap(ColorMapName::Viridis, 0, fragmentPairs.uniquePairs.size() - 1);
-    for(const auto &[fragmentPair, idx]: fragmentPairs.pairs[selectedFragments[0]]) {
-      structure->setFragmentColor(fragmentPair.fragmentIndexB, colorMap(idx));
-    }
-    auto interactionMap = results->getInteractionsMatchingFragments(
-        fragmentPairs.uniquePairs);
-
-    structure->setAtomColoring(ChemicalStructure::AtomColoring::Fragment);
-    for(auto interactionList: interactionMap) {
-      for(int i = 0; i < interactionList.size(); i++) {
-        if(interactionList[i]) {
-          interactionList[i]->setColor(colorMap(i));
-        }
-      }
-    }
-  }
 
   // Insert header
   cursor.insertHtml("<h1>Interaction Energies</h1>");

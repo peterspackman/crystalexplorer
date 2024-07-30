@@ -51,12 +51,19 @@ public:
   const std::vector<std::pair<int, int>> &covalentBonds() const override;
   std::vector<CloseContactPair> closeContacts(const CloseContactCriteria & = {}) const override;
 
+
+  int genericIndexToIndex(const GenericAtomIndex &) const override;
+  GenericAtomIndex indexToGenericIndex(int) const override;
+
   void updateBondGraph() override;
 
   void resetAtomsAndBonds(bool toSelection = false) override;
 
   void setShowVanDerWaalsContactAtoms(bool state) override;
+
   void completeFragmentContaining(int) override;
+  void completeFragmentContaining(GenericAtomIndex) override;
+
   bool hasIncompleteFragments() const override;
   bool hasIncompleteSelectedFragments() const override;
   void completeAllFragments() override;
@@ -94,6 +101,9 @@ public:
       const std::vector<GenericAtomIndex> &) const override;
 
   [[nodiscard]] QString chemicalFormula(bool richText = true) const override;
+
+
+  std::vector<GenericAtomIndex> getAtomIndicesUnderTransformation(const std::vector<GenericAtomIndex> &idxs, const Eigen::Isometry3d &result) const override;
 
 private:
   Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;

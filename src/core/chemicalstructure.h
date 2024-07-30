@@ -90,9 +90,14 @@ public:
   void resetAtomColorOverrides();
   void setAtomColoring(AtomColoring);
 
+  void setColorForAtomsWithFlags(const AtomFlags &, const QColor &);
+
   virtual inline StructureType structureType() const {
     return StructureType::Cluster;
   }
+
+  virtual int genericIndexToIndex(const GenericAtomIndex &) const;
+  virtual GenericAtomIndex indexToGenericIndex(int) const;
 
   virtual occ::IVec
   atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const;
@@ -106,9 +111,12 @@ public:
                                  const std::vector<GenericAtomIndex> &to,
                                  Eigen::Isometry3d &result) const;
 
+  virtual std::vector<GenericAtomIndex> getAtomIndicesUnderTransformation(const std::vector<GenericAtomIndex> &idxs, const Eigen::Isometry3d &result) const;
+
   // fragments
   virtual void selectFragmentContaining(int);
   virtual void completeFragmentContaining(int);
+  virtual void completeFragmentContaining(GenericAtomIndex);
   virtual void completeAllFragments();
   virtual void packUnitCells(const QPair<QVector3D, QVector3D> &);
 
@@ -171,6 +179,8 @@ public:
   FragmentPairs findFragmentPairs(int keyFragment = -1) const;
 
   virtual void setFragmentColor(int fragment, const QColor &color);
+  virtual void setAllFragmentColors(const QColor &color);
+
 
   // dynamics data
   inline bool hasFrameData() const { return frameCount() > 0; }

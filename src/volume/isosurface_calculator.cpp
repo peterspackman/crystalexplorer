@@ -2,6 +2,7 @@
 #include "exefileutilities.h"
 #include "crystalstructure.h"
 #include "load_mesh.h"
+#include "meshinstance.h"
 #include "occsurfacetask.h"
 #include "xyzfile.h"
 #include "settings.h"
@@ -130,6 +131,10 @@ void IsosurfaceCalculator::surfaceComplete() {
   mesh->setAtomsInside(m_atomsInside);
   mesh->setAtomsOutside(m_atomsOutside);
   mesh->setParent(m_structure);
+  // create the child instance that will be shown
+  MeshInstance *instance = new MeshInstance(mesh);
+  instance->setObjectName("+ {x,y,z} [0,0,0]");
+
 }
 
 } // namespace volume

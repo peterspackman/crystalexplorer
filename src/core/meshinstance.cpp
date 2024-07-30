@@ -5,6 +5,7 @@
 MeshInstance::MeshInstance(Mesh *parent, const MeshTransform &transform)
     : QObject(parent), m_mesh(parent), m_transform(transform) {
   if (m_mesh) {
+    populateSurroundingAtoms();
     m_selectedProperty = m_mesh->getSelectedProperty();
     // TODO remove these connections
     connect(this, &MeshInstance::visibilityChanged, m_mesh,
@@ -220,4 +221,15 @@ MeshInstance::nearestPoint(const MeshInstance *other) const {
     }
   }
   return result;
+}
+
+
+void MeshInstance::populateSurroundingAtoms() {
+  ChemicalStructure *structure =
+      qobject_cast<ChemicalStructure *>(m_mesh->parent());
+  if(structure) {
+    m_atomsInside = structure->getAtomIndicesUnderTransformation(m_mesh->atomsInside(), m_transform);
+    m_atomsOutside = structure->getAtomIndicesUnderTransformation(m_mesh->atomsOutside(), m_transform);
+    qDebug() << "m_atomsOutside" << m_atomsOutside.size();
+  }
 }

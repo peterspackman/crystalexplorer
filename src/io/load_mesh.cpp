@@ -202,9 +202,6 @@ Mesh *read_ply_file(const QString &filepath, bool preload_into_memory = true) {
       }
     }
 
-    // create a mesh instance
-    MeshInstance *instance = new MeshInstance(mesh);
-    instance->setObjectName("+ {x,y,z} [0,0,0]");
     return mesh;
 
   } catch (const std::exception &e) {

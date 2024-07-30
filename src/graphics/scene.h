@@ -196,7 +196,6 @@ public:
   bool applyDisorderColoring();
   void togglePairHighlighting(bool);
 
-  void toggleFragmentColors();
   void colorFragmentsByEnergyPair();
   void clearFragmentColors();
 

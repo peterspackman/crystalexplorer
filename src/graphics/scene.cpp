@@ -10,6 +10,7 @@
 #include "mathconstants.h"
 #include "scene.h"
 #include "settings.h"
+#include <ankerl/unordered_dense.h>
 
 using cx::graphics::SelectionType;
 
@@ -81,9 +82,8 @@ void Scene::setShowCloseContacts(bool set) {
   m_structure->setShowVanDerWaalsContactAtoms(set);
 }
 
-
 void Scene::setFrameworkOptions(const FrameworkOptions &options) {
-  if(m_structureRenderer) {
+  if (m_structureRenderer) {
     m_structureRenderer->setFrameworkOptions(options);
   }
 }
@@ -247,7 +247,7 @@ QVector<Label> Scene::energyLabels() {
 void Scene::updateNoneProperties() {
   // TODO update none properties
   // surfaceHandler()->updateAllSurfaceNoneProperties();
-  if(m_structureRenderer) {
+  if (m_structureRenderer) {
     m_structureRenderer->updateMeshes();
   }
 }
@@ -308,7 +308,14 @@ void Scene::setSelectStatusForAtomDoubleClick(int atomIndex) {
 }
 
 void Scene::selectAtomsSeparatedBySurface(bool inside) {
-  // TODO
+  if (m_selectedSurface.surface) {
+    m_structure->setFlagForAllAtoms(AtomFlag::Selected, !inside);
+    auto atomIndices = m_selectedSurface.surface->atomsInside();
+    for (const auto &idx : atomIndices) {
+      int i = m_structure->genericIndexToIndex(idx);
+      m_structure->setAtomFlag(i, AtomFlag::Selected, inside);
+    }
+  }
 }
 
 bool Scene::processSelectionDoubleClick(const QColor &color) {
@@ -333,8 +340,9 @@ bool Scene::processSelectionDoubleClick(const QColor &color) {
   return false;
 }
 
-void Scene::handleSurfacesNeedUpdate() { 
-  if(m_structureRenderer) m_structureRenderer->updateMeshes();
+void Scene::handleSurfacesNeedUpdate() {
+  if (m_structureRenderer)
+    m_structureRenderer->updateMeshes();
 }
 
 void Scene::handleLabelsNeedUpdate() { m_labelsNeedUpdate = true; }
@@ -537,7 +545,7 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
     }
     const auto &positions = m_structure->atomicPositions();
     occ::Vec3 pos = 0.5 * (positions.col(atomsForBond.first) +
-                          positions.col(atomsForBond.second));
+                           positions.col(atomsForBond.second));
     result.position = QVector3D(pos.x(), pos.y(), pos.z());
     result.selectionType = SelectionType::Bond;
     result.index = bond_idx;
@@ -1258,6 +1266,8 @@ void Scene::selectAtomsOutsideRadiusOfSelectedAtoms(float radius) {
 
 void Scene::reset() {
   m_structure->resetAtomsAndBonds();
+  m_structure->resetAtomColorOverrides();
+  clearFragmentColors();
   resetViewAndSelections();
 }
 
@@ -1440,16 +1450,35 @@ bool Scene::applyDisorderColoring() {
   return _highlightMode == HighlightMode::Normal && _disorderCycleIndex == -1;
 }
 
-void Scene::toggleFragmentColors() {
-  // TODO toggle fragment colors
-}
-
 void Scene::colorFragmentsByEnergyPair() {
-  // TODO color fragments by energy pair
+  auto selectedFragments = m_structure->selectedFragments();
+  if (selectedFragments.size() == 1) {
+    auto *interactions = m_structure->pairInteractions();
+    auto fragmentPairs = m_structure->findFragmentPairs(selectedFragments[0]);
+    ColorMapFunc colorMap(ColorMapName::Viridis, 0,
+                          fragmentPairs.uniquePairs.size() - 1);
+    for (const auto &[fragmentPair, idx] :
+         fragmentPairs.pairs[selectedFragments[0]]) {
+      m_structure->setFragmentColor(fragmentPair.fragmentIndexB, colorMap(idx));
+    }
+    auto interactionMap = interactions->getInteractionsMatchingFragments(
+        fragmentPairs.uniquePairs);
+    for (auto interactionList : interactionMap) {
+      for (int i = 0; i < interactionList.size(); i++) {
+        if (interactionList[i]) {
+          interactionList[i]->setColor(colorMap(i));
+        }
+      }
+    }
+  } else {
+    m_structure->setAllFragmentColors(Qt::gray);
+  }
+  m_structure->setAtomColoring(ChemicalStructure::AtomColoring::Fragment);
 }
 
 void Scene::clearFragmentColors() {
-  // TODO clear fragment colors
+  m_structure->setAllFragmentColors(Qt::gray);
+  m_structure->setAtomColoring(ChemicalStructure::AtomColoring::Element);
 }
 
 void Scene::togglePairHighlighting(bool show) {
@@ -1470,15 +1499,54 @@ void Scene::toggleDrawHydrogenEllipsoids(bool hEllipsoids) {
 void Scene::setShowHydrogens(bool show) { _showHydrogens = show; }
 
 void Scene::generateAllExternalFragments() {
-  // TODO generateAllExternalFragments
+  if (m_selectedSurface.surface) {
+    auto *mesh = m_selectedSurface.surface->mesh();
+    qDebug() << "Generate external fragment";
+    if (!mesh)
+      return;
+    occ::IVec de_idxs = mesh->vertexProperty("de_idx").cast<int>();
+    qDebug() << "num de_idxs" << de_idxs.size();
+    ankerl::unordered_dense::set<int> unique(de_idxs.data(),
+                                             de_idxs.data() + de_idxs.size());
+    auto atomIndices = m_selectedSurface.surface->atomsOutside();
+    for (const auto &i : unique) {
+      if (i >= atomIndices.size())
+        continue;
+      const auto &idx = atomIndices[i];
+      m_structure->completeFragmentContaining(idx);
+    }
+  }
 }
 
 void Scene::generateInternalFragment() {
-  // TODO generate internal fragment
+  if (m_selectedSurface.surface) {
+    auto atomIndices = m_selectedSurface.surface->atomsInside();
+    for (const auto &idx : atomIndices) {
+      m_structure->completeFragmentContaining(idx);
+    }
+  }
 }
 
 void Scene::generateExternalFragment() {
-  // TODO generateExternalFragment
+  if (m_selectedSurface.surface) {
+    auto *mesh = m_selectedSurface.surface->mesh();
+    qDebug() << "Generate external fragment";
+    if (!mesh)
+      return;
+    const auto &de_idxs = mesh->vertexProperty("de_idx");
+    qDebug() << "num de_idxs" << de_idxs.size();
+    if ((de_idxs.size() < m_selection.secondaryIndex) ||
+        (m_selection.secondaryIndex < 0))
+      return;
+    const int de_idx = static_cast<int>(de_idxs(m_selection.secondaryIndex));
+    auto atomIndices = m_selectedSurface.surface->atomsOutside();
+    qDebug() << "de_idx" << de_idx << atomIndices.size();
+    if (de_idx >= atomIndices.size())
+      return;
+    qDebug() << "de_idx valid";
+    const auto &idx = atomIndices[de_idx];
+    m_structure->completeFragmentContaining(idx);
+  }
 }
 
 bool Scene::hasAllAtomsSelected() {
@@ -1552,17 +1620,16 @@ void Scene::deleteSelectedAtoms() {
 void Scene::completeAllFragments() { m_structure->completeAllFragments(); }
 
 void Scene::colorSelectedAtoms(const QColor &color, bool fragments) {
-    auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
-    if(fragments) {
-        for(const auto &idx: idxs) {
-            int frag = m_structure->fragmentIndexForAtom(idx);
-            m_structure->setFragmentColor(frag, color);
-        }
+  auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
+  if (fragments) {
+    for (const auto &idx : idxs) {
+      int frag = m_structure->fragmentIndexForAtom(idx);
+      m_structure->setFragmentColor(frag, color);
     }
-    else {
-        // TODO color selected atoms
-
-    }
+  } else {
+    AtomFlags flags = AtomFlag::Selected;
+    m_structure->setColorForAtomsWithFlags(flags, color);
+  }
 }
 
 bool Scene::hasHydrogens() const {
@@ -1636,7 +1703,7 @@ void Scene::toggleAtomsForFingerprintSelectionFilter(bool show) {
     m_deprecatedCrystal->colorAtomsByFragment(deAtoms);
 
   } else { // reset back to how it was before
-    m_deprecatedCrystal->resetAllAtomColors();
+    m_deprecatedCrystal->reeetAllAtomColors();
     m_deprecatedCrystal->removeLastAtoms(numberOfAddedAtoms);
   }
 

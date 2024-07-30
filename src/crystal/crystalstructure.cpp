@@ -231,21 +231,23 @@ int CrystalStructure::fragmentIndexForAtom(int atomIndex) const {
 }
 
 int CrystalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
-    const auto loc = m_atomMap.find(idx);
-    if(loc != m_atomMap.end()) {
-        return m_fragmentForAtom[loc->second];
-    }
-    return -1;
+  const auto loc = m_atomMap.find(idx);
+  if (loc != m_atomMap.end()) {
+    return m_fragmentForAtom[loc->second];
+  }
+  return -1;
 }
-
 
 std::vector<HBondTriple>
 CrystalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
-  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds, m_hydrogenBonds);
+  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds,
+                         m_hydrogenBonds);
 }
 
-std::vector<CloseContactPair> CrystalStructure::closeContacts(const CloseContactCriteria &criteria) const {
-  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds, m_vdwContacts);
+std::vector<CloseContactPair>
+CrystalStructure::closeContacts(const CloseContactCriteria &criteria) const {
+  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds,
+                         m_vdwContacts);
 }
 
 const std::vector<std::pair<int, int>> &
@@ -445,16 +447,20 @@ void CrystalStructure::setShowVanDerWaalsContactAtoms(bool state) {
   }
 }
 
-void CrystalStructure::completeFragmentContaining(int atomIndex) {
-  if (atomIndex < 0 || atomIndex >= numberOfAtoms())
-    return;
+void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
+
   bool haveContactAtoms = anyAtomHasFlags(AtomFlag::Contact);
   bool fragmentWasSelected{false};
-  if (!atomFlagsSet(atomIndex, AtomFlag::Contact)) {
-    fragmentWasSelected = atomsHaveFlags(
-        atomsForFragment(fragmentIndexForAtom(atomIndex)), AtomFlag::Selected);
+
+  int atomIndex = genericIndexToIndex(index);
+
+  if(atomIndex >= 0) {
+    if (!atomFlagsSet(atomIndex, AtomFlag::Contact)) {
+      fragmentWasSelected = atomsHaveFlags(
+          atomsForFragment(fragmentIndexForAtom(atomIndex)), AtomFlag::Selected);
+    }
+    setAtomFlag(atomIndex, AtomFlag::Contact, false);
   }
-  setAtomFlag(atomIndex, AtomFlag::Contact, false);
 
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
@@ -476,11 +482,10 @@ void CrystalStructure::completeFragmentContaining(int atomIndex) {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+  VertexDesc uc_vertex = index.unique;
   filtered_connectivity_traversal_with_cell_offset(
       g, uc_vertex, visitor, covalentPredicate,
-      {m_unitCellOffsets[atomIndex].x, m_unitCellOffsets[atomIndex].y,
-       m_unitCellOffsets[atomIndex].z});
+      {index.x, index.y, index.z});
 
   std::vector<GenericAtomIndex> indices(atomsToAdd.begin(), atomsToAdd.end());
   addAtomsByCrystalIndex(indices, fragmentWasSelected ? AtomFlag::Selected
@@ -488,6 +493,13 @@ void CrystalStructure::completeFragmentContaining(int atomIndex) {
   if (haveContactAtoms)
     addVanDerWaalsContactAtoms();
   updateBondGraph();
+
+}
+void CrystalStructure::completeFragmentContaining(int atomIndex) {
+  if (atomIndex < 0 || atomIndex >= numberOfAtoms())
+    return;
+  GenericAtomIndex idx = indexToGenericIndex(atomIndex);
+  completeFragmentContaining(idx);
 }
 
 bool CrystalStructure::hasIncompleteFragments() const {
@@ -801,7 +813,7 @@ CrystalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
 
   for (int i = 0; i < numberOfAtoms(); i++) {
     bool check = atomFlagsSet(i, flags);
-    if((set && check) || (!set && !check)) {
+    if ((set && check) || (!set && !check)) {
       const auto &offset = m_unitCellOffsets[i];
       selected_idxs.insert({offset.unique, offset.x, offset.y, offset.z});
     }
@@ -976,4 +988,61 @@ Fragment CrystalStructure::makeFragment(
 
 const std::vector<Fragment> &CrystalStructure::getFragments() const {
   return m_fragments;
+}
+
+std::vector<GenericAtomIndex>
+CrystalStructure::getAtomIndicesUnderTransformation(
+    const std::vector<GenericAtomIndex> &idxs,
+    const Eigen::Isometry3d &transform) const {
+  std::vector<GenericAtomIndex> result;
+  occ::Mat3N pos =
+      (transform.rotation() * atomicPositionsForIndices(idxs)).colwise() +
+      transform.translation();
+  occ::Mat3N fracPos = m_crystal.to_fractional(pos);
+
+  const auto &uc_atoms = m_crystal.unit_cell_atoms();
+
+  for (int i = 0; i < fracPos.cols(); ++i) {
+    occ::Vec3 frac = fracPos.col(i);
+
+    double minDistance = std::numeric_limits<double>::max();
+    int closestAtomIndex = -1;
+    Eigen::Vector3i cellOffset;
+
+    for (size_t j = 0; j < uc_atoms.size(); ++j) {
+      Eigen::Vector3d diff = frac - uc_atoms.frac_pos.col(j);
+      Eigen::Vector3i currentOffset = diff.array().round().cast<int>();
+      Eigen::Vector3d wrappedDiff = diff - currentOffset.cast<double>();
+
+      double distance = wrappedDiff.squaredNorm();
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestAtomIndex = j;
+        cellOffset = currentOffset;
+      }
+    }
+
+    if (closestAtomIndex != -1) {
+      if (minDistance > 1e-3)
+        qDebug() << "Match has large distance: " << closestAtomIndex
+                 << minDistance;
+      result.emplace_back(GenericAtomIndex{static_cast<int>(closestAtomIndex),
+                                           cellOffset(0), cellOffset(1),
+                                           cellOffset(2)});
+    }
+  }
+  return result;
+}
+
+int CrystalStructure::genericIndexToIndex(const GenericAtomIndex &idx) const {
+  auto location = m_atomMap.find(idx);
+  if (location == m_atomMap.end()) {
+    return -1;
+  }
+  return location->second;
+}
+
+GenericAtomIndex CrystalStructure::indexToGenericIndex(int idx) const {
+  if(idx < 0 || idx >= m_unitCellOffsets.size()) return GenericAtomIndex{-1};
+  return m_unitCellOffsets[idx];
 }

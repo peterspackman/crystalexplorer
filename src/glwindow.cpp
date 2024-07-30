@@ -765,16 +765,18 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
                            &GLWindow::contextualDeleteFragmentWithBond);
     break;
   case SelectionType::Surface: {
-    // TODO
-    /*
-    Surface *surface = scene->selectedSurface();
-    if (surface) {
+    const auto &selection = scene->selectedSurface();
+    if (selection.surface) {
+      auto * mesh = selection.surface->mesh();
+      if(!mesh) break;
+
       contextMenu->addAction(tr("Hide Surface"), this,
                              &GLWindow::contextualHideSurface);
       contextMenu->addAction(tr("Delete Surface"), this,
                              &GLWindow::contextualDeleteSurface);
 
-      if (surface->isHirshfeldBased()) {
+
+      if (mesh->kind() == isosurface::Kind::Hirshfeld) {
         contextMenu->addAction(tr("Generate Internal Fragment"), this,
                                &GLWindow::contextualGenerateInternalFragment);
         contextMenu->addAction(tr("Generate External Fragment"), this,
@@ -789,25 +791,7 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
       contextMenu->addAction(tr("Select Atoms Outside Surface"), this,
                              &GLWindow::contextualSelectAtomsOutsideSurface);
 
-      if (surface->currentProperty()->type() ==
-          IsosurfacePropertyDetails::Type::None) {
-        contextMenu->addAction(tr("Edit Surface Color"), this,
-                               &GLWindow::contextualEditNonePropertyColor);
-        contextMenu->addAction(tr("Reset Surface Color"), this,
-                               &GLWindow::contextualResetNonePropertyColor);
-      }
-
-      if (surface->isCapped()) {
-        if (surface->capsVisible()) {
-          contextMenu->addAction(tr("Hide Surface Caps"), this,
-                                 &GLWindow::contextualHideSurfaceCaps);
-        } else {
-          contextMenu->addAction(tr("Show Surface Caps"), this,
-                                 &GLWindow::contextualShowSurfaceCaps);
-        }
-      }
     }
-      */
     break;
   }
   case SelectionType::None: // do nothing

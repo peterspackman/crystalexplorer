@@ -534,18 +534,19 @@ int ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
 }
 
 int ChemicalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
-    return m_fragmentForAtom[idx.unique];
+  return m_fragmentForAtom[idx.unique];
 }
-
 
 std::vector<HBondTriple>
 ChemicalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
-  return criteria.filter(m_atomicPositions, m_atomicNumbers, m_covalentBonds, m_hydrogenBonds);
+  return criteria.filter(m_atomicPositions, m_atomicNumbers, m_covalentBonds,
+                         m_hydrogenBonds);
 }
 
-
-std::vector<CloseContactPair> ChemicalStructure::closeContacts(const CloseContactCriteria &criteria) const {
-  return criteria.filter(m_atomicPositions, m_atomicNumbers, m_covalentBonds, m_vdwContacts);
+std::vector<CloseContactPair>
+ChemicalStructure::closeContacts(const CloseContactCriteria &criteria) const {
+  return criteria.filter(m_atomicPositions, m_atomicNumbers, m_covalentBonds,
+                         m_vdwContacts);
 }
 
 const std::vector<std::pair<int, int>> &
@@ -585,8 +586,8 @@ QColor ChemicalStructure::atomColor(int atomIndex) const {
   }
   case AtomColoring::Fragment: {
     int frag = fragmentIndexForAtom(atomIndex);
-    if(frag >= 0 && frag <= m_fragments.size()) {
-        return m_fragments[frag].color;
+    if (frag >= 0 && frag <= m_fragments.size()) {
+      return m_fragments[frag].color;
     }
     return Qt::white;
   }
@@ -600,12 +601,30 @@ void ChemicalStructure::overrideAtomColor(int index, const QColor &color) {
   m_atomColorOverrides[index] = color;
 }
 
+void ChemicalStructure::setColorForAtomsWithFlags(const AtomFlags &flags,
+                                                  const QColor &color) {
+  for (int i = 0; i < numberOfAtoms(); i++) {
+    if (m_flags[i].testFlags(flags)) {
+      m_atomColorOverrides[i] = color;
+    }
+  }
+}
+
 void ChemicalStructure::resetAtomColorOverrides() {
   m_atomColorOverrides.clear();
 }
 
 void ChemicalStructure::setAtomColoring(AtomColoring atomColoring) {
   m_atomColoring = atomColoring;
+}
+
+
+int ChemicalStructure::genericIndexToIndex(const GenericAtomIndex &idx) const {
+  return idx.unique;
+}
+
+GenericAtomIndex ChemicalStructure::indexToGenericIndex(int idx) const {
+  return GenericAtomIndex{idx};
 }
 
 void ChemicalStructure::resetAtomsAndBonds(bool toSelection) {
@@ -617,6 +636,10 @@ void ChemicalStructure::setShowVanDerWaalsContactAtoms(bool state) {
 }
 
 void ChemicalStructure::completeFragmentContaining(int) {
+  // TODO
+}
+
+void ChemicalStructure::completeFragmentContaining(GenericAtomIndex) {
   // TODO
 }
 
@@ -638,7 +661,8 @@ ChemicalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
   std::vector<GenericAtomIndex> result;
   for (int i = 0; i < numberOfAtoms(); i++) {
     bool check = m_flags[i].testFlags(flags);
-    if((set && check) || (!set && !check)) result.push_back({i});
+    if ((set && check) || (!set && !check))
+      result.push_back({i});
   }
   return result;
 }
@@ -738,7 +762,8 @@ occ::IVec ChemicalStructure::atomicNumbersForIndices(
   return result;
 }
 
-std::vector<QString> ChemicalStructure::labelsForIndices(const std::vector<GenericAtomIndex> &idxs) const {
+std::vector<QString> ChemicalStructure::labelsForIndices(
+    const std::vector<GenericAtomIndex> &idxs) const {
   std::vector<QString> result;
   result.reserve(idxs.size());
   for (int i = 0; i < idxs.size(); i++) {
@@ -747,12 +772,34 @@ std::vector<QString> ChemicalStructure::labelsForIndices(const std::vector<Gener
   return result;
 }
 
-
 occ::Mat3N ChemicalStructure::atomicPositionsForIndices(
     const std::vector<GenericAtomIndex> &idxs) const {
   occ::Mat3N result(3, idxs.size());
   for (int i = 0; i < idxs.size(); i++) {
     result.col(i) = m_atomicPositions.col(i % m_atomicPositions.cols());
+  }
+  return result;
+}
+
+std::vector<GenericAtomIndex>
+ChemicalStructure::getAtomIndicesUnderTransformation(
+    const std::vector<GenericAtomIndex> &idxs,
+    const Eigen::Isometry3d &transform) const {
+  std::vector<GenericAtomIndex> result;
+  occ::Mat3N pos = (transform.rotation() * atomicPositionsForIndices(idxs)).colwise() +
+                   transform.translation();
+
+  occ::core::KDTree<double> tree(3, m_atomicPositions, occ::core::max_leaf);
+  tree.index->buildIndex();
+  size_t idx;
+  double d;
+  nanoflann::KNNResultSet<double> resultSet(1);
+  resultSet.init(&idx, &d);
+
+  for(int i = 0; i < pos.cols(); i++) {
+      occ::Vec3 position = pos.col(i);
+      tree.index->findNeighbors(resultSet, position.data(), nanoflann::SearchParams(10));
+      if(d < 1e-3) result.push_back({static_cast<int>(idx)});
   }
   return result;
 }
@@ -895,99 +942,114 @@ ChemicalStructure::findUniqueFragment(
 }
 
 FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
-    FragmentPairs result;
-    constexpr double tolerance = 1e-1;
-    const auto &fragments = getFragments();
-    const auto &uniqueFragments = symmetryUniqueFragments();
+  FragmentPairs result;
+  constexpr double tolerance = 1e-1;
+  const auto &fragments = getFragments();
+  const auto &uniqueFragments = symmetryUniqueFragments();
 
-    occ::core::DynamicKDTree<double> tree(occ::core::max_leaf);
+  occ::core::DynamicKDTree<double> tree(occ::core::max_leaf);
 
-    auto &pairs = result.uniquePairs;
-    auto &molPairs = result.pairs;
-    molPairs.resize(uniqueFragments.size());
+  auto &pairs = result.uniquePairs;
+  auto &molPairs = result.pairs;
+  molPairs.resize(uniqueFragments.size());
 
-    std::vector<size_t> candidateFragments;
-    if (keyFragment < 0) {
-        for (size_t fragIndexA = 0; fragIndexA < fragments.size(); fragIndexA++) {
-            candidateFragments.push_back(fragIndexA);
+  std::vector<size_t> candidateFragments;
+  if (keyFragment < 0) {
+    for (size_t fragIndexA = 0; fragIndexA < fragments.size(); fragIndexA++) {
+      candidateFragments.push_back(fragIndexA);
+    }
+  } else {
+    candidateFragments.push_back(keyFragment);
+  }
+
+  for (size_t fragIndexA : candidateFragments) {
+    const auto &fragA = fragments[fragIndexA];
+    const size_t asymIndex = fragA.asymmetricFragmentIndex;
+
+    for (size_t fragIndexB = 0; fragIndexB < fragments.size(); fragIndexB++) {
+      if ((keyFragment < 0) && (fragIndexB <= fragIndexA))
+        continue;
+
+      const auto &fragB = fragments[fragIndexB];
+      double distance = (fragA.nearestAtom(fragB).distance);
+      if (distance <= tolerance)
+        continue;
+
+      FragmentDimer d(fragA, fragB);
+      d.fragmentIndexA = fragIndexA;
+      d.fragmentIndexB = fragIndexB;
+
+      // Create a 3D point for the current pair
+      Eigen::Vector3d point(d.nearestAtomDistance, d.centroidDistance,
+                            d.centerOfMassDistance);
+
+      // Check if a similar pair already exists using the KD-tree
+      bool found_identical = false;
+      if (tree.size() > 0) {
+        auto [ret_index, out_dist_sqr] = tree.nearest(point);
+        if (out_dist_sqr <= tolerance * tolerance) {
+          if (pairs[ret_index] == d) {
+            found_identical = true;
+          }
         }
-    } else {
-        candidateFragments.push_back(keyFragment);
+      }
+
+      if (!found_identical) {
+        pairs.push_back(d);
+        tree.addPoint(point);
+      }
+      molPairs[asymIndex].push_back({d, -1});
     }
+  }
 
-    for (size_t fragIndexA : candidateFragments) {
-        const auto &fragA = fragments[fragIndexA];
-        const size_t asymIndex = fragA.asymmetricFragmentIndex;
+  // Sort the pairs
+  auto fragmentDimerSortFunc = [](const FragmentDimer &a,
+                                  const FragmentDimer &b) {
+    return a.nearestAtomDistance < b.nearestAtomDistance;
+  };
+  auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
+                            const FragmentPairs::SymmetryRelatedPair &b) {
+    return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
+  };
 
-        for (size_t fragIndexB = 0; fragIndexB < fragments.size(); fragIndexB++) {
-            if ((keyFragment < 0) && (fragIndexB <= fragIndexA)) continue;
+  std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
 
-            const auto &fragB = fragments[fragIndexB];
-            double distance = (fragA.nearestAtom(fragB).distance);
-            if (distance <= tolerance) continue;
+  occ::core::DynamicKDTree<double> sortedTree(occ::core::max_leaf);
+  for (size_t i = 0; i < pairs.size(); ++i) {
+    Eigen::Vector3d point(pairs[i].nearestAtomDistance,
+                          pairs[i].centroidDistance,
+                          pairs[i].centerOfMassDistance);
+    sortedTree.addPoint(point);
+  }
 
-            FragmentDimer d(fragA, fragB);
-            d.fragmentIndexA = fragIndexA;
-            d.fragmentIndexB = fragIndexB;
-
-            // Create a 3D point for the current pair
-            Eigen::Vector3d point(d.nearestAtomDistance, d.centroidDistance, d.centerOfMassDistance);
-
-            // Check if a similar pair already exists using the KD-tree
-            bool found_identical = false;
-            if (tree.size() > 0) {
-                auto [ret_index, out_dist_sqr] = tree.nearest(point);
-                if (out_dist_sqr <= tolerance * tolerance) {
-                    if (pairs[ret_index] == d) {
-                        found_identical = true;
-                    }
-                }
-            }
-
-            if (!found_identical) {
-                pairs.push_back(d);
-                tree.addPoint(point);
-            }
-            molPairs[asymIndex].push_back({d, -1});
-        }
+  for (auto &vec : molPairs) {
+    std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
+    for (auto &d : vec) {
+      Eigen::Vector3d query(d.fragments.nearestAtomDistance,
+                            d.fragments.centroidDistance,
+                            d.fragments.centerOfMassDistance);
+      auto [idx, dist_sqr] = sortedTree.nearest(query);
+      if (dist_sqr > tolerance * tolerance)
+        continue;
+      if (pairs[idx] == d.fragments) {
+        d.uniquePairIndex = idx;
+      }
     }
-
-    // Sort the pairs
-    auto fragmentDimerSortFunc = [](const FragmentDimer &a, const FragmentDimer &b) {
-        return a.nearestAtomDistance < b.nearestAtomDistance;
-    };
-    auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
-                              const FragmentPairs::SymmetryRelatedPair &b) {
-        return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
-    };
-
-    std::stable_sort(pairs.begin(), pairs.end(), fragmentDimerSortFunc);
-
-    occ::core::DynamicKDTree<double> sortedTree(occ::core::max_leaf);
-    for (size_t i = 0; i < pairs.size(); ++i) {
-        Eigen::Vector3d point(pairs[i].nearestAtomDistance, pairs[i].centroidDistance, pairs[i].centerOfMassDistance);
-        sortedTree.addPoint(point);
-    }
-
-    for (auto &vec : molPairs) {
-        std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
-        for (auto &d : vec) {
-            Eigen::Vector3d query(d.fragments.nearestAtomDistance, d.fragments.centroidDistance, d.fragments.centerOfMassDistance);
-            auto [idx, dist_sqr] = sortedTree.nearest(query);
-            if(dist_sqr > tolerance * tolerance) continue;
-            if(pairs[idx] == d.fragments) {
-              d.uniquePairIndex = idx;
-            }
-        }
-    }
-    return result;
+  }
+  return result;
 }
 
-void ChemicalStructure::setFragmentColor(int fragment, const QColor &color)  {
-    if(fragment < 0 || fragment >= m_fragments.size()) return;
-    m_fragments[fragment].color = color;
+void ChemicalStructure::setFragmentColor(int fragment, const QColor &color) {
+  if (fragment < 0 || fragment >= m_fragments.size())
+    return;
+  m_fragments[fragment].color = color;
 }
 
+void ChemicalStructure::setAllFragmentColors(const QColor &color) {
+  for (auto &frag : m_fragments) {
+    frag.color = color;
+  }
+}
 
 const std::vector<Fragment> &ChemicalStructure::getFragments() const {
   return m_fragments;
