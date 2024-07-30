@@ -113,7 +113,7 @@ private:
   // Interaction Energy Info
   static void insertEnergyScalingPreamble(QTextCursor);
   static void insertEnergyModelScalingInfo(QTextCursor);
-  static void insertInteractionEnergiesGroupedByPair(PairInteractions *, QTextCursor);
+  static void insertInteractionEnergiesGroupedByPair(ChemicalStructure *, PairInteractions *, QTextCursor);
   static void insertInteractionEnergiesGroupedByWavefunction(Scene *,
                                                              QTextCursor);
   static void insertLatticeEnergy(Scene *, QTextCursor);

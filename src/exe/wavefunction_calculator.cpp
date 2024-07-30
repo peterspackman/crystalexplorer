@@ -24,7 +24,7 @@ inline wfn::Parameters xtb2wfn(const xtb::Parameters &params) {
   result.charge = params.charge;
   result.multiplicity = params.multiplicity;
   result.method = xtb::methodToString(params.method);
-  result.basis = "N/A";
+  result.basis = "";
   result.structure = params.structure;
   result.atoms = params.atoms;
   result.accepted = params.accepted;

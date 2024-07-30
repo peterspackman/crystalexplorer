@@ -1,6 +1,6 @@
 #include "energycalculationdialog.h"
-#include <ankerl/unordered_dense.h>
 #include "settings.h"
+#include <ankerl/unordered_dense.h>
 
 EnergyCalculationDialog::EnergyCalculationDialog(QWidget *parent)
     : QDialog(parent) {
@@ -41,28 +41,25 @@ void EnergyCalculationDialog::initConnections() {
           &EnergyCalculationDialog::handleModelChange);
   connect(qualitativeRadioButton, &QRadioButton::toggled, this,
           &EnergyCalculationDialog::handleModelChange);
+  connect(gfnRadioButton, &QRadioButton::toggled, this,
+          &EnergyCalculationDialog::handleModelChange);
+  connect(gfnComboBox, &QComboBox::currentTextChanged, this,
+          &EnergyCalculationDialog::handleModelChange);
   connect(userWavefunctionRadioButton, &QRadioButton::toggled, this,
           &EnergyCalculationDialog::handleModelChange);
 }
 
 void EnergyCalculationDialog::showEvent(QShowEvent *) {
 
-  /*
-bool show_experimental = false;
-    settings::readSetting(
-        settings::keys::ENABLE_EXPERIMENTAL_INTERACTION_ENERGIES)
-        .toBool();
-qDebug() << "Show event" << show_experimental;
-bool orcaVisible = show_experimental &&
+  // orca is not visible right now until we implement it
+  bool orcaVisible = false &&
                    !settings::readSetting(settings::keys::ORCA_EXECUTABLE)
                         .toString()
                         .isEmpty();
-                       */
   bool xtbVisible = !settings::readSetting(settings::keys::XTB_EXECUTABLE)
                          .toString()
                          .isEmpty();
 
-  bool orcaVisible = false;
   gfnRadioButton->setVisible(xtbVisible);
   gfnComboBox->setVisible(xtbVisible);
   orcaRadioButton->setVisible(orcaVisible);
@@ -80,9 +77,9 @@ void EnergyCalculationDialog::handleModelChange() {
   m_method = (quantitativeRadioButton->isChecked()) ? "b3lyp" : "hf";
   m_basis = (quantitativeRadioButton->isChecked()) ? "def2-svp" : "3-21g";
 
-  if(gfnRadioButton->isChecked()) {
-    m_method = "GFN2-xTB";
-    m_basis = "N/A";
+  if (gfnRadioButton->isChecked()) {
+    m_method = gfnComboBox->currentText();
+    m_basis = "";
   }
 
   wavefunctionCombobox->setEnabled(userWavefunctionRadioButton->isChecked());
@@ -106,9 +103,6 @@ bool EnergyCalculationDialog::handleStructureChange() {
   const auto &fragments = m_structure->getFragments();
   const int keyFragmentIndex = selectedFragments[0];
   m_fragmentPairs = m_structure->findFragmentPairs(keyFragmentIndex);
-
-  qDebug() << "Found" << m_fragmentPairs.uniquePairs.size() << "unique pairs";
-
   m_fragmentPairsToCalculate.clear();
   const auto &keyFragment = fragments[keyFragmentIndex];
   int asymIndex = keyFragment.asymmetricFragmentIndex;
@@ -117,24 +111,29 @@ bool EnergyCalculationDialog::handleStructureChange() {
   ankerl::unordered_dense::set<int> wavefunctionsNeeded;
   wavefunctionsNeeded.insert(asymIndex);
 
-  for (const auto &pair : m_fragmentPairs.uniquePairs) {
-    const bool lhs = ((pair.a.asymmetricFragmentIndex == asymIndex) &&
-                      (pair.a.atomIndices == keyFragment.atomIndices));
-    const bool rhs = ((pair.b.asymmetricFragmentIndex == asymIndex) &&
-                      (pair.b.atomIndices == keyFragment.atomIndices));
-    if (lhs || rhs) {
-      m_fragmentPairsToCalculate.push_back(pair);
-      qDebug() << pair.a.asymmetricFragmentIndex
-               << pair.b.asymmetricFragmentIndex << pair.centroidDistance << pair.symmetry;
-      wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
-      wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);
+  auto match = [](const Fragment &a, const Fragment &b) {
+    return (a.asymmetricFragmentIndex == b.asymmetricFragmentIndex) &&
+           (a.atomIndices == b.atomIndices);
+  };
+  if (selectedFragments.size() == 2) {
+    // TODO improve efficiency here
+    const auto &keyFragment2 = fragments[selectedFragments[1]];
+    for (const auto &[pair, uniqueIndex] : m_fragmentPairs.pairs[keyFragmentIndex]) {
+      if (match(pair.b, keyFragment2)) {
+        m_fragmentPairsToCalculate.push_back(m_fragmentPairs.uniquePairs[uniqueIndex]);
+        wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
+        wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);
+      }
+    }
+  } else {
+    for (const auto &pair : m_fragmentPairs.uniquePairs) {
+      if (match(pair.a, keyFragment) || match(pair.b, keyFragment)) {
+        m_fragmentPairsToCalculate.push_back(pair);
+        wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
+        wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);
+      }
     }
   }
-
-  qDebug() << "Need to calculate" << wavefunctionsNeeded.size()
-           << "wavefunctions";
-  qDebug() << "Need to calculate" << m_fragmentPairsToCalculate.size()
-           << "pairs";
 
   const auto &uniqueFragments = m_structure->symmetryUniqueFragments();
   const auto &uniqueFragmentStates =
@@ -150,9 +149,14 @@ bool EnergyCalculationDialog::handleStructureChange() {
 
 QString EnergyCalculationDialog::selectedEnergyModel() const {
   // TODO add support for more energy models
-  if(gfnRadioButton->isChecked()) return "GFN2-xTB";
-  if(quantitativeRadioButton->isChecked()) return "ce-1p";
-  if(qualitativeRadioButton->isChecked()) return "ce-hf";
+  if (gfnRadioButton->isChecked()) {
+    return gfnComboBox->currentText();
+  }
+  if (quantitativeRadioButton->isChecked())
+    return "ce-1p";
+  if (qualitativeRadioButton->isChecked())
+    return "ce-hf";
+  // use the CE-1p model with whatever we throw at it
   return "ce-1p";
 }
 
@@ -164,7 +168,8 @@ void EnergyCalculationDialog::validate() {
     }
   }
   emit energyParametersChosen(pair_energy::EnergyModelParameters{
-      selectedEnergyModel(), m_requiredWavefunctions, m_fragmentPairsToCalculate});
+      selectedEnergyModel(), m_requiredWavefunctions,
+      m_fragmentPairsToCalculate});
 }
 
 void EnergyCalculationDialog::updateWavefunctionComboBox() {
@@ -172,7 +177,6 @@ void EnergyCalculationDialog::updateWavefunctionComboBox() {
   QStringList items{"Generate New Wavefunction"};
 
   if (m_structure) {
-    qDebug() << "Have m_structure: " << m_structure;
     for (const auto *child : m_structure->children()) {
       const MolecularWavefunction *wfn =
           qobject_cast<const MolecularWavefunction *>(child);

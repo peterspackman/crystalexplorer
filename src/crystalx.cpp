@@ -1692,29 +1692,8 @@ void Crystalx::showEnergyCalculationDialog() {
   }
   m_energyCalculationDialog->setChemicalStructure(structure);
 
-  if (selectedFragments.size() == 1 && completeFragments.size() > 1) {
-    int keyIndex = selectedFragments[0];
-    const auto &keyFragment = structure->getFragments()[keyIndex];
+  if (selectedFragments.size() > 0 && completeFragments.size() > 1) {
     m_energyCalculationDialog->show();
-  } else if (selectedFragments.size() == 2) {
-    /********
-        int indexFragA = crystal->fragmentIndexOfFirstSelectedFragment();
-        int indexFragB = crystal->fragmentIndexOfSecondSelectedFragment();
-
-        Q_ASSERT(indexFragA != -1);
-        Q_ASSERT(indexFragB != -1);
-
-        QVector<AtomId> fragAtomsA = crystal->atomIdsForFragment(indexFragA);
-        QVector<AtomId> fragAtomsB = crystal->atomIdsForFragment(indexFragB);
-
-        m_energyCalculationDialog->setAtomsForCalculation(fragAtomsA,
-       fragAtomsB);
-        m_energyCalculationDialog->setChargesAndMultiplicitiesForCalculation(
-                crystal->chargeMultiplicityForFragment(fragAtomsA),
-                crystal->chargeMultiplicityForFragment(fragAtomsB));
-        m_energyCalculationDialog->show();
-
-    */
   } else {
     QString baseMessage = "Unable to calculate interaction "
                           "energies.\nCrystalExplorer can handle the following "

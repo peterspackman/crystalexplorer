@@ -13,7 +13,7 @@ inline xtb::Parameters pair2xtb(const pair_energy::Parameters &params) {
   result.multiplicity = params.multiplicity();
   result.method = xtb::stringToMethod(params.model);
   result.structure = params.structure;
-  qDebug() << params.wfnA << params.wfnB;
+  qDebug() << params.wfnA << params.wfnB << params.model << xtb::methodToString(result.method);
   if(params.wfnA && params.wfnB) {
     result.reference_energy = params.wfnA->totalEnergy() + params.wfnB->totalEnergy();
   }
@@ -140,7 +140,7 @@ void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params, xtb::Re
         auto * interactions = params.structure->pairInteractions();
         auto * wfn = new MolecularWavefunction();
         bool success = io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
-        auto pair = new PairInteraction("GFN2-xTB");
+        auto pair = new PairInteraction(xtb::methodToString(params.method));
         qDebug() << success << "wfn->totalEnergy" << wfn->totalEnergy() << "ref" << params.reference_energy;
         double e = wfn->totalEnergy() - params.reference_energy;
         pair->addComponent("total", e * 2625.5);

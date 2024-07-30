@@ -2,6 +2,7 @@
 #include <QtDebug>
 
 #include "wavefunctioncalculationdialog.h"
+#include "xtb_parameters.h"
 
 const QString WavefunctionCalculationDialog::customEntry{"Custom..."};
 
@@ -37,7 +38,7 @@ void WavefunctionCalculationDialog::initPrograms() {
 }
 
 void WavefunctionCalculationDialog::initMethod() {
-  QStringList methods{"HF", "B3LYP", "WB97M-V", "GFN2-xTB"};
+  QStringList methods{"HF", "B3LYP", "WB97M-V", "GFN0-xTB", "GFN1-xTB", "GFN2-xTB"};
 
   for (const auto &method : methods) {
     methodComboBox->addItem(method);
@@ -95,7 +96,7 @@ const wfn::Parameters &WavefunctionCalculationDialog::getParameters() const {
 }
 
 bool WavefunctionCalculationDialog::isXtbMethod() const {
-  return method() == "GFN2-xTB";
+  return xtb::isXtbMethod(method());
 }
 
 void WavefunctionCalculationDialog::accept() {

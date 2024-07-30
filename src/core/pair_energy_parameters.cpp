@@ -1,5 +1,6 @@
 #include "pair_energy_parameters.h"
 #include "chemicalstructure.h"
+#include "xtb_parameters.h"
 #include <functional>
 
 // Helper function to combine hash values
@@ -40,8 +41,7 @@ bool EnergyModelParameters::operator==(const EnergyModelParameters &rhs) const {
 }
 
 bool EnergyModelParameters::isXtbModel() const {
-    // TODO proper implementation
-    return model == "GFN2-xTB";
+  return xtb::isXtbMethod(model);
 }
 
 bool Parameters::operator==(const Parameters &rhs) const {
@@ -80,19 +80,15 @@ QString Parameters::deriveName() const {
 }
 
 int Parameters::charge() const {
-    // TODO
-    return 0;
+  // TODO
+  return 0;
 }
 
 int Parameters::multiplicity() const {
-    // TODO
-    return 1;
+  // TODO
+  return 1;
 }
 
-bool Parameters::isXtbModel() const {
-    // TODO proper implementation
-    return model == "GFN2-xTB";
-}
-
+bool Parameters::isXtbModel() const { return xtb::isXtbMethod(model); }
 
 } // namespace pair_energy

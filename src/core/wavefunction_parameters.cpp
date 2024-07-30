@@ -1,4 +1,5 @@
 #include "wavefunction_parameters.h"
+#include "xtb_parameters.h"
 
 namespace wfn {
 
@@ -43,7 +44,7 @@ FileFormat fileFormatFromFilename(const QString &filename) {
 }
 
 bool Parameters::isXtbMethod() const {
-    return method == "GFN2-xTB";
+  return xtb::isXtbMethod(method);
 }
 
 } // namespace wfn

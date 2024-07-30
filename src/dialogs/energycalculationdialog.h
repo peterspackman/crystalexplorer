@@ -22,7 +22,7 @@ public:
   void setChemicalStructure(ChemicalStructure *);
   std::vector<wfn::Parameters> requiredWavefunctions();
   FragmentPairs fragmentPairs();
-  
+
   QString selectedEnergyModel() const;
 
 signals:

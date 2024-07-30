@@ -68,4 +68,12 @@ inline Method stringToMethod(const QString &s) {
     return Method::GFN2_xTB; // Default case
 }
 
+inline bool isXtbMethod(const QString &s) {
+    if (s.compare("GFN0-xTB", Qt::CaseInsensitive) == 0) return true;
+    if (s.compare("GFN1-xTB", Qt::CaseInsensitive) == 0) return true;
+    if (s.compare("GFN2-xTB", Qt::CaseInsensitive) == 0) return true;
+    if (s.compare("GFN-FF", Qt::CaseInsensitive) == 0) return true;
+    return false; // Default case
+}
+
 } // namespace wfn
