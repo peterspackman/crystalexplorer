@@ -47,10 +47,11 @@ public:
   std::vector<GenericAtomIndex> atomIndicesForFragment(int) const override;
 
   const std::pair<int, int> &atomsForBond(int) const override;
-  std::vector<HBondTriple> hydrogenBonds(const HBondCriteria & = {}) const override;
+  std::vector<HBondTriple>
+  hydrogenBonds(const HBondCriteria & = {}) const override;
   const std::vector<std::pair<int, int>> &covalentBonds() const override;
-  std::vector<CloseContactPair> closeContacts(const CloseContactCriteria & = {}) const override;
-
+  std::vector<CloseContactPair>
+  closeContacts(const CloseContactCriteria & = {}) const override;
 
   int genericIndexToIndex(const GenericAtomIndex &) const override;
   GenericAtomIndex indexToGenericIndex(int) const override;
@@ -95,15 +96,17 @@ public:
   [[nodiscard]] occ::IVec
   atomicNumbersForIndices(const std::vector<GenericAtomIndex> &) const override;
 
-  [[nodiscard]] std::vector<QString> labelsForIndices(const std::vector<GenericAtomIndex> &) const override;
+  [[nodiscard]] std::vector<QString>
+  labelsForIndices(const std::vector<GenericAtomIndex> &) const override;
 
   [[nodiscard]] occ::Mat3N atomicPositionsForIndices(
       const std::vector<GenericAtomIndex> &) const override;
 
   [[nodiscard]] QString chemicalFormula(bool richText = true) const override;
 
-
-  std::vector<GenericAtomIndex> getAtomIndicesUnderTransformation(const std::vector<GenericAtomIndex> &idxs, const Eigen::Isometry3d &result) const override;
+  std::vector<GenericAtomIndex> getAtomIndicesUnderTransformation(
+      const std::vector<GenericAtomIndex> &idxs,
+      const Eigen::Isometry3d &result) const override;
 
 private:
   Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;

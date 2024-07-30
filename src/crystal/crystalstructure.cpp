@@ -1,4 +1,6 @@
 #include "crystalstructure.h"
+#include "occ/core/kabsch.h"
+#include <iostream>
 
 using VertexDesc =
     typename occ::core::graph::PeriodicBondGraph::VertexDescriptor;
@@ -181,14 +183,16 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
 
     std::vector<GenericAtomIndex> indices;
 
-    const auto &uc_atoms = m_crystal.unit_cell_atoms();
-    indices.reserve(asym.size());
-    for (int i = 0; i < asym.size(); i++) {
-      occ::Vec3 t = asym.positions.col(i) - uc_atoms.frac_pos.col(i);
-      int h = static_cast<int>(std::round(t(0)));
-      int k = static_cast<int>(std::round(t(1)));
-      int l = static_cast<int>(std::round(t(2)));
-      indices.push_back(GenericAtomIndex{i, h, k, l});
+    ankerl::unordered_dense::set<int> included;
+    for(const auto &frag: m_symmetryUniqueFragments) {
+      qDebug() << frag;
+      const auto &asym = frag.asymmetricUnitIndices;
+      for(int i = 0; i < frag.atomIndices.size(); i++) {
+        if(included.contains(asym(i))) continue;
+        qDebug() << frag.atomIndices[i];
+        indices.push_back(frag.atomIndices[i]);
+        included.insert(asym(i));
+      }
     }
     addAtomsByCrystalIndex(indices);
   }
@@ -202,13 +206,11 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   const auto &uc_atoms = m_crystal.unit_cell_atoms();
   for (const auto &mol : m_crystal.symmetry_unique_molecules()) {
     std::vector<GenericAtomIndex> idxs;
-    occ::Mat3N pos_frac = m_crystal.to_fractional(mol.positions());
     const auto &uc_idx = mol.unit_cell_idx();
     const auto &uc_shift = mol.unit_cell_atom_shift();
 
     for (int i = 0; i < uc_idx.rows(); i++) {
-      idxs.push_back(
-          GenericAtomIndex{i, uc_shift(0, i), uc_shift(1, i), uc_shift(2, i)});
+      idxs.push_back(GenericAtomIndex{uc_idx(i), uc_shift(0, i), uc_shift(1, i), uc_shift(2, i)});
     }
     std::sort(idxs.begin(), idxs.end());
     m_symmetryUniqueFragments.push_back(makeAsymFragment(idxs));
@@ -454,10 +456,11 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
 
   int atomIndex = genericIndexToIndex(index);
 
-  if(atomIndex >= 0) {
+  if (atomIndex >= 0) {
     if (!atomFlagsSet(atomIndex, AtomFlag::Contact)) {
-      fragmentWasSelected = atomsHaveFlags(
-          atomsForFragment(fragmentIndexForAtom(atomIndex)), AtomFlag::Selected);
+      fragmentWasSelected =
+          atomsHaveFlags(atomsForFragment(fragmentIndexForAtom(atomIndex)),
+                         AtomFlag::Selected);
     }
     setAtomFlag(atomIndex, AtomFlag::Contact, false);
   }
@@ -484,8 +487,7 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
 
   VertexDesc uc_vertex = index.unique;
   filtered_connectivity_traversal_with_cell_offset(
-      g, uc_vertex, visitor, covalentPredicate,
-      {index.x, index.y, index.z});
+      g, uc_vertex, visitor, covalentPredicate, {index.x, index.y, index.z});
 
   std::vector<GenericAtomIndex> indices(atomsToAdd.begin(), atomsToAdd.end());
   addAtomsByCrystalIndex(indices, fragmentWasSelected ? AtomFlag::Selected
@@ -493,7 +495,6 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
   if (haveContactAtoms)
     addVanDerWaalsContactAtoms();
   updateBondGraph();
-
 }
 void CrystalStructure::completeFragmentContaining(int atomIndex) {
   if (atomIndex < 0 || atomIndex >= numberOfAtoms())
@@ -961,7 +962,7 @@ Fragment CrystalStructure::makeAsymFragment(
   result.positions = atomicPositionsForIndices(idxs);
   result.asymmetricUnitIndices = occ::IVec(idxs.size());
   for (int i = 0; i < idxs.size(); i++) {
-    result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(i);
+    result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(idxs[i].unique);
   }
   return result;
 }
@@ -1043,6 +1044,7 @@ int CrystalStructure::genericIndexToIndex(const GenericAtomIndex &idx) const {
 }
 
 GenericAtomIndex CrystalStructure::indexToGenericIndex(int idx) const {
-  if(idx < 0 || idx >= m_unitCellOffsets.size()) return GenericAtomIndex{-1};
+  if (idx < 0 || idx >= m_unitCellOffsets.size())
+    return GenericAtomIndex{-1};
   return m_unitCellOffsets[idx];
 }

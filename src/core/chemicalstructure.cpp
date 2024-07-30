@@ -938,6 +938,7 @@ ChemicalStructure::findUniqueFragment(
       break;
     }
   }
+  if(result < 0) qDebug() << "No asymmetric fragment found!";
   return {result, transform};
 }
 
@@ -946,6 +947,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
   constexpr double tolerance = 1e-1;
   const auto &fragments = getFragments();
   const auto &uniqueFragments = symmetryUniqueFragments();
+  qDebug() << "Fragments" << fragments.size();
 
   occ::core::DynamicKDTree<double> tree(occ::core::max_leaf);
 
@@ -965,6 +967,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
   for (size_t fragIndexA : candidateFragments) {
     const auto &fragA = fragments[fragIndexA];
     const size_t asymIndex = fragA.asymmetricFragmentIndex;
+    qDebug() << "Asymmetric fragment index" << asymIndex;
 
     for (size_t fragIndexB = 0; fragIndexB < fragments.size(); fragIndexB++) {
       if ((keyFragment < 0) && (fragIndexB <= fragIndexA))
@@ -1029,8 +1032,10 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
                             d.fragments.centroidDistance,
                             d.fragments.centerOfMassDistance);
       auto [idx, dist_sqr] = sortedTree.nearest(query);
-      if (dist_sqr > tolerance * tolerance)
+      if (dist_sqr > tolerance * tolerance) {
+        qDebug() << "Warning: " << dist_sqr << "no similar fragment pair";
         continue;
+      }
       if (pairs[idx] == d.fragments) {
         d.uniquePairIndex = idx;
       }
