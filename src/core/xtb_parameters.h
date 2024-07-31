@@ -24,6 +24,7 @@ struct Parameters {
   double reference_energy{0.0};
   bool accepted{false};
   QString name{"XtbCalculation"};
+  bool write_molden{false};
 
   inline bool hasEquivalentMethodTo(const Parameters &rhs) const {
     return (method == rhs.method);
@@ -48,6 +49,7 @@ struct Result {
   QString name;
   QString filename;
   QByteArray jsonContents;
+  QByteArray moldenContents;
   ankerl::unordered_dense::map<QString, double> energy;
   bool success{false};
 };

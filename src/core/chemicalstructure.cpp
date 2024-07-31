@@ -113,15 +113,10 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
 
   auto covalentVisitor = [&](const VertexDesc &v, const VertexDesc &prev,
                              const EdgeDesc &e) {
-    const auto &edge = edges.at(e);
-    if (edge.connectionType != Connection::CovalentBond)
-      return;
     auto &idxs = fragments[currentFragmentIndex];
     visited.insert(v);
     m_fragmentForAtom[v] = currentFragmentIndex;
     idxs.push_back(v);
-    if (prev != v) {
-    }
   };
 
   auto covalentPredicate = [&edges](const EdgeDesc &e) {
@@ -144,9 +139,12 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
       sym.push_back(GenericAtomIndex{idx});
     }
     std::sort(sym.begin(), sym.end());
-    m_fragments.push_back(makeFragment(sym));
-    m_symmetryUniqueFragments.push_back(m_fragments.back());
-    m_symmetryUniqueFragmentStates.push_back({});
+    auto frag = makeFragment(sym);
+    m_fragments.push_back(frag);
+    if(frag.asymmetricFragmentIndex == m_symmetryUniqueFragments.size()) {
+      m_symmetryUniqueFragments.push_back(frag);
+      m_symmetryUniqueFragmentStates.push_back({});
+    }
   }
 
   for (const auto &[edge_desc, edge] : m_bondGraph.edges()) {
@@ -776,7 +774,7 @@ occ::Mat3N ChemicalStructure::atomicPositionsForIndices(
     const std::vector<GenericAtomIndex> &idxs) const {
   occ::Mat3N result(3, idxs.size());
   for (int i = 0; i < idxs.size(); i++) {
-    result.col(i) = m_atomicPositions.col(i % m_atomicPositions.cols());
+    result.col(i) = m_atomicPositions.col(idxs[i].unique);
   }
   return result;
 }
@@ -919,8 +917,9 @@ Fragment ChemicalStructure::makeFragment(
                  [](const GenericAtomIndex &idx) { return idx.unique; });
   result.atomicNumbers = atomicNumbersForIndices(idxs);
   result.positions = atomicPositionsForIndices(idxs);
-  std::tie(result.asymmetricFragmentIndex, result.asymmetricFragmentTransform) =
-      findUniqueFragment(idxs);
+  auto [idx, transform] = findUniqueFragment(idxs);
+  result.asymmetricFragmentIndex = idx;
+  result.asymmetricFragmentTransform = transform;
   return result;
 }
 
@@ -938,7 +937,14 @@ ChemicalStructure::findUniqueFragment(
       break;
     }
   }
-  if(result < 0) qDebug() << "No asymmetric fragment found!";
+  if(result < 0) {
+    qDebug() << "No asymmetric fragment found!";
+    result = sym.size();
+    transform = Eigen::Isometry3d::Identity();
+  }
+  else {
+    qDebug() << "Found matching fragment: " << result;
+  }
   return {result, transform};
 }
 
@@ -948,6 +954,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
   const auto &fragments = getFragments();
   const auto &uniqueFragments = symmetryUniqueFragments();
   qDebug() << "Fragments" << fragments.size();
+  qDebug() << "Unique fragments" << uniqueFragments.size();
 
   occ::core::DynamicKDTree<double> tree(occ::core::max_leaf);
 

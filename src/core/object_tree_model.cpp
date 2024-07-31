@@ -88,6 +88,11 @@ QVariant ObjectTreeModel::data(const QModelIndex &index, int role) const {
       if (mesh) {
         return QIcon(":/images/mesh.png");
       }
+      auto *wfn = qobject_cast<MolecularWavefunction*>(itemObject);
+      if (wfn) {
+        return QIcon(":/images/psi.png");
+      }
+
     }
   } else if (role == Qt::DisplayRole && col == 1) {
     return QVariant(itemObject->objectName());

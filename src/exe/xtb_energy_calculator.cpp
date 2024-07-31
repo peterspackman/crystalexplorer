@@ -1,5 +1,5 @@
 #include "xtb_energy_calculator.h"
-#include "load_xtb_json.h"
+#include "xtb.h"
 #include "exefileutilities.h"
 #include "xtbtask.h"
 #include "settings.h"
@@ -26,8 +26,6 @@ void XtbEnergyCalculator::start(xtb::Parameters params) {
         << "Found nullptr for chemical structure in XtbEnergyCalculator";
     return;
   }
-  m_structure = params.structure;
-
   std::vector<int> idx =
       params.structure->atomIndicesWithFlags(AtomFlag::Selected);
   occ::IVec nums = params.structure->atomicNumbers()(idx);
@@ -42,29 +40,31 @@ void XtbEnergyCalculator::start(xtb::Parameters params) {
   task->setProperty("basename", params.name);
   task->setExecutable(m_xtbExecutable);
   task->setEnvironment(m_environment);
-  QString outputFilename = task->jsonFilename();
+  QString jsonFilename = task->jsonFilename();
+  QString moldenFilename = task->moldenFilename();
 
   auto taskId = m_taskManager->add(task);
   connect(task, &Task::completed,
-          [&, params, outputFilename]() {
-            this->handleFinishedTask(params, outputFilename, params.name);
+          [&, params, jsonFilename, moldenFilename]() {
+            this->handleFinishedTask(params, params.name, jsonFilename, moldenFilename);
           });
 }
 
 void XtbEnergyCalculator::handleFinishedTask(xtb::Parameters params,
-                                             QString filename,
-                                             QString name) {
+                                             QString name,
+                                             QString jsonFilename,
+                                             QString moldenFilename) {
   qDebug() << "Task" << name << "finished in XtbEnergyCalculator";
-  auto result = load_xtb_json(filename);
+  auto result = loadXtbResult(params, jsonFilename, moldenFilename);
   result.name = name;
-  qDebug() << "Loaded result from" << filename << result.success
+
+  qDebug() << "Loaded result from" << jsonFilename << moldenFilename << result.success
            << params.atoms.size();
   if(m_deleteWorkingFiles) {
-    exe::deleteFile(filename);
+    exe::deleteFile(jsonFilename);
+    if(params.write_molden) {
+      exe::deleteFile(moldenFilename);
+    }
   }
   emit calculationComplete(params, result);
-}
-
-xtb::Result XtbEnergyCalculator::getResult(int index) const {
-  return m_results[index];
 }

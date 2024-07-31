@@ -509,6 +509,7 @@ void Crystalx::updateCrystalActions() {
   generateCellsAction->setEnabled(enable);
   toggleContactAtomsAction->setEnabled(enable);
   showAtomsWithinRadiusAction->setEnabled(enable);
+  generateWavefunctionAction->setEnabled(enable);
 
   distanceAction->setEnabled(enable);
   angleAction->setEnabled(enable);
@@ -1653,6 +1654,7 @@ void Crystalx::showEnergyCalculationDialog() {
 
   if (!setByUser.isValid() || !setByUser.toBool()) {
     bool success = getFragmentStatesIfMultipleFragments(structure);
+    qDebug() << "Success" << success;
     if (!success) {
       return; // User doesn't want us to continue so early return;
     }
@@ -2042,7 +2044,6 @@ bool Crystalx::getFragmentStatesIfMultipleFragments(
     ChemicalStructure *structure) {
   bool success = true;
   if (structure->symmetryUniqueFragments().size() > 1) {
-    qDebug() << "Skipping due to only 1 fragment";
     success = getFragmentStatesFromUser(structure);
   }
   return success;
@@ -2067,6 +2068,7 @@ bool Crystalx::getFragmentStatesFromUser(ChemicalStructure *structure) {
         structure->setSymmetryUniqueFragmentState(i, states[i]);
       }
     }
+    success = true;
   }
 
   return success;

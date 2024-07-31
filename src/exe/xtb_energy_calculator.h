@@ -11,18 +11,15 @@ public:
 
   void setTaskManager(TaskManager *);
   void start(xtb::Parameters);
-  xtb::Result getResult(int index = 0) const;
 
 signals:
   void calculationComplete(xtb::Parameters, xtb::Result);
 
 private slots:
-  void handleFinishedTask(xtb::Parameters, QString filename, QString name);
+  void handleFinishedTask(xtb::Parameters, QString name, QString jsonFilename, QString moldenFilename);
 
 private:
   TaskManager *m_taskManager{nullptr};
-  ChemicalStructure *m_structure{nullptr};
-  std::vector<xtb::Result> m_results;
   QString m_xtbExecutable{"xtb"};
   QProcessEnvironment m_environment;
 

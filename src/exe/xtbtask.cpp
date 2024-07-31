@@ -4,7 +4,7 @@
 #include <QJsonDocument>
 #include <fmt/core.h>
 #include <occ/core/element.h>
-#include "xtbcoord.h"
+#include "xtb.h"
 
 XtbTask::XtbTask(QObject *parent)
     : ExternalProgramTask(parent) {
@@ -25,6 +25,10 @@ QString XtbTask::jsonFilename() const {
   return QString("%1.xtbout.json").arg(baseName());
 }
 
+QString XtbTask::moldenFilename() const {
+  return QString("%1.molden.input").arg(baseName());
+}
+
 void XtbTask::start() {
   QString coord = xtbCoordString(m_parameters);
   emit progressText("Generated coord input");
@@ -39,9 +43,16 @@ void XtbTask::start() {
   }
   emit progressText("Wrote input file");
 
-  setArguments({inputName});
+
+  QStringList arguments{inputName};
+  FileDependencyList outputs{FileDependency("xtbout.json", outputName)};
+  if(m_parameters.write_molden) {
+    arguments.append("--molden");
+    outputs.append(FileDependency("molden.input", moldenFilename()));
+  }
+  setArguments(arguments);
   setRequirements({FileDependency(inputName)});
-  setOutputs({FileDependency("xtbout.json", outputName)});
+  setOutputs(outputs);
 
   emit progressText("Starting XTB process");
   ExternalProgramTask::start();

@@ -16,6 +16,7 @@ inline xtb::Parameters wfn2xtb(const wfn::Parameters &params) {
   result.structure = params.structure;
   result.atoms = params.atoms;
   result.accepted = params.accepted;
+  result.write_molden = true;
   return result;
 }
 
@@ -66,6 +67,7 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
 
   if (params.isXtbMethod()) {
     xtb::Parameters xtb_params = wfn2xtb(params);
+    xtb_params.name = QString("xtb_wfn_%1").arg(0);
     start(xtb_params);
     return;
   }
@@ -112,6 +114,8 @@ void WavefunctionCalculator::start_batch(
   m_completedTaskCount = 0;
   m_totalTasks = wfn.size();
 
+  int idx{0};
+
   for (const auto &params : wfn) {
     if (!params.structure) {
       qDebug()
@@ -123,8 +127,9 @@ void WavefunctionCalculator::start_batch(
     qDebug() << "Is xtb method?" << params.isXtbMethod() << params.method;
     if (params.isXtbMethod()) {
       xtb::Parameters xtb_params = wfn2xtb(params);
+      xtb_params.name = QString("xtb_wfn_%1").arg(idx++);
       start(xtb_params);
-      return;
+      continue;
     }
 
     QString wavefunctionName =
@@ -181,12 +186,16 @@ void WavefunctionCalculator::handleXtbTaskComplete(xtb::Parameters params,
   qDebug() << "Task" << result.name << "finished in WavefunctionCalculator";
   auto * wfn = new MolecularWavefunction();
   bool success = io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
+  success = io::populateWavefunctionFromMoldenContents(wfn, result.moldenContents);
+  wfn->setRawContents(result.moldenContents);
   wfn->setParameters(xtb2wfn(params));
-  wfn->setFileFormat(wfn::FileFormat::XtbJson);
+  wfn->setFileFormat(wfn::FileFormat::Molden);
 
+  qDebug() << m_completedTaskCount << m_totalTasks;
   m_completedTaskCount++;
 
   if (m_completedTaskCount == m_totalTasks) {
+      qDebug() << "Setting complete to true";
       m_complete = true;
   }
 

@@ -298,6 +298,7 @@ void Scene::setSelectStatusForAtomDoubleClick(int atomIndex) {
   if (m_structure->testAtomFlag(atomIndex, AtomFlag::Contact))
     return;
   int fragmentIndex = m_structure->fragmentIndexForAtom(atomIndex);
+  qDebug() << atomIndex << fragmentIndex;
   const auto &atomIndices = m_structure->atomsForFragment(fragmentIndex);
   m_structure->setAtomFlag(atomIndex, AtomFlag::Selected, true);
   bool selected =

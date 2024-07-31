@@ -88,7 +88,9 @@ void CrystalController::structureViewClicked(const QModelIndex &index) {
   qDebug() << "Item on click: " << item;
   if (item) {
     // Toggle the visibility);
-    bool currentVisibility = item->property("visible").toBool();
+    auto prop = item->property("visible");
+    if(prop.isNull()) return;
+    bool currentVisibility = prop.toBool();
     item->setProperty("visible", !currentVisibility);
     qDebug() << "Setting object visibility";
 

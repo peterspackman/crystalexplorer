@@ -102,6 +102,7 @@ bool EnergyCalculationDialog::handleStructureChange() {
 
   const auto &fragments = m_structure->getFragments();
   const int keyFragmentIndex = selectedFragments[0];
+  qDebug() << "Key fragment" << keyFragmentIndex;
   m_fragmentPairs = m_structure->findFragmentPairs(keyFragmentIndex);
   m_fragmentPairsToCalculate.clear();
   const auto &keyFragment = fragments[keyFragmentIndex];
@@ -111,6 +112,7 @@ bool EnergyCalculationDialog::handleStructureChange() {
   ankerl::unordered_dense::set<int> wavefunctionsNeeded;
   wavefunctionsNeeded.insert(asymIndex);
 
+  qDebug() << "Unique pairs: " << m_fragmentPairs.uniquePairs.size();
   auto match = [](const Fragment &a, const Fragment &b) {
     return (a.asymmetricFragmentIndex == b.asymmetricFragmentIndex) &&
            (a.atomIndices == b.atomIndices);

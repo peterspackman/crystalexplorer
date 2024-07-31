@@ -82,6 +82,7 @@ MolecularWavefunction *loadWavefunction(const QString &filename) {
     qDebug() << "Read" << contents.size() << "bytes from wavefunction at"
              << filename;
     populateWavefunctionFromJsonContents(wfn, contents);
+    wfn->setRawContents(contents);
   }
   wfn->setFileFormat(wfn::fileFormatFromFilename(filename));
 
@@ -93,7 +94,11 @@ bool populateWavefunctionFromJsonContents(MolecularWavefunction *wfn, const QByt
     if (doc.isNull())  return false;
     qDebug() << "Found JSON format, setting additional data";
     setJsonProperties(wfn, doc);
-    wfn->setRawContents(std::move(contents));
+    return true;
+}
+
+bool populateWavefunctionFromMoldenContents(MolecularWavefunction *wfn, const QByteArray &contents) {
+    // TODO
     return true;
 }
 

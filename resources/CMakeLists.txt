@@ -7,7 +7,7 @@ set(MESH_FILES
 
 set(MESH_QRC "${CMAKE_CURRENT_SOURCE_DIR}/mesh.qrc" PARENT_SCOPE)
 
-set(OCC_VERSION "0.5.8")
+set(OCC_VERSION "0.5.9")
 set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-linux-x86_64-static.tar.xz")
 if(WIN32)
     set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-windows-x86_64.tar.xz")

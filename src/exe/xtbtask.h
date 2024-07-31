@@ -14,6 +14,7 @@ public:
 
   QString inputSuffix() const;
   QString jsonFilename() const;
+  QString moldenFilename() const;
 
 private:
   xtb::Parameters m_parameters;
