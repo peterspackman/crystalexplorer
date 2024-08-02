@@ -183,7 +183,8 @@ QVector<Label> Scene::atomicLabels() {
   const auto &atomLabels = m_structure->labels();
   const auto &positions = m_structure->atomicPositions();
   for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
-    if (m_structure->testAtomFlag(i, AtomFlag::Contact))
+    auto idx = m_structure->indexToGenericIndex(i);
+    if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
       continue;
     labels.append({atomLabels[i], QVector3D(positions(0, i), positions(1, i),
                                             positions(2, i))});
@@ -294,15 +295,16 @@ bool Scene::hasOnScreenCloseContacts() {
                      [](const auto &criteria) { return criteria.show; });
 }
 
-void Scene::setSelectStatusForAtomDoubleClick(int atomIndex) {
+void Scene::setSelectStatusForAtomDoubleClick(int atom) {
+  auto atomIndex = m_structure->indexToGenericIndex(atom);
   if (m_structure->testAtomFlag(atomIndex, AtomFlag::Contact))
     return;
   int fragmentIndex = m_structure->fragmentIndexForAtom(atomIndex);
-  qDebug() << atomIndex << fragmentIndex;
-  const auto &atomIndices = m_structure->atomsForFragment(fragmentIndex);
-  m_structure->setAtomFlag(atomIndex, AtomFlag::Selected, true);
+  const auto &atomIndices = m_structure->atomIndicesForFragment(fragmentIndex);
+  auto idx = m_structure->indexToGenericIndex(atom);
+  m_structure->setAtomFlag(idx, AtomFlag::Selected, true);
   bool selected =
-      std::all_of(atomIndices.begin(), atomIndices.end(), [&](int x) {
+      std::all_of(atomIndices.begin(), atomIndices.end(), [&](GenericAtomIndex x) {
         return m_structure->atomFlagsSet(x, AtomFlag::Selected);
       });
   m_structure->setFlagForAtoms(atomIndices, AtomFlag::Selected, !selected);
@@ -313,8 +315,7 @@ void Scene::selectAtomsSeparatedBySurface(bool inside) {
     m_structure->setFlagForAllAtoms(AtomFlag::Selected, !inside);
     auto atomIndices = m_selectedSurface.surface->atomsInside();
     for (const auto &idx : atomIndices) {
-      int i = m_structure->genericIndexToIndex(idx);
-      m_structure->setAtomFlag(i, AtomFlag::Selected, inside);
+      m_structure->setAtomFlag(idx, AtomFlag::Selected, inside);
     }
   }
 }
@@ -372,30 +373,29 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
 
   switch (m_selection.type) {
   case SelectionType::Atom: {
-    size_t atom_idx = m_selection.index;
+    const auto atomIndex = m_structure->indexToGenericIndex(m_selection.index);
     // TODO handle contact atom
-    if (m_structure->testAtomFlag(atom_idx, AtomFlag::Contact)) {
-      m_structure->completeFragmentContaining(atom_idx);
+    if (m_structure->testAtomFlag(atomIndex, AtomFlag::Contact)) {
+      m_structure->completeFragmentContaining(atomIndex);
       emit contactAtomExpanded();
     } else {
-      m_structure->atomFlags(atom_idx) ^= AtomFlag::Selected;
+      m_structure->toggleAtomFlag(atomIndex, AtomFlag::Selected);
       emit atomSelectionChanged();
     }
     return true;
     break;
   }
   case SelectionType::Bond: {
-    size_t bond_idx = m_selection.index;
-    const auto bondedAtoms = m_structure->atomsForBond(bond_idx);
-    auto &flags_a = m_structure->atomFlags(bondedAtoms.first);
-    auto &flags_b = m_structure->atomFlags(bondedAtoms.second);
-    if ((flags_a & AtomFlag::Selected) != (flags_b & AtomFlag::Selected)) {
-      flags_a |= AtomFlag::Selected;
-      flags_b |= AtomFlag::Selected;
+    const auto [a, b] = m_structure->atomIndicesForBond(m_selection.index);
+    auto &flagsA = m_structure->atomFlags(a);
+    auto &flagsB = m_structure->atomFlags(b);
+    if ((flagsA & AtomFlag::Selected) != (flagsB & AtomFlag::Selected)) {
+      flagsA |= AtomFlag::Selected;
+      flagsB |= AtomFlag::Selected;
     } else {
       // toggle
-      flags_a ^= AtomFlag::Selected;
-      flags_b ^= AtomFlag::Selected;
+      flagsA ^= AtomFlag::Selected;
+      flagsB ^= AtomFlag::Selected;
     }
     emit atomSelectionChanged();
     return true;
@@ -516,37 +516,35 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
 
   switch (m_selection.type) {
   case SelectionType::Atom: {
-    size_t atom_idx = m_selection.index;
-    if (m_structure->atomFlagsSet(atom_idx, AtomFlag::Contact))
+    const auto atomIndex = m_structure->indexToGenericIndex(m_selection.index);
+    if (m_structure->atomFlagsSet(atomIndex, AtomFlag::Contact))
       break;
     if (wholeObject)
-      m_structure->selectFragmentContaining(atom_idx);
+      m_structure->selectFragmentContaining(atomIndex);
     else {
-      m_structure->atomFlags(atom_idx) ^= AtomFlag::Selected;
+      m_structure->atomFlags(atomIndex) ^= AtomFlag::Selected;
     }
     emit atomSelectionChanged();
-    occ::Vec3 pos = m_structure->atomicPositions().col(atom_idx);
+    occ::Vec3 pos = m_structure->atomPosition(atomIndex);
     result.position = QVector3D(pos.x(), pos.y(), pos.z());
     result.selectionType = SelectionType::Atom;
-    result.index = atom_idx;
+    result.index = m_selection.index;
     break;
   }
   case SelectionType::Bond: {
     size_t bond_idx = m_selection.index;
-    auto atomsForBond = m_structure->atomsForBond(bond_idx);
-    auto &flags_a = m_structure->atomFlags(atomsForBond.first);
-    auto &flags_b = m_structure->atomFlags(atomsForBond.second);
-    if ((flags_a & AtomFlag::Contact) && (flags_b & AtomFlag::Contact))
+    auto [a, b] = m_structure->atomIndicesForBond(bond_idx);
+    auto &flagsA = m_structure->atomFlags(a);
+    auto &flagsB = m_structure->atomFlags(b);
+    if ((flagsA & AtomFlag::Contact) && (flagsB & AtomFlag::Contact))
       break;
     if (wholeObject)
-      m_structure->selectFragmentContaining(atomsForBond.first);
+      m_structure->selectFragmentContaining(a);
     else {
-      flags_a ^= AtomFlag::Selected;
-      flags_b ^= AtomFlag::Selected;
+      flagsA ^= AtomFlag::Selected;
+      flagsB ^= AtomFlag::Selected;
     }
-    const auto &positions = m_structure->atomicPositions();
-    occ::Vec3 pos = 0.5 * (positions.col(atomsForBond.first) +
-                           positions.col(atomsForBond.second));
+    occ::Vec3 pos = 0.5 * (m_structure->atomPosition(a) + m_structure->atomPosition(b));
     result.position = QVector3D(pos.x(), pos.y(), pos.z());
     result.selectionType = SelectionType::Bond;
     result.index = bond_idx;
@@ -1603,10 +1601,7 @@ void Scene::selectAllAtoms() {
 }
 
 void Scene::invertSelection() {
-  for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
-    auto &flags = m_structure->atomFlags(i);
-    flags ^= AtomFlag::Selected;
-  }
+  m_structure->toggleFlagForAllAtoms(AtomFlag::Selected);
 }
 
 void Scene::deleteIncompleteFragments() {
@@ -1650,7 +1645,7 @@ bool Scene::hasIncompleteFragments() const {
 }
 
 int Scene::numberOfSelectedAtoms() const {
-  return m_structure->atomIndicesWithFlags(AtomFlag::Selected).size();
+  return m_structure->atomsWithFlags(AtomFlag::Selected).size();
 }
 
 bool Scene::hasAtomsWithCustomColor() const {
@@ -1662,14 +1657,6 @@ void Scene::deleteFragmentContainingAtomIndex(int atomIndex) {
 }
 
 const SelectedAtom &Scene::selectedAtom() const { return m_selectedAtom; }
-
-std::vector<int> Scene::selectedAtomIndices() const {
-  if (m_structure != nullptr) {
-    return m_structure->atomIndicesWithFlags(AtomFlag::Selected);
-  } else {
-    return {};
-  }
-}
 
 void Scene::completeFragmentContainingAtom(int atomIndex) {
   m_structure->completeFragmentContaining(atomIndex);

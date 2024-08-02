@@ -128,7 +128,6 @@ public:
     m_selection.type = cx::graphics::SelectionType::None;
   }
   const SelectedAtom &selectedAtom() const;
-  std::vector<int> selectedAtomIndices() const;
   const SelectedBond &selectedBond() const;
   const SelectedSurface &selectedSurface() const;
 

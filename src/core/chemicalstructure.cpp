@@ -17,6 +17,12 @@ ChemicalStructure::ChemicalStructure(QObject *parent)
   m_treeModel = new ObjectTreeModel(this);
 }
 
+
+occ::Vec3 ChemicalStructure::atomPosition(GenericAtomIndex idx) const {
+  int i = genericIndexToIndex(idx);
+  return m_atomicPositions.col(i);
+}
+
 void ChemicalStructure::updateBondGraph() { guessBondsBasedOnDistances(); }
 
 void ChemicalStructure::guessBondsBasedOnDistances() {
@@ -141,7 +147,7 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     std::sort(sym.begin(), sym.end());
     auto frag = makeFragment(sym);
     m_fragments.push_back(frag);
-    if(frag.asymmetricFragmentIndex == m_symmetryUniqueFragments.size()) {
+    if (frag.asymmetricFragmentIndex == m_symmetryUniqueFragments.size()) {
       m_symmetryUniqueFragments.push_back(frag);
       m_symmetryUniqueFragmentStates.push_back({});
     }
@@ -162,18 +168,26 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   }
 }
 
-const AtomFlags &ChemicalStructure::atomFlags(int index) const {
+const AtomFlags &ChemicalStructure::atomFlags(GenericAtomIndex index) const {
+  return m_flags.at(index);
+}
+
+bool ChemicalStructure::testAtomFlag(GenericAtomIndex idx, AtomFlag flag) const {
+  return m_flags.at(idx).testFlag(flag);
+}
+
+AtomFlags &ChemicalStructure::atomFlags(GenericAtomIndex index) {
   return m_flags[index];
 }
 
-AtomFlags &ChemicalStructure::atomFlags(int index) { return m_flags[index]; }
-
-void ChemicalStructure::setAtomFlags(int index, const AtomFlags &flags) {
+void ChemicalStructure::setAtomFlags(GenericAtomIndex index,
+                                     const AtomFlags &flags) {
   m_flags[index] = flags;
 }
 
-bool ChemicalStructure::atomFlagsSet(int index, const AtomFlags &flags) const {
-  return m_flags[index] & flags;
+bool ChemicalStructure::atomFlagsSet(GenericAtomIndex index,
+                                     const AtomFlags &flags) const {
+  return m_flags.at(index) & flags;
 }
 
 void ChemicalStructure::resetOrigin() {
@@ -228,7 +242,6 @@ void ChemicalStructure::clearAtoms() {
   m_atomicPositions = occ::Mat3N();
   m_flags.clear();
   m_labels.clear();
-  m_atomColors.clear();
 }
 
 void ChemicalStructure::setAtoms(const std::vector<QString> &elementSymbols,
@@ -241,18 +254,14 @@ void ChemicalStructure::setAtoms(const std::vector<QString> &elementSymbols,
   m_atomicPositions = occ::Mat3N(3, N);
   m_flags.clear();
   m_labels.clear();
-  m_atomColors.clear();
 
   m_labels.reserve(N);
-  m_flags.reserve(N);
-  m_atomColors.reserve(N);
   m_fragments.reserve(N);
   m_fragmentForAtom.reserve(N);
 
   for (int i = 0; i < N; i++) {
     element = occ::core::Element(elementSymbols[i].toStdString());
     m_atomicNumbers(i) = element.atomic_number();
-    m_atomColors.push_back(Qt::black);
 
     m_atomicPositions(0, i) = positions[i].x();
     m_atomicPositions(1, i) = positions[i].y();
@@ -263,7 +272,9 @@ void ChemicalStructure::setAtoms(const std::vector<QString> &elementSymbols,
     } else {
       m_labels.push_back(elementSymbols[i]);
     }
-    m_flags.push_back(AtomFlag::NoFlag);
+    // TODO flags?
+    auto idx = indexToGenericIndex(i);
+    setAtomFlags(idx, AtomFlag::NoFlag);
   }
   m_origin = m_atomicPositions.rowwise().mean();
   m_bondsNeedUpdate = true;
@@ -279,8 +290,6 @@ void ChemicalStructure::addAtoms(const std::vector<QString> &elementSymbols,
   const int numTotal = numOld + numAdded;
   m_atomicNumbers.conservativeResize(numTotal, 1);
   m_atomicPositions.conservativeResize(3, numTotal);
-  m_flags.resize(numTotal);
-  m_atomColors.resize(numTotal);
   m_fragments.resize(numTotal);
   m_fragmentForAtom.resize(numTotal, -1);
 
@@ -288,7 +297,6 @@ void ChemicalStructure::addAtoms(const std::vector<QString> &elementSymbols,
     element = occ::core::Element(elementSymbols[i].toStdString());
     int index = numOld + i;
     m_atomicNumbers(index) = element.atomic_number();
-    m_atomColors[index] = Qt::black;
 
     m_atomicPositions(0, index) = positions[i].x();
     m_atomicPositions(1, index) = positions[i].y();
@@ -300,7 +308,8 @@ void ChemicalStructure::addAtoms(const std::vector<QString> &elementSymbols,
     } else {
       m_labels.push_back(elementSymbols[i]);
     }
-    m_flags[index] = AtomFlag::NoFlag;
+    auto idx = indexToGenericIndex(i);
+    setAtomFlags(idx, AtomFlag::NoFlag);
   }
   m_origin = m_atomicPositions.rowwise().mean();
   m_bondsNeedUpdate = true;
@@ -377,10 +386,8 @@ void ChemicalStructure::deleteAtomsByOffset(
   std::vector<QString> newLabels;
   occ::Mat3N newAtomicPositions(3, newNumAtoms);
   Eigen::VectorXi newAtomicNumbers(newNumAtoms);
-  std::vector<AtomFlags> newFlags;
   std::vector<QColor> newAtomColors;
   newLabels.reserve(newNumAtoms);
-  newFlags.reserve(newNumAtoms);
   newAtomColors.reserve(newNumAtoms);
   int newIndex = 0;
   for (int i = 0; i < originalNumAtoms; i++) {
@@ -390,15 +397,11 @@ void ChemicalStructure::deleteAtomsByOffset(
     newLabels.push_back(m_labels[i]);
     newAtomicPositions.col(newIndex) = m_atomicPositions.col(i);
     newAtomicNumbers(newIndex) = m_atomicNumbers(i);
-    newFlags.push_back(m_flags[i]);
-    newAtomColors.push_back(m_atomColors[i]);
     newIndex++;
   }
   m_atomicNumbers = newAtomicNumbers;
   m_atomicPositions = newAtomicPositions;
   m_labels = newLabels;
-  m_flags = newFlags;
-  m_atomColors = newAtomColors;
   m_origin = m_atomicPositions.rowwise().mean();
   m_bondsNeedUpdate = true;
 }
@@ -410,52 +413,48 @@ void ChemicalStructure::deleteAtom(int atomIndex) {
 }
 
 bool ChemicalStructure::anyAtomHasFlags(const AtomFlags &flags) const {
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    if (m_flags[i] & flags)
+  for (const auto &[k, v] : m_flags) {
+    if (v & flags)
       return true;
   }
   return false;
 }
 
-bool ChemicalStructure::atomsHaveFlags(const std::vector<int> &idxs,
-                                       const AtomFlags &flags) const {
+bool ChemicalStructure::atomsHaveFlags(
+    const std::vector<GenericAtomIndex> &idxs, const AtomFlags &flags) const {
   // TODO check if this is correct, should probably be an and not an xor
   for (const auto &idx : idxs) {
-    if (idx >= m_flags.size())
+    const auto loc = m_flags.find(idx);
+    if (loc == m_flags.end())
       return false;
-    if (m_flags[idx] ^ flags)
+    if (loc->second ^ flags)
       return false;
   }
   return true;
 }
 
 bool ChemicalStructure::allAtomsHaveFlags(const AtomFlags &flags) const {
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    if (m_flags[i] ^ flags)
+  for (const auto &[k, v] : m_flags) {
+    if (v ^ flags)
       return false;
   }
   return true;
 }
 
-std::vector<int>
-ChemicalStructure::atomIndicesWithFlags(const AtomFlags &flags) const {
-  std::vector<int> result;
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    if (m_flags[i] & flags)
-      result.push_back(i);
+void ChemicalStructure::setFlagForAllAtoms(AtomFlag flag, bool on) {
+  for (auto &[k, v] : m_flags) {
+    v.setFlag(flag, on);
   }
-  return result;
 }
 
-void ChemicalStructure::setFlagForAllAtoms(AtomFlag flag, bool on) {
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    setAtomFlag(i, flag, on);
-  }
+void ChemicalStructure::toggleAtomFlag(GenericAtomIndex idx, AtomFlag flag) {
+  auto &v = m_flags[idx];
+  v ^= flag;
 }
 
 void ChemicalStructure::toggleFlagForAllAtoms(AtomFlag flag) {
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    m_flags[i] ^= (m_flags[i] & flag);
+  for (auto &[k, v] : m_flags) {
+    v ^= flag;
   }
 }
 
@@ -463,9 +462,13 @@ void ChemicalStructure::selectFragmentContaining(int atom) {
   int fragIndex = fragmentIndexForAtom(atom);
   if (fragIndex < 0)
     return;
-  for (int idx : atomsForFragment(fragIndex)) {
+  for (const auto &idx : atomIndicesForFragment(fragIndex)) {
     setAtomFlags(idx, AtomFlag::Selected);
   }
+}
+
+void ChemicalStructure::selectFragmentContaining(GenericAtomIndex atom) {
+  selectFragmentContaining(genericIndexToIndex(atom));
 }
 
 void ChemicalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
@@ -496,7 +499,7 @@ std::vector<int> ChemicalStructure::selectedFragments() const {
   std::vector<int> result;
   for (int fragmentIndex = 0; fragmentIndex < m_fragments.size();
        fragmentIndex++) {
-    const auto &fragIndices = atomsForFragment(fragmentIndex);
+    const auto &fragIndices = atomIndicesForFragment(fragmentIndex);
     if (fragIndices.size() == 0)
       continue;
     if (atomsHaveFlags(fragIndices, AtomFlag::Selected))
@@ -510,8 +513,8 @@ bool ChemicalStructure::hasIncompleteSelectedFragments() const { return false; }
 
 void ChemicalStructure::deleteIncompleteFragments() {}
 
-void ChemicalStructure::setFlagForAtoms(const std::vector<int> &atomIndices,
-                                        AtomFlag flag, bool on) {
+void ChemicalStructure::setFlagForAtoms(
+    const std::vector<GenericAtomIndex> &atomIndices, AtomFlag flag, bool on) {
   for (const auto &idx : atomIndices) {
     setAtomFlag(idx, flag, on);
   }
@@ -520,9 +523,9 @@ void ChemicalStructure::setFlagForAtoms(const std::vector<int> &atomIndices,
 void ChemicalStructure::setFlagForAtomsFiltered(const AtomFlag &flagToSet,
                                                 const AtomFlag &query,
                                                 bool on) {
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    if (atomFlagsSet(i, query)) {
-      setAtomFlag(i, flagToSet, on);
+  for (auto &[k, v] : m_flags) {
+    if (v & query) {
+      v.setFlag(flagToSet, on);
     }
   }
 }
@@ -557,6 +560,12 @@ ChemicalStructure::atomsForBond(int bondIndex) const {
   return m_covalentBonds.at(bondIndex);
 }
 
+std::pair<GenericAtomIndex, GenericAtomIndex>
+ChemicalStructure::atomIndicesForBond(int bondIndex) const {
+  auto [a, b] = m_covalentBonds.at(bondIndex);
+  return {indexToGenericIndex(a), indexToGenericIndex(b)};
+}
+
 const std::vector<int> &
 ChemicalStructure::atomsForFragment(int fragIndex) const {
   return m_fragments.at(fragIndex)._atomOffset;
@@ -569,18 +578,19 @@ ChemicalStructure::atomIndicesForFragment(int fragmentIndex) const {
   return m_fragments[fragmentIndex].atomIndices;
 }
 
-QColor ChemicalStructure::atomColor(int atomIndex) const {
+QColor ChemicalStructure::atomColor(GenericAtomIndex atomIndex) const {
   const auto loc = m_atomColorOverrides.find(atomIndex);
   if (loc != m_atomColorOverrides.end())
     return loc->second;
+
+  int i = genericIndexToIndex(atomIndex);
   switch (m_atomColoring) {
   case AtomColoring::Element: {
-    Element *el =
-        ElementData::elementFromAtomicNumber(m_atomicNumbers(atomIndex));
+    Element *el = ElementData::elementFromAtomicNumber(m_atomicNumbers(i));
     if (el != nullptr) {
       return el->color();
     } else
-      return m_atomColors[atomIndex];
+      return Qt::black;
   }
   case AtomColoring::Fragment: {
     int frag = fragmentIndexForAtom(atomIndex);
@@ -595,15 +605,16 @@ QColor ChemicalStructure::atomColor(int atomIndex) const {
   return Qt::black; // unreachable
 }
 
-void ChemicalStructure::overrideAtomColor(int index, const QColor &color) {
+void ChemicalStructure::overrideAtomColor(GenericAtomIndex index,
+                                          const QColor &color) {
   m_atomColorOverrides[index] = color;
 }
 
 void ChemicalStructure::setColorForAtomsWithFlags(const AtomFlags &flags,
                                                   const QColor &color) {
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    if (m_flags[i].testFlags(flags)) {
-      m_atomColorOverrides[i] = color;
+  for (const auto &[k, v] : m_flags) {
+    if (v.testFlags(flags)) {
+      m_atomColorOverrides[k] = color;
     }
   }
 }
@@ -615,7 +626,6 @@ void ChemicalStructure::resetAtomColorOverrides() {
 void ChemicalStructure::setAtomColoring(AtomColoring atomColoring) {
   m_atomColoring = atomColoring;
 }
-
 
 int ChemicalStructure::genericIndexToIndex(const GenericAtomIndex &idx) const {
   return idx.unique;
@@ -657,10 +667,10 @@ void ChemicalStructure::expandAtomsWithinRadius(float radius, bool selected) {
 std::vector<GenericAtomIndex>
 ChemicalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
   std::vector<GenericAtomIndex> result;
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    bool check = m_flags[i].testFlags(flags);
+  for (const auto &[k, v] : m_flags) {
+    bool check = v.testFlags(flags);
     if ((set && check) || (!set && !check))
-      result.push_back({i});
+      result.push_back(k);
   }
   return result;
 }
@@ -708,9 +718,9 @@ ChemicalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
   std::vector<std::pair<size_t, double>> idxs_dists;
   nanoflann::RadiusResultSet results(max_dist2, idxs_dists);
 
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    if (m_flags[i] & flags) {
-      const double *q = m_atomicPositions.col(i).data();
+  for (GenericAtomIndex i = {0}; i.unique < numberOfAtoms(); i.unique++) {
+    if (m_flags.at(i) & flags) {
+      const double *q = m_atomicPositions.col(i.unique).data();
       tree.index->findNeighbors(results, q, nanoflann::SearchParams());
       for (const auto &result : idxs_dists) {
         int idx = result.first;
@@ -784,8 +794,9 @@ ChemicalStructure::getAtomIndicesUnderTransformation(
     const std::vector<GenericAtomIndex> &idxs,
     const Eigen::Isometry3d &transform) const {
   std::vector<GenericAtomIndex> result;
-  occ::Mat3N pos = (transform.rotation() * atomicPositionsForIndices(idxs)).colwise() +
-                   transform.translation();
+  occ::Mat3N pos =
+      (transform.rotation() * atomicPositionsForIndices(idxs)).colwise() +
+      transform.translation();
 
   occ::core::KDTree<double> tree(3, m_atomicPositions, occ::core::max_leaf);
   tree.index->buildIndex();
@@ -794,10 +805,12 @@ ChemicalStructure::getAtomIndicesUnderTransformation(
   nanoflann::KNNResultSet<double> resultSet(1);
   resultSet.init(&idx, &d);
 
-  for(int i = 0; i < pos.cols(); i++) {
-      occ::Vec3 position = pos.col(i);
-      tree.index->findNeighbors(resultSet, position.data(), nanoflann::SearchParams(10));
-      if(d < 1e-3) result.push_back({static_cast<int>(idx)});
+  for (int i = 0; i < pos.cols(); i++) {
+    occ::Vec3 position = pos.col(i);
+    tree.index->findNeighbors(resultSet, position.data(),
+                              nanoflann::SearchParams(10));
+    if (d < 1e-3)
+      result.push_back({static_cast<int>(idx)});
   }
   return result;
 }
@@ -937,12 +950,11 @@ ChemicalStructure::findUniqueFragment(
       break;
     }
   }
-  if(result < 0) {
+  if (result < 0) {
     qDebug() << "No asymmetric fragment found for " << idxs;
     result = sym.size();
     transform = Eigen::Isometry3d::Identity();
-  }
-  else {
+  } else {
     qDebug() << "Found matching fragment: " << result;
   }
   return {result, transform};
@@ -1076,4 +1088,3 @@ QString ChemicalStructure::chemicalFormula(bool richText) const {
   }
   return formulaSum(symbols, richText);
 }
-

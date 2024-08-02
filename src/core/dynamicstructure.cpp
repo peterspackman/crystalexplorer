@@ -62,7 +62,8 @@ void DynamicStructure::updateFromCurrentFrame() {
     setAtoms(elementSymbols, positions, labels);
 
     for (int i = 0; i < numAtoms; i++) {
-      setAtomFlags(i, frame->atomFlags(i));
+      auto idx = indexToGenericIndex(i);
+      setAtomFlags(idx, frame->atomFlags(idx));
     }
     updateBondGraph();
   }

@@ -76,6 +76,7 @@ public:
   virtual void setShowVanDerWaalsContactAtoms(bool state = false);
   virtual void updateBondGraph();
 
+  occ::Vec3 atomPosition(GenericAtomIndex) const;
   inline const occ::Mat3N &atomicPositions() const { return m_atomicPositions; }
   inline const occ::IVec &atomicNumbers() const { return m_atomicNumbers; }
   inline const auto &labels() const { return m_labels; }
@@ -85,8 +86,8 @@ public:
   inline const auto &name() const { return m_name; }
 
   // colors
-  QColor atomColor(int atomIndex) const;
-  void overrideAtomColor(int index, const QColor &);
+  QColor atomColor(GenericAtomIndex atomIndex) const;
+  void overrideAtomColor(GenericAtomIndex, const QColor &);
   void resetAtomColorOverrides();
   void setAtomColoring(AtomColoring);
 
@@ -115,6 +116,7 @@ public:
 
   // fragments
   virtual void selectFragmentContaining(int);
+  virtual void selectFragmentContaining(GenericAtomIndex);
   virtual void completeFragmentContaining(int);
   virtual void completeFragmentContaining(GenericAtomIndex);
   virtual void completeAllFragments();
@@ -168,6 +170,7 @@ public:
   virtual const std::vector<int> &atomsForFragment(int) const;
   virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
+  virtual std::pair<GenericAtomIndex, GenericAtomIndex> atomIndicesForBond(int) const;
   virtual std::vector<HBondTriple>
   hydrogenBonds(const HBondCriteria & = {}) const;
   virtual std::vector<CloseContactPair>
@@ -193,22 +196,21 @@ public:
   inline virtual int getCurrentFrameIndex() const { return 0; }
 
   // flags
-  const AtomFlags &atomFlags(int) const;
-  AtomFlags &atomFlags(int);
-  void setAtomFlags(int, const AtomFlags &);
-  void setAtomFlag(int idx, AtomFlag flag, bool on = true) {
+  const AtomFlags &atomFlags(GenericAtomIndex) const;
+  AtomFlags &atomFlags(GenericAtomIndex);
+  void setAtomFlags(GenericAtomIndex, const AtomFlags &);
+  void setAtomFlag(GenericAtomIndex idx, AtomFlag flag, bool on = true) {
     m_flags[idx].setFlag(flag, on);
   }
-  inline bool testAtomFlag(int idx, AtomFlag flag) const {
-    return m_flags[idx].testFlag(flag);
-  }
-  bool atomFlagsSet(int index, const AtomFlags &flags) const;
+  void toggleAtomFlag(GenericAtomIndex idx, AtomFlag flag);
+  bool testAtomFlag(GenericAtomIndex idx, AtomFlag flag) const;
+
+  bool atomFlagsSet(GenericAtomIndex index, const AtomFlags &flags) const;
   bool anyAtomHasFlags(const AtomFlags &) const;
   bool allAtomsHaveFlags(const AtomFlags &) const;
-  bool atomsHaveFlags(const std::vector<int> &, const AtomFlags &) const;
-  std::vector<int> atomIndicesWithFlags(const AtomFlags &) const;
+  bool atomsHaveFlags(const std::vector<GenericAtomIndex> &, const AtomFlags &) const;
   void setFlagForAllAtoms(AtomFlag, bool on = true);
-  void setFlagForAtoms(const std::vector<int> &, AtomFlag, bool on = true);
+  void setFlagForAtoms(const std::vector<GenericAtomIndex> &, AtomFlag, bool on = true);
   void setFlagForAtomsFiltered(const AtomFlag &flagToSet, const AtomFlag &query,
                                bool on = true);
   void toggleFlagForAllAtoms(AtomFlag);
@@ -259,11 +261,11 @@ private:
   Eigen::Vector3d m_origin{0.0, 0.0, 0.0};
 
   AtomColoring m_atomColoring{AtomColoring::Element};
-  ankerl::unordered_dense::map<int, QColor> m_atomColorOverrides;
+  ankerl::unordered_dense::map<GenericAtomIndex, QColor, GenericAtomIndexHash> m_atomColorOverrides;
   std::vector<QString> m_labels;
   occ::Mat3N m_atomicPositions;
   Eigen::VectorXi m_atomicNumbers;
-  std::vector<AtomFlags> m_flags;
+  ankerl::unordered_dense::map<GenericAtomIndex, AtomFlags, GenericAtomIndexHash> m_flags;
   std::vector<QColor> m_atomColors;
   QString m_name{"structure"};
 

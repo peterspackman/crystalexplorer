@@ -74,11 +74,12 @@ void ChemicalStructureRenderer::toggleShowSuppressedAtoms() {
 
 bool ChemicalStructureRenderer::shouldSkipAtom(int index) const {
   const auto &numbers = m_structure->atomicNumbers();
+  auto atomIndex = m_structure->indexToGenericIndex(index);
 
   if (!showHydrogenAtoms() && (numbers(index) == 1)) {
     return true;
   } else if (!showSuppressedAtoms() &&
-             (m_structure->testAtomFlag(index, AtomFlag::Suppressed))) {
+             (m_structure->testAtomFlag(atomIndex, AtomFlag::Suppressed))) {
     return true;
   }
   return false;
@@ -147,7 +148,8 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
 
     if (shouldSkipAtom(i))
       continue;
-    auto color = m_structure->atomColor(i);
+    auto idx = m_structure->indexToGenericIndex(i);
+    auto color = m_structure->atomColor(idx);
     float radius = covRadii(i) * 0.5;
 
     if (atomStyle() == AtomDrawingStyle::RoundCapped) {
@@ -155,7 +157,7 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
     } else if (atomStyle() == AtomDrawingStyle::VanDerWaalsSphere) {
       radius = vdwRadii(i);
     }
-    if (m_structure->testAtomFlag(i, AtomFlag::Contact))
+    if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
       color = color.lighter();
 
     quint32 selectionId{0};
@@ -167,7 +169,7 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
     QVector3D position(positions(0, i), positions(1, i), positions(2, i));
     cx::graphics::addSphereToEllipsoidRenderer(
         m_ellipsoidRenderer, position, color, radius, selectionIdColor,
-        m_structure->atomFlagsSet(i, AtomFlag::Selected));
+        m_structure->atomFlagsSet(idx, AtomFlag::Selected));
   }
 }
 
@@ -192,16 +194,18 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
     if (shouldSkipAtom(i) || shouldSkipAtom(j))
       continue;
 
+    auto idxA = m_structure->indexToGenericIndex(i);
+    auto idxB = m_structure->indexToGenericIndex(j);
     QVector3D pointA(atomPositions(0, i), atomPositions(1, i),
                      atomPositions(2, i));
     QVector3D pointB(atomPositions(0, j), atomPositions(1, j),
                      atomPositions(2, j));
 
-    auto colorA = m_structure->atomColor(i);
-    auto colorB = m_structure->atomColor(j);
+    auto colorA = m_structure->atomColor(idxA);
+    auto colorB = m_structure->atomColor(idxB);
 
-    bool selectedA = m_structure->atomFlagsSet(i, AtomFlag::Selected);
-    bool selectedB = m_structure->atomFlagsSet(j, AtomFlag::Selected);
+    bool selectedA = m_structure->atomFlagsSet(idxA, AtomFlag::Selected);
+    bool selectedB = m_structure->atomFlagsSet(idxB, AtomFlag::Selected);
 
     quint32 bond_id{0};
     QVector3D id_color;

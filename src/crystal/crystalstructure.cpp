@@ -81,7 +81,7 @@ void CrystalStructure::updateBondGraph() {
       return;
     }
     int idx = location->second;
-    if (testAtomFlag(idx, AtomFlag::Contact))
+    if (testAtomFlag(atomIdx, AtomFlag::Contact))
       return;
     visited.insert(idx);
     m_fragmentForAtom[idx] = currentFragmentIndex;
@@ -93,13 +93,14 @@ void CrystalStructure::updateBondGraph() {
   };
 
   for (int i = 0; i < numberOfAtoms(); i++) {
-    VertexDesc uc_vertex = m_unitCellOffsets[i].unique;
-    int h = m_unitCellOffsets[i].x;
-    int k = m_unitCellOffsets[i].y;
-    int l = m_unitCellOffsets[i].z;
-    int idx = m_atomMap[GenericAtomIndex{static_cast<int>(uc_vertex), h, k, l}];
+    auto offset = m_unitCellOffsets[i];
+    VertexDesc uc_vertex = offset.unique;
+    int h = offset.x;
+    int k = offset.y;
+    int l = offset.z;
+    int idx = m_atomMap[offset];
 
-    if (visited.contains(idx) || testAtomFlag(idx, AtomFlag::Contact))
+    if (visited.contains(idx) || testAtomFlag(offset, AtomFlag::Contact))
       continue;
 
     fragments.push_back({});
@@ -111,7 +112,7 @@ void CrystalStructure::updateBondGraph() {
   for (const auto &[sourceCrystalIndex, sourceAtomIndex] : m_atomMap) {
     const VertexDesc sourceVertex =
         static_cast<VertexDesc>(sourceCrystalIndex.unique);
-    if (testAtomFlag(sourceAtomIndex, AtomFlag::Contact))
+    if (testAtomFlag(sourceCrystalIndex, AtomFlag::Contact))
       continue;
     for (const auto &[neighborVertexDesc, edgeDesc] :
          adjacency.at(sourceVertex)) {
@@ -162,7 +163,7 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
 
     int numAtoms = 0;
     for (int i = 0; i < numberOfAtoms(); i++) {
-      if (!atomFlagsSet(i, AtomFlag::Selected))
+      if (!atomFlagsSet(m_unitCellOffsets[i], AtomFlag::Selected))
         continue;
       positions.push_back(atomicPositions().col(i));
       elementSymbols.push_back(QString::fromStdString(
@@ -324,7 +325,7 @@ void CrystalStructure::addAtomsByCrystalIndex(
   addAtoms(elementSymbols, positionsToAdd, l);
   const int numAtomsAfter = numberOfAtoms();
   for (int i = numAtomsBefore; i < numAtomsAfter; i++) {
-    setAtomFlags(i, flags);
+    setAtomFlags(m_unitCellOffsets[i], flags);
   }
 }
 
@@ -337,7 +338,7 @@ void CrystalStructure::addVanDerWaalsContactAtoms() {
     const VertexDesc sourceVertex =
         static_cast<VertexDesc>(sourceCrystalIndex.unique);
     // don't add vdw contacts for vdw contact atoms
-    if (atomFlagsSet(sourceAtomIndex, AtomFlag::Contact))
+    if (atomFlagsSet(sourceCrystalIndex, AtomFlag::Contact))
       continue;
 
     for (const auto &[neighborVertexDesc, edgeDesc] :
@@ -422,7 +423,7 @@ void CrystalStructure::removeVanDerWaalsContactAtoms() {
   std::vector<int> indicesToRemove;
 
   for (int i = 0; i < numberOfAtoms(); i++) {
-    if (testAtomFlag(i, AtomFlag::Contact)) {
+    if (testAtomFlag(m_unitCellOffsets[i], AtomFlag::Contact)) {
       indicesToRemove.push_back(i);
     }
   }
@@ -459,12 +460,12 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
   int atomIndex = genericIndexToIndex(index);
 
   if (atomIndex >= 0) {
-    if (!atomFlagsSet(atomIndex, AtomFlag::Contact)) {
+    if (!atomFlagsSet(index, AtomFlag::Contact)) {
       fragmentWasSelected =
-          atomsHaveFlags(atomsForFragment(fragmentIndexForAtom(atomIndex)),
+          atomsHaveFlags(atomIndicesForFragment(fragmentIndexForAtom(index)),
                          AtomFlag::Selected);
     }
-    setAtomFlag(atomIndex, AtomFlag::Contact, false);
+    setAtomFlag(index, AtomFlag::Contact, false);
   }
 
   const auto &g = m_crystal.unit_cell_connectivity();
@@ -476,7 +477,7 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
     GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
     auto location = m_atomMap.find(atomIdx);
     if (location != m_atomMap.end()) {
-      setAtomFlag(location->second, AtomFlag::Contact, false);
+      setAtomFlag(atomIdx, AtomFlag::Contact, false);
       return;
     }
     atomsToAdd.insert(atomIdx);
@@ -569,7 +570,7 @@ bool CrystalStructure::hasIncompleteSelectedFragments() const {
       continue;
 
     // ensure fragment is selected
-    const auto &fragIndices = atomsForFragment(currentFragmentIndex);
+    const auto &fragIndices = atomIndicesForFragment(currentFragmentIndex);
     if (!atomsHaveFlags(fragIndices, AtomFlag::Selected))
       continue;
 
@@ -632,8 +633,8 @@ std::vector<int> CrystalStructure::selectedFragments() const {
   std::vector<int> result;
   for (int fragmentIndex = 0; fragmentIndex < m_fragments.size();
        fragmentIndex++) {
-    const auto &fragIndices = atomsForFragment(fragmentIndex);
-    if (fragIndices.size() == 0)
+    const auto &fragIndices = atomIndicesForFragment(fragmentIndex);
+    if (fragIndices.size() == 1)
       continue;
     if (atomsHaveFlags(fragIndices, AtomFlag::Selected))
       result.push_back(fragmentIndex);
@@ -701,7 +702,7 @@ void CrystalStructure::completeAllFragments() {
     GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
     auto location = m_atomMap.find(atomIdx);
     if (location != m_atomMap.end()) {
-      setAtomFlag(location->second, AtomFlag::Contact, false);
+      setAtomFlag(atomIdx, AtomFlag::Contact, false);
       return;
     }
     atomsToAdd.insert(atomIdx);
@@ -770,10 +771,9 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
     // resets to selection
     resetAtomsAndBonds(true);
 
-    for (int atomIndex = 0; atomIndex < numberOfAtoms(); atomIndex++) {
-      setAtomFlag(atomIndex,
-                  AtomFlag::Selected); // the call to resetAtomsAndBonds
-      // unselects everything
+    for (const auto &offset: m_unitCellOffsets) {
+      // the call to resetAtomsAndBonds unselects everything
+      setAtomFlag(offset, AtomFlag::Selected);
     }
     if (std::abs(radius) < 1e-3)
       return;
@@ -810,11 +810,10 @@ CrystalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
 
   GenericAtomIndexSet selected_idxs;
 
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    bool check = atomFlagsSet(i, flags);
+  for (const auto &offset : m_unitCellOffsets) {
+    bool check = atomFlagsSet(offset, flags);
     if ((set && check) || (!set && !check)) {
-      const auto &offset = m_unitCellOffsets[i];
-      selected_idxs.insert({offset.unique, offset.x, offset.y, offset.z});
+      selected_idxs.insert(offset);
     }
   }
 
@@ -854,10 +853,9 @@ CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
 
   GenericAtomIndexSet selected_idxs;
 
-  for (int i = 0; i < numberOfAtoms(); i++) {
-    if (atomFlagsSet(i, flags)) {
-      const auto &offset = m_unitCellOffsets[i];
-      selected_idxs.insert({offset.unique, offset.x, offset.y, offset.z});
+  for (const auto &offset: m_unitCellOffsets) {
+    if (atomFlagsSet(offset, flags)) {
+      selected_idxs.insert(offset);
     }
   }
 

@@ -74,10 +74,9 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
 
   QString filename, filename_outside;
 
-  std::vector<int> idx =
-      params.structure->atomIndicesWithFlags(AtomFlag::Selected);
-  occ::IVec nums = params.structure->atomicNumbers()(idx);
-  occ::Mat3N pos = params.structure->atomicPositions()(Eigen::all, idx);
+  auto idx = params.structure->atomsWithFlags(AtomFlag::Selected);
+  occ::IVec nums = params.structure->atomicNumbersForIndices(idx);
+  occ::Mat3N pos = params.structure->atomicPositionsForIndices(idx);
 
   QString wavefunctionName =
       QString("%1/%2").arg(params.method).arg(params.basis);
