@@ -777,7 +777,7 @@ void Crystalx::openFile() {
   const QString FILTER = "CIF, CIF2, Project File, XYZ file (*." +
                          CIF_EXTENSION + " *." + PROJECT_EXTENSION + " *." +
                          CIF2_EXTENSION + " *." + XYZ_FILE_EXTENSION +
-                         " *.pdb" + ")";
+                         " *.pdb" + " *.json" + ")";
   QStringList filenames = QFileDialog::getOpenFileNames(
       0, tr("Open File"), QDir::currentPath(), FILTER);
 
@@ -869,7 +869,11 @@ void Crystalx::loadExternalFileData(QString filename) {
   QFileInfo fileInfo(filename);
   QString extension = fileInfo.suffix().toLower();
 
-  if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
+  if(filename.endsWith("cg_results.json")) {
+    showStatusMessage(QString("Loading crystal clear output from %1").arg(filename));
+    project->loadCrystalClearJson(filename);
+  }
+  else if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
     processCif(filename);
   } else if (extension == "pdb") {
     processPdb(filename);

@@ -938,7 +938,7 @@ ChemicalStructure::findUniqueFragment(
     }
   }
   if(result < 0) {
-    qDebug() << "No asymmetric fragment found!";
+    qDebug() << "No asymmetric fragment found for " << idxs;
     result = sym.size();
     transform = Eigen::Isometry3d::Identity();
   }

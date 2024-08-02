@@ -5,6 +5,11 @@
 #include <occ/core/linear_algebra.h>
 #include <QVector3D>
 
+struct DimerAtoms{
+  std::vector<GenericAtomIndex> a;
+  std::vector<GenericAtomIndex> b;
+};
+
 using Transform = Eigen::Isometry3d;
 struct Fragment {
 

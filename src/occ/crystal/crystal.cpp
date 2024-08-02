@@ -485,7 +485,7 @@ void Crystal::update_unit_cell_molecules() const {
   IVec molecule_index(atoms.size());
   std::vector<std::vector<int>> atom_indices;
   std::vector<std::vector<std::pair<size_t, size_t>>> mol_bonds;
-  Mat3N shifts = Mat3N::Zero(3, atoms.size());
+  IMat3N shifts = IMat3N::Zero(3, atoms.size());
   ankerl::unordered_dense::set<vertex_desc> visited;
 
   auto predicate = [&edges](const edge_desc &e) {
@@ -500,7 +500,7 @@ void Crystal::update_unit_cell_molecules() const {
     molecule_index(v) = uc_mol_idx;
     idxs.push_back(v);
     if (v != prev) {
-      Vec3 uc_shift(edge.h, edge.k, edge.l);
+      IVec3 uc_shift(edge.h, edge.k, edge.l);
       shifts.col(v) = shifts.col(prev) + uc_shift;
       mol_bonds[uc_mol_idx].push_back({prev, v});
     }
@@ -515,7 +515,7 @@ void Crystal::update_unit_cell_molecules() const {
     uc_mol_idx++;
   }
 
-  Mat3N cart_pos = to_cartesian(atoms.frac_pos + shifts);
+  Mat3N cart_pos = to_cartesian(atoms.frac_pos + shifts.cast<double>());
   for (size_t i = 0; i < uc_mol_idx; i++) {
     auto idx = atom_indices[i];
 
@@ -528,7 +528,7 @@ void Crystal::update_unit_cell_molecules() const {
       }
       return atoms.asym_idx(a) < atoms.asym_idx(b);
     });
-    IMat3N shift_hkl = shifts(Eigen::all, idx).cast<int>();
+    IMat3N shift_hkl = shifts(Eigen::all, idx);
 
     occ::core::Molecule m(atoms.atomic_numbers(idx), cart_pos({0, 1, 2}, idx));
     m.set_unit_cell_idx(Eigen::Map<const IVec>(idx.data(), idx.size()));

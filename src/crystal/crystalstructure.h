@@ -17,6 +17,8 @@ public:
   void setOccCrystal(const OccCrystal &);
   inline const auto &occCrystal() const { return m_crystal; }
 
+  void setPairInteractionsFromDimerAtoms(const QList<QList<PairInteraction*>> &, const QList<QList<DimerAtoms>> &);
+
   virtual inline StructureType structureType() const override {
     return StructureType::Crystal;
   }
@@ -107,6 +109,11 @@ public:
   std::vector<GenericAtomIndex> getAtomIndicesUnderTransformation(
       const std::vector<GenericAtomIndex> &idxs,
       const Eigen::Isometry3d &result) const override;
+
+  bool getTransformation(
+      const std::vector<GenericAtomIndex> &from_orig,
+      const std::vector<GenericAtomIndex> &to_orig,
+      Eigen::Isometry3d &result) const override;
 
 private:
   Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;

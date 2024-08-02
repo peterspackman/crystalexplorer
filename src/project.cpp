@@ -11,6 +11,7 @@
 #include "version.h"
 #include "xyzfile.h"
 #include "globals.h"
+#include "crystalclear.h"
 
 namespace SceneNotification {
 void subscribe(Project *project) {
@@ -322,6 +323,23 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
     emit selectedSceneChanged(position);
   }
 
+  return true;
+}
+
+bool Project::loadCrystalClearJson(const QString &filename) {
+  CrystalStructure *crystal = io::loadCrystalClearJson(filename);
+  Scene *scene = new Scene(crystal);
+  scene->setTitle(QFileInfo(filename).baseName());
+  int position = m_scenes.size();
+  beginInsertRows(QModelIndex(), position, position);
+  m_scenes.append(scene);
+  endInsertRows();
+
+  if (position > -1) {
+    setUnsavedChangesExists();
+    setCurrentCrystal(position);
+    emit selectedSceneChanged(position);
+  }
   return true;
 }
 

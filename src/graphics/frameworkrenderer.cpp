@@ -106,6 +106,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       if (scale < 1e-4)
         continue;
 
+      color = interaction->color();
       if (m_options.display == FrameworkOptions::Display::Tubes) {
         cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
                                                    color, scale);

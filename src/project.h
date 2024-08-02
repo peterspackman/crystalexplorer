@@ -38,6 +38,7 @@ public:
   bool loadChemicalStructureFromXyzFile(const QString &);
   bool loadCrystalStructuresFromCifFile(const QString &);
   bool loadCrystalStructuresFromPdbFile(const QString &);
+  bool loadCrystalClearJson(const QString &);
 
   bool hasFrames();
   int nextFrame(bool forward);

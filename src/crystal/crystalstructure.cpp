@@ -10,6 +10,9 @@ using Vertex = occ::core::graph::PeriodicVertex;
 using Edge = occ::core::graph::PeriodicEdge;
 using occ::core::graph::PeriodicBondGraph;
 
+using GenericAtomIndexSet =
+    ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>;
+
 CrystalStructure::CrystalStructure(QObject *parent)
     : ChemicalStructure(parent) {}
 
@@ -184,12 +187,11 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
     std::vector<GenericAtomIndex> indices;
 
     ankerl::unordered_dense::set<int> included;
-    for(const auto &frag: m_symmetryUniqueFragments) {
-      qDebug() << frag;
+    for (const auto &frag : m_symmetryUniqueFragments) {
       const auto &asym = frag.asymmetricUnitIndices;
-      for(int i = 0; i < frag.atomIndices.size(); i++) {
-        if(included.contains(asym(i))) continue;
-        qDebug() << frag.atomIndices[i];
+      for (int i = 0; i < frag.atomIndices.size(); i++) {
+        if (included.contains(asym(i)))
+          continue;
         indices.push_back(frag.atomIndices[i]);
         included.insert(asym(i));
       }
@@ -210,7 +212,8 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     const auto &uc_shift = mol.unit_cell_atom_shift();
 
     for (int i = 0; i < uc_idx.rows(); i++) {
-      idxs.push_back(GenericAtomIndex{uc_idx(i), uc_shift(0, i), uc_shift(1, i), uc_shift(2, i)});
+      idxs.push_back(GenericAtomIndex{uc_idx(i), uc_shift(0, i), uc_shift(1, i),
+                                      uc_shift(2, i)});
     }
     std::sort(idxs.begin(), idxs.end());
     m_symmetryUniqueFragments.push_back(makeAsymFragment(idxs));
@@ -326,8 +329,7 @@ void CrystalStructure::addAtomsByCrystalIndex(
 }
 
 void CrystalStructure::addVanDerWaalsContactAtoms() {
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      atomsToShow;
+  GenericAtomIndexSet atomsToShow;
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &adjacency = g.adjacency_list();
   const auto &edges = g.edges();
@@ -467,8 +469,7 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
 
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      atomsToAdd;
+  GenericAtomIndexSet atomsToAdd;
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                      const EdgeDesc &e, const MillerIndex &hkl) {
@@ -693,8 +694,7 @@ void CrystalStructure::completeAllFragments() {
 
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      atomsToAdd;
+  GenericAtomIndexSet atomsToAdd;
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                      const EdgeDesc &e, const MillerIndex &hkl) {
@@ -780,8 +780,7 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
   }
 
   auto uc_regions = m_crystal.unit_cell_atom_surroundings(radius);
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      atomsToAdd;
+  GenericAtomIndexSet atomsToAdd;
   for (int atomIndex = 0; atomIndex < numberOfAtoms(); atomIndex++) {
     const auto &crystal_index = m_unitCellOffsets[atomIndex];
     const auto &region = uc_regions[crystal_index.unique];
@@ -809,8 +808,7 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
 std::vector<GenericAtomIndex>
 CrystalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
 
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      selected_idxs;
+  GenericAtomIndexSet selected_idxs;
 
   for (int i = 0; i < numberOfAtoms(); i++) {
     bool check = atomFlagsSet(i, flags);
@@ -827,11 +825,8 @@ CrystalStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
 std::vector<GenericAtomIndex> CrystalStructure::atomsSurroundingAtoms(
     const std::vector<GenericAtomIndex> &idxs, float radius) const {
 
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash> idx_set(
-      idxs.begin(), idxs.end());
-
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      unique_idxs;
+  GenericAtomIndexSet idx_set(idxs.begin(), idxs.end());
+  GenericAtomIndexSet unique_idxs;
 
   auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
 
@@ -857,8 +852,7 @@ std::vector<GenericAtomIndex>
 CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
                                                  float radius) const {
 
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      selected_idxs;
+  GenericAtomIndexSet selected_idxs;
 
   for (int i = 0; i < numberOfAtoms(); i++) {
     if (atomFlagsSet(i, flags)) {
@@ -867,8 +861,7 @@ CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
     }
   }
 
-  ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>
-      unique_idxs;
+  GenericAtomIndexSet unique_idxs;
 
   auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
 
@@ -972,6 +965,7 @@ Fragment CrystalStructure::makeFragment(
   const auto uc_atoms = m_crystal.unit_cell_atoms();
   Fragment result;
   result.atomIndices = idxs;
+  std::sort(result.atomIndices.begin(), result.atomIndices.end());
   std::transform(
       idxs.begin(), idxs.end(), std::back_inserter(result._atomOffset),
       [&](const GenericAtomIndex &idx) { return m_atomMap.at(idx); });
@@ -1047,4 +1041,108 @@ GenericAtomIndex CrystalStructure::indexToGenericIndex(int idx) const {
   if (idx < 0 || idx >= m_unitCellOffsets.size())
     return GenericAtomIndex{-1};
   return m_unitCellOffsets[idx];
+}
+
+void CrystalStructure::setPairInteractionsFromDimerAtoms(
+    const QList<QList<PairInteraction *>> &interactions,
+    const QList<QList<DimerAtoms>> &offsets) {
+  GenericAtomIndexSet idxs;
+  for (int i = 0; i < offsets.size(); i++) {
+    const auto &molOffsets = offsets[i];
+    for (int j = 0; j < molOffsets.size(); j++) {
+      const auto &offset = molOffsets[j];
+      qDebug() << "Offset a" << offset.a.size();
+      qDebug() << "Offset b" << offset.b.size();
+      idxs.insert(offset.a.begin(), offset.a.end());
+      idxs.insert(offset.b.begin(), offset.b.end());
+    }
+  }
+
+  std::vector<GenericAtomIndex> idxsToAdd(idxs.begin(), idxs.end());
+
+  qDebug() << "Adding" << idxsToAdd.size() << "atoms";
+  addAtomsByCrystalIndex(idxsToAdd);
+  updateBondGraph();
+
+  auto *p = pairInteractions();
+  for (int i = 0; i < interactions.size(); i++) {
+    const auto &molInteractions = interactions[i];
+    const auto &molOffsets = offsets[i];
+    for (int j = 0; j < molInteractions.size(); j++) {
+      const auto &offset = molOffsets[j];
+      auto fragA = makeFragment(offset.a);
+      auto fragB = makeFragment(offset.b);
+      auto *pair = molInteractions[j];
+      FragmentDimer d(fragA, fragB);
+      qDebug() << d;
+      pair_energy::Parameters params;
+      params.fragmentDimer = d;
+      params.nearestAtomDistance = d.nearestAtomDistance;
+      params.centroidDistance = d.centroidDistance;
+      pair->setParameters(params);
+      p->add(pair);
+    }
+  }
+}
+
+bool CrystalStructure::getTransformation(
+    const std::vector<GenericAtomIndex> &from_orig,
+    const std::vector<GenericAtomIndex> &to_orig,
+    Eigen::Isometry3d &result) const {
+
+  if (from_orig.size() != to_orig.size())
+    return false;
+  auto from = from_orig;
+  auto to = to_orig;
+  std::sort(from.begin(), from.end());
+  std::sort(to.begin(), to.end());
+  auto nums_a = atomicNumbersForIndices(from);
+  auto nums_b = atomicNumbersForIndices(to);
+
+  // first check if they're the same elements
+  if (!(nums_a.array() == nums_b.array()).all())
+    return false;
+
+  auto pos_a = atomicPositionsForIndices(from);
+  auto pos_b = atomicPositionsForIndices(to);
+
+  // Convert positions to fractional coordinates
+  auto frac_pos_a = m_crystal.to_fractional(pos_a);
+  auto frac_pos_b = m_crystal.to_fractional(pos_b);
+  occ::Vec3 frac_centroid_b = frac_pos_b.rowwise().mean();
+
+  const auto &symops = m_crystal.space_group().symmetry_operations();
+
+  for (const auto &symop : symops) {
+    occ::Mat3N transformed_pos = symop.apply(frac_pos_a);
+    occ::Vec3 frac_centroid_a = transformed_pos.rowwise().mean();
+
+    // Calculate the translation between centroids
+    occ::Vec3 frac_trans = frac_centroid_b - frac_centroid_a;
+
+    // Apply the translation
+    transformed_pos.colwise() += frac_trans;
+
+    // Check if transformed positions match frac_pos_b
+    occ::Mat3N diff = transformed_pos - frac_pos_b;
+    double rmsd = diff.norm() / std::sqrt(diff.size());
+
+    if (rmsd < 1e-6) { // Tighter tolerance for fractional coordinates
+      auto symop_ab = symop.translated(frac_trans);
+      qDebug() << QString::fromStdString(symop_ab.to_string());
+      // Found a matching symmetry operation
+      // Convert back to Cartesian for the result
+      Eigen::Matrix3d cart_rot = m_crystal.unit_cell().direct() *
+                                 symop_ab.rotation() *
+                                 m_crystal.unit_cell().inverse();
+      Eigen::Vector3d cart_trans =
+          m_crystal.to_cartesian(symop_ab.translation());
+
+      result = Eigen::Isometry3d::Identity();
+      result.linear() = cart_rot;
+      result.translation() = cart_trans;
+      return true;
+    }
+  }
+  return false;
 }

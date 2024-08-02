@@ -127,6 +127,7 @@ void WavefunctionCalculator::start_batch(
     qDebug() << "Is xtb method?" << params.isXtbMethod() << params.method;
     if (params.isXtbMethod()) {
       xtb::Parameters xtb_params = wfn2xtb(params);
+      // TODO Name generation based on fragment
       xtb_params.name = QString("xtb_wfn_%1").arg(idx++);
       start(xtb_params);
       continue;

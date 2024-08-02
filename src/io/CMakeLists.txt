@@ -1,5 +1,6 @@
 add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/ciffile.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/crystalclear.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_eps.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/genericxyzfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
