@@ -419,6 +419,7 @@ void Project::completeFragmentsForCurrentCrystal() {
   currentScene()->completeAllFragments();
   setUnsavedChangesExists();
   emit currentSceneChanged();
+  emit showMessage("Complete all fragments");
 }
 
 void Project::toggleUnitCellAxes(bool state) {
@@ -426,6 +427,7 @@ void Project::toggleUnitCellAxes(bool state) {
     currentScene()->setUnitCellBoxVisible(state);
     setUnsavedChangesExists();
     emit currentSceneChanged();
+    emit showMessage(state ? "Show unit cell axes" : "Hide unit cell axes");
   }
 }
 
@@ -449,6 +451,7 @@ void Project::toggleHydrogenAtoms(bool state) {
   if (currentScene()) {
     currentScene()->setShowHydrogens(state);
     emit currentSceneChanged();
+    emit showMessage(state ? "Show hydrogen atoms" : "Hide hydrogen atoms");
   }
 }
 
@@ -470,6 +473,7 @@ void Project::toggleCloseContacts(bool state) {
   if (currentScene()) {
     currentScene()->setShowCloseContacts(state);
     emit currentSceneChanged();
+    emit showMessage(state ? "Show close contacts" : "Hide close contacts");
   }
 }
 
@@ -477,6 +481,7 @@ void Project::toggleHydrogenBonds(bool state) {
   if (currentScene()) {
     currentScene()->setHydrogenBondsVisible(state);
     emit currentSceneChanged();
+    emit showMessage(state ? "Show hydrogen bonds" : "Hide hydrogen bonds");
   }
 }
 
@@ -636,8 +641,9 @@ void Project::invertSelection() {
 
 void Project::removeAllMeasurements() {
   for (auto *scene : m_scenes) {
-    if (scene)
+    if (scene) {
       scene->removeAllMeasurements();
+    }
   }
 }
 
@@ -808,6 +814,7 @@ int Project::setCurrentFrame(int current) {
   current = std::clamp(current, 0, count - 1);
   structure->setCurrentFrameIndex(current);
   emit currentSceneChanged();
+  emit showMessage(QString("Show frame %1").arg(current));
   return current;
 }
 

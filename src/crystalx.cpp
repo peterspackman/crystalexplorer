@@ -427,6 +427,8 @@ void Crystalx::initMenuConnections() {
   connect(invertSelectionAction, &QAction::triggered, project,
           &Project::invertSelection);
 
+  connect(project, &Project::showMessage, glWindow, &GLWindow::showMessageOnGraphicsView);
+
   // NB hbondOptionsAction and closeContactOptionsAction are connected in
   // initCloseContactsDialog
   connect(depthFadingOptionsAction, &QAction::triggered, this,

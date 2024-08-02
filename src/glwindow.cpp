@@ -655,6 +655,11 @@ void GLWindow::showMessage(const QString &message) {
   QToolTip::showText(mapToGlobal(QPoint(50, height() - 100)), message);
 }
 
+
+void GLWindow::showMessageOnGraphicsView(QString message) {
+  showMessage(message);
+}
+
 void GLWindow::setObjectInformationTextAndPosition(QString text, QPoint pos) {
   QToolTip::showText(mapToGlobal(pos), text);
 }

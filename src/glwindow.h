@@ -57,6 +57,7 @@ public:
   bool renderToPovRay(QTextStream &);
 
 public slots:
+  void showMessageOnGraphicsView(QString);
   void setCurrentCrystal(Project *);
   void redraw();
   void setMouseMode(MouseMode);

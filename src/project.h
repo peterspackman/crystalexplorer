@@ -102,6 +102,7 @@ public slots:
   void removeAllMeasurements();
 
 signals:
+  void showMessage(QString);
   void projectChanged(Project *);
   void projectSaved();
   void selectedSceneChanged(int);
