@@ -1076,3 +1076,4 @@ QString ChemicalStructure::chemicalFormula(bool richText) const {
   }
   return formulaSum(symbols, richText);
 }
+
