@@ -102,4 +102,11 @@ bool writeTextFile(const QString &filename, const QString &text) {
   return true;
 }
 
+
+
+QString changeSuffix(const QString &filePath, const QString &suffix) {
+  QFileInfo fileInfo(filePath);
+  return fileInfo.completeBaseName() + suffix;
+}
+
 } // namespace exe

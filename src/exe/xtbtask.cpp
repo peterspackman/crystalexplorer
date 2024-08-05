@@ -20,7 +20,6 @@ const xtb::Parameters &XtbTask::getParameters() const {
   return m_parameters;
 }
 
-
 QString XtbTask::jsonFilename() const {
   return QString("%1.xtbout.json").arg(baseName());
 }

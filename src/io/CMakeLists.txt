@@ -6,6 +6,7 @@ add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_wavefunction.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_pair_energy_json.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/orcainput.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pdbfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyply.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefrontobjfile.cpp"

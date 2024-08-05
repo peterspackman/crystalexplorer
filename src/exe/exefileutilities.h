@@ -12,4 +12,6 @@ QString readFileContents(const QString& filePath, const QString& binaryPlacehold
 
 QString findProgramInPath(const QString &program);
 
+QString changeSuffix(const QString &filePath, const QString &suffix);
+
 }

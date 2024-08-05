@@ -562,7 +562,7 @@ ChemicalStructure::atomsForBond(int bondIndex) const {
 
 std::pair<GenericAtomIndex, GenericAtomIndex>
 ChemicalStructure::atomIndicesForBond(int bondIndex) const {
-  auto [a, b] = m_covalentBonds.at(bondIndex);
+  auto [a, b] = atomsForBond(bondIndex);
   return {indexToGenericIndex(a), indexToGenericIndex(b)};
 }
 
@@ -1060,6 +1060,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
       }
     }
   }
+  qDebug() << "Unique dimers:" << pairs.size();
   return result;
 }
 

@@ -69,8 +69,7 @@ bool FragmentDimer::operator==(const FragmentDimer &rhs) const {
   }
   bool aa_eq = a.isEquivalentTo(rhs.a);
   bool bb_eq = b.isEquivalentTo(rhs.b);
-  if (aa_eq && bb_eq)
-    return true;
+  return (aa_eq && bb_eq);
   bool ba_eq = b.isEquivalentTo(rhs.a);
   bool ab_eq = a.isEquivalentTo(rhs.b);
   return ab_eq && ba_eq;

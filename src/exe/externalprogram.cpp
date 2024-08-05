@@ -52,6 +52,7 @@ void ExternalProgramTask::updateStdoutStderr(QProcess &process) {
   err += process.readAllStandardError();
   setProperty("stdout", out);
   setProperty("stderr", err);
+  emit stdoutChanged();
 }
 
 void ExternalProgramTask::setupProcessConnectionsPrivate(QProcess &process) {
@@ -88,6 +89,7 @@ bool ExternalProgramTask::copyRequirements(const QString &path) {
   bool force = overwrite();
   for (const auto &[input, input_dest] : m_requirements) {
     QString dest = path + QDir::separator() + QFileInfo(input_dest).fileName();
+    qDebug() << "Copying " << input << "to" << dest;
     if (!exe::copyFile(input, dest, force)) {
       setErrorMessage(
           QString("Failed to copy input file to temporary directory: %1 -> %2")
@@ -103,6 +105,13 @@ bool ExternalProgramTask::copyRequirements(const QString &path) {
 
 bool ExternalProgramTask::copyResults(const QString &path) {
   bool force = overwrite();
+  // List contents of the temp directory
+  QDir tempDir(path);
+  qDebug() << "Contents of temporary directory" << path << ":";
+  for (const auto &entry :
+       tempDir.entryList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot)) {
+    qDebug() << "  " << entry;
+  }
   for (const auto &[output, output_dest] : m_outputs) {
     QString tmpOutput = path + QDir::separator() + QFileInfo(output).fileName();
     qDebug() << "Copying " << tmpOutput << "to" << output_dest;
@@ -123,9 +132,7 @@ bool ExternalProgramTask::copyResults(const QString &path) {
 bool ExternalProgramTask::deleteRequirements() {
   for (const auto &[input, input_dest] : m_requirements) {
     if (!exe::deleteFile(input)) {
-      setErrorMessage(
-          QString("Failed to delete working files %1")
-              .arg(input));
+      setErrorMessage(QString("Failed to delete working files %1").arg(input));
       qDebug() << errorMessage();
       return false;
     }
@@ -213,8 +220,10 @@ void ExternalProgramTask::start() {
     }
     promise.setProgressValueAndText(100, "Task complete");
     promise.finish();
-    qDebug() << "Task " << property("name").toString() << " finished" <<  errorMessage();
-    if(m_deleteRequirements) deleteRequirements();
+    qDebug() << "Task " << property("name").toString() << " finished"
+             << errorMessage();
+    if (m_deleteRequirements)
+      deleteRequirements();
   };
 
   Task::run(taskLogic);

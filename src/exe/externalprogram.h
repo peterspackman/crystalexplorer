@@ -68,6 +68,7 @@ public:
 
 signals:
     void stopProcess();
+    void stdoutChanged();
 
 private:
     void updateStdoutStderr(QProcess&);

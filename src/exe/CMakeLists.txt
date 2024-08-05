@@ -5,6 +5,7 @@ add_library(cx_exe
     "${CMAKE_CURRENT_SOURCE_DIR}/occpairtask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occsurfacetask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occwavefunctiontask.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/orcatask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/task.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanagerwidget.cpp"

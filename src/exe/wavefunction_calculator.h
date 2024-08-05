@@ -26,16 +26,18 @@ signals:
   void calculationComplete();
 
 private slots:
-  void handleOccTaskComplete(wfn::Parameters, QString filename, QString name);
+  void handleTaskComplete(wfn::Parameters, QString filename, QString name);
   void handleXtbTaskComplete(xtb::Parameters, xtb::Result);
 
 private:
+  void start_occ(wfn::Parameters);
+  void start_orca(wfn::Parameters);
 
   TaskManager *m_taskManager{nullptr};
   XtbEnergyCalculator *m_xtb{nullptr};
   ChemicalStructure *m_structure{nullptr};
   MolecularWavefunction *m_wavefunction{nullptr};
-  QString m_occExecutable{"occ"};
+  QString m_occExecutable{"occ"}, m_orcaExecutable{"orca"};
   QList<QString> m_workingFiles;
   QProcessEnvironment m_environment;
 

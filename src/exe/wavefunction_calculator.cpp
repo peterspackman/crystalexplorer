@@ -3,6 +3,7 @@
 #include "molecular_wavefunction.h"
 #include "exefileutilities.h"
 #include "occwavefunctiontask.h"
+#include "orcatask.h"
 #include "settings.h"
 #include <QFile>
 #include <QTextStream>
@@ -34,8 +35,11 @@ inline wfn::Parameters xtb2wfn(const xtb::Parameters &params) {
 
 WavefunctionCalculator::WavefunctionCalculator(QObject *parent)
     : QObject(parent) {
+  m_orcaExecutable =
+      settings::readSetting(settings::keys::ORCA_EXECUTABLE).toString();
   m_occExecutable =
       settings::readSetting(settings::keys::OCC_EXECUTABLE).toString();
+
   m_environment = QProcessEnvironment::systemEnvironment();
   QString dataDir =
       settings::readSetting(settings::keys::OCC_DATA_DIRECTORY).toString();
@@ -50,6 +54,57 @@ WavefunctionCalculator::WavefunctionCalculator(QObject *parent)
 void WavefunctionCalculator::setTaskManager(TaskManager *mgr) {
   m_taskManager = mgr;
   m_xtb->setTaskManager(mgr);
+}
+
+void WavefunctionCalculator::start_occ(wfn::Parameters params) {
+  QString filename;
+
+  auto idx = params.structure->atomsWithFlags(AtomFlag::Selected);
+  occ::IVec nums = params.structure->atomicNumbersForIndices(idx);
+  occ::Mat3N pos = params.structure->atomicPositionsForIndices(idx);
+
+  QString wavefunctionName =
+      QString("%1/%2").arg(params.method).arg(params.basis);
+  auto *task = new OccWavefunctionTask();
+  task->setParameters(params);
+  task->setProperty("name", wavefunctionName);
+  task->setExecutable(m_occExecutable);
+  task->setEnvironment(m_environment);
+  task->setDeleteWorkingFiles(m_deleteWorkingFiles);
+  QString wavefunctionFilename = task->wavefunctionFilename();
+
+
+  auto taskId = m_taskManager->add(task);
+  connect(task, &Task::completed,
+          [&, params, wavefunctionName, wavefunctionFilename]() {
+            this->handleTaskComplete(params, wavefunctionFilename,
+                                        wavefunctionName);
+          });
+
+}
+
+
+void WavefunctionCalculator::start_orca(wfn::Parameters params) {
+  QString filename;
+
+  QString wavefunctionName =
+      QString("%1/%2").arg(params.method).arg(params.basis);
+  auto *task = new OrcaWavefunctionTask();
+  task->setParameters(params);
+  task->setProperty("name", wavefunctionName);
+  task->setExecutable(m_orcaExecutable);
+  task->setEnvironment(m_environment);
+  task->setDeleteWorkingFiles(m_deleteWorkingFiles);
+  QString wavefunctionFilename = task->moldenFilename();
+
+
+  auto taskId = m_taskManager->add(task);
+  connect(task, &Task::completed,
+          [&, params, wavefunctionName, wavefunctionFilename]() {
+            this->handleTaskComplete(params, wavefunctionFilename,
+                                         wavefunctionName);
+          });
+
 }
 
 void WavefunctionCalculator::start(wfn::Parameters params) {
@@ -72,29 +127,13 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
     return;
   }
 
-  QString filename, filename_outside;
-
-  auto idx = params.structure->atomsWithFlags(AtomFlag::Selected);
-  occ::IVec nums = params.structure->atomicNumbersForIndices(idx);
-  occ::Mat3N pos = params.structure->atomicPositionsForIndices(idx);
-
-  QString wavefunctionName =
-      QString("%1/%2").arg(params.method).arg(params.basis);
-  auto *task = new OccWavefunctionTask();
-  task->setParameters(params);
-  task->setProperty("name", wavefunctionName);
-  task->setExecutable(m_occExecutable);
-  task->setEnvironment(m_environment);
-  task->setDeleteWorkingFiles(m_deleteWorkingFiles);
-  QString wavefunctionFilename = task->wavefunctionFilename();
-
-
-  auto taskId = m_taskManager->add(task);
-  connect(task, &Task::completed,
-          [&, params, wavefunctionName, wavefunctionFilename]() {
-            this->handleOccTaskComplete(params, wavefunctionFilename,
-                                        wavefunctionName);
-          });
+  // TODO check which ones are needed
+  if(!m_orcaExecutable.isEmpty()) {
+    start_orca(params);
+  }
+  else {
+    start_occ(params);
+  }
 }
 
 void WavefunctionCalculator::start(xtb::Parameters params) {
@@ -147,13 +186,13 @@ void WavefunctionCalculator::start_batch(
 
     connect(task, &Task::completed, this,
             [this, params, wavefunctionName, wavefunctionFilename, tasks]() {
-              this->handleOccTaskComplete(params, wavefunctionFilename,
+              this->handleTaskComplete(params, wavefunctionFilename,
                                           wavefunctionName);
             });
   }
 }
 
-void WavefunctionCalculator::handleOccTaskComplete(wfn::Parameters params,
+void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
                                                    QString filename,
                                                    QString name) {
   qDebug() << "Task" << name << "finished in WavefunctionCalculator";
