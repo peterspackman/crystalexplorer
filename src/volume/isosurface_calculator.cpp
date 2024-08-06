@@ -64,8 +64,9 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
     occ::Mat3N pos = params.structure->atomicPositionsForIndices(m_atomsInside);
 
     if (params.wfn) {
+      QString suffix = params.wfn->fileFormatSuffix();
       filename = m_structure->name() + "_" +
-                 isosurface::kindToString(params.kind) + "_inside.owf.json";
+                 isosurface::kindToString(params.kind) + "_inside" + suffix;
       params.wfn->writeToFile(filename);
     } else {
       filename = m_structure->name() + "_" +

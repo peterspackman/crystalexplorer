@@ -38,13 +38,13 @@ signals:
 
 private slots:
   void accept();
+  void updateMethodOptions();
+  void updateBasisSetOptions();
 
 private:
   static const QString customEntry;
   void init();
   void initPrograms();
-  void initMethod();
-  void initBasis();
 
   wfn::Parameters m_parameters;
 

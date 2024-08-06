@@ -54,6 +54,10 @@ wfn::FileFormat MolecularWavefunction::fileFormat() const {
   return m_fileFormat;
 }
 
+QString MolecularWavefunction::fileFormatSuffix() const {
+  return wfn::fileFormatSuffix(m_fileFormat);
+}
+
 void MolecularWavefunction::setFileFormat(wfn::FileFormat fmt) {
   m_fileFormat = fmt;
 }

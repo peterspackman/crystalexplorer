@@ -27,6 +27,8 @@ public:
     wfn::FileFormat fileFormat() const;
     void setFileFormat(wfn::FileFormat);
 
+    QString fileFormatSuffix() const;
+
     [[nodiscard]] int charge() const;
     [[nodiscard]] int multiplicity() const;
 

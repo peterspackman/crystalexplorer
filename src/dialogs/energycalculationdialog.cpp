@@ -69,8 +69,7 @@ void EnergyCalculationDialog::showEvent(QShowEvent *) {
 bool EnergyCalculationDialog::methodIsDefined() const {
   return (quantitativeRadioButton->isChecked() ||
           qualitativeRadioButton->isChecked() || orcaRadioButton->isChecked() ||
-          gfnRadioButton->isChecked() ||
-          (wavefunctionCombobox->currentIndex() == 0));
+          gfnRadioButton->isChecked());
 }
 
 void EnergyCalculationDialog::handleModelChange() {

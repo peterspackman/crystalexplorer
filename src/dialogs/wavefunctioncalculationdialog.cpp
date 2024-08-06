@@ -1,7 +1,9 @@
 #include <QDialog>
 #include <QtDebug>
+#include <ankerl/unordered_dense.h>
 
 #include "wavefunctioncalculationdialog.h"
+#include "settings.h"
 #include "xtb_parameters.h"
 
 const QString WavefunctionCalculationDialog::customEntry{"Custom..."};
@@ -18,32 +20,31 @@ void WavefunctionCalculationDialog::init() {
 
   // put available options in the dialog
   initPrograms();
-  initMethod();
-  initBasis();
+  updateMethodOptions();
+  updateBasisSetOptions();
   adjustSize();
 }
 
 void WavefunctionCalculationDialog::initPrograms() {
   programComboBox->clear();
 
-  QStringList programs{"OCC", "Gaussian", "ORCA"};
+  ankerl::unordered_dense::map<QString, QString> programs {
+    {"OCC", settings::readSetting(settings::keys::OCC_EXECUTABLE).toString()},
+    {"Gaussian", settings::readSetting(settings::keys::GAUSSIAN_EXECUTABLE).toString()},
+    {"Orca", settings::readSetting(settings::keys::ORCA_EXECUTABLE).toString()},
+    {"XTB", settings::readSetting(settings::keys::XTB_EXECUTABLE).toString()},
+  };
 
   QString preferred = "OCC";
-  for (const auto &source : programs) {
+  for (const auto &[source, exe] : programs) {
+    if(exe.isEmpty()) continue;
     programComboBox->addItem(source);
     if (source == preferred) {
       programComboBox->setCurrentText(source);
     }
   }
-}
-
-void WavefunctionCalculationDialog::initMethod() {
-  QStringList methods{"HF", "B3LYP", "WB97M-V", "GFN0-xTB", "GFN1-xTB", "GFN2-xTB"};
-
-  for (const auto &method : methods) {
-    methodComboBox->addItem(method);
-  }
-  methodComboBox->addItem(customEntry);
+  connect(programComboBox, &QComboBox::currentTextChanged,
+          this, &WavefunctionCalculationDialog::updateMethodOptions);
 
   connect(methodComboBox, QOverload<int>::of(&QComboBox::activated),
           [&](int index) {
@@ -58,19 +59,8 @@ void WavefunctionCalculationDialog::initMethod() {
               methodComboBox->setEditable(false);
             }
           });
-}
-
-void WavefunctionCalculationDialog::initBasis() {
-  QStringList basisSets{
-      "def2-svp", "def2-tzvp", "6-31G(d,p)", "DGDZVP", "3-21G", "STO-3G",
-  };
-
-  for (const auto &basis : basisSets) {
-    basisComboBox->addItem(basis);
-  }
-
-  basisComboBox->addItem(customEntry);
-
+  connect(methodComboBox, &QComboBox::currentTextChanged,
+          this, &WavefunctionCalculationDialog::updateBasisSetOptions);
   connect(
       basisComboBox, QOverload<int>::of(&QComboBox::activated), [&](int index) {
         if (basisComboBox->itemText(index) == customEntry) {
@@ -83,6 +73,41 @@ void WavefunctionCalculationDialog::initBasis() {
           basisComboBox->setEditable(false);
         }
       });
+}
+
+void WavefunctionCalculationDialog::updateMethodOptions() {
+
+  ankerl::unordered_dense::map<QString, QStringList> programMethods{
+    {"OCC", {"HF", "B3LYP", "wB97m-V"}},
+    {"Orca", {"HF", "B3LYP", "wB97m-V"}},
+    {"Gaussian", {"HF", "B3LYP", "wB97m-V"}},
+    {"XTB", {"GFN0-xTB", "GFN1-xTB", "GFN2-xTB"}},
+  };
+
+  methodComboBox->clear();
+  QString prog = program();
+  QStringList options = programMethods[prog];
+  for (const auto &method : options) {
+    methodComboBox->addItem(method);
+  }
+  methodComboBox->addItem(customEntry);
+
+}
+
+void WavefunctionCalculationDialog::updateBasisSetOptions() {
+
+  QStringList basisSets{
+      "def2-svp", "def2-tzvp", "6-31G(d,p)", "DGDZVP", "3-21G", "STO-3G",
+  };
+
+  basisComboBox->clear();
+  if(program() != "XTB") {
+    for (const auto &basis : basisSets) {
+      basisComboBox->addItem(basis);
+    }
+
+    basisComboBox->addItem(customEntry);
+  }
 }
 
 void WavefunctionCalculationDialog::show() {

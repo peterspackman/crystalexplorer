@@ -779,10 +779,7 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
     resetAtomsAndBonds(true);
 
     selectedAtoms = m_unitCellOffsets;
-    for (const auto &offset : selectedAtoms) {
-      // the call to resetAtomsAndBonds unselects everything
-      setAtomFlag(offset, AtomFlag::Selected);
-    }
+    setFlagForAtoms(selectedAtoms, AtomFlag::Selected);
     if (std::abs(radius) < 1e-3)
       return;
   }
@@ -811,10 +808,7 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
     addAtomsByCrystalIndex(atomIndexes, flags);
     updateBondGraph();
   }
-  for (const auto &offset : selectedAtoms) {
-    // the call to resetAtomsAndBonds unselects everything
-    setAtomFlag(offset, AtomFlag::Selected);
-  }
+  setFlagForAtoms(selectedAtoms, AtomFlag::Selected);
 }
 
 std::vector<GenericAtomIndex>
