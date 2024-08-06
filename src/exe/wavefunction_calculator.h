@@ -30,8 +30,8 @@ private slots:
   void handleXtbTaskComplete(xtb::Parameters, xtb::Result);
 
 private:
-  void start_occ(wfn::Parameters);
-  void start_orca(wfn::Parameters);
+  Task * makeOccTask(wfn::Parameters);
+  Task * makeOrcaTask(wfn::Parameters);
 
   TaskManager *m_taskManager{nullptr};
   XtbEnergyCalculator *m_xtb{nullptr};

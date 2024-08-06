@@ -57,7 +57,7 @@ public:
   inline QString gbwFilename() const { return m_scfTask->gbwFilename(); }
   inline QString propertiesFilename() const { return m_scfTask->propertiesFilename(); }
 
-  inline QString moldenFilename() const { return m_convertTask->moldenFilename(); }
+  inline QString moldenFilename() const { return m_scfTask->moldenFilename(); }
 
 private slots:
   void scfFinished();

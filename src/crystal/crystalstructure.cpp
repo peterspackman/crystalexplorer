@@ -692,6 +692,7 @@ void CrystalStructure::deleteIncompleteFragments() {
 
 void CrystalStructure::completeAllFragments() {
   bool haveContactAtoms = anyAtomHasFlags(AtomFlag::Contact);
+  const auto selectedAtoms = atomsWithFlags(AtomFlag::Selected);
 
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
@@ -725,6 +726,11 @@ void CrystalStructure::completeAllFragments() {
   if (haveContactAtoms)
     addVanDerWaalsContactAtoms();
   updateBondGraph();
+
+  // ensure selection doesn't change
+  for (const auto &idx : selectedAtoms) {
+    setAtomFlag(idx, AtomFlag::Selected);
+  }
 }
 
 void CrystalStructure::packUnitCells(
@@ -767,11 +773,13 @@ void CrystalStructure::packUnitCells(
 
 void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
 
+  std::vector<GenericAtomIndex> selectedAtoms;
   if (selected) {
     // resets to selection
     resetAtomsAndBonds(true);
 
-    for (const auto &offset: m_unitCellOffsets) {
+    selectedAtoms = m_unitCellOffsets;
+    for (const auto &offset : selectedAtoms) {
       // the call to resetAtomsAndBonds unselects everything
       setAtomFlag(offset, AtomFlag::Selected);
     }
@@ -802,6 +810,10 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
   if (atomIndexes.size() > 0) {
     addAtomsByCrystalIndex(atomIndexes, flags);
     updateBondGraph();
+  }
+  for (const auto &offset : selectedAtoms) {
+    // the call to resetAtomsAndBonds unselects everything
+    setAtomFlag(offset, AtomFlag::Selected);
   }
 }
 
@@ -853,7 +865,7 @@ CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
 
   GenericAtomIndexSet selected_idxs;
 
-  for (const auto &offset: m_unitCellOffsets) {
+  for (const auto &offset : m_unitCellOffsets) {
     if (atomFlagsSet(offset, flags)) {
       selected_idxs.insert(offset);
     }

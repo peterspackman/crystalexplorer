@@ -56,7 +56,7 @@ void WavefunctionCalculator::setTaskManager(TaskManager *mgr) {
   m_xtb->setTaskManager(mgr);
 }
 
-void WavefunctionCalculator::start_occ(wfn::Parameters params) {
+Task * WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
   QString filename;
 
   auto idx = params.structure->atomsWithFlags(AtomFlag::Selected);
@@ -74,19 +74,17 @@ void WavefunctionCalculator::start_occ(wfn::Parameters params) {
   QString wavefunctionFilename = task->wavefunctionFilename();
 
 
-  auto taskId = m_taskManager->add(task);
   connect(task, &Task::completed,
           [&, params, wavefunctionName, wavefunctionFilename]() {
             this->handleTaskComplete(params, wavefunctionFilename,
                                         wavefunctionName);
           });
 
+  return task;
 }
 
 
-void WavefunctionCalculator::start_orca(wfn::Parameters params) {
-  QString filename;
-
+Task * WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
   QString wavefunctionName =
       QString("%1/%2").arg(params.method).arg(params.basis);
   auto *task = new OrcaWavefunctionTask();
@@ -96,15 +94,16 @@ void WavefunctionCalculator::start_orca(wfn::Parameters params) {
   task->setEnvironment(m_environment);
   task->setDeleteWorkingFiles(m_deleteWorkingFiles);
   QString wavefunctionFilename = task->moldenFilename();
+  qDebug() << "Molden filename" << wavefunctionFilename;
 
 
-  auto taskId = m_taskManager->add(task);
   connect(task, &Task::completed,
           [&, params, wavefunctionName, wavefunctionFilename]() {
             this->handleTaskComplete(params, wavefunctionFilename,
                                          wavefunctionName);
           });
 
+  return task;
 }
 
 void WavefunctionCalculator::start(wfn::Parameters params) {
@@ -127,13 +126,16 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
     return;
   }
 
+  Task * task = nullptr;
   // TODO check which ones are needed
   if(!m_orcaExecutable.isEmpty()) {
-    start_orca(params);
+    task = makeOrcaTask(params);
   }
   else {
-    start_occ(params);
+    task = makeOccTask(params);
   }
+  auto taskId = m_taskManager->add(task);
+  qDebug() << "Single task started with id:" << taskId;
 }
 
 void WavefunctionCalculator::start(xtb::Parameters params) {
@@ -148,7 +150,7 @@ void WavefunctionCalculator::start(xtb::Parameters params) {
 
 void WavefunctionCalculator::start_batch(
     const std::vector<wfn::Parameters> &wfn) {
-  QList<OccWavefunctionTask *> tasks;
+  QList<Task*> tasks;
   m_completedTaskCount = 0;
   m_totalTasks = wfn.size();
 
@@ -171,24 +173,21 @@ void WavefunctionCalculator::start_batch(
       continue;
     }
 
-    QString wavefunctionName =
-        QString("%1/%2").arg(params.method).arg(params.basis);
-    auto *task = new OccWavefunctionTask();
-    task->setParameters(params);
-    task->setProperty("name", wavefunctionName);
-    task->setExecutable(m_occExecutable);
-    task->setEnvironment(m_environment);
-    task->setDeleteWorkingFiles(m_deleteWorkingFiles);
-    QString wavefunctionFilename = task->wavefunctionFilename();
+    Task * task = nullptr;
+    // TODO check which ones are needed
+    if(!m_orcaExecutable.isEmpty()) {
+      task = makeOrcaTask(params);
+    }
+    else {
+      task = makeOccTask(params);
+    }
 
-    auto taskId = m_taskManager->add(task);
     tasks.append(task);
+  }
 
-    connect(task, &Task::completed, this,
-            [this, params, wavefunctionName, wavefunctionFilename, tasks]() {
-              this->handleTaskComplete(params, wavefunctionFilename,
-                                          wavefunctionName);
-            });
+  for(auto * task: tasks) {
+    // submit all the tasks at once
+    auto taskId = m_taskManager->add(task);
   }
 }
 

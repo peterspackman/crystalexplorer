@@ -99,6 +99,7 @@ bool populateWavefunctionFromJsonContents(MolecularWavefunction *wfn, const QByt
 
 bool populateWavefunctionFromMoldenContents(MolecularWavefunction *wfn, const QByteArray &contents) {
     // TODO
+    qDebug() << "Found Molden format, setting additional data";
     return true;
 }
 
