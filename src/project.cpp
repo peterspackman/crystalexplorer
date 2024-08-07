@@ -424,7 +424,7 @@ void Project::completeFragmentsForCurrentCrystal() {
 
 void Project::toggleUnitCellAxes(bool state) {
   if (currentScene()) {
-    currentScene()->setUnitCellBoxVisible(state);
+    currentScene()->setShowCells(state);
     setUnsavedChangesExists();
     emit currentSceneChanged();
     emit showMessage(state ? "Show unit cell axes" : "Hide unit cell axes");
@@ -433,7 +433,7 @@ void Project::toggleUnitCellAxes(bool state) {
 
 void Project::toggleMultipleUnitCellBoxes(bool state) {
   if (currentScene()) {
-    currentScene()->enableMultipleUnitCellBoxes(state);
+    currentScene()->setShowMultipleCells(state);
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }

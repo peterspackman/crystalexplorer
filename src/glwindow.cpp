@@ -988,7 +988,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
 
     contextMenu->addSeparator();
 
-    if (scene->unitCellBoxIsVisible()) {
+    if (scene->showCells()) {
       contextMenu->addAction(tr("Hide Unit Cell Axes"), this,
                              &GLWindow::contextualHideUnitCellBox);
     } else {
@@ -1233,13 +1233,13 @@ void GLWindow::contextualSelectSuppressedAtoms() {
 
 void GLWindow::contextualHideUnitCellBox() {
   Q_ASSERT(scene);
-  scene->setUnitCellBoxVisible(false);
+  scene->setShowCells(false);
   redraw();
 }
 
 void GLWindow::contextualShowUnitCellBox() {
   Q_ASSERT(scene);
-  scene->setUnitCellBoxVisible(true);
+  scene->setShowCells(true);
   redraw();
 }
 

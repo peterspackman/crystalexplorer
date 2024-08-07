@@ -1074,6 +1074,11 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
   return result;
 }
 
+
+CellIndexSet ChemicalStructure::occupiedCells() const {
+  return CellIndexSet{CellIndex{0,0,0}};
+}
+
 void ChemicalStructure::setFragmentColor(int fragment, const QColor &color) {
   if (fragment < 0 || fragment >= m_fragments.size())
     return;

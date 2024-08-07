@@ -2,6 +2,7 @@
 #include "atomflags.h"
 #include "close_contact_criteria.h"
 #include "fragment.h"
+#include "cell_index.h"
 #include "generic_atom_index.h"
 #include "hbond_criteria.h"
 #include "molecular_wavefunction.h"
@@ -176,6 +177,8 @@ public:
   virtual std::vector<CloseContactPair>
   closeContacts(const CloseContactCriteria & = {}) const;
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
+  
+  virtual CellIndexSet occupiedCells() const;
 
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;

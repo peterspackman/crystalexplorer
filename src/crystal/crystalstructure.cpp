@@ -1150,3 +1150,20 @@ bool CrystalStructure::getTransformation(
   }
   return false;
 }
+
+
+CellIndexSet CrystalStructure::occupiedCells() const {
+  CellIndexSet result;
+  occ::Mat3N pos_frac = m_crystal.to_fractional(atomicPositions());
+
+  auto conv = [](double x) {
+    return static_cast<int>(std::floor(x));
+  };
+
+  for(int i = 0; i < pos_frac.cols(); i++) {
+    CellIndex idx{
+      conv(pos_frac(0, i)), conv(pos_frac(1, i)), conv(pos_frac(2, i))};
+    result.insert(idx);
+  }
+  return result;
+}

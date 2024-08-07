@@ -653,11 +653,10 @@ void Scene::updateForPreferencesChange() {
 
 void Scene::setNeedsUpdate() {
   m_labelsNeedUpdate = true;
-  if(m_structureRenderer) {
+  if (m_structureRenderer) {
     m_structureRenderer->forceUpdates();
   }
 }
-
 
 QStringList Scene::uniqueElementSymbols() const {
   if (m_structure) {
@@ -1326,6 +1325,32 @@ void Scene::drawLabels() {
   m_billboardTextLabels->release();
 }
 
+bool Scene::showCells() {
+  if (m_structureRenderer) {
+    return m_structureRenderer->showCells();
+  }
+  return false;
+}
+
+void Scene::setShowCells(bool show) {
+  if (m_structureRenderer) {
+    return m_structureRenderer->setShowCells(show);
+  }
+}
+
+bool Scene::showMultipleCells() {
+  if (m_structureRenderer) {
+    return m_structureRenderer->showMultipleCells();
+  }
+  return false;
+}
+
+void Scene::setShowMultipleCells(bool show) {
+  if (m_structureRenderer) {
+    return m_structureRenderer->setShowMultipleCells(show);
+  }
+}
+
 void Scene::drawUnitCellBox() {
   // setup unit cell lines
 
@@ -1500,21 +1525,21 @@ void Scene::toggleDrawHydrogenEllipsoids(bool hEllipsoids) {
 }
 
 bool Scene::showHydrogenAtoms() const {
-  if(m_structureRenderer) {
+  if (m_structureRenderer) {
     return m_structureRenderer->showHydrogenAtoms();
   }
   // default to true for this case
   return true;
 }
 
-void Scene::setShowHydrogenAtoms(bool show) { 
-  if(m_structureRenderer) {
+void Scene::setShowHydrogenAtoms(bool show) {
+  if (m_structureRenderer) {
     m_structureRenderer->setShowHydrogenAtoms(show);
   }
 }
 
-void Scene::toggleShowHydrogenAtoms() { 
-  if(m_structureRenderer) {
+void Scene::toggleShowHydrogenAtoms() {
+  if (m_structureRenderer) {
     m_structureRenderer->toggleShowHydrogenAtoms();
   }
 }

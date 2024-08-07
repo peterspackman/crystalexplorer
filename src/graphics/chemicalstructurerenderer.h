@@ -39,6 +39,14 @@ public:
   [[nodiscard]] bool showSuppressedAtoms() const;
   void toggleShowSuppressedAtoms();
 
+  void setShowCells(bool show);
+  bool showCells() const;
+  void toggleShowCells();
+
+  void setShowMultipleCells(bool show);
+  bool showMultipleCells() const;
+  void toggleShowMultipleCells();
+
   void setShowAtomLabels(bool show);
   [[nodiscard]] bool showAtomLabels() const;
   void toggleShowAtomLabels();
@@ -59,6 +67,7 @@ public:
   void setFrameworkOptions(const FrameworkOptions &);
 
   void updateAtoms();
+  void updateCells();
   void updateLabels();
   void updateBonds();
   void updateInteractions();
@@ -69,14 +78,6 @@ public:
 
   void forceUpdates();
   void draw(bool forPicking = false);
-
-  [[nodiscard]] inline CylinderRenderer *cylinderRenderer() {
-    return m_cylinderRenderer;
-  }
-  [[nodiscard]] inline EllipsoidRenderer *ellipsoidRenderer() {
-    return m_ellipsoidRenderer;
-  }
-  [[nodiscard]] inline LineRenderer *lineRenderer() { return m_lineRenderer; }
 
   [[nodiscard]] MeshInstance *getMeshInstance(size_t index) const;
 
@@ -96,6 +97,7 @@ private:
   void handleLabelsUpdate();
   void handleAtomsUpdate();
   void handleBondsUpdate();
+  void handleCellsUpdate();
   void handleInteractionsUpdate();
   void handleMeshesUpdate();
 
@@ -108,10 +110,14 @@ private:
   bool m_bondsNeedsUpdate{true};
   bool m_meshesNeedsUpdate{true};
   bool m_labelsNeedsUpdate{true};
+  bool m_cellsNeedsUpdate{true};
 
   bool m_showHydrogens{true};
   bool m_showAtomLabels{false};
   bool m_showSuppressedAtoms{false};
+
+  bool m_showCells{false};
+  bool m_showMultipleCells{false};
 
   // helper for keeping track of mesh selection
   std::vector<MeshInstance *> m_meshIndexToMesh;
@@ -120,7 +126,7 @@ private:
   BondDrawingStyle m_bondStyle{BondDrawingStyle::Stick};
 
   RenderSelection *m_selectionHandler{nullptr};
-  LineRenderer *m_lineRenderer{nullptr};
+  LineRenderer *m_bondLineRenderer{nullptr};
   LineRenderer *m_highlightRenderer{nullptr};
   EllipsoidRenderer *m_ellipsoidRenderer{nullptr};
   CylinderRenderer *m_cylinderRenderer{nullptr};
@@ -128,6 +134,8 @@ private:
   PointCloudRenderer *m_pointCloudRenderer{nullptr};
   FrameworkRenderer *m_frameworkRenderer{nullptr};
   BillboardRenderer *m_labelRenderer{nullptr};
+
+  LineRenderer *m_cellLinesRenderer{nullptr};
 
   ChemicalStructure *m_structure{nullptr};
 

@@ -129,15 +129,10 @@ public:
   const SelectedBond &selectedBond() const;
   const SelectedSurface &selectedSurface() const;
 
-  bool unitCellBoxIsVisible() { return _showUnitCellBox; }
-  void setUnitCellBoxVisible(bool show) { _showUnitCellBox = show; }
-  void enableMultipleUnitCellBoxes(bool enable) {
-    _drawMultipleCellBoxes = enable;
-    if (m_unitCellLines != nullptr) {
-      delete m_unitCellLines;
-      m_unitCellLines = nullptr;
-    }
-  }
+  bool showCells();
+  void setShowCells(bool show);
+  bool showMultipleCells();
+  void setShowMultipleCells(bool);
 
   bool showAtomLabels() const;
   void setShowAtomLabels(bool show);

@@ -82,6 +82,9 @@ public:
   const std::vector<FragmentState> &
   symmetryUniqueFragmentStates() const override;
 
+
+  CellIndexSet occupiedCells() const override;
+
   void expandAtomsWithinRadius(float radius, bool selected) override;
   Fragment
   makeFragment(const std::vector<GenericAtomIndex> &idxs) const override;

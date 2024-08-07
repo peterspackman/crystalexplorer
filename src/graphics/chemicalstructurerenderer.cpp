@@ -12,7 +12,8 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   m_ellipsoidRenderer = new EllipsoidRenderer();
   m_cylinderRenderer = new CylinderRenderer();
   m_labelRenderer = new BillboardRenderer();
-  m_lineRenderer = new LineRenderer();
+  m_bondLineRenderer = new LineRenderer();
+  m_cellLinesRenderer = new LineRenderer();
   m_highlightRenderer = new LineRenderer();
   m_pointCloudRenderer = new PointCloudRenderer();
   m_frameworkRenderer = new FrameworkRenderer(m_structure);
@@ -21,10 +22,11 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
           &ChemicalStructureRenderer::childAddedToStructure);
   connect(m_structure, &ChemicalStructure::childRemoved, this,
           &ChemicalStructureRenderer::childRemovedFromStructure);
-  connect(m_structure, &ChemicalStructure::atomsChanged, [&](){
+  connect(m_structure, &ChemicalStructure::atomsChanged, [&]() {
     m_labelsNeedsUpdate = true;
     m_atomsNeedsUpdate = true;
     m_bondsNeedsUpdate = true;
+    m_cellsNeedsUpdate = true;
   });
   initStructureChildren();
 
@@ -61,6 +63,34 @@ bool ChemicalStructureRenderer::showHydrogenAtoms() const {
 
 void ChemicalStructureRenderer::toggleShowHydrogenAtoms() {
   setShowHydrogenAtoms(!m_showHydrogens);
+}
+
+void ChemicalStructureRenderer::setShowCells(bool show) {
+  if (show != m_showCells) {
+    m_showCells = show;
+    m_cellsNeedsUpdate = true;
+  }
+}
+
+bool ChemicalStructureRenderer::showCells() const { return m_showCells; }
+
+void ChemicalStructureRenderer::toggleShowCells() {
+  setShowCells(!m_showCells);
+}
+
+void ChemicalStructureRenderer::setShowMultipleCells(bool show) {
+  if (show != m_showMultipleCells) {
+    m_showMultipleCells = show;
+    m_cellsNeedsUpdate = true;
+  }
+}
+
+bool ChemicalStructureRenderer::showMultipleCells() const {
+  return m_showMultipleCells;
+}
+
+void ChemicalStructureRenderer::toggleShowMultipleCells() {
+  setShowCells(!m_showMultipleCells);
 }
 
 void ChemicalStructureRenderer::setShowAtomLabels(bool show) {
@@ -130,7 +160,8 @@ BondDrawingStyle ChemicalStructureRenderer::bondStyle() const {
 }
 
 [[nodiscard]] float ChemicalStructureRenderer::bondThickness() const {
-  float bondThicknessFactor = settings::readSetting(settings::keys::BOND_THICKNESS).toInt() / 100.0;
+  float bondThicknessFactor =
+      settings::readSetting(settings::keys::BOND_THICKNESS).toInt() / 100.0;
   return ElementData::elementFromAtomicNumber(1)->covRadius() *
          bondThicknessFactor;
 }
@@ -160,6 +191,11 @@ void ChemicalStructureRenderer::updateBonds() {
 void ChemicalStructureRenderer::updateMeshes() {
   m_meshesNeedsUpdate = true;
   emit meshesChanged();
+}
+
+void ChemicalStructureRenderer::updateCells() {
+  m_cellsNeedsUpdate = true;
+  handleCellsUpdate();
 }
 
 QList<TextLabel> ChemicalStructureRenderer::getCurrentLabels() {
@@ -200,6 +236,78 @@ void ChemicalStructureRenderer::handleLabelsUpdate() {
   m_labelsNeedsUpdate = false;
 }
 
+void ChemicalStructureRenderer::handleCellsUpdate() {
+  if (!m_structure)
+    return;
+  if (!m_cellsNeedsUpdate)
+    return;
+
+  m_cellLinesRenderer->clear();
+
+  if (!m_showCells) {
+    m_cellsNeedsUpdate = false;
+    return;
+  }
+
+  QVector3D a(1, 0, 0);
+  QVector3D b(0, 1, 0);
+  QVector3D c(0, 0, 1);
+
+  const auto &unitCell = m_structure->cellVectors();
+
+  const CellIndex origin = CellIndex{0, 0, 0};
+  CellIndexSet cells{origin};
+  if (m_showMultipleCells) {
+    auto extraCells = m_structure->occupiedCells();
+    cells.insert(extraCells.begin(), extraCells.end());
+  }
+
+  a = QVector3D(unitCell(0, 0), unitCell(1, 0), unitCell(2, 0));
+  b = QVector3D(unitCell(0, 1), unitCell(1, 1), unitCell(2, 1));
+  c = QVector3D(unitCell(0, 2), unitCell(1, 2), unitCell(2, 2));
+  const QColor A_AXISCOLOR =
+      settings::readSetting(settings::keys::CE_RED_COLOR).toString();
+  const QColor B_AXISCOLOR =
+      settings::readSetting(settings::keys::CE_GREEN_COLOR).toString();
+  const QColor C_AXISCOLOR =
+      settings::readSetting(settings::keys::CE_BLUE_COLOR).toString();
+  const QColor UNITCELLCOLOR = QColor("#646464");
+
+  CellIndexPairSet drawnLines;
+
+  auto drawLine = [&](const CellIndex &start, const CellIndex &end, const QColor &color) {
+    auto line = std::minmax(start, end);
+    if (drawnLines.insert(line).second) {
+      QVector3D startPos = start.x * a + start.y * b + start.z * c;
+      QVector3D endPos = end.x * a + end.y * b + end.z * c;
+      cx::graphics::addLineToLineRenderer(*m_cellLinesRenderer, startPos, endPos,
+                                          DrawingStyleConstants::unitCellLineWidth, color);
+    }
+  };
+
+  for (const auto &cell : cells) {
+    QColor aColor = (cell == CellIndex{0, 0, 0}) ? A_AXISCOLOR : UNITCELLCOLOR;
+    QColor bColor = (cell == CellIndex{0, 0, 0}) ? B_AXISCOLOR : UNITCELLCOLOR;
+    QColor cColor = (cell == CellIndex{0, 0, 0}) ? C_AXISCOLOR : UNITCELLCOLOR;
+
+    // Draw 12 edges of the parallelepiped
+    drawLine(cell, CellIndex{cell.x + 1, cell.y, cell.z}, aColor);
+    drawLine(cell, CellIndex{cell.x, cell.y + 1, cell.z}, bColor);
+    drawLine(cell, CellIndex{cell.x, cell.y, cell.z + 1}, cColor);
+    drawLine(CellIndex{cell.x + 1, cell.y, cell.z}, CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x + 1, cell.y, cell.z}, CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y + 1, cell.z}, CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y + 1, cell.z}, CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y, cell.z + 1}, CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y, cell.z + 1}, CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x + 1, cell.y + 1, cell.z}, CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x + 1, cell.y, cell.z + 1}, CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y + 1, cell.z + 1}, CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+  }
+
+  m_cellsNeedsUpdate = false;
+}
+
 void ChemicalStructureRenderer::handleAtomsUpdate() {
   if (!m_structure)
     return;
@@ -211,8 +319,8 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
   }
 
   m_ellipsoidRenderer->clear();
-  
-  if(atomStyle() == AtomDrawingStyle::None) {
+
+  if (atomStyle() == AtomDrawingStyle::None) {
     m_atomsNeedsUpdate = false;
     return;
   }
@@ -261,7 +369,7 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
     m_selectionHandler->clear(SelectionType::Bond);
   }
 
-  m_lineRenderer->clear();
+  m_bondLineRenderer->clear();
   m_cylinderRenderer->clear();
 
   float radius = bondThickness();
@@ -296,10 +404,10 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
 
     if (bondStyle() == BondDrawingStyle::Line) {
       cx::graphics::addLineToLineRenderer(
-          *m_lineRenderer, pointA, 0.5 * pointA + 0.5 * pointB,
+          *m_bondLineRenderer, pointA, 0.5 * pointA + 0.5 * pointB,
           DrawingStyleConstants::bondLineWidth, colorA);
       cx::graphics::addLineToLineRenderer(
-          *m_lineRenderer, pointB, 0.5 * pointA + 0.5 * pointB,
+          *m_bondLineRenderer, pointB, 0.5 * pointA + 0.5 * pointB,
           DrawingStyleConstants::bondLineWidth, colorB);
     } else {
       cx::graphics::addCylinderToCylinderRenderer(
@@ -311,23 +419,25 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
 }
 
 void ChemicalStructureRenderer::beginUpdates() {
-  m_lineRenderer->beginUpdates();
+  m_bondLineRenderer->beginUpdates();
   m_cylinderRenderer->beginUpdates();
   m_ellipsoidRenderer->beginUpdates();
   m_highlightRenderer->beginUpdates();
+  m_cellLinesRenderer->beginUpdates();
 }
 
 void ChemicalStructureRenderer::endUpdates() {
-  m_lineRenderer->endUpdates();
+  m_bondLineRenderer->endUpdates();
   m_cylinderRenderer->endUpdates();
   m_ellipsoidRenderer->endUpdates();
   m_highlightRenderer->endUpdates();
+  m_cellLinesRenderer->endUpdates();
 }
 
 bool ChemicalStructureRenderer::needsUpdate() {
   // TODO check for efficiency in non-granular toggle like this
   return m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate ||
-         m_labelsNeedsUpdate;
+         m_labelsNeedsUpdate || m_cellsNeedsUpdate;
 }
 
 void ChemicalStructureRenderer::draw(bool forPicking) {
@@ -337,6 +447,7 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     handleAtomsUpdate();
     handleBondsUpdate();
     handleMeshesUpdate();
+    handleCellsUpdate();
     endUpdates();
   }
 
@@ -357,22 +468,29 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
   m_cylinderRenderer->draw();
   m_cylinderRenderer->release();
 
-  m_lineRenderer->bind();
-  m_uniforms.apply(m_lineRenderer);
-  m_lineRenderer->draw();
-  m_lineRenderer->release();
+  m_bondLineRenderer->bind();
+  m_uniforms.apply(m_bondLineRenderer);
+  m_bondLineRenderer->draw();
+  m_bondLineRenderer->release();
 
-  m_labelRenderer->bind();
-  m_uniforms.apply(m_labelRenderer);
-  m_labelRenderer->draw();
-  m_labelRenderer->release();
+  if (!forPicking) {
+    m_labelRenderer->bind();
+    m_uniforms.apply(m_labelRenderer);
+    m_labelRenderer->draw();
+    m_labelRenderer->release();
+
+    m_highlightRenderer->bind();
+    m_uniforms.apply(m_highlightRenderer);
+    m_highlightRenderer->draw();
+    m_highlightRenderer->release();
+
+    m_cellLinesRenderer->bind();
+    m_uniforms.apply(m_cellLinesRenderer);
+    m_cellLinesRenderer->draw();
+    m_cellLinesRenderer->release();
+  }
 
   handleMeshesUpdate();
-
-  m_highlightRenderer->bind();
-  m_uniforms.apply(m_highlightRenderer);
-  m_highlightRenderer->draw();
-  m_highlightRenderer->release();
 
   for (auto *meshRenderer : m_meshRenderers) {
     meshRenderer->bind();
