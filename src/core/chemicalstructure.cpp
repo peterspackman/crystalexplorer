@@ -278,6 +278,7 @@ void ChemicalStructure::setAtoms(const std::vector<QString> &elementSymbols,
   }
   m_origin = m_atomicPositions.rowwise().mean();
   m_bondsNeedUpdate = true;
+  emit atomsChanged();
 }
 
 void ChemicalStructure::addAtoms(const std::vector<QString> &elementSymbols,
@@ -313,6 +314,7 @@ void ChemicalStructure::addAtoms(const std::vector<QString> &elementSymbols,
   }
   m_origin = m_atomicPositions.rowwise().mean();
   m_bondsNeedUpdate = true;
+  emit atomsChanged();
 }
 
 QStringList ChemicalStructure::uniqueElementSymbols() const {
@@ -404,6 +406,7 @@ void ChemicalStructure::deleteAtomsByOffset(
   m_labels = newLabels;
   m_origin = m_atomicPositions.rowwise().mean();
   m_bondsNeedUpdate = true;
+  emit atomsChanged();
 }
 
 void ChemicalStructure::deleteAtom(int atomIndex) {
@@ -445,17 +448,20 @@ void ChemicalStructure::setFlagForAllAtoms(AtomFlag flag, bool on) {
   for (auto &[k, v] : m_flags) {
     v.setFlag(flag, on);
   }
+  emit atomsChanged();
 }
 
 void ChemicalStructure::toggleAtomFlag(GenericAtomIndex idx, AtomFlag flag) {
   auto &v = m_flags[idx];
   v ^= flag;
+  emit atomsChanged();
 }
 
 void ChemicalStructure::toggleFlagForAllAtoms(AtomFlag flag) {
   for (auto &[k, v] : m_flags) {
     v ^= flag;
   }
+  emit atomsChanged();
 }
 
 void ChemicalStructure::selectFragmentContaining(int atom) {
@@ -518,6 +524,7 @@ void ChemicalStructure::setFlagForAtoms(
   for (const auto &idx : atomIndices) {
     setAtomFlag(idx, flag, on);
   }
+  emit atomsChanged();
 }
 
 void ChemicalStructure::setFlagForAtomsFiltered(const AtomFlag &flagToSet,
@@ -528,6 +535,7 @@ void ChemicalStructure::setFlagForAtomsFiltered(const AtomFlag &flagToSet,
       v.setFlag(flagToSet, on);
     }
   }
+  emit atomsChanged();
 }
 
 int ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
@@ -608,6 +616,7 @@ QColor ChemicalStructure::atomColor(GenericAtomIndex atomIndex) const {
 void ChemicalStructure::overrideAtomColor(GenericAtomIndex index,
                                           const QColor &color) {
   m_atomColorOverrides[index] = color;
+  emit atomsChanged();
 }
 
 void ChemicalStructure::setColorForAtomsWithFlags(const AtomFlags &flags,
@@ -617,14 +626,17 @@ void ChemicalStructure::setColorForAtomsWithFlags(const AtomFlags &flags,
       m_atomColorOverrides[k] = color;
     }
   }
+  emit atomsChanged();
 }
 
 void ChemicalStructure::resetAtomColorOverrides() {
   m_atomColorOverrides.clear();
+  emit atomsChanged();
 }
 
 void ChemicalStructure::setAtomColoring(AtomColoring atomColoring) {
   m_atomColoring = atomColoring;
+  emit atomsChanged();
 }
 
 int ChemicalStructure::genericIndexToIndex(const GenericAtomIndex &idx) const {
@@ -1068,12 +1080,14 @@ void ChemicalStructure::setFragmentColor(int fragment, const QColor &color) {
   if (fragment < 0 || fragment >= m_fragments.size())
     return;
   m_fragments[fragment].color = color;
+  emit atomsChanged();
 }
 
 void ChemicalStructure::setAllFragmentColors(const QColor &color) {
   for (auto &frag : m_fragments) {
     frag.color = color;
   }
+  emit atomsChanged();
 }
 
 const std::vector<Fragment> &ChemicalStructure::getFragments() const {

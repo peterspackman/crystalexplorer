@@ -996,7 +996,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
                              &GLWindow::contextualShowUnitCellBox);
     }
 
-    if (scene->atomicLabelsVisible()) {
+    if (scene->showAtomLabels()) {
       contextMenu->addAction(tr("Hide Atom Labels"), this,
                              &GLWindow::contextualToggleAtomicLabels);
     } else {
@@ -1257,7 +1257,7 @@ void GLWindow::contextualRemoveIncompleteFragments() {
 
 void GLWindow::contextualToggleAtomicLabels() {
   Q_ASSERT(scene);
-  scene->setAtomicLabelsVisible(!scene->atomicLabelsVisible());
+  scene->toggleShowAtomLabels();
   redraw();
 }
 

@@ -10,6 +10,7 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
 
   m_ellipsoidRenderer = new EllipsoidRenderer();
   m_cylinderRenderer = new CylinderRenderer();
+  m_labelRenderer = new BillboardRenderer();
   m_lineRenderer = new LineRenderer();
   m_highlightRenderer = new LineRenderer();
   m_pointCloudRenderer = new PointCloudRenderer();
@@ -19,6 +20,11 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
           &ChemicalStructureRenderer::childAddedToStructure);
   connect(m_structure, &ChemicalStructure::childRemoved, this,
           &ChemicalStructureRenderer::childRemovedFromStructure);
+  connect(m_structure, &ChemicalStructure::atomsChanged, [&](){
+    m_labelsNeedsUpdate = true;
+    m_atomsNeedsUpdate = true;
+    m_bondsNeedsUpdate = true;
+  });
   initStructureChildren();
 
   m_propertyColorMaps = {
@@ -36,6 +42,10 @@ void ChemicalStructureRenderer::initStructureChildren() {
   m_meshesNeedsUpdate = true;
 }
 
+void ChemicalStructureRenderer::setSelectionHandler(RenderSelection *ptr) {
+  m_selectionHandler = ptr;
+}
+
 void ChemicalStructureRenderer::setShowHydrogenAtoms(bool show) {
   if (show != m_showHydrogens) {
     m_showHydrogens = show;
@@ -44,16 +54,27 @@ void ChemicalStructureRenderer::setShowHydrogenAtoms(bool show) {
   }
 }
 
-void ChemicalStructureRenderer::setSelectionHandler(RenderSelection *ptr) {
-  m_selectionHandler = ptr;
-}
-
 bool ChemicalStructureRenderer::showHydrogenAtoms() const {
   return m_showHydrogens;
 }
 
 void ChemicalStructureRenderer::toggleShowHydrogenAtoms() {
   setShowHydrogenAtoms(!m_showHydrogens);
+}
+
+void ChemicalStructureRenderer::setShowAtomLabels(bool show) {
+  if (show != m_showAtomLabels) {
+    m_showAtomLabels = show;
+    m_labelsNeedsUpdate = true;
+  }
+}
+
+bool ChemicalStructureRenderer::showAtomLabels() const {
+  return m_showAtomLabels;
+}
+
+void ChemicalStructureRenderer::toggleShowAtomLabels() {
+  setShowAtomLabels(!m_showAtomLabels);
 }
 
 void ChemicalStructureRenderer::setShowSuppressedAtoms(bool show) {
@@ -112,6 +133,11 @@ BondDrawingStyle ChemicalStructureRenderer::bondStyle() const {
          m_bondThicknessFactor;
 }
 
+void ChemicalStructureRenderer::updateLabels() {
+  m_labelsNeedsUpdate = true;
+  handleLabelsUpdate();
+}
+
 void ChemicalStructureRenderer::updateAtoms() {
   m_atomsNeedsUpdate = true;
   handleAtomsUpdate();
@@ -125,6 +151,42 @@ void ChemicalStructureRenderer::updateBonds() {
 void ChemicalStructureRenderer::updateMeshes() {
   m_meshesNeedsUpdate = true;
   emit meshesChanged();
+}
+
+QList<TextLabel> ChemicalStructureRenderer::getCurrentLabels() {
+  QList<TextLabel> result;
+  if (m_showAtomLabels) {
+    const auto &atomLabels = m_structure->labels();
+    const auto &positions = m_structure->atomicPositions();
+    for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
+      auto idx = m_structure->indexToGenericIndex(i);
+      if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
+        continue;
+      QVector3D pos(positions(0, i), positions(1, i), positions(2, i));
+      result.append(TextLabel{atomLabels[i], pos});
+    }
+  }
+  return result;
+}
+
+void ChemicalStructureRenderer::handleLabelsUpdate() {
+  if (!m_structure)
+    return;
+  if (!m_labelsNeedsUpdate)
+    return;
+
+  m_labelRenderer->clear();
+  auto labels = getCurrentLabels();
+  if (labels.empty())
+    return;
+
+  m_labelRenderer->beginUpdates();
+  for (const auto &label : labels) {
+    cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, label.position,
+                                             label.text);
+  }
+  m_labelRenderer->endUpdates();
+  m_labelsNeedsUpdate = false;
 }
 
 void ChemicalStructureRenderer::handleAtomsUpdate() {
@@ -171,6 +233,7 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
         m_ellipsoidRenderer, position, color, radius, selectionIdColor,
         m_structure->atomFlagsSet(idx, AtomFlag::Selected));
   }
+  m_atomsNeedsUpdate = false;
 }
 
 void ChemicalStructureRenderer::handleBondsUpdate() {
@@ -228,6 +291,7 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
           selectedA, selectedB);
     }
   }
+  m_bondsNeedsUpdate = false;
 }
 
 void ChemicalStructureRenderer::beginUpdates() {
@@ -244,9 +308,17 @@ void ChemicalStructureRenderer::endUpdates() {
   m_highlightRenderer->endUpdates();
 }
 
+bool ChemicalStructureRenderer::needsUpdate() {
+  // TODO check for efficiency in non-granular toggle like this
+  return m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate ||
+         m_labelsNeedsUpdate;
+}
+
 void ChemicalStructureRenderer::draw(bool forPicking) {
-  if (m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate) {
+  if (needsUpdate()) {
     beginUpdates();
+    if (m_labelsNeedsUpdate)
+      updateLabels();
     if (m_atomsNeedsUpdate)
       updateAtoms();
     if (m_bondsNeedsUpdate)
@@ -277,6 +349,11 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
   m_uniforms.apply(m_lineRenderer);
   m_lineRenderer->draw();
   m_lineRenderer->release();
+
+  m_labelRenderer->bind();
+  m_uniforms.apply(m_labelRenderer);
+  m_labelRenderer->draw();
+  m_labelRenderer->release();
 
   handleMeshesUpdate();
 
@@ -427,8 +504,8 @@ void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
   }
 }
 
-
-void ChemicalStructureRenderer::setFrameworkOptions(const FrameworkOptions &options) {
+void ChemicalStructureRenderer::setFrameworkOptions(
+    const FrameworkOptions &options) {
   m_frameworkOptions = options;
   m_frameworkRenderer->setOptions(m_frameworkOptions);
 }

@@ -140,9 +140,10 @@ public:
       m_unitCellLines = nullptr;
     }
   }
-  inline bool atomicLabelsVisible() const { return _showAtomicLabels; }
-  inline void setAtomicLabelsVisible(bool show) { _showAtomicLabels = show; }
 
+  bool showAtomLabels() const;
+  void setShowAtomLabels(bool show);
+  void toggleShowAtomLabels();
 
   void setFrameworkOptions(const FrameworkOptions &options);
 
@@ -182,7 +183,6 @@ public:
 
   QVector<Label> labels();
   QVector<Label> measurementLabels();
-  QVector<Label> atomicLabels();
   QVector<Label> fragmentLabels();
   QVector<Label> surfaceLabels();
   QVector<Label> energyLabels();
@@ -376,7 +376,6 @@ private:
   bool _showHydrogens;
   bool _showSuppressedAtoms;
   bool _showUnitCellBox;
-  bool _showAtomicLabels;
   bool _showFragmentLabels;
   bool _showSurfaceLabels;
 

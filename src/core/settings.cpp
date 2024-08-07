@@ -77,6 +77,8 @@ static const QMap<QString, QVariant> defaults{
     {keys::LIGHTING_EXPOSURE, 1.0f},
     {keys::LIGHTING_TONEMAP, 1},
     {keys::MATERIAL, 2},
+    {keys::TEXT_FONT_FAMILY, "Sans"},
+    {keys::TEXT_FONT_SIZE, 128},
     {keys::TEXT_OUTLINE, 0.15f},
     {keys::TEXT_BUFFER, 0.15f},
     {keys::TEXT_SMOOTHING, 0.15f},

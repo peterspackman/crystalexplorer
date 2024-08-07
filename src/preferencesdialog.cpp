@@ -228,6 +228,8 @@ void PreferencesDialog::initConnections() {
           &PreferencesDialog::setTextSliders);
   connect(textSmoothingWidthSlider, &QAbstractSlider::valueChanged, this,
           &PreferencesDialog::setTextSliders);
+  connect(textFontComboBox, &QFontComboBox::currentFontChanged, this,
+          &PreferencesDialog::onTextFontFamilyChanged);
 
   // Advanced settings
   // There is no connections for widgets: deleteWorkingFilesCheckBox and
@@ -839,23 +841,29 @@ void PreferencesDialog::populateExecutablesFromPath(bool override) {
   for (auto kv = m_externalProgramSettingsKeys.constKeyValueBegin();
        kv != m_externalProgramSettingsKeys.constKeyValueEnd(); kv++) {
     QString group = kv->first;
-    QString currentSetting = settings::readSetting(group + "/executablePath").toString();
-    if(!(override || currentSetting.isEmpty())) continue;
+    QString currentSetting =
+        settings::readSetting(group + "/executablePath").toString();
+    if (!(override || currentSetting.isEmpty()))
+      continue;
     auto availableSettings = kv->second;
     qDebug() << "Populate empty executables for" << group;
     QStringList names;
-    if(availableSettings.contains("executableNames")) {
-        names = settings::readSetting(group + "/executableNames").toStringList();
+    if (availableSettings.contains("executableNames")) {
+      names = settings::readSetting(group + "/executableNames").toStringList();
+    } else {
+      names.push_back(group);
     }
-    else {
-        names.push_back(group);
-    }
-    for(const auto &name: names) {
-        auto result = exe::findProgramInPath(name);
-        if(!result.isEmpty()) {
-            settings::writeSetting(group + "/executablePath", result);
-            break;
-        }
+    for (const auto &name : names) {
+      auto result = exe::findProgramInPath(name);
+      if (!result.isEmpty()) {
+        settings::writeSetting(group + "/executablePath", result);
+        break;
+      }
     }
   }
+}
+
+void PreferencesDialog::onTextFontFamilyChanged(const QFont &font) {
+  settings::writeSetting(settings::keys::TEXT_FONT_FAMILY, font.family());
+  settings::writeSetting(settings::keys::TEXT_FONT_SIZE, font.pointSize());
 }

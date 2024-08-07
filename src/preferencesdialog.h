@@ -68,6 +68,7 @@ private slots:
   void setLightIntensities(double);
   void setTextSliders(int);
   void restoreDefaultLightingSettings();
+  void onTextFontFamilyChanged(const QFont &font);
 
 private:
   void updateLightPositions();

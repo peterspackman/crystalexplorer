@@ -441,7 +441,7 @@ void Project::toggleMultipleUnitCellBoxes(bool state) {
 
 void Project::toggleAtomicLabels(bool state) {
   if (currentScene()) {
-    currentScene()->setAtomicLabelsVisible(state);
+    currentScene()->setShowAtomLabels(state);
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }

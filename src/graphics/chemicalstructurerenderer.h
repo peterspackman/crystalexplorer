@@ -1,4 +1,5 @@
 #pragma once
+#include "billboardrenderer.h"
 #include "chemicalstructure.h"
 #include "colormap.h"
 #include "cylinderrenderer.h"
@@ -16,6 +17,12 @@
 
 namespace cx::graphics {
 
+
+struct TextLabel {
+  QString text;
+  QVector3D position;
+};
+
 class ChemicalStructureRenderer : public QObject {
   Q_OBJECT
 public:
@@ -31,6 +38,10 @@ public:
   void setShowSuppressedAtoms(bool show);
   [[nodiscard]] bool showSuppressedAtoms() const;
   void toggleShowSuppressedAtoms();
+
+  void setShowAtomLabels(bool show);
+  [[nodiscard]] bool showAtomLabels() const;
+  void toggleShowAtomLabels();
 
   void setAtomStyle(AtomDrawingStyle);
   void setBondStyle(BondDrawingStyle);
@@ -48,6 +59,7 @@ public:
   void setFrameworkOptions(const FrameworkOptions &);
 
   void updateAtoms();
+  void updateLabels();
   void updateBonds();
   void updateInteractions();
   void updateMeshes();
@@ -77,22 +89,27 @@ public slots:
   void childPropertyChanged();
 
 private:
+  bool needsUpdate();
   void initStructureChildren();
 
+  void handleLabelsUpdate();
   void handleAtomsUpdate();
   void handleBondsUpdate();
   void handleInteractionsUpdate();
   void handleMeshesUpdate();
 
   void clearMeshRenderers();
+  QList<TextLabel> getCurrentLabels();
 
   [[nodiscard]] bool shouldSkipAtom(int idx) const;
 
   bool m_atomsNeedsUpdate{true};
   bool m_bondsNeedsUpdate{true};
   bool m_meshesNeedsUpdate{true};
+  bool m_labelsNeedsUpdate{true};
 
   bool m_showHydrogens{true};
+  bool m_showAtomLabels{false};
   bool m_showSuppressedAtoms{false};
   float m_bondThicknessFactor{0.325};
 
@@ -110,6 +127,7 @@ private:
   std::vector<MeshInstanceRenderer *> m_meshRenderers;
   PointCloudRenderer *m_pointCloudRenderer{nullptr};
   FrameworkRenderer *m_frameworkRenderer{nullptr};
+  BillboardRenderer *m_labelRenderer{nullptr};
 
   ChemicalStructure *m_structure{nullptr};
 

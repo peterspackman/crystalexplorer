@@ -242,6 +242,7 @@ public:
   [[nodiscard]] virtual QString chemicalFormula(bool richText = true) const;
 
 signals:
+  void atomsChanged();
   void childAdded(QObject *);
   void childRemoved(QObject *);
 

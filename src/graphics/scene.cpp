@@ -71,7 +71,6 @@ void Scene::setShowStatusesToDefaults() {
   _showHydrogens = true;
   _showSuppressedAtoms = true;
   _showUnitCellBox = false;
-  _showAtomicLabels = false;
   _showFragmentLabels = false;
   _showSurfaceLabels = false;
   m_showHydrogenBonds = false;
@@ -85,6 +84,25 @@ void Scene::setShowCloseContacts(bool set) {
 void Scene::setFrameworkOptions(const FrameworkOptions &options) {
   if (m_structureRenderer) {
     m_structureRenderer->setFrameworkOptions(options);
+  }
+}
+
+bool Scene::showAtomLabels() const {
+  if (m_structureRenderer) {
+    return m_structureRenderer->showAtomLabels();
+  }
+  return false;
+}
+
+void Scene::setShowAtomLabels(bool show) {
+  if (m_structureRenderer) {
+    m_structureRenderer->setShowAtomLabels(show);
+  }
+}
+
+void Scene::toggleShowAtomLabels() {
+  if (m_structureRenderer) {
+    m_structureRenderer->toggleShowAtomLabels();
   }
 }
 
@@ -162,9 +180,6 @@ bool Scene::anyAtomHasAdp() const {
 /// That need to be rendered by glWindow on top of the scene
 QVector<Label> Scene::labels() {
   QVector<Label> labels;
-  if (_showAtomicLabels) {
-    labels.append(atomicLabels());
-  }
   if (_showFragmentLabels) {
     // TODO fragment labels
   }
@@ -175,20 +190,6 @@ QVector<Label> Scene::labels() {
     labels.append(measurementLabels());
   }
 
-  return labels;
-}
-
-QVector<Label> Scene::atomicLabels() {
-  QVector<Label> labels;
-  const auto &atomLabels = m_structure->labels();
-  const auto &positions = m_structure->atomicPositions();
-  for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
-    auto idx = m_structure->indexToGenericIndex(i);
-    if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
-      continue;
-    labels.append({atomLabels[i], QVector3D(positions(0, i), positions(1, i),
-                                            positions(2, i))});
-  }
   return labels;
 }
 
@@ -303,8 +304,8 @@ void Scene::setSelectStatusForAtomDoubleClick(int atom) {
   const auto &atomIndices = m_structure->atomIndicesForFragment(fragmentIndex);
   auto idx = m_structure->indexToGenericIndex(atom);
   m_structure->setAtomFlag(idx, AtomFlag::Selected, true);
-  bool selected =
-      std::all_of(atomIndices.begin(), atomIndices.end(), [&](GenericAtomIndex x) {
+  bool selected = std::all_of(
+      atomIndices.begin(), atomIndices.end(), [&](GenericAtomIndex x) {
         return m_structure->atomFlagsSet(x, AtomFlag::Selected);
       });
   m_structure->setFlagForAtoms(atomIndices, AtomFlag::Selected, !selected);
@@ -544,7 +545,8 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
       flagsA ^= AtomFlag::Selected;
       flagsB ^= AtomFlag::Selected;
     }
-    occ::Vec3 pos = 0.5 * (m_structure->atomPosition(a) + m_structure->atomPosition(b));
+    occ::Vec3 pos =
+        0.5 * (m_structure->atomPosition(a) + m_structure->atomPosition(b));
     result.position = QVector3D(pos.x(), pos.y(), pos.z());
     result.selectionType = SelectionType::Bond;
     result.index = bond_idx;
@@ -917,11 +919,6 @@ void Scene::draw() {
     }
     drawCloseContacts();
     drawMeasurements();
-  }
-
-  if (_showAtomicLabels) {
-    updateLabelsForDrawing();
-    drawLabels();
   }
 
   if (m_drawLights) {

@@ -36,7 +36,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>5</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="generalTab">
       <attribute name="title">
@@ -508,7 +508,31 @@
           <string>Text Labels</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_7">
-          <item row="0" column="1">
+          <item row="2" column="0">
+           <widget class="QLabel" name="textBufferWidthLabel">
+            <property name="text">
+             <string>Buffer</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="textOutlineWidthLabel">
+            <property name="text">
+             <string>Outline Width</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QSlider" name="textSmoothingWidthSlider">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::TicksBelow</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
            <widget class="QSlider" name="textOutlineWidthSlider">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -517,42 +541,41 @@
              <bool>false</bool>
             </property>
             <property name="tickPosition">
-             <enum>QSlider::NoTicks</enum>
+             <enum>QSlider::TicksBelow</enum>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QSlider" name="textBufferWidthSlider">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QSlider" name="textSmoothingWidthSlider">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+          <item row="3" column="0">
+           <widget class="QLabel" name="textSmoothingWidthLabel">
+            <property name="text">
+             <string>Smoothing</string>
             </property>
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QLabel" name="textOutlineWidthLabel">
+           <widget class="QLabel" name="textFontFamilyLabel">
             <property name="text">
-             <string>Outline Width</string>
+             <string>Font Family</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="textBufferWidthLabel">
-            <property name="text">
-             <string>Buffer</string>
+          <item row="2" column="2">
+           <widget class="QSlider" name="textBufferWidthSlider">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::TicksBelow</enum>
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="textSmoothingWidthLabel">
-            <property name="text">
-             <string>Smoothing</string>
+          <item row="0" column="2">
+           <widget class="QFontComboBox" name="textFontComboBox">
+            <property name="currentFont">
+             <font>
+              <family>Arial</family>
+              <pointsize>128</pointsize>
+             </font>
             </property>
            </widget>
           </item>

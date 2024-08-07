@@ -155,6 +155,8 @@ const QString TEXT_BUFFER = "graphics/textBufferWidth";
 const QString TEXT_SMOOTHING = "graphics/textSmoothingWidth";
 const QString TEXT_COLOR = "graphics/textColor";
 const QString TEXT_OUTLINE_COLOR = "graphics/textOutlineColor";
+const QString TEXT_FONT_FAMILY = "graphics/textFontFamily";
+const QString TEXT_FONT_SIZE = "graphics/textFontSize";
 
 const QString BIG_TOOLBAR_BUTTONS = "general/UseBigToolbarButtons";
 const QString MAIN_WINDOW_SIZE = "general/mainWindowSize";

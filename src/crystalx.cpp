@@ -1395,7 +1395,7 @@ void Crystalx::updateMenuOptionsForScene() {
     }
     //_drawHEllipsoidsAction->setChecked(scene->drawHydrogenEllipsoids());
     showUnitCellAxesAction->setChecked(scene->unitCellBoxIsVisible());
-    showAtomicLabelsAction->setChecked(scene->atomicLabelsVisible());
+    showAtomicLabelsAction->setChecked(scene->showAtomLabels());
     showHydrogenAtomsAction->setChecked(scene->hydrogensAreVisible());
   }
 }
