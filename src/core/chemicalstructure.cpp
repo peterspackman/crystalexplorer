@@ -998,8 +998,6 @@ FragmentPairs ChemicalStructure::findFragmentPairs(int keyFragment) const {
   for (size_t fragIndexA : candidateFragments) {
     const auto &fragA = fragments[fragIndexA];
     const size_t asymIndex = fragA.asymmetricFragmentIndex;
-    qDebug() << "Asymmetric fragment index" << asymIndex;
-
     for (size_t fragIndexB = 0; fragIndexB < fragments.size(); fragIndexB++) {
       if ((keyFragment < 0) && (fragIndexB <= fragIndexA))
         continue;

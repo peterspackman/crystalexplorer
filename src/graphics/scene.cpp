@@ -651,6 +651,14 @@ void Scene::updateForPreferencesChange() {
   }
 }
 
+void Scene::setNeedsUpdate() {
+  m_labelsNeedUpdate = true;
+  if(m_structureRenderer) {
+    m_structureRenderer->forceUpdates();
+  }
+}
+
+
 QStringList Scene::uniqueElementSymbols() const {
   if (m_structure) {
     return m_structure->uniqueElementSymbols();

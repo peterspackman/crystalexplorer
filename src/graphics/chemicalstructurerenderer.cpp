@@ -2,6 +2,7 @@
 #include "elementdata.h"
 #include "graphics.h"
 #include "mesh.h"
+#include "settings.h"
 
 namespace cx::graphics {
 ChemicalStructureRenderer::ChemicalStructureRenderer(
@@ -129,8 +130,16 @@ BondDrawingStyle ChemicalStructureRenderer::bondStyle() const {
 }
 
 [[nodiscard]] float ChemicalStructureRenderer::bondThickness() const {
+  float bondThicknessFactor = settings::readSetting(settings::keys::BOND_THICKNESS).toInt() / 100.0;
   return ElementData::elementFromAtomicNumber(1)->covRadius() *
-         m_bondThicknessFactor;
+         bondThicknessFactor;
+}
+
+void ChemicalStructureRenderer::forceUpdates() {
+  m_labelsNeedsUpdate = true;
+  m_atomsNeedsUpdate = true;
+  m_bondsNeedsUpdate = true;
+  m_meshesNeedsUpdate = true;
 }
 
 void ChemicalStructureRenderer::updateLabels() {
@@ -202,6 +211,11 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
   }
 
   m_ellipsoidRenderer->clear();
+  
+  if(atomStyle() == AtomDrawingStyle::None) {
+    m_atomsNeedsUpdate = false;
+    return;
+  }
 
   const auto &positions = m_structure->atomicPositions();
 
@@ -319,14 +333,10 @@ bool ChemicalStructureRenderer::needsUpdate() {
 void ChemicalStructureRenderer::draw(bool forPicking) {
   if (needsUpdate()) {
     beginUpdates();
-    if (m_labelsNeedsUpdate)
-      updateLabels();
-    if (m_atomsNeedsUpdate)
-      updateAtoms();
-    if (m_bondsNeedsUpdate)
-      updateBonds();
-    if (m_meshesNeedsUpdate)
-      updateMeshes();
+    handleLabelsUpdate();
+    handleAtomsUpdate();
+    handleBondsUpdate();
+    handleMeshesUpdate();
     endUpdates();
   }
 

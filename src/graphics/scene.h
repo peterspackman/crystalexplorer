@@ -114,9 +114,7 @@ public:
     return m_structure->cellVectors().inverse();
   }
 
-  inline void setNeedsUpdate() {
-    m_labelsNeedUpdate = true;
-  }
+  void setNeedsUpdate();
 
   bool anyAtomHasAdp() const;
 

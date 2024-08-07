@@ -77,8 +77,8 @@ inline const DrawingStyle GLOBAL_DRAWING_STYLE = DrawingStyle::BallAndStick;
 
 namespace DrawingStyleConstants {
 
-inline constexpr float bondLineWidth = 0.2f;
-inline constexpr float unitCellLineWidth = 0.25f;
+inline constexpr float bondLineWidth = 1.0f;
+inline constexpr float unitCellLineWidth = 1.0f;
 
 inline constexpr float defaultAlpha = 0.0f;
 inline constexpr float contactAtomAlpha = 0.5f;

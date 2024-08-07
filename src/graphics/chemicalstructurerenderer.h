@@ -67,6 +67,7 @@ public:
   void beginUpdates();
   void endUpdates();
 
+  void forceUpdates();
   void draw(bool forPicking = false);
 
   [[nodiscard]] inline CylinderRenderer *cylinderRenderer() {
@@ -111,7 +112,6 @@ private:
   bool m_showHydrogens{true};
   bool m_showAtomLabels{false};
   bool m_showSuppressedAtoms{false};
-  float m_bondThicknessFactor{0.325};
 
   // helper for keeping track of mesh selection
   std::vector<MeshInstance *> m_meshIndexToMesh;
