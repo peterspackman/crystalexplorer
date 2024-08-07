@@ -159,6 +159,8 @@ QList<TextLabel> ChemicalStructureRenderer::getCurrentLabels() {
     const auto &atomLabels = m_structure->labels();
     const auto &positions = m_structure->atomicPositions();
     for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
+      if (shouldSkipAtom(i))
+        continue;
       auto idx = m_structure->indexToGenericIndex(i);
       if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
         continue;

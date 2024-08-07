@@ -1005,7 +1005,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
     }
 
     if (scene->hasHydrogens()) {
-      if (scene->hydrogensAreVisible()) {
+      if (scene->showHydrogenAtoms()) {
         contextMenu->addAction(tr("Hide Hydrogen Atoms"), this,
                                &GLWindow::contextualHideHydrogens);
       } else {
@@ -1197,7 +1197,7 @@ void GLWindow::contextualHideSuppressedAtoms() { showSuppressedAtoms(false); }
 void GLWindow::contextualShowSuppressedAtoms() { showSuppressedAtoms(true); }
 
 void GLWindow::showHydrogens(bool show) {
-  scene->setShowHydrogens(show);
+  scene->setShowHydrogenAtoms(show);
   redraw();
 }
 

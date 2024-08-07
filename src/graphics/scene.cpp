@@ -68,7 +68,6 @@ void Scene::setSurfaceLightingToDefaults() {
 void Scene::setViewAngleAndScaleToDefaults() { m_orientation = Orientation(); }
 
 void Scene::setShowStatusesToDefaults() {
-  _showHydrogens = true;
   _showSuppressedAtoms = true;
   _showUnitCellBox = false;
   _showFragmentLabels = false;
@@ -1492,7 +1491,25 @@ void Scene::toggleDrawHydrogenEllipsoids(bool hEllipsoids) {
   _drawHydrogenEllipsoids = hEllipsoids;
 }
 
-void Scene::setShowHydrogens(bool show) { _showHydrogens = show; }
+bool Scene::showHydrogenAtoms() const {
+  if(m_structureRenderer) {
+    return m_structureRenderer->showHydrogenAtoms();
+  }
+  // default to true for this case
+  return true;
+}
+
+void Scene::setShowHydrogenAtoms(bool show) { 
+  if(m_structureRenderer) {
+    m_structureRenderer->setShowHydrogenAtoms(show);
+  }
+}
+
+void Scene::toggleShowHydrogenAtoms() { 
+  if(m_structureRenderer) {
+    m_structureRenderer->toggleShowHydrogenAtoms();
+  }
+}
 
 void Scene::generateAllExternalFragments() {
   if (m_selectedSurface.surface) {

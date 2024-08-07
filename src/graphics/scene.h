@@ -147,8 +147,9 @@ public:
 
   void setFrameworkOptions(const FrameworkOptions &options);
 
-  void setShowHydrogens(bool show);
-  inline bool hydrogensAreVisible() const { return _showHydrogens; }
+  bool showHydrogenAtoms() const;
+  void setShowHydrogenAtoms(bool show);
+  void toggleShowHydrogenAtoms();
 
   void setShowSuppressedAtoms(bool);
   inline bool suppressedAtomsAreVisible() { return _showSuppressedAtoms; }
@@ -373,7 +374,6 @@ private:
 
   Orientation m_orientation;
 
-  bool _showHydrogens;
   bool _showSuppressedAtoms;
   bool _showUnitCellBox;
   bool _showFragmentLabels;

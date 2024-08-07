@@ -449,7 +449,7 @@ void Project::toggleAtomicLabels(bool state) {
 
 void Project::toggleHydrogenAtoms(bool state) {
   if (currentScene()) {
-    currentScene()->setShowHydrogens(state);
+    currentScene()->setShowHydrogenAtoms(state);
     emit currentSceneChanged();
     emit showMessage(state ? "Show hydrogen atoms" : "Hide hydrogen atoms");
   }
