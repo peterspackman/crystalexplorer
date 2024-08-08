@@ -115,16 +115,13 @@ public:
   }
 
   void setNeedsUpdate();
-
   bool anyAtomHasAdp() const;
 
   GLfloat scale() { return m_orientation.scale(); }
   void draw();
   void drawForPicking();
   inline auto selectionType() const { return m_selection.type; }
-  void resetNoSelection() {
-    m_selection.type = cx::graphics::SelectionType::None;
-  }
+
   const SelectedAtom &selectedAtom() const;
   const SelectedBond &selectedBond() const;
   const SelectedSurface &selectedSurface() const;
@@ -223,9 +220,6 @@ public:
   void generateExternalFragment();
 
   bool hasAllAtomsSelected();
-
-  // fingerprints
-  void toggleAtomsForFingerprintSelectionFilter(bool show);
 
   occ::Vec3 convertToCartesian(const occ::Vec3 &) const;
   void resetOrigin();

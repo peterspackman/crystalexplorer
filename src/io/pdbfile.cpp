@@ -93,6 +93,7 @@ buildAsymmetricUnit(const std::vector<PdbAtomData> &atoms, const occ::crystal::U
   size_t numAtoms = atoms.size();
   result.atomic_numbers = occ::IVec(numAtoms);
   result.positions = occ::Mat3N(3, numAtoms);
+  result.adps = occ::Mat6N::Zero(6, numAtoms);
   for (int i = 0; i < atoms.size(); i++) {
     const auto &atom = atoms[i];
     result.positions.col(i) = Eigen::Map<const occ::Vec3>(atom.position.data());

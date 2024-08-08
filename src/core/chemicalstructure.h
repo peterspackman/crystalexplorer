@@ -1,4 +1,5 @@
 #pragma once
+#include "adp.h"
 #include "atomflags.h"
 #include "close_contact_criteria.h"
 #include "fragment.h"
@@ -200,11 +201,8 @@ public:
 
   // flags
   const AtomFlags &atomFlags(GenericAtomIndex) const;
-  AtomFlags &atomFlags(GenericAtomIndex);
   void setAtomFlags(GenericAtomIndex, const AtomFlags &);
-  void setAtomFlag(GenericAtomIndex idx, AtomFlag flag, bool on = true) {
-    m_flags[idx].setFlag(flag, on);
-  }
+  void setAtomFlag(GenericAtomIndex idx, AtomFlag flag, bool on = true);
   void toggleAtomFlag(GenericAtomIndex idx, AtomFlag flag);
   bool testAtomFlag(GenericAtomIndex idx, AtomFlag flag) const;
 
@@ -218,6 +216,7 @@ public:
                                bool on = true);
   void toggleFlagForAllAtoms(AtomFlag);
 
+  // pair interactions
   [[nodiscard]] inline const PairInteractions *pairInteractions() const {
     return m_interactions;
   }
@@ -226,6 +225,7 @@ public:
     return m_interactions;
   }
 
+  // atom filtering
   [[nodiscard]] virtual std::vector<GenericAtomIndex>
   atomsSurroundingAtomsWithFlags(const AtomFlags &flags, float radius) const;
   [[nodiscard]] virtual std::vector<GenericAtomIndex>
@@ -243,6 +243,9 @@ public:
                      bool richText) const;
 
   [[nodiscard]] virtual QString chemicalFormula(bool richText = true) const;
+  [[nodiscard]] virtual std::vector<AtomicDisplacementParameters> atomicDisplacementParametersForAtoms(const std::vector<GenericAtomIndex> &) const;
+
+  [[nodiscard]] virtual AtomicDisplacementParameters atomicDisplacementParameters(GenericAtomIndex) const;
 
 signals:
   void atomsChanged();

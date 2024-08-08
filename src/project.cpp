@@ -561,20 +561,6 @@ void Project::showAtomsWithinRadius(float radius,
   emit currentSceneChanged();
 }
 
-void Project::toggleAtomsForFingerprintSelectionFilter(bool show) {
-  // TODO
-  qDebug() << "toggleAtomsForFingerprintSelectionFilter";
-  /*
-  if (currentScene() && currentScene()->currentSurface()) {
-    currentScene()->toggleAtomsForFingerprintSelectionFilter(show);
-    // emit currentCrystalContentsChanged();
-  } else {
-    // No current surface!
-    Q_ASSERT(false);
-  }
-  */
-}
-
 void Project::suppressSelectedAtoms() {
   if (currentScene()) {
     currentScene()->suppressSelectedAtoms();

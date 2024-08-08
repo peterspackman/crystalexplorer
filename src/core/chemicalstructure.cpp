@@ -176,13 +176,15 @@ bool ChemicalStructure::testAtomFlag(GenericAtomIndex idx, AtomFlag flag) const 
   return m_flags.at(idx).testFlag(flag);
 }
 
-AtomFlags &ChemicalStructure::atomFlags(GenericAtomIndex index) {
-  return m_flags[index];
-}
-
 void ChemicalStructure::setAtomFlags(GenericAtomIndex index,
                                      const AtomFlags &flags) {
   m_flags[index] = flags;
+  emit atomsChanged();
+}
+
+void ChemicalStructure::setAtomFlag(GenericAtomIndex idx, AtomFlag flag, bool on) {
+  m_flags[idx].setFlag(flag, on);
+  emit atomsChanged();
 }
 
 bool ChemicalStructure::atomFlagsSet(GenericAtomIndex index,
@@ -1105,4 +1107,14 @@ QString ChemicalStructure::chemicalFormula(bool richText) const {
         occ::core::Element(m_atomicNumbers(i)).symbol()));
   }
   return formulaSum(symbols, richText);
+}
+
+
+
+std::vector<AtomicDisplacementParameters> ChemicalStructure::atomicDisplacementParametersForAtoms(const std::vector<GenericAtomIndex> &idxs) const {
+  return std::vector<AtomicDisplacementParameters>(idxs.size());
+}
+
+AtomicDisplacementParameters ChemicalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
+  return AtomicDisplacementParameters{};
 }

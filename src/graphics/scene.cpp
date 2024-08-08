@@ -387,8 +387,8 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
   }
   case SelectionType::Bond: {
     const auto [a, b] = m_structure->atomIndicesForBond(m_selection.index);
-    auto &flagsA = m_structure->atomFlags(a);
-    auto &flagsB = m_structure->atomFlags(b);
+    auto flagsA = m_structure->atomFlags(a);
+    auto flagsB = m_structure->atomFlags(b);
     if ((flagsA & AtomFlag::Selected) != (flagsB & AtomFlag::Selected)) {
       flagsA |= AtomFlag::Selected;
       flagsB |= AtomFlag::Selected;
@@ -397,6 +397,8 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
       flagsA ^= AtomFlag::Selected;
       flagsB ^= AtomFlag::Selected;
     }
+    m_structure->setAtomFlags(a, flagsA);
+    m_structure->setAtomFlags(b, flagsB);
     emit atomSelectionChanged();
     return true;
     break;
@@ -482,32 +484,6 @@ void Scene::setTransformationMatrix(const QMatrix4x4 &T) {
   m_camera.setView(T);
 }
 
-// A control-click (command-click on mac) causes the surface to highlight
-// surface patches
-// void DrawableCrystal::processHitsForSingleClickSelectionWithControlKey(
-//    GLuint hits, GLuint buffer[]) {
-//  // Get the topmost GL name
-//  int nameSelected = nameWithSmallestZ(hits, buffer);
-
-//  // Process named hit
-//  if (nameSelected != -1) {
-
-//    // We are only interested in surface hits...
-//    QPair<int, int> surfaceAndFace =
-//    surfaceIndexAndFaceFromName(nameSelected); int surfaceIndex =
-//    surfaceAndFace.first; int faceIndex = surfaceAndFace.second;
-
-//    if (surfaceIndex > -1) {
-//      _surfaceList[surfaceIndex]->highlightFragmentPatchForFace(faceIndex);
-//      //_surfaceList[surfaceIndex]->highlightDiDePatchForFace(faceIndex);
-//      //_surfaceList[surfaceIndex]->highlightDiPatchForFace(faceIndex);
-//      //_surfaceList[surfaceIndex]->highlightDePatchForFace(faceIndex);
-//      //_surfaceList[surfaceIndex]->highlightCurvednessPatchForFace(faceIndex,
-//      //-0.6);
-//    }
-//  }
-//}
-
 MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
                                                        bool wholeObject) {
   MeasurementObject result;
@@ -522,7 +498,9 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
     if (wholeObject)
       m_structure->selectFragmentContaining(atomIndex);
     else {
-      m_structure->atomFlags(atomIndex) ^= AtomFlag::Selected;
+      auto flags = m_structure->atomFlags(atomIndex);
+      flags ^= AtomFlag::Selected;
+      m_structure->setAtomFlags(atomIndex, flags);
     }
     emit atomSelectionChanged();
     occ::Vec3 pos = m_structure->atomPosition(atomIndex);
@@ -534,8 +512,8 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
   case SelectionType::Bond: {
     size_t bond_idx = m_selection.index;
     auto [a, b] = m_structure->atomIndicesForBond(bond_idx);
-    auto &flagsA = m_structure->atomFlags(a);
-    auto &flagsB = m_structure->atomFlags(b);
+    auto flagsA = m_structure->atomFlags(a);
+    auto flagsB = m_structure->atomFlags(b);
     if ((flagsA & AtomFlag::Contact) && (flagsB & AtomFlag::Contact))
       break;
     if (wholeObject)
@@ -543,6 +521,8 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
     else {
       flagsA ^= AtomFlag::Selected;
       flagsB ^= AtomFlag::Selected;
+      m_structure->setAtomFlags(a, flagsA);
+      m_structure->setAtomFlags(b, flagsB);
     }
     occ::Vec3 pos =
         0.5 * (m_structure->atomPosition(a) + m_structure->atomPosition(b));
@@ -1708,41 +1688,6 @@ const SelectedAtom &Scene::selectedAtom() const { return m_selectedAtom; }
 void Scene::completeFragmentContainingAtom(int atomIndex) {
   m_structure->completeFragmentContaining(atomIndex);
   emit atomSelectionChanged();
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Fingerprints
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-void Scene::toggleAtomsForFingerprintSelectionFilter(bool show) {
-  // TODO fingerprint selection filter
-  /*
-  if (m_periodicity != ScenePeriodicity::ThreeDimensions)
-    return;
-  static int numberOfAddedAtoms = 0;
-  Q_ASSERT(currentSurface()->isHirshfeldBased());
-
-  if (show) { // add fragments
-    int numAtomsBefore = m_deprecatedCrystal->numberOfAtoms();
-    QVector<int> diAtoms = m_surfaceHandler->generateInternalFragment(
-        m_deprecatedCrystal, m_surfaceHandler->currentSurfaceIndex(), false);
-    QVector<int> deAtoms =
-        m_surfaceHandler->generateExternalFragmentsForSurface(
-            m_deprecatedCrystal, false);
-    numberOfAddedAtoms = m_deprecatedCrystal->numberOfAtoms() - numAtomsBefore;
-
-    m_deprecatedCrystal->colorAllAtoms(Qt::lightGray);
-    m_deprecatedCrystal->colorAtomsByFragment(diAtoms);
-    m_deprecatedCrystal->colorAtomsByFragment(deAtoms);
-
-  } else { // reset back to how it was before
-    m_deprecatedCrystal->reeetAllAtomColors();
-    m_deprecatedCrystal->removeLastAtoms(numberOfAddedAtoms);
-  }
-
-  */
 }
 
 QDataStream &operator<<(QDataStream &ds, const Scene &scene) {

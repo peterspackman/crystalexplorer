@@ -88,8 +88,6 @@ public slots:
 
   void showAtomsWithinRadius(float, bool);
 
-  void toggleAtomsForFingerprintSelectionFilter(bool);
-
   void suppressSelectedAtoms();
   void unsuppressSelectedAtoms();
   void selectAllAtoms();

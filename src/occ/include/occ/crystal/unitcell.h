@@ -43,6 +43,12 @@ public:
   /// Volume of the unit cell in cubic Angstroms
   inline double volume() const { return m_volume; }
 
+  inline Mat3 metric_tensor() const { return m_direct.transpose() * m_direct; }
+
+  inline Mat3 reciprocal_metric_tensor() const {
+    return m_reciprocal.transpose() * m_reciprocal;
+  }
+
   /**
    * Set the length of the a-axis.
    *
@@ -148,6 +154,48 @@ public:
   }
 
   /**
+   * Calculate the direct matrix for ADP transformations
+   *
+   * This method computes the ad hoc direct matrix used specifically
+   * for transforming Anisotropic Displacement Parameters (ADPs).
+   *
+   * \returns Mat3 representing the ADP direct transformation matrix
+   */
+  Mat3 adp_adhoc_direct() const;
+
+  /**
+   * Calculate the inverse matrix for ADP transformations
+   *
+   * This method computes the ad hoc inverse matrix used specifically
+   * for transforming Anisotropic Displacement Parameters (ADPs).
+   *
+   * \returns Mat3 representing the ADP inverse transformation matrix
+   */
+  Mat3 adp_adhoc_inverse() const;
+
+  /**
+   * Convert ADPs from Cartesian to fractional coordinates
+   *
+   * This method transforms a set of Anisotropic Displacement Parameters (ADPs)
+   * from Cartesian to the fractional (ad-hoc) coordinate system.
+   *
+   * \param adp Mat6N of ADPs in Cartesian coordinates
+   * \returns Mat6N of ADPs in fractional coordinates
+   */
+  Mat6N to_fractional_adp(const Mat6N &adp) const;
+
+  /**
+   * Convert ADPs from fractional to Cartesian coordinates
+   *
+   * This method transforms a set of Anisotropic Displacement Parameters (ADPs)
+   * from fractional (ad-hoc) basis to Cartesian coordinate system.
+   *
+   * \param adp Mat6N of ADPs in fractional coordinates
+   * \returns Mat6N of ADPs in Cartesian coordinates
+   */
+  Mat6N to_cartesian_adp(const Mat6N &adp) const;
+
+  /**
    * Convert a given matrix of coordinates from Cartesian to fractional
    *
    * \param coords Mat3N of Cartesian coordinates
@@ -156,6 +204,17 @@ public:
    */
   inline auto to_fractional(const Mat3N &coords) const {
     return m_inverse * coords;
+  }
+
+  /**
+   * Convert a given matrix of coordinates from Cartesian to fractional
+   *
+   * \param coords Mat3N of Cartesian coordinates
+   *
+   * \returns Mat3N of fractional coordinates
+   */
+  inline auto to_reciprocal(const Mat3N &coords) const {
+    return m_reciprocal * coords;
   }
 
   /// The direct matrix of this unit cell (columns are lattice vectors)
