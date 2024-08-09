@@ -3,6 +3,7 @@
 #include "graphics.h"
 #include "mesh.h"
 #include "settings.h"
+#include <iostream>
 
 namespace cx::graphics {
 ChemicalStructureRenderer::ChemicalStructureRenderer(
@@ -63,6 +64,21 @@ bool ChemicalStructureRenderer::showHydrogenAtoms() const {
 
 void ChemicalStructureRenderer::toggleShowHydrogenAtoms() {
   setShowHydrogenAtoms(!m_showHydrogens);
+}
+
+void ChemicalStructureRenderer::setShowHydrogenAtomEllipsoids(bool show) {
+  if (show != m_showHydrogenAtomEllipsoids) {
+    m_showHydrogenAtomEllipsoids = show;
+    m_atomsNeedsUpdate = true;
+  }
+}
+
+bool ChemicalStructureRenderer::showHydrogenAtomEllipsoids() const {
+  return m_showHydrogenAtomEllipsoids;
+}
+
+void ChemicalStructureRenderer::toggleShowHydrogenAtomEllipsoids() {
+  setShowHydrogenAtomEllipsoids(!m_showHydrogenAtomEllipsoids);
 }
 
 void ChemicalStructureRenderer::setShowCells(bool show) {
@@ -275,13 +291,15 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
 
   CellIndexPairSet drawnLines;
 
-  auto drawLine = [&](const CellIndex &start, const CellIndex &end, const QColor &color) {
+  auto drawLine = [&](const CellIndex &start, const CellIndex &end,
+                      const QColor &color) {
     auto line = std::minmax(start, end);
     if (drawnLines.insert(line).second) {
       QVector3D startPos = start.x * a + start.y * b + start.z * c;
       QVector3D endPos = end.x * a + end.y * b + end.z * c;
-      cx::graphics::addLineToLineRenderer(*m_cellLinesRenderer, startPos, endPos,
-                                          DrawingStyleConstants::unitCellLineWidth, color);
+      cx::graphics::addLineToLineRenderer(
+          *m_cellLinesRenderer, startPos, endPos,
+          DrawingStyleConstants::unitCellLineWidth, color);
     }
   };
 
@@ -294,15 +312,24 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
     drawLine(cell, CellIndex{cell.x + 1, cell.y, cell.z}, aColor);
     drawLine(cell, CellIndex{cell.x, cell.y + 1, cell.z}, bColor);
     drawLine(cell, CellIndex{cell.x, cell.y, cell.z + 1}, cColor);
-    drawLine(CellIndex{cell.x + 1, cell.y, cell.z}, CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x + 1, cell.y, cell.z}, CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y + 1, cell.z}, CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y + 1, cell.z}, CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y, cell.z + 1}, CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y, cell.z + 1}, CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x + 1, cell.y + 1, cell.z}, CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x + 1, cell.y, cell.z + 1}, CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y + 1, cell.z + 1}, CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x + 1, cell.y, cell.z},
+             CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x + 1, cell.y, cell.z},
+             CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y + 1, cell.z},
+             CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y + 1, cell.z},
+             CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y, cell.z + 1},
+             CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y, cell.z + 1},
+             CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x + 1, cell.y + 1, cell.z},
+             CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x + 1, cell.y, cell.z + 1},
+             CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    drawLine(CellIndex{cell.x, cell.y + 1, cell.z + 1},
+             CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
   }
 
   m_cellsNeedsUpdate = false;
@@ -326,9 +353,18 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
   }
 
   const auto &positions = m_structure->atomicPositions();
+  const auto &nums = m_structure->atomicNumbers();
 
   const auto covRadii = m_structure->covalentRadii();
   const auto vdwRadii = m_structure->vdwRadii();
+
+  auto drawAsEllipsoid = [&](int i) {
+    if (atomStyle() != AtomDrawingStyle::Ellipsoid)
+      return false;
+    if ((nums(i) == 1) && !m_showHydrogenAtomEllipsoids)
+      return false;
+    return true;
+  };
 
   for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
 
@@ -353,9 +389,20 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
       selectionIdColor = m_selectionHandler->getColorFromId(selectionId);
     }
     QVector3D position(positions(0, i), positions(1, i), positions(2, i));
-    cx::graphics::addSphereToEllipsoidRenderer(
-        m_ellipsoidRenderer, position, color, radius, selectionIdColor,
-        m_structure->atomFlagsSet(idx, AtomFlag::Selected));
+    bool selected = m_structure->atomFlagsSet(idx, AtomFlag::Selected);
+    if (drawAsEllipsoid(i)) {
+      auto adp = m_structure->atomicDisplacementParameters(idx);
+      if (!adp.isZero()) {
+        QMatrix3x3 scales = adp.thermalEllipsoidMatrix(3.3682);
+        cx::graphics::addEllipsoidToEllipsoidRenderer(
+            m_ellipsoidRenderer, position, scales, color, selectionIdColor,
+            selected);
+        continue;
+      }
+    }
+    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, position,
+                                               color, radius, selectionIdColor,
+                                               selected);
   }
   m_atomsNeedsUpdate = false;
 }

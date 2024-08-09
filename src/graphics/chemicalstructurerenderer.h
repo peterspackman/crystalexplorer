@@ -51,6 +51,11 @@ public:
   [[nodiscard]] bool showAtomLabels() const;
   void toggleShowAtomLabels();
 
+  void setShowHydrogenAtomEllipsoids(bool show);
+  [[nodiscard]] bool showHydrogenAtomEllipsoids() const;
+  void toggleShowHydrogenAtomEllipsoids();
+
+
   void setAtomStyle(AtomDrawingStyle);
   void setBondStyle(BondDrawingStyle);
 
@@ -115,6 +120,7 @@ private:
   bool m_showHydrogens{true};
   bool m_showAtomLabels{false};
   bool m_showSuppressedAtoms{false};
+  bool m_showHydrogenAtomEllipsoids{true};
 
   bool m_showCells{false};
   bool m_showMultipleCells{false};

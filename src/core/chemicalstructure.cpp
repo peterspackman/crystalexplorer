@@ -1118,3 +1118,13 @@ std::vector<AtomicDisplacementParameters> ChemicalStructure::atomicDisplacementP
 AtomicDisplacementParameters ChemicalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
   return AtomicDisplacementParameters{};
 }
+
+
+std::vector<GenericAtomIndex> ChemicalStructure::atomIndices() const {
+  std::vector<GenericAtomIndex> result;
+  result.reserve(numberOfAtoms());
+  for(int i = 0; i < numberOfAtoms(); i++) {
+    result.push_back(indexToGenericIndex(i));
+  }
+  return result;
+}

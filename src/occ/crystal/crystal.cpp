@@ -21,13 +21,11 @@ void Crystal::update_unit_cell_atoms() const {
   const auto &atoms = m_asymmetric_unit.atomic_numbers;
   const int natom = num_sites();
   const int nsymops = symmetry_operations().size();
-  Eigen::VectorXd occupation =
-      m_asymmetric_unit.occupations.replicate(nsymops, 1);
-  Eigen::VectorXi uc_nums = atoms.replicate(nsymops, 1);
-  Eigen::VectorXi asym_idx =
-      Eigen::VectorXi::LinSpaced(natom, 0, natom - 1).replicate(nsymops, 1);
-  Eigen::VectorXi sym;
-  Eigen::Matrix3Xd uc_pos;
+  Vec occupation = m_asymmetric_unit.occupations.replicate(nsymops, 1);
+  IVec uc_nums = atoms.replicate(nsymops, 1);
+  IVec asym_idx = IVec::LinSpaced(natom, 0, natom - 1).replicate(nsymops, 1);
+  IVec sym;
+  Mat3N uc_pos;
   std::tie(sym, uc_pos) = m_space_group.apply_all_symmetry_operations(pos);
   uc_pos = uc_pos.unaryExpr([](const double x) { return fmod(x + 7.0, 1.0); });
 
@@ -46,10 +44,10 @@ void Crystal::update_unit_cell_atoms() const {
         occupation(i) += occupation(j);
     }
   }
-  Eigen::VectorXi idxs(uc_pos.cols() - mask.count());
-  Eigen::VectorXi uc_idxs(uc_pos.cols() - mask.count());
+  IVec idxs(uc_pos.cols() - mask.count());
+  IVec uc_idxs(uc_pos.cols() - mask.count());
   size_t n = 0;
-  occ::Mat3N uc_pos_masked(3, idxs.rows());
+  Mat3N uc_pos_masked(3, idxs.rows());
   for (size_t i = 0; i < uc_pos.cols(); i++) {
     if (!mask(i)) {
       idxs(n) = i;

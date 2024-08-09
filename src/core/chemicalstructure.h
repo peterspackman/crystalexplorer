@@ -1,9 +1,9 @@
 #pragma once
 #include "adp.h"
 #include "atomflags.h"
+#include "cell_index.h"
 #include "close_contact_criteria.h"
 #include "fragment.h"
-#include "cell_index.h"
 #include "generic_atom_index.h"
 #include "hbond_criteria.h"
 #include "molecular_wavefunction.h"
@@ -114,7 +114,9 @@ public:
                                  const std::vector<GenericAtomIndex> &to,
                                  Eigen::Isometry3d &result) const;
 
-  virtual std::vector<GenericAtomIndex> getAtomIndicesUnderTransformation(const std::vector<GenericAtomIndex> &idxs, const Eigen::Isometry3d &result) const;
+  virtual std::vector<GenericAtomIndex>
+  getAtomIndicesUnderTransformation(const std::vector<GenericAtomIndex> &idxs,
+                                    const Eigen::Isometry3d &result) const;
 
   // fragments
   virtual void selectFragmentContaining(int);
@@ -172,13 +174,14 @@ public:
   virtual const std::vector<int> &atomsForFragment(int) const;
   virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
-  virtual std::pair<GenericAtomIndex, GenericAtomIndex> atomIndicesForBond(int) const;
+  virtual std::pair<GenericAtomIndex, GenericAtomIndex>
+  atomIndicesForBond(int) const;
   virtual std::vector<HBondTriple>
   hydrogenBonds(const HBondCriteria & = {}) const;
   virtual std::vector<CloseContactPair>
   closeContacts(const CloseContactCriteria & = {}) const;
   virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
-  
+
   virtual CellIndexSet occupiedCells() const;
 
   FragmentSymmetryRelation
@@ -187,7 +190,6 @@ public:
 
   virtual void setFragmentColor(int fragment, const QColor &color);
   virtual void setAllFragmentColors(const QColor &color);
-
 
   // dynamics data
   inline bool hasFrameData() const { return frameCount() > 0; }
@@ -209,9 +211,11 @@ public:
   bool atomFlagsSet(GenericAtomIndex index, const AtomFlags &flags) const;
   bool anyAtomHasFlags(const AtomFlags &) const;
   bool allAtomsHaveFlags(const AtomFlags &) const;
-  bool atomsHaveFlags(const std::vector<GenericAtomIndex> &, const AtomFlags &) const;
+  bool atomsHaveFlags(const std::vector<GenericAtomIndex> &,
+                      const AtomFlags &) const;
   void setFlagForAllAtoms(AtomFlag, bool on = true);
-  void setFlagForAtoms(const std::vector<GenericAtomIndex> &, AtomFlag, bool on = true);
+  void setFlagForAtoms(const std::vector<GenericAtomIndex> &, AtomFlag,
+                       bool on = true);
   void setFlagForAtomsFiltered(const AtomFlag &flagToSet, const AtomFlag &query,
                                bool on = true);
   void toggleFlagForAllAtoms(AtomFlag);
@@ -243,9 +247,14 @@ public:
                      bool richText) const;
 
   [[nodiscard]] virtual QString chemicalFormula(bool richText = true) const;
-  [[nodiscard]] virtual std::vector<AtomicDisplacementParameters> atomicDisplacementParametersForAtoms(const std::vector<GenericAtomIndex> &) const;
+  [[nodiscard]] virtual std::vector<AtomicDisplacementParameters>
+  atomicDisplacementParametersForAtoms(
+      const std::vector<GenericAtomIndex> &) const;
 
-  [[nodiscard]] virtual AtomicDisplacementParameters atomicDisplacementParameters(GenericAtomIndex) const;
+  [[nodiscard]] virtual AtomicDisplacementParameters
+      atomicDisplacementParameters(GenericAtomIndex) const;
+
+  std::vector<GenericAtomIndex> atomIndices() const;
 
 signals:
   void atomsChanged();
@@ -268,11 +277,14 @@ private:
   Eigen::Vector3d m_origin{0.0, 0.0, 0.0};
 
   AtomColoring m_atomColoring{AtomColoring::Element};
-  ankerl::unordered_dense::map<GenericAtomIndex, QColor, GenericAtomIndexHash> m_atomColorOverrides;
+  ankerl::unordered_dense::map<GenericAtomIndex, QColor, GenericAtomIndexHash>
+      m_atomColorOverrides;
   std::vector<QString> m_labels;
   occ::Mat3N m_atomicPositions;
   Eigen::VectorXi m_atomicNumbers;
-  ankerl::unordered_dense::map<GenericAtomIndex, AtomFlags, GenericAtomIndexHash> m_flags;
+  ankerl::unordered_dense::map<GenericAtomIndex, AtomFlags,
+                               GenericAtomIndexHash>
+      m_flags;
   std::vector<QColor> m_atomColors;
   QString m_name{"structure"};
 

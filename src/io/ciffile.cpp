@@ -167,9 +167,9 @@ inline void setAtomData(int index, const std::vector<AtomField> &fields,
   }
 }
 
-std::vector<CifAtomData> extractAtomSites(const gemmi::cif::Loop &loop,
+void extractAtomSites(const gemmi::cif::Loop &loop,
+                      std::vector<CifAtomData> &atoms,
                                           AdpMap &adps) {
-  std::vector<CifAtomData> result;
   std::vector<AtomField> fields(loop.tags.size(), AtomField::Ignore);
 
   bool found_info = false;
@@ -184,12 +184,13 @@ std::vector<CifAtomData> extractAtomSites(const gemmi::cif::Loop &loop,
   }
 
   if (!found_info)
-    return {};
+    return;
 
-  result.resize(loop.length());
+  if(atoms.size() != loop.length())
+    atoms.resize(std::max(atoms.size(), loop.length()));
   for (size_t i = 0; i < loop.length(); i++) {
     AdpData adp;
-    auto &atom = result[i];
+    auto &atom = atoms[i];
     setAtomData(i, fields, loop, atom, adp);
     if (atom.element.empty())
       atom.element = atom.siteLabel;
@@ -198,7 +199,6 @@ std::vector<CifAtomData> extractAtomSites(const gemmi::cif::Loop &loop,
       adps.insert({adp.anisoLabel, adp});
     }
   }
-  return result;
 }
 
 void extractCellParameter(const gemmi::cif::Pair &pair,
@@ -293,9 +293,7 @@ std::vector<CifCrystalData> readDocument(gemmi::cif::Document &document) {
         break;
       case gemmi::cif::ItemType::Loop:
         if (item.has_prefix("_atom_site_")) {
-          if (cifData.atoms.size() != 0)
-            continue;
-          cifData.atoms = extractAtomSites(item.loop, cifData.adps);
+            extractAtomSites(item.loop, cifData.atoms, cifData.adps);
         } else if (item.has_prefix("_symmetry_equiv_pos") ||
                    item.has_prefix("_space_group_symop")) {
           cifData.symmetryData.symmetryOperations =
@@ -329,7 +327,7 @@ buildAsymmetricUnit(const std::vector<CifAtomData> &atoms, const AdpMap &adps) {
   size_t numAtoms = atoms.size();
   result.atomic_numbers = occ::IVec(numAtoms);
   result.positions = occ::Mat3N(3, numAtoms);
-  result.adps.resize(6, numAtoms);
+  result.adps = occ::Mat6N::Zero(6, numAtoms);
   for (int i = 0; i < atoms.size(); i++) {
     const auto &atom = atoms[i];
     result.positions.col(i) = Eigen::Map<const occ::Vec3>(atom.position.data());
@@ -339,6 +337,9 @@ buildAsymmetricUnit(const std::vector<CifAtomData> &atoms, const AdpMap &adps) {
     result.adps(0, i) = atom.uiso;
     result.adps(1, i) = atom.uiso;
     result.adps(2, i) = atom.uiso;
+    result.adps(3, i) = 0.0;
+    result.adps(4, i) = 0.0;
+    result.adps(5, i) = 0.0;
 
     const auto kv = adps.find(atom.siteLabel);
     if (kv != adps.end()) {

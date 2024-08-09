@@ -658,27 +658,26 @@ void Crystalx::initMoleculeStyles() {
     QString moleculeStyleString = drawingStyleLabel(drawingStyle);
     m_drawingStyleLabelToDrawingStyle[moleculeStyleString] = drawingStyle;
     if (drawingStyle == DrawingStyle::Ortep) {
-      /*
-      _thermalEllipsoidMenu = new QMenu(moleculeStyleString);
-      for (int i = 0; i < Atom::numThermalEllipsoidSettings; i++) {
+      const QStringList probs{"0.5", "0.9", "0.99"};
+      m_thermalEllipsoidMenu = new QMenu(moleculeStyleString);
+      for (int i = 0; i < probs.size(); i++) {
         QAction *action = new QAction(this);
         action->setCheckable(true);
-        action->setText(Atom::thermalEllipsoidProbabilityStrings[i]);
-        _thermalEllipsoidMenu->addAction(action);
+        action->setText(probs[i]);
+        m_thermalEllipsoidMenu->addAction(action);
         moleculeStyleActions.append(action);
         connect(action, &QAction::triggered, this,
                 &Crystalx::setEllipsoidStyleWithProbabilityForCurrent);
       }
-      _drawHEllipsoidsAction = new QAction(this);
-      _drawHEllipsoidsAction->setCheckable(true);
-      _drawHEllipsoidsAction->setChecked(true);
-      _drawHEllipsoidsAction->setText("Draw H Ellipsoids");
-      _thermalEllipsoidMenu->addSeparator();
-      _thermalEllipsoidMenu->addAction(_drawHEllipsoidsAction);
-      connect(_drawHEllipsoidsAction, &QAction::toggled, this,
+      m_drawHEllipsoidsAction = new QAction(this);
+      m_drawHEllipsoidsAction->setCheckable(true);
+      m_drawHEllipsoidsAction->setChecked(true);
+      m_drawHEllipsoidsAction->setText("Draw H Ellipsoids");
+      m_thermalEllipsoidMenu->addSeparator();
+      m_thermalEllipsoidMenu->addAction(m_drawHEllipsoidsAction);
+      connect(m_drawHEllipsoidsAction, &QAction::toggled, this,
               &Crystalx::toggleDrawHydrogenEllipsoids);
-      optionsMoleculeStylePopup->addMenu(_thermalEllipsoidMenu);
-      */
+      optionsMoleculeStylePopup->addMenu(m_thermalEllipsoidMenu);
     } else {
       QAction *action = new QAction(this);
       action->setCheckable(true);
@@ -1385,7 +1384,7 @@ void Crystalx::toggleDrawHydrogenEllipsoids(bool draw) {
 void Crystalx::updateMenuOptionsForScene() {
   Scene *scene = project->currentScene();
   if (scene) {
-    //_thermalEllipsoidMenu->setEnabled(scene->anyAtomHasAdp());
+    m_thermalEllipsoidMenu->setEnabled(true);
     QString moleculeStyleString = drawingStyleLabel(scene->drawingStyle());
     if (scene->drawingStyle() == DrawingStyle::Ortep) {
       moleculeStyleString = scene->thermalEllipsoidProbabilityString();
@@ -1393,7 +1392,7 @@ void Crystalx::updateMenuOptionsForScene() {
     foreach (QAction *action, moleculeStyleActions) {
       action->setChecked(action->text() == moleculeStyleString);
     }
-    //_drawHEllipsoidsAction->setChecked(scene->drawHydrogenEllipsoids());
+    m_drawHEllipsoidsAction->setChecked(scene->drawHydrogenEllipsoids());
     showUnitCellAxesAction->setChecked(scene->showCells());
     showAtomicLabelsAction->setChecked(scene->showAtomLabels());
     showHydrogenAtomsAction->setChecked(scene->showHydrogenAtoms());

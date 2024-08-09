@@ -118,6 +118,10 @@ public:
       const std::vector<GenericAtomIndex> &to_orig,
       Eigen::Isometry3d &result) const override;
 
+  [[nodiscard]] std::vector<AtomicDisplacementParameters> atomicDisplacementParametersForAtoms(const std::vector<GenericAtomIndex> &) const override;
+  [[nodiscard]] AtomicDisplacementParameters atomicDisplacementParameters(GenericAtomIndex) const override;
+
+
 private:
   Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;
 
@@ -132,6 +136,7 @@ private:
   std::vector<GenericAtomIndex> m_unitCellOffsets;
   ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash>
       m_atomMap;
+  ankerl::unordered_dense::map<int, AtomicDisplacementParameters> m_unitCellAdps;
   std::vector<Fragment> m_fragments;
   std::vector<GenericAtomIndex> m_fragmentUnitCellMolecules;
   std::vector<int> m_fragmentForAtom;

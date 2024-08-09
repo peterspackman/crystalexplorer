@@ -232,8 +232,8 @@ private:
   QMessageBox *loadingMessageBox{nullptr};
   AnimationSettingsDialog *_animationSettingsDialog{nullptr};
   QAction *_clearRecentFileAction{nullptr};
-  QMenu *_thermalEllipsoidMenu{nullptr};
-  QAction *_drawHEllipsoidsAction{nullptr};
+  QMenu *m_thermalEllipsoidMenu{nullptr};
+  QAction *m_drawHEllipsoidsAction{nullptr};
 
   QProgressBar *_jobProgress{nullptr};
   QToolButton *_jobCancel{nullptr};

@@ -202,6 +202,27 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
   updateBondGraph();
 }
 
+inline occ::Mat6N computeUnitCellAtomAdps(const OccCrystal &crystal) {
+  const auto &uc_atoms = crystal.unit_cell_atoms();
+  const auto &asym = crystal.asymmetric_unit();
+  occ::Mat6N result = occ::Mat6N::Zero(6, uc_atoms.size());
+
+  if (asym.adps.cols() < asym.size())
+    return result;
+
+  occ::Vec6 tmp;
+  for (int i = 0; i < result.cols(); i++) {
+    auto symop = occ::crystal::SymmetryOperation(uc_atoms.symop(i));
+    auto asym_idx = uc_atoms.asym_idx(i);
+    tmp = asym.adps.col(asym_idx);
+    result.col(i) = symop.rotate_adp(tmp);
+  }
+  std::cout << "Asym ADPS" << asym.adps << '\n';
+  std::cout << "ADPs" << result << '\n';
+
+  return crystal.unit_cell().to_cartesian_adp(result);
+}
+
 void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   m_crystal = crystal;
 
@@ -222,7 +243,12 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
         m_symmetryUniqueFragments.size() - 1;
     m_symmetryUniqueFragmentStates.push_back({});
   }
-
+  auto adps = computeUnitCellAtomAdps(crystal);
+  for (int i = 0; i < adps.cols(); i++) {
+    m_unitCellAdps.insert(
+        {i, AtomicDisplacementParameters(adps(0, i), adps(1, i), adps(2, i),
+                                         adps(3, i), adps(4, i), adps(5, i))});
+  }
   resetAtomsAndBonds();
 }
 
@@ -1151,19 +1177,38 @@ bool CrystalStructure::getTransformation(
   return false;
 }
 
-
 CellIndexSet CrystalStructure::occupiedCells() const {
   CellIndexSet result;
   occ::Mat3N pos_frac = m_crystal.to_fractional(atomicPositions());
 
-  auto conv = [](double x) {
-    return static_cast<int>(std::floor(x));
-  };
+  auto conv = [](double x) { return static_cast<int>(std::floor(x)); };
 
-  for(int i = 0; i < pos_frac.cols(); i++) {
-    CellIndex idx{
-      conv(pos_frac(0, i)), conv(pos_frac(1, i)), conv(pos_frac(2, i))};
+  for (int i = 0; i < pos_frac.cols(); i++) {
+    CellIndex idx{conv(pos_frac(0, i)), conv(pos_frac(1, i)),
+                  conv(pos_frac(2, i))};
     result.insert(idx);
   }
   return result;
+}
+
+std::vector<AtomicDisplacementParameters>
+CrystalStructure::atomicDisplacementParametersForAtoms(
+    const std::vector<GenericAtomIndex> &idxs) const {
+  std::vector<AtomicDisplacementParameters> result(idxs.size());
+  for (int i = 0; i < idxs.size(); i++) {
+    auto kv = m_unitCellAdps.find(idxs[i].unique);
+    if (kv != m_unitCellAdps.end()) {
+      result[i] = kv->second;
+    }
+  }
+  return result;
+}
+
+AtomicDisplacementParameters
+CrystalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
+  auto kv = m_unitCellAdps.find(idx.unique);
+  if (kv != m_unitCellAdps.end()) {
+    return kv->second;
+  }
+  return AtomicDisplacementParameters{};
 }
