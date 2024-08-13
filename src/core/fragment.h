@@ -1,4 +1,5 @@
 #pragma once
+#include "fragment_index.h"
 #include "generic_atom_index.h"
 #include <QDebug>
 #include <QColor>
@@ -19,14 +20,22 @@ struct Fragment {
     double distance;
   };
 
+  struct State {
+    int charge{0};
+    int multiplicity{1};
+  };
+
+
   std::vector<GenericAtomIndex> atomIndices;
-  std::vector<int> _atomOffset;
 
   occ::IVec atomicNumbers;
   occ::Mat3N positions;
 
-  int asymmetricFragmentIndex{-1};
+  FragmentIndex asymmetricFragmentIndex{-1};
   Transform asymmetricFragmentTransform = Transform::Identity();
+
+  FragmentIndex index;
+  State state;
 
   occ::IVec asymmetricUnitIndices;
   QColor color{Qt::gray};
@@ -56,8 +65,8 @@ struct FragmentDimer {
   double nearestAtomDistance{0.0};
   double centerOfMassDistance{0.0};
   QString symmetry{"-"};
-  int fragmentIndexA{-1};
-  int fragmentIndexB{-1};
+  FragmentIndex fragmentIndexA{-1};
+  FragmentIndex fragmentIndexB{-1};
 
   bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
   bool operator==(const FragmentDimer &) const;

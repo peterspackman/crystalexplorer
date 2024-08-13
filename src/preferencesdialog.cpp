@@ -100,6 +100,9 @@ void PreferencesDialog::init() {
       energyColorSchemeComboBox->setCurrentIndex(idx);
     idx++;
   }
+  textFontComboBox->setCurrentFont(
+      QFont(settings::readSetting(settings::keys::TEXT_FONT_FAMILY).toString(),
+            settings::readSetting(settings::keys::TEXT_FONT_SIZE).toInt()));
 }
 
 void PreferencesDialog::initConnections() {

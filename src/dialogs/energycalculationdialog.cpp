@@ -52,10 +52,10 @@ void EnergyCalculationDialog::initConnections() {
 void EnergyCalculationDialog::showEvent(QShowEvent *) {
 
   // orca is not visible right now until we implement it
-  bool orcaVisible = false &&
-                   !settings::readSetting(settings::keys::ORCA_EXECUTABLE)
-                        .toString()
-                        .isEmpty();
+  bool orcaVisible =
+      false && !settings::readSetting(settings::keys::ORCA_EXECUTABLE)
+                    .toString()
+                    .isEmpty();
   bool xtbVisible = !settings::readSetting(settings::keys::XTB_EXECUTABLE)
                          .toString()
                          .isEmpty();
@@ -100,15 +100,15 @@ bool EnergyCalculationDialog::handleStructureChange() {
     return false;
 
   const auto &fragments = m_structure->getFragments();
-  const int keyFragmentIndex = selectedFragments[0];
+  const auto keyFragmentIndex = selectedFragments[0];
   qDebug() << "Key fragment" << keyFragmentIndex;
   m_fragmentPairs = m_structure->findFragmentPairs(keyFragmentIndex);
   m_fragmentPairsToCalculate.clear();
-  const auto &keyFragment = fragments[keyFragmentIndex];
-  int asymIndex = keyFragment.asymmetricFragmentIndex;
+  const auto &keyFragment = fragments.at(keyFragmentIndex);
+  const auto asymIndex = keyFragment.asymmetricFragmentIndex;
   auto asymTransform = keyFragment.asymmetricFragmentTransform;
 
-  ankerl::unordered_dense::set<int> wavefunctionsNeeded;
+  FragmentIndexSet wavefunctionsNeeded;
   wavefunctionsNeeded.insert(asymIndex);
 
   qDebug() << "Unique pairs: " << m_fragmentPairs.uniquePairs.size();
@@ -118,10 +118,12 @@ bool EnergyCalculationDialog::handleStructureChange() {
   };
   if (selectedFragments.size() == 2) {
     // TODO improve efficiency here
-    const auto &keyFragment2 = fragments[selectedFragments[1]];
-    for (const auto &[pair, uniqueIndex] : m_fragmentPairs.pairs[keyFragmentIndex]) {
+    const auto &keyFragment2 = fragments.at(selectedFragments[1]);
+    for (const auto &[pair, uniqueIndex] :
+         m_fragmentPairs.pairs.at(keyFragmentIndex)) {
       if (match(pair.b, keyFragment2)) {
-        m_fragmentPairsToCalculate.push_back(m_fragmentPairs.uniquePairs[uniqueIndex]);
+        m_fragmentPairsToCalculate.push_back(
+            m_fragmentPairs.uniquePairs[uniqueIndex]);
         wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
         wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);
       }
@@ -137,13 +139,12 @@ bool EnergyCalculationDialog::handleStructureChange() {
   }
 
   const auto &uniqueFragments = m_structure->symmetryUniqueFragments();
-  const auto &uniqueFragmentStates =
-      m_structure->symmetryUniqueFragmentStates();
   for (const auto &uniqueIndex : wavefunctionsNeeded) {
-    m_requiredWavefunctions.emplace_back(wfn::Parameters{
-        uniqueFragmentStates[uniqueIndex].charge,
-        uniqueFragmentStates[uniqueIndex].multiplicity, m_method, m_basis,
-        m_structure, uniqueFragments[uniqueIndex].atomIndices});
+    const auto &uniqueFrag = uniqueFragments.at(uniqueIndex);
+    const auto &state = uniqueFrag.state;
+    m_requiredWavefunctions.emplace_back(
+        wfn::Parameters{state.charge, state.multiplicity, m_method, m_basis,
+                        m_structure, uniqueFrag.atomIndices});
   }
   return false;
 }

@@ -21,7 +21,10 @@ public:
   void enableFingerprintButton(bool);
   void currentSurfaceVisibilityChanged(bool);
   Mesh *getCurrentMesh();
+
+  bool showEnergyFramework() const;
   void setShowEnergyFramework(bool);
+  bool toggleShowEnergyFramework();
 
 public slots:
   void setCurrentMesh(Mesh *);

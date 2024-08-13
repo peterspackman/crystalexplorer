@@ -64,7 +64,7 @@ void FragmentStateDialog::cleanupWidgets() {
 
 void FragmentStateDialog::createWidgets(
     const QStringList &fragmentString,
-    const std::vector<ChemicalStructure::FragmentState> &fragmentStates) {
+    const std::vector<Fragment::State> &fragmentStates) {
   QVBoxLayout *boxLayout = new QVBoxLayout();
 
   for (int i = 0; i < fragmentString.size(); ++i) {
@@ -121,28 +121,33 @@ void FragmentStateDialog::registerConnectionsForSpinBoxes() {
 }
 
 void FragmentStateDialog::populate(ChemicalStructure *structure) {
-    if(!structure) return;
+  if (!structure)
+    return;
 
-    const auto fragments = structure->symmetryUniqueFragments();
-    bool statesFromUser{false};
-    const auto states = structure->symmetryUniqueFragmentStates();
-    bool hasChargedFragments = std::any_of(states.begin(), states.end(),
-	    [](const ChemicalStructure::FragmentState &state) { return state.charge != 0; });
+  const auto fragments = structure->symmetryUniqueFragments();
+  std::vector<Fragment::State> states;
 
+  states.reserve(fragments.size()); // Optional: Reserve space for efficiency
+  for (const auto &[fragIndex, fragment] : fragments) {
+    states.push_back(fragment.state);
+  }
 
-    QStringList fragmentStrings;
-    for(const auto &frag: fragments) {
-	fragmentStrings << structure->formulaSumForAtoms(frag.atomIndices, true);
-    }
+  bool hasChargedFragments = std::any_of(
+      states.begin(), states.end(),
+      [](const Fragment::State &state) { return state.charge != 0; });
 
-    setFragmentInformation(fragmentStrings, states, hasChargedFragments);
+  QStringList fragmentStrings;
+  for (const auto &[fragIndex, frag] : fragments) {
+    fragmentStrings << structure->formulaSumForAtoms(frag.atomIndices, true);
+  }
 
+  setFragmentInformation(fragmentStrings, states, hasChargedFragments);
 }
 void FragmentStateDialog::setFragmentInformation(
     const QStringList &fragmentString,
-    const std::vector<ChemicalStructure::FragmentState> &fragmentStates,
+    const std::vector<Fragment::State> &fragmentStates,
     bool hasChargedFragments) {
-    qDebug() << fragmentString << fragmentStates.size();
+  qDebug() << fragmentString << fragmentStates.size();
   Q_ASSERT((fragmentString.size() == fragmentStates.size()));
 
   cleanupWidgets();
@@ -169,14 +174,14 @@ bool FragmentStateDialog::hasFragmentStates() {
   return ui->yesRadioButton->isChecked();
 }
 
-std::vector<ChemicalStructure::FragmentState>
+std::vector<Fragment::State>
 FragmentStateDialog::getFragmentStates() {
-  std::vector<ChemicalStructure::FragmentState> result;
+  std::vector<Fragment::State> result;
   for (int i = 0;
        i < std::min(_chargeSpinBoxes.size(), _multiplicitySpinBoxes.size());
        i++) {
-    result.push_back(
-        ChemicalStructure::FragmentState{_chargeSpinBoxes[i]->value(), _multiplicitySpinBoxes[i]->value()});
+    result.push_back(Fragment::State{
+        _chargeSpinBoxes[i]->value(), _multiplicitySpinBoxes[i]->value()});
   }
   return result;
 }

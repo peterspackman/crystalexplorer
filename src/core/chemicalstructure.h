@@ -4,6 +4,7 @@
 #include "cell_index.h"
 #include "close_contact_criteria.h"
 #include "fragment.h"
+#include "fragment_index.h"
 #include "generic_atom_index.h"
 #include "hbond_criteria.h"
 #include "molecular_wavefunction.h"
@@ -20,15 +21,18 @@
 
 using Transform = Eigen::Isometry3d;
 
+using FragmentMap = 
+  ankerl::unordered_dense::map<FragmentIndex, Fragment, FragmentIndexHash>;
+
 struct FragmentPairs {
   struct SymmetryRelatedPair {
     FragmentDimer fragments;
     int uniquePairIndex{-1};
   };
-  std::vector<FragmentDimer> uniquePairs;
-
   using MoleculeNeighbors = std::vector<SymmetryRelatedPair>;
-  std::vector<MoleculeNeighbors> pairs;
+
+  std::vector<FragmentDimer> uniquePairs;
+  ankerl::unordered_dense::map<FragmentIndex, MoleculeNeighbors, FragmentIndexHash> pairs;
 };
 
 struct StructureFrame;
@@ -36,12 +40,7 @@ struct StructureFrame;
 class ChemicalStructure : public QObject {
   Q_OBJECT
 public:
-  struct FragmentState {
-    int charge{0};
-    int multiplicity{1};
-  };
-
-  using FragmentSymmetryRelation = std::pair<int, Transform>;
+  using FragmentSymmetryRelation = std::pair<FragmentIndex, Transform>;
 
   enum class StructureType {
     Cluster, // 0D
@@ -147,32 +146,29 @@ public:
     return occ::Vec3(1.0, 1.0, 1.0);
   }
 
-  virtual std::vector<int> completedFragments() const;
-  virtual std::vector<int> selectedFragments() const;
+  virtual std::vector<FragmentIndex> completedFragments() const;
+  virtual std::vector<FragmentIndex> selectedFragments() const;
 
-  virtual FragmentState getSymmetryUniqueFragmentState(int) const;
-  virtual void setSymmetryUniqueFragmentState(int, FragmentState);
+  virtual Fragment::State getSymmetryUniqueFragmentState(FragmentIndex) const;
+  virtual void setSymmetryUniqueFragmentState(FragmentIndex, Fragment::State);
 
-  virtual const std::vector<Fragment> &symmetryUniqueFragments() const;
-  virtual const std::vector<FragmentState> &
-  symmetryUniqueFragmentStates() const;
+  virtual const FragmentMap &symmetryUniqueFragments() const;
 
   virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &) const;
-  virtual const std::vector<Fragment> &getFragments() const;
+  virtual const FragmentMap& getFragments() const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
 
   virtual inline size_t numberOfFragments() const { return m_fragments.size(); }
-  virtual int fragmentIndexForAtom(int) const;
-  virtual int fragmentIndexForAtom(GenericAtomIndex) const;
+  virtual FragmentIndex fragmentIndexForAtom(int) const;
+  virtual FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const;
   virtual void deleteFragmentContainingAtomIndex(int atomIndex);
   virtual void deleteIncompleteFragments();
   virtual void deleteAtoms(const std::vector<GenericAtomIndex> &);
   virtual bool hasIncompleteFragments() const;
   virtual bool hasIncompleteSelectedFragments() const;
-  virtual const std::vector<int> &atomsForFragment(int) const;
-  virtual std::vector<GenericAtomIndex> atomIndicesForFragment(int) const;
+  virtual std::vector<GenericAtomIndex> atomIndicesForFragment(FragmentIndex) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
   virtual std::pair<GenericAtomIndex, GenericAtomIndex>
   atomIndicesForBond(int) const;
@@ -186,9 +182,9 @@ public:
 
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
-  FragmentPairs findFragmentPairs(int keyFragment = -1) const;
+  virtual FragmentPairs findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}) const;
 
-  virtual void setFragmentColor(int fragment, const QColor &color);
+  virtual void setFragmentColor(FragmentIndex, const QColor&);
   virtual void setAllFragmentColors(const QColor &color);
 
   // dynamics data
@@ -296,11 +292,10 @@ private:
   std::vector<occ::core::graph::BondGraph::EdgeDescriptor> m_bondGraphEdges;
 
   // all of these must be updated when the bondGraph is updated
-  std::vector<Fragment> m_fragments;
-  std::vector<Fragment> m_symmetryUniqueFragments;
-  std::vector<FragmentState> m_symmetryUniqueFragmentStates;
+  FragmentMap m_fragments;
+  FragmentMap m_symmetryUniqueFragments;
 
-  std::vector<int> m_fragmentForAtom;
+  std::vector<FragmentIndex> m_fragmentForAtom;
   std::vector<std::pair<int, int>> m_covalentBonds;
   std::vector<std::pair<int, int>> m_vdwContacts;
   std::vector<std::pair<int, int>> m_hydrogenBonds;

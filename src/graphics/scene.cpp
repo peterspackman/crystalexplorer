@@ -299,7 +299,7 @@ void Scene::setSelectStatusForAtomDoubleClick(int atom) {
   auto atomIndex = m_structure->indexToGenericIndex(atom);
   if (m_structure->testAtomFlag(atomIndex, AtomFlag::Contact))
     return;
-  int fragmentIndex = m_structure->fragmentIndexForAtom(atomIndex);
+  const auto fragmentIndex = m_structure->fragmentIndexForAtom(atomIndex);
   const auto &atomIndices = m_structure->atomIndicesForFragment(fragmentIndex);
   auto idx = m_structure->indexToGenericIndex(atom);
   m_structure->setAtomFlag(idx, AtomFlag::Selected, true);
@@ -674,10 +674,10 @@ Scene::positionsForDistanceMeasurement(const MeasurementObject &object,
   }
   default: {
     const auto &fragments = m_structure->getFragments();
-    int fragIndex = m_structure->fragmentIndexForAtom(object.index);
+    const auto fragIndex = m_structure->fragmentIndexForAtom(object.index);
 
-    if (fragIndex >= 0 && fragIndex < fragments.size()) {
-      const auto frag = fragments[fragIndex];
+    if (fragIndex.isValid()) {
+      const auto frag = fragments.at(fragIndex);
       auto res =
           frag.nearestAtomToPoint(Eigen::Vector3d(pos.x(), pos.y(), pos.z()));
       result.a = frag.posVector3D(res.idx_this);
@@ -730,12 +730,12 @@ Scene::positionsForDistanceMeasurement(const MeasurementObject &object1,
         break;
 
       const auto &fragments = m_structure->getFragments();
-      int fragIndex = m_structure->fragmentIndexForAtom(object2.index);
-      const bool validIndex = fragIndex >= 0 && fragIndex < fragments.size();
+      const auto fragIndex = m_structure->fragmentIndexForAtom(object2.index);
+      const bool validIndex = fragIndex.isValid();
       if (!validIndex)
         break;
 
-      const auto &frag = fragments[fragIndex];
+      const auto &frag = fragments.at(fragIndex);
       auto res = meshInstance->nearestPoint(frag);
       result.a = meshInstance->vertexVector3D(res.idx_this);
       result.b = frag.posVector3D(res.idx_other);
@@ -753,12 +753,12 @@ Scene::positionsForDistanceMeasurement(const MeasurementObject &object1,
         break;
 
       const auto &fragments = m_structure->getFragments();
-      int fragIndex = m_structure->fragmentIndexForAtom(object1.index);
-      const bool validIndex = fragIndex >= 0 && fragIndex < fragments.size();
+      const auto fragIndex = m_structure->fragmentIndexForAtom(object1.index);
+      const bool validIndex = fragIndex.isValid();
       if (!validIndex)
         break;
 
-      const auto &frag = fragments[fragIndex];
+      const auto &frag = fragments.at(fragIndex);
       auto res = meshInstance->nearestPoint(frag);
       result.b = meshInstance->vertexVector3D(res.idx_this);
       result.a = frag.posVector3D(res.idx_other);
@@ -767,14 +767,15 @@ Scene::positionsForDistanceMeasurement(const MeasurementObject &object1,
     }
     default: {
       const auto &fragments = m_structure->getFragments();
-      int fragIndexA = m_structure->fragmentIndexForAtom(object1.index);
-      int fragIndexB = m_structure->fragmentIndexForAtom(object2.index);
+      const auto fragIndexA = m_structure->fragmentIndexForAtom(object1.index);
+      const auto fragIndexB = m_structure->fragmentIndexForAtom(object2.index);
 
-      const bool validIndexA = fragIndexA >= 0 && fragIndexA < fragments.size();
-      const bool validIndexB = fragIndexB >= 0 && fragIndexB < fragments.size();
+      const bool validIndexA = fragIndexA.isValid();
+      const bool validIndexB = fragIndexA.isValid();
+
       if (validIndexA && validIndexB && (fragIndexA != fragIndexB)) {
-        const auto fragA = fragments[fragIndexA];
-        const auto fragB = fragments[fragIndexB];
+        const auto fragA = fragments.at(fragIndexA);
+        const auto fragB = fragments.at(fragIndexB);
         auto res = fragA.nearestAtom(fragB);
         result.a = fragA.posVector3D(res.idx_this);
         result.b = fragB.posVector3D(res.idx_other);
@@ -1646,7 +1647,7 @@ void Scene::colorSelectedAtoms(const QColor &color, bool fragments) {
   auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
   if (fragments) {
     for (const auto &idx : idxs) {
-      int frag = m_structure->fragmentIndexForAtom(idx);
+      const auto frag = m_structure->fragmentIndexForAtom(idx);
       m_structure->setFragmentColor(frag, color);
     }
   } else {

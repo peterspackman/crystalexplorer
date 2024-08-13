@@ -1,5 +1,4 @@
 add_library(cx_crystal
-    "${CMAKE_CURRENT_SOURCE_DIR}/crystalfragment.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/crystalplanegenerator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/crystalstructure.cpp"
 )

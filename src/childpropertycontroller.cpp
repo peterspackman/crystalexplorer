@@ -211,6 +211,15 @@ void ChildPropertyController::updatePairInteractionComponents() {
   emitFrameworkOptions();
 }
 
+bool ChildPropertyController::showEnergyFramework() const {
+  return m_frameworkDisplay != FrameworkOptions::Display::None;
+}
+
+bool ChildPropertyController::toggleShowEnergyFramework() {
+  setShowEnergyFramework(!showEnergyFramework());
+  return showEnergyFramework();
+}
+
 void ChildPropertyController::setShowEnergyFramework(bool show) {
   if (!m_pairInteractions)
     return;

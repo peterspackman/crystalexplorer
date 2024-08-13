@@ -34,12 +34,12 @@ bool Fragment::isEquivalentTo(const Fragment &rhs) const {
 bool FragmentDimer::sameAsymmetricFragmentIndices(
     const FragmentDimer &rhs) const {
   bool same_idxs = false;
-  const int a1_idx = a.asymmetricFragmentIndex;
-  const int b1_idx = b.asymmetricFragmentIndex;
-  const int a2_idx = rhs.a.asymmetricFragmentIndex;
-  const int b2_idx = rhs.b.asymmetricFragmentIndex;
+  const auto a1_idx = a.asymmetricFragmentIndex;
+  const auto b1_idx = b.asymmetricFragmentIndex;
+  const auto a2_idx = rhs.a.asymmetricFragmentIndex;
+  const auto b2_idx = rhs.b.asymmetricFragmentIndex;
 
-  if ((a1_idx < 0) || (b1_idx < 0) || (a2_idx < 0) || (b2_idx < 0))
+  if ((a1_idx.u < 0) || (b1_idx.u < 0) || (a2_idx.u < 0) || (b2_idx.u < 0))
     same_idxs = true;
   else {
     if ((a1_idx == a2_idx) && (b1_idx == b2_idx))
@@ -139,12 +139,6 @@ QDebug operator<<(QDebug debug, const Fragment &fragment) {
   debug.nospace() << "  atomIndices: [";
   for (const auto &index : fragment.atomIndices) {
     debug.nospace() << index << ", ";
-  }
-  debug.nospace() << "]\n";
-
-  debug.nospace() << "  _atomOffset: [";
-  for (int offset : fragment._atomOffset) {
-    debug.nospace() << offset << ", ";
   }
   debug.nospace() << "]\n";
 

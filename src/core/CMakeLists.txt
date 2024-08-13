@@ -6,6 +6,7 @@ add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/element.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/elementdata.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fragment.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fragment_index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/generic_atom_index.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/globalconfiguration.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/hbond_criteria.cpp"

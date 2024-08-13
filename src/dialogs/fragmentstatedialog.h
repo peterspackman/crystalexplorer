@@ -22,10 +22,10 @@ public:
   ~FragmentStateDialog();
 
   void setFragmentInformation(const QStringList &,
-                              const std::vector<ChemicalStructure::FragmentState> &,
+                              const std::vector<Fragment::State> &,
                               bool);
   bool hasFragmentStates();
-  std::vector<ChemicalStructure::FragmentState> getFragmentStates();
+  std::vector<Fragment::State> getFragmentStates();
   void populate(ChemicalStructure *);
 
 public slots:
@@ -41,7 +41,7 @@ private:
   void registerConnectionsForSpinBoxes();
   void cleanupWidgets();
   void createWidgets(const QStringList &,
-                     const std::vector<ChemicalStructure::FragmentState> &);
+                     const std::vector<Fragment::State> &);
   int totalCharge();
   bool chargeIsBalanced();
 

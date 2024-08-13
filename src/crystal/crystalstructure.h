@@ -1,6 +1,8 @@
 #pragma once
 #include "chemicalstructure.h"
+#include "fragment_index.h"
 #include "crystalplane.h"
+#include "dimer_graph.h"
 #include <QHash>
 #include <ankerl/unordered_dense.h>
 #include <occ/crystal/crystal.h>
@@ -37,16 +39,15 @@ public:
 
   inline const auto &spaceGroup() const { return m_crystal.space_group(); }
 
-  int fragmentIndexForAtom(int) const override;
-  int fragmentIndexForAtom(GenericAtomIndex) const override;
+  FragmentIndex fragmentIndexForAtom(int) const override;
+  FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const override;
   void deleteFragmentContainingAtomIndex(int atomIndex) override;
 
-  const std::vector<Fragment> &getFragments() const override;
+  const FragmentMap &getFragments() const override;
   void deleteIncompleteFragments() override;
   void deleteAtoms(const std::vector<GenericAtomIndex> &) override;
 
-  const std::vector<int> &atomsForFragment(int) const override;
-  std::vector<GenericAtomIndex> atomIndicesForFragment(int) const override;
+  std::vector<GenericAtomIndex> atomIndicesForFragment(FragmentIndex) const override;
 
   const std::pair<int, int> &atomsForBond(int) const override;
   std::vector<HBondTriple>
@@ -72,16 +73,13 @@ public:
   void completeAllFragments() override;
   void packUnitCells(const QPair<QVector3D, QVector3D> &) override;
 
-  std::vector<int> completedFragments() const override;
-  std::vector<int> selectedFragments() const override;
+  std::vector<FragmentIndex> completedFragments() const override;
+  std::vector<FragmentIndex> selectedFragments() const override;
 
-  FragmentState getSymmetryUniqueFragmentState(int) const override;
-  void setSymmetryUniqueFragmentState(int, FragmentState) override;
+  Fragment::State getSymmetryUniqueFragmentState(FragmentIndex) const override;
+  void setSymmetryUniqueFragmentState(FragmentIndex, Fragment::State) override;
 
-  const std::vector<Fragment> &symmetryUniqueFragments() const override;
-  const std::vector<FragmentState> &
-  symmetryUniqueFragmentStates() const override;
-
+  const FragmentMap &symmetryUniqueFragments() const override;
 
   CellIndexSet occupiedCells() const override;
 
@@ -123,7 +121,9 @@ public:
 
 
 private:
-  Fragment makeAsymFragment(const std::vector<GenericAtomIndex> &idxs) const;
+
+  FragmentIndex findUnitCellFragment(const Fragment &frag) const;
+  Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol) const;
 
   void addAtomsByCrystalIndex(std::vector<GenericAtomIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);
@@ -131,19 +131,29 @@ private:
   void removeVanDerWaalsContactAtoms();
   void deleteAtomsByOffset(const std::vector<int> &atomIndices);
 
+  void buildDimerGraph(double maxRadius=30.0);
+
   OccCrystal m_crystal;
 
   std::vector<GenericAtomIndex> m_unitCellOffsets;
   ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash>
       m_atomMap;
   ankerl::unordered_dense::map<int, AtomicDisplacementParameters> m_unitCellAdps;
-  std::vector<Fragment> m_fragments;
-  std::vector<GenericAtomIndex> m_fragmentUnitCellMolecules;
-  std::vector<int> m_fragmentForAtom;
-  std::vector<Fragment> m_symmetryUniqueFragments;
-  std::vector<ChemicalStructure::FragmentState> m_symmetryUniqueFragmentStates;
+
+  FragmentMap m_fragments;
+  std::vector<FragmentIndex> m_fragmentForAtom;
+  FragmentMap m_symmetryUniqueFragments;
+  FragmentMap m_unitCellFragments;
 
   std::vector<std::pair<int, int>> m_covalentBonds;
   std::vector<std::pair<int, int>> m_vdwContacts;
   std::vector<std::pair<int, int>> m_hydrogenBonds;
+
+  occ::crystal::CrystalDimers m_unitCellDimers;
+  PeriodicDimerGraph m_dimerGraph;
+  std::vector<PeriodicDimerGraph::VertexDescriptor>
+      m_dimerGraphVertices;
+  std::vector<PeriodicDimerGraph::EdgeDescriptor> m_dimerGraphEdges;
+  ankerl::unordered_dense::map<FragmentIndexPair, PeriodicDimerGraph::EdgeDescriptor, FragmentIndexPairHash> m_dimerEdgeMap;
+
 };

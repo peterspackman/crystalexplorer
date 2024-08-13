@@ -65,10 +65,10 @@ void CrystalStructure::updateBondGraph() {
   m_vdwContacts.clear();
   m_fragments.clear();
   m_fragmentForAtom.clear();
-  m_fragmentForAtom.resize(numberOfAtoms(), -1);
+  m_fragmentForAtom.resize(numberOfAtoms(), FragmentIndex{-1});
 
   ankerl::unordered_dense::set<int> visited;
-  size_t currentFragmentIndex{0};
+  int currentFragmentIndex{0};
 
   std::vector<std::vector<int>> fragments;
 
@@ -84,7 +84,7 @@ void CrystalStructure::updateBondGraph() {
     if (testAtomFlag(atomIdx, AtomFlag::Contact))
       return;
     visited.insert(idx);
-    m_fragmentForAtom[idx] = currentFragmentIndex;
+    m_fragmentForAtom[idx] = FragmentIndex{currentFragmentIndex};
     idxs.push_back(idx);
   };
 
@@ -147,7 +147,8 @@ void CrystalStructure::updateBondGraph() {
                    [&](int i) { return m_unitCellOffsets[i]; });
 
     std::sort(g.begin(), g.end());
-    m_fragments.push_back(makeFragment(g));
+    auto frag = makeFragment(g);
+    m_fragments.insert({frag.index, frag});
   }
 }
 
@@ -188,7 +189,7 @@ void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
     std::vector<GenericAtomIndex> indices;
 
     ankerl::unordered_dense::set<int> included;
-    for (const auto &frag : m_symmetryUniqueFragments) {
+    for (const auto &[fragIndex, frag] : m_symmetryUniqueFragments) {
       const auto &asym = frag.asymmetricUnitIndices;
       for (int i = 0; i < frag.atomIndices.size(); i++) {
         if (included.contains(asym(i)))
@@ -217,38 +218,67 @@ inline occ::Mat6N computeUnitCellAtomAdps(const OccCrystal &crystal) {
     tmp = asym.adps.col(asym_idx);
     result.col(i) = symop.rotate_adp(tmp);
   }
-  std::cout << "Asym ADPS" << asym.adps << '\n';
-  std::cout << "ADPs" << result << '\n';
-
   return crystal.unit_cell().to_cartesian_adp(result);
+}
+
+Fragment CrystalStructure::makeFragmentFromOccMolecule(
+    const occ::core::Molecule &mol) const {
+  std::vector<GenericAtomIndex> idxs;
+  const auto &uc_idx = mol.unit_cell_idx();
+  const auto &uc_shift = mol.unit_cell_atom_shift();
+  const auto &asym_idx = mol.asymmetric_unit_idx();
+
+  for (int i = 0; i < uc_idx.rows(); i++) {
+    idxs.push_back(GenericAtomIndex{uc_idx(i), uc_shift(0, i), uc_shift(1, i),
+                                    uc_shift(2, i)});
+  }
+  std::sort(idxs.begin(), idxs.end());
+
+  Fragment result;
+  result.atomIndices = idxs;
+  result.atomicNumbers = atomicNumbersForIndices(idxs);
+  result.positions = atomicPositionsForIndices(idxs);
+  result.asymmetricUnitIndices = occ::IVec(idxs.size());
+  for (int i = 0; i < idxs.size(); i++) {
+    result.asymmetricUnitIndices(i) = asym_idx(idxs[i].unique);
+  }
+  return result;
 }
 
 void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   m_crystal = crystal;
 
   m_symmetryUniqueFragments.clear();
-  const auto &uc_atoms = m_crystal.unit_cell_atoms();
-  for (const auto &mol : m_crystal.symmetry_unique_molecules()) {
-    std::vector<GenericAtomIndex> idxs;
-    const auto &uc_idx = mol.unit_cell_idx();
-    const auto &uc_shift = mol.unit_cell_atom_shift();
 
-    for (int i = 0; i < uc_idx.rows(); i++) {
-      idxs.push_back(GenericAtomIndex{uc_idx(i), uc_shift(0, i), uc_shift(1, i),
-                                      uc_shift(2, i)});
-    }
-    std::sort(idxs.begin(), idxs.end());
-    m_symmetryUniqueFragments.push_back(makeAsymFragment(idxs));
-    m_symmetryUniqueFragments.back().asymmetricFragmentIndex =
-        m_symmetryUniqueFragments.size() - 1;
-    m_symmetryUniqueFragmentStates.push_back({});
+  const auto &uc_atoms = m_crystal.unit_cell_atoms();
+  std::vector<FragmentIndex> asymmetricMoleculeIndices;
+
+  for (const auto &mol : m_crystal.symmetry_unique_molecules()) {
+    FragmentIndex idx{mol.unit_cell_molecule_idx(), 0, 0, 0};
+    asymmetricMoleculeIndices.push_back(idx);
+    auto frag = makeFragmentFromOccMolecule(mol);
+    frag.asymmetricFragmentIndex = idx;
+    frag.index = idx;
+    m_symmetryUniqueFragments.insert({idx, frag});
   }
+
+  m_unitCellFragments.clear();
+  for (const auto &mol : m_crystal.unit_cell_molecules()) {
+    FragmentIndex idx{mol.unit_cell_molecule_idx(), 0, 0, 0};
+    auto frag = makeFragmentFromOccMolecule(mol);
+    frag.asymmetricFragmentIndex =
+        asymmetricMoleculeIndices[mol.asymmetric_molecule_idx()];
+    frag.index = idx;
+    m_unitCellFragments.insert({idx, frag});
+  }
+
   auto adps = computeUnitCellAtomAdps(crystal);
   for (int i = 0; i < adps.cols(); i++) {
     m_unitCellAdps.insert(
         {i, AtomicDisplacementParameters(adps(0, i), adps(1, i), adps(2, i),
                                          adps(3, i), adps(4, i), adps(5, i))});
   }
+  buildDimerGraph();
   resetAtomsAndBonds();
 }
 
@@ -258,16 +288,17 @@ QString CrystalStructure::chemicalFormula(bool richText) const {
   return QString::fromStdString(formula);
 }
 
-int CrystalStructure::fragmentIndexForAtom(int atomIndex) const {
+FragmentIndex CrystalStructure::fragmentIndexForAtom(int atomIndex) const {
   return m_fragmentForAtom[atomIndex];
 }
 
-int CrystalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
+FragmentIndex
+CrystalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
   const auto loc = m_atomMap.find(idx);
   if (loc != m_atomMap.end()) {
     return m_fragmentForAtom[loc->second];
   }
-  return -1;
+  return FragmentIndex{-1};
 }
 
 std::vector<HBondTriple>
@@ -291,16 +322,11 @@ const std::pair<int, int> &CrystalStructure::atomsForBond(int bondIndex) const {
   return m_covalentBonds.at(bondIndex);
 }
 
-const std::vector<int> &
-CrystalStructure::atomsForFragment(int fragIndex) const {
-  return m_fragments.at(fragIndex)._atomOffset;
-}
-
 std::vector<GenericAtomIndex>
-CrystalStructure::atomIndicesForFragment(int fragmentIndex) const {
-  if (fragmentIndex < 0 || fragmentIndex >= m_fragments.size())
-    return {};
-  return m_fragments[fragmentIndex].atomIndices;
+CrystalStructure::atomIndicesForFragment(FragmentIndex fragmentIndex) const {
+  const auto kv = m_fragments.find(fragmentIndex);
+  if(kv != m_fragments.end()) return kv->second.atomIndices;
+  return {};
 }
 
 void CrystalStructure::addAtomsByCrystalIndex(
@@ -458,13 +484,13 @@ void CrystalStructure::removeVanDerWaalsContactAtoms() {
 
 void CrystalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
   const auto &fragmentIndex = fragmentIndexForAtom(atomIndex);
-  if (fragmentIndex < 0)
+  if (fragmentIndex.u < 0)
     return;
-  const auto &fragIndices = atomsForFragment(fragmentIndex);
+  const auto &fragIndices = atomIndicesForFragment(fragmentIndex);
   if (fragIndices.size() == 0)
     return;
 
-  deleteAtomsByOffset(fragIndices);
+  deleteAtoms(fragIndices);
   updateBondGraph();
 }
 
@@ -535,7 +561,6 @@ bool CrystalStructure::hasIncompleteFragments() const {
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
 
-  int currentFragmentIndex{0};
   bool incomplete{false};
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
@@ -552,16 +577,12 @@ bool CrystalStructure::hasIncompleteFragments() const {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for (currentFragmentIndex = 0; currentFragmentIndex < m_fragments.size();
-       currentFragmentIndex++) {
-    if (m_fragments[currentFragmentIndex].size() == 0)
-      continue;
-    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+  for(const auto &[fragIndex, frag]: m_fragments) {
+    if(frag.size() == 0 ) continue;
+    const auto &idx = frag.atomIndices[0];
+    VertexDesc uc_vertex = idx.unique;
     filtered_connectivity_traversal_with_cell_offset(
-        g, uc_vertex, visitor, covalentPredicate,
-        {m_unitCellOffsets[atomIndex].x, m_unitCellOffsets[atomIndex].y,
-         m_unitCellOffsets[atomIndex].z});
+        g, uc_vertex, visitor, covalentPredicate, {idx.x, idx.y, idx.z});
     if (incomplete)
       return true;
   }
@@ -572,7 +593,6 @@ bool CrystalStructure::hasIncompleteSelectedFragments() const {
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
 
-  int currentFragmentIndex{0};
   bool incomplete{false};
 
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
@@ -589,45 +609,40 @@ bool CrystalStructure::hasIncompleteSelectedFragments() const {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for (currentFragmentIndex = 0; currentFragmentIndex < m_fragments.size();
-       currentFragmentIndex++) {
+  for(const auto &[fragIndex, frag]: m_fragments) {
     // fragment is length 0 - should not happen
-    if (m_fragments[currentFragmentIndex].size() == 0)
+    if (frag.size() == 0)
       continue;
 
     // ensure fragment is selected
-    const auto &fragIndices = atomIndicesForFragment(currentFragmentIndex);
+    const auto &fragIndices = frag.atomIndices;
     if (!atomsHaveFlags(fragIndices, AtomFlag::Selected))
       continue;
 
-    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+    const auto &idx = fragIndices[0];
+    VertexDesc uc_vertex = idx.unique;
     filtered_connectivity_traversal_with_cell_offset(
-        g, uc_vertex, visitor, covalentPredicate,
-        {m_unitCellOffsets[atomIndex].x, m_unitCellOffsets[atomIndex].y,
-         m_unitCellOffsets[atomIndex].z});
+        g, uc_vertex, visitor, covalentPredicate, {idx.x, idx.y, idx.z});
     if (incomplete)
       return true;
   }
   return false;
 }
 
-std::vector<int> CrystalStructure::completedFragments() const {
+std::vector<FragmentIndex> CrystalStructure::completedFragments() const {
 
-  std::vector<int> result;
+  std::vector<FragmentIndex> result;
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
-
-  int currentFragmentIndex{0};
 
   auto covalentPredicate = [&edges](const EdgeDesc &e) {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for (currentFragmentIndex = 0; currentFragmentIndex < m_fragments.size();
-       currentFragmentIndex++) {
-    if (m_fragments[currentFragmentIndex].size() == 0)
+  for(const auto &[fragIndex, frag]: m_fragments) {
+    if (frag.size() == 0)
       continue;
+
     bool incomplete{false};
 
     auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
@@ -640,30 +655,27 @@ std::vector<int> CrystalStructure::completedFragments() const {
       }
     };
 
-    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
+    const auto &idx = frag.atomIndices[0];
+    VertexDesc uc_vertex = idx.unique;
 
-    const auto &offset = m_unitCellOffsets[atomIndex];
     filtered_connectivity_traversal_with_cell_offset(
-        g, uc_vertex, visitor, covalentPredicate,
-        {offset.x, offset.y, offset.z});
+        g, uc_vertex, visitor, covalentPredicate, {idx.x, idx.y, idx.z});
     if (incomplete)
       continue;
     else
-      result.push_back(currentFragmentIndex);
+      result.push_back(fragIndex);
   }
   return result;
 }
 
-std::vector<int> CrystalStructure::selectedFragments() const {
-  std::vector<int> result;
-  for (int fragmentIndex = 0; fragmentIndex < m_fragments.size();
-       fragmentIndex++) {
-    const auto &fragIndices = atomIndicesForFragment(fragmentIndex);
+std::vector<FragmentIndex> CrystalStructure::selectedFragments() const {
+  std::vector<FragmentIndex> result;
+  for(const auto &[fragIndex, frag]: m_fragments) {
+    const auto &fragIndices = frag.atomIndices;
     if (fragIndices.size() == 1)
       continue;
     if (atomsHaveFlags(fragIndices, AtomFlag::Selected))
-      result.push_back(fragmentIndex);
+      result.push_back(fragIndex);
   }
   return result;
 }
@@ -673,9 +685,9 @@ void CrystalStructure::deleteIncompleteFragments() {
   const auto &g = m_crystal.unit_cell_connectivity();
   const auto &edges = g.edges();
 
-  ankerl::unordered_dense::set<int> fragmentIndicesToDelete;
-  int currentFragmentIndex{0};
+  FragmentIndexSet fragmentIndicesToDelete;
 
+  FragmentIndex currentFragmentIndex;
   auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                      const EdgeDesc &e, const MillerIndex &hkl) {
     GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
@@ -690,28 +702,25 @@ void CrystalStructure::deleteIncompleteFragments() {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for (currentFragmentIndex = 0; currentFragmentIndex < m_fragments.size();
-       currentFragmentIndex++) {
-    if (m_fragments[currentFragmentIndex].size() == 0)
+  for(const auto &[fragIndex, frag]: m_fragments) {
+    if (frag.size() == 0)
       continue;
-    int atomIndex = m_fragments[currentFragmentIndex]._atomOffset[0];
-    VertexDesc uc_vertex = m_unitCellOffsets[atomIndex].unique;
-    const auto &offset = m_unitCellOffsets[atomIndex];
+    currentFragmentIndex = fragIndex;
+    const auto &idx = frag.atomIndices[0];
+    VertexDesc uc_vertex = idx.unique;
     filtered_connectivity_traversal_with_cell_offset(
-        g, uc_vertex, visitor, covalentPredicate,
-        {offset.x, offset.y, offset.z});
+        g, uc_vertex, visitor, covalentPredicate, {idx.x, idx.y, idx.z});
   }
 
-  std::vector<int> atomIndicesToDelete;
+  std::vector<GenericAtomIndex> atomIndicesToDelete;
   for (const auto &fragIndex : fragmentIndicesToDelete) {
-    const auto &fragAtoms = m_fragments[fragIndex]._atomOffset;
+    const auto &fragAtoms = m_fragments[fragIndex].atomIndices;
     atomIndicesToDelete.insert(atomIndicesToDelete.end(), fragAtoms.begin(),
                                fragAtoms.end());
   }
 
   if (atomIndicesToDelete.size() > 0) {
-    std::sort(atomIndicesToDelete.begin(), atomIndicesToDelete.end());
-    deleteAtomsByOffset(atomIndicesToDelete);
+    deleteAtoms(atomIndicesToDelete);
     updateBondGraph();
   }
 }
@@ -951,67 +960,98 @@ occ::Mat3N CrystalStructure::atomicPositionsForIndices(
   return result;
 }
 
-const std::vector<ChemicalStructure::FragmentState> &
-CrystalStructure::symmetryUniqueFragmentStates() const {
-  return m_symmetryUniqueFragmentStates;
-}
-
-const std::vector<Fragment> &CrystalStructure::symmetryUniqueFragments() const {
+const FragmentMap &CrystalStructure::symmetryUniqueFragments() const {
   return m_symmetryUniqueFragments;
 }
 
-ChemicalStructure::FragmentState
-CrystalStructure::getSymmetryUniqueFragmentState(int fragmentIndex) const {
-  if (fragmentIndex < 0 ||
-      fragmentIndex >= m_symmetryUniqueFragmentStates.size())
+Fragment::State CrystalStructure::getSymmetryUniqueFragmentState(
+    FragmentIndex fragmentIndex) const {
+  const auto kv = m_symmetryUniqueFragments.find(fragmentIndex);
+  if (kv == m_symmetryUniqueFragments.end())
     return {};
-  return m_symmetryUniqueFragmentStates[fragmentIndex];
+  else
+    return kv->second.state;
 }
 
 void CrystalStructure::setSymmetryUniqueFragmentState(
-    int fragmentIndex, ChemicalStructure::FragmentState state) {
-  if (fragmentIndex < 0 ||
-      fragmentIndex >= m_symmetryUniqueFragmentStates.size())
+    FragmentIndex fragmentIndex, Fragment::State state) {
+  auto kv = m_symmetryUniqueFragments.find(fragmentIndex);
+  if (kv == m_symmetryUniqueFragments.end())
     return;
-  m_symmetryUniqueFragmentStates[fragmentIndex] = state;
+  kv->second.state = state;
 }
 
-Fragment CrystalStructure::makeAsymFragment(
-    const std::vector<GenericAtomIndex> &idxs) const {
-  const auto uc_atoms = m_crystal.unit_cell_atoms();
-  Fragment result;
-  result.atomIndices = idxs;
-  result.atomicNumbers = atomicNumbersForIndices(idxs);
-  result.positions = atomicPositionsForIndices(idxs);
-  result.asymmetricUnitIndices = occ::IVec(idxs.size());
-  for (int i = 0; i < idxs.size(); i++) {
-    result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(idxs[i].unique);
+FragmentIndex
+CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
+  // assume sorted
+  auto findCommonOffset = [](const Fragment &a, const Fragment &b) {
+    FragmentIndex result{-1, 0, 0, 0};
+    const auto &idxA = a.atomIndices;
+    const auto &idxB = b.atomIndices;
+    if (idxA.size() != idxB.size())
+      return result;
+
+    if (idxA[0].unique != idxB[0].unique)
+      return result;
+    result.h = idxB[0].x - idxA[0].x;
+    result.k = idxB[0].y - idxA[0].y;
+    result.l = idxB[0].z - idxA[0].z;
+    for (int i = 1; i < idxA.size(); i++) {
+      if (idxA[i].unique != idxB[i].unique)
+        return result;
+      if ((idxB[i].x - idxA[i].x) != result.h)
+        return result;
+      if ((idxB[i].y - idxA[i].y) != result.k)
+        return result;
+      if ((idxB[i].z - idxA[i].z) != result.l)
+        return result;
+    }
+    result.u = 0;
+    return result;
+  };
+
+  for (const auto &[fragIndex, candidate] : m_unitCellFragments) {
+    auto offset = findCommonOffset(candidate, frag);
+    if (offset.u >= 0) {
+      offset.u = fragIndex.u;
+      qDebug() << "Found common offset at uc mol:" << offset;
+      return offset;
+    }
   }
-  return result;
+  qDebug() << "No Matching unit cell fragment!";
+  return FragmentIndex{-1, 0, 0, 0};
 }
 
 Fragment CrystalStructure::makeFragment(
     const std::vector<GenericAtomIndex> &idxs) const {
-  const auto uc_atoms = m_crystal.unit_cell_atoms();
   Fragment result;
   result.atomIndices = idxs;
   std::sort(result.atomIndices.begin(), result.atomIndices.end());
-  std::transform(
-      idxs.begin(), idxs.end(), std::back_inserter(result._atomOffset),
-      [&](const GenericAtomIndex &idx) { return m_atomMap.at(idx); });
   result.atomicNumbers = atomicNumbersForIndices(idxs);
   result.positions = atomicPositionsForIndices(idxs);
-  std::tie(result.asymmetricFragmentIndex, result.asymmetricFragmentTransform) =
-      findUniqueFragment(idxs);
 
-  result.asymmetricUnitIndices = occ::IVec(idxs.size());
-  for (int i = 0; i < idxs.size(); i++) {
-    result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(i);
+  result.index = findUnitCellFragment(result);
+  const FragmentIndex ucIndex = {result.index.u, 0, 0, 0};
+
+  const auto kv = m_unitCellFragments.find(ucIndex);
+
+  if (kv != m_unitCellFragments.end()) {
+    const auto &ucFrag = kv->second;
+    result.asymmetricFragmentIndex = ucFrag.asymmetricFragmentIndex; 
+    // TODO transform
+  } else {
+    const auto &uc_atoms = m_crystal.unit_cell_atoms();
+    std::tie(result.asymmetricFragmentIndex,
+             result.asymmetricFragmentTransform) = findUniqueFragment(idxs);
+    result.asymmetricUnitIndices = occ::IVec(idxs.size());
+    for (int i = 0; i < idxs.size(); i++) {
+      result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(i);
+    }
   }
   return result;
 }
 
-const std::vector<Fragment> &CrystalStructure::getFragments() const {
+const FragmentMap &CrystalStructure::getFragments() const {
   return m_fragments;
 }
 
@@ -1211,4 +1251,66 @@ CrystalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
     return kv->second;
   }
   return AtomicDisplacementParameters{};
+}
+
+void CrystalStructure::buildDimerGraph(double maxRadius) {
+  maxRadius = 30.0;
+  m_unitCellDimers = m_crystal.unit_cell_dimers(maxRadius);
+  qDebug() << "Building dimer graph";
+  qDebug() << "Unit cell molecules" << m_unitCellFragments.size();
+  qDebug() << "Unique dimers:" << m_unitCellDimers.unique_dimers.size();
+  const size_t N = m_unitCellDimers.molecule_neighbors.size();
+
+  m_dimerGraphVertices.clear();
+  m_dimerGraphEdges.clear();
+  m_dimerGraph = PeriodicDimerGraph();
+  m_dimerEdgeMap.clear();
+  for (size_t i = 0; i < N; i++) {
+    m_dimerGraphVertices.push_back(
+        m_dimerGraph.add_vertex(PeriodicDimerVertex{i}));
+  }
+
+  int numConnections = 0;
+
+  auto addEdge = [&](const occ::core::Dimer &d, int asymIndex) {
+    PeriodicDimerEdge fwd;
+    int a = d.a().unit_cell_molecule_idx();
+    int b = d.b().unit_cell_molecule_idx();
+    const auto &shiftA = d.a().cell_shift();
+    const auto &shiftB = d.b().cell_shift();
+
+    FragmentIndex fa{a, shiftA[0], shiftA[1], shiftA[2]};
+    FragmentIndex fb{b, shiftB[0], shiftB[1], shiftB[2]};
+
+    fwd.nearestAtomDistance = d.nearest_distance();
+    fwd.centroidDistance = d.centroid_distance();
+    fwd.centerOfMassDistance = d.center_of_mass_distance();
+    fwd.sourceIndex = a;
+    fwd.targetIndex = b;
+    fwd.asymmetricDimerIndex = asymIndex;
+
+    fwd.h = shiftB[0] - shiftA[0];
+    fwd.k = shiftB[1] - shiftA[1];
+    fwd.l = shiftB[2] - shiftA[2];
+
+    m_dimerGraphEdges.push_back(m_dimerGraph.add_edge(a, b, fwd));
+    m_dimerEdgeMap.insert({{fa, fb}, m_dimerGraphEdges.back()});
+    PeriodicDimerEdge back = fwd;
+    std::swap(back.sourceIndex, back.targetIndex);
+    back.h = -back.h;
+    back.k = -back.k;
+    back.l = -back.l;
+    m_dimerGraphEdges.push_back(m_dimerGraph.add_edge(b, a, back));
+    m_dimerEdgeMap.insert(
+        {FragmentIndexPair{fb, fa}, m_dimerGraphEdges.back()});
+    numConnections++;
+  };
+
+  for (size_t i = 0; i < N; i++) {
+    for (const auto &[d, asymIndex] : m_unitCellDimers.molecule_neighbors[i]) {
+      addEdge(d, asymIndex);
+    }
+  }
+
+  qDebug() << "Found" << m_dimerGraphEdges.size() << "Dimer edges";
 }

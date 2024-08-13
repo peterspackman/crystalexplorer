@@ -225,8 +225,9 @@ void Crystalx::createChildPropertyControllerDockWidget() {
           childPropertyController,
           &ChildPropertyController::setSelectedPropertyValue);
 
-  connect(childPropertyController, &ChildPropertyController::frameworkOptionsChanged,
-          project, &Project::frameworkOptionsChanged);
+  connect(childPropertyController,
+          &ChildPropertyController::frameworkOptionsChanged, project,
+          &Project::frameworkOptionsChanged);
 
   connect(
       crystalController, &CrystalController::childSelectionChanged,
@@ -236,7 +237,8 @@ void Crystalx::createChildPropertyControllerDockWidget() {
         auto *wfn = crystalController->getChild<MolecularWavefunction>(index);
         auto *pairInteractions =
             crystalController->getChild<PairInteractions>(index);
-        auto *chemicalStructure = crystalController->getChild<ChemicalStructure>(index);
+        auto *chemicalStructure =
+            crystalController->getChild<ChemicalStructure>(index);
 
         // check for mesh instance first
         if (mesh) {
@@ -252,11 +254,11 @@ void Crystalx::createChildPropertyControllerDockWidget() {
         } else if (pairInteractions) {
           qDebug() << "Setting pair interactions to" << pairInteractions;
           childPropertyController->setCurrentPairInteractions(pairInteractions);
-        }
-        else if (chemicalStructure) {
+        } else if (chemicalStructure) {
           int frame = 0;
           auto prop = chemicalStructure->property("frame");
-          if(prop.isValid()) frame = prop.toInt();
+          if (prop.isValid())
+            frame = prop.toInt();
           qDebug() << "Setting frame to " << frame;
           project->setCurrentFrame(frame);
         }
@@ -427,7 +429,8 @@ void Crystalx::initMenuConnections() {
   connect(invertSelectionAction, &QAction::triggered, project,
           &Project::invertSelection);
 
-  connect(project, &Project::showMessage, glWindow, &GLWindow::showMessageOnGraphicsView);
+  connect(project, &Project::showMessage, glWindow,
+          &GLWindow::showMessageOnGraphicsView);
 
   // NB hbondOptionsAction and closeContactOptionsAction are connected in
   // initCloseContactsDialog
@@ -870,11 +873,11 @@ void Crystalx::loadExternalFileData(QString filename) {
   QFileInfo fileInfo(filename);
   QString extension = fileInfo.suffix().toLower();
 
-  if(filename.endsWith("cg_results.json")) {
-    showStatusMessage(QString("Loading crystal clear output from %1").arg(filename));
+  if (filename.endsWith("cg_results.json")) {
+    showStatusMessage(
+        QString("Loading crystal clear output from %1").arg(filename));
     project->loadCrystalClearJson(filename);
-  }
-  else if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
+  } else if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
     processCif(filename);
   } else if (extension == "pdb") {
     processPdb(filename);
@@ -1629,8 +1632,8 @@ void Crystalx::cloneSurface() {
     qDebug() << "Cloned surface: " << instance;
 
   } else {
-    for (int i = 0; i < structure->numberOfFragments(); i++) {
-      auto idxs = structure->atomIndicesForFragment(i);
+    for (const auto &[fragIndex, fragment] : structure->getFragments()) {
+      auto idxs = structure->atomIndicesForFragment(fragIndex);
       if (idxs.size() < 1)
         continue;
       auto *instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, idxs);
@@ -1962,35 +1965,11 @@ void Crystalx::showEnergyFrameworkDialog() {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  if(childPropertyController) {
-      childPropertyController->setCurrentPairInteractions(scene->chemicalStructure()->pairInteractions());
-      childPropertyController->setShowEnergyFramework(true);
+  if (childPropertyController) {
+    childPropertyController->setCurrentPairInteractions(
+        scene->chemicalStructure()->pairInteractions());
+    childPropertyController->toggleShowEnergyFramework();
   }
-  qDebug() << "Todo show energy framework dialog";
-  /*
-  if (frameworkDialog == nullptr) {
-    frameworkDialog = new FrameworkDialog(this);
-    connect(frameworkDialog, &FrameworkDialog::cycleFrameworkRequested, this,
-            &Crystalx::cycleEnergyFramework);
-    connect(frameworkDialog, &FrameworkDialog::frameworkDialogClosing, project,
-            &Project::turnOffEnergyFramework);
-    connect(frameworkDialog, &FrameworkDialog::frameworkDialogCutoffChanged,
-            project, &Project::updateEnergyFramework);
-    connect(frameworkDialog, &FrameworkDialog::frameworkDialogScaleChanged,
-            project, &Project::currentSceneChanged); // force a redraw
-    connect(frameworkDialog, &FrameworkDialog::energyTheoryChanged, project,
-            &Project::updateEnergyTheoryForEnergyFramework);
-  }
-
-  Scene *scene = project->currentScene();
-
-  if (scene && scene->crystal()->hasInteractionEnergies()) {
-    scene->turnOnEnergyFramework();
-    frameworkDialog->setEnergyTheories(scene->crystal()->energyTheories());
-    frameworkDialog->setCurrentFramework(scene->currentFramework());
-    frameworkDialog->show();
-  }
-  */
 }
 
 void Crystalx::cycleEnergyFrameworkBackwards() { cycleEnergyFramework(true); }
@@ -2069,8 +2048,11 @@ bool Crystalx::getFragmentStatesFromUser(ChemicalStructure *structure) {
   if (m_fragmentStateDialog->exec() == QDialog::Accepted) {
     if (m_fragmentStateDialog->hasFragmentStates()) {
       const auto &states = m_fragmentStateDialog->getFragmentStates();
-      for (int i = 0; i < states.size(); i++) {
-        structure->setSymmetryUniqueFragmentState(i, states[i]);
+      const auto &asymFrags = structure->symmetryUniqueFragments();
+      int i = 0;
+      for (const auto &[fragIndex, frag] : asymFrags) {
+        structure->setSymmetryUniqueFragmentState(fragIndex, states[i]);
+        i++;
       }
     }
     success = true;
