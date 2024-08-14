@@ -122,10 +122,11 @@ public:
 
 private:
 
+  Fragment makeFragmentFromFragmentIndex(FragmentIndex);
   FragmentIndex findUnitCellFragment(const Fragment &frag) const;
   Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol) const;
 
-  void addAtomsByCrystalIndex(std::vector<GenericAtomIndex> &,
+  void addAtomsByCrystalIndex(const std::vector<GenericAtomIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);
   void addVanDerWaalsContactAtoms();
   void removeVanDerWaalsContactAtoms();
@@ -139,6 +140,7 @@ private:
   ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash>
       m_atomMap;
   ankerl::unordered_dense::map<int, AtomicDisplacementParameters> m_unitCellAdps;
+  ankerl::unordered_dense::map<int, FragmentIndex> m_unitCellAtomFragments;
 
   FragmentMap m_fragments;
   std::vector<FragmentIndex> m_fragmentForAtom;

@@ -118,7 +118,12 @@ bool EnergyCalculationDialog::handleStructureChange() {
   };
   if (selectedFragments.size() == 2) {
     // TODO improve efficiency here
+    qDebug() << "Selected fragments: " << selectedFragments[0] << selectedFragments[1];
     const auto &keyFragment2 = fragments.at(selectedFragments[1]);
+    qDebug() << "Keyfragment2" << keyFragment2;
+    for(const auto &[idx, mpairs]: m_fragmentPairs.pairs) {
+      qDebug() << "Key: " << idx;
+    }
     for (const auto &[pair, uniqueIndex] :
          m_fragmentPairs.pairs.at(keyFragmentIndex)) {
       if (match(pair.b, keyFragment2)) {

@@ -308,8 +308,8 @@ void ChemicalStructure::addAtoms(const std::vector<QString> &elementSymbols,
     } else {
       m_labels.push_back(elementSymbols[i]);
     }
-    auto idx = indexToGenericIndex(i);
-    setAtomFlags(idx, AtomFlag::NoFlag);
+    auto genericIndex = indexToGenericIndex(index);
+    setAtomFlags(genericIndex, AtomFlag::NoFlag);
   }
   m_origin = m_atomicPositions.rowwise().mean();
   m_bondsNeedUpdate = true;
@@ -1012,7 +1012,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) co
         pairs.push_back(d);
         tree.addPoint(point);
       }
-      molPairs[asymIndex].push_back({d, -1});
+      molPairs[fragA.index].push_back({d, -1});
     }
   }
 

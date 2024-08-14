@@ -149,6 +149,9 @@ void CrystalStructure::updateBondGraph() {
     std::sort(g.begin(), g.end());
     auto frag = makeFragment(g);
     m_fragments.insert({frag.index, frag});
+    for (const auto &idx : g) {
+      m_fragmentForAtom[genericIndexToIndex(idx)] = frag.index;
+    }
   }
 }
 
@@ -240,7 +243,7 @@ Fragment CrystalStructure::makeFragmentFromOccMolecule(
   result.positions = atomicPositionsForIndices(idxs);
   result.asymmetricUnitIndices = occ::IVec(idxs.size());
   for (int i = 0; i < idxs.size(); i++) {
-    result.asymmetricUnitIndices(i) = asym_idx(idxs[i].unique);
+    result.asymmetricUnitIndices(i) = asym_idx(i);
   }
   return result;
 }
@@ -263,13 +266,28 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   }
 
   m_unitCellFragments.clear();
+  m_unitCellAtomFragments.clear();
   for (const auto &mol : m_crystal.unit_cell_molecules()) {
     FragmentIndex idx{mol.unit_cell_molecule_idx(), 0, 0, 0};
+    qDebug() << "Unit cell mol: " << idx;
     auto frag = makeFragmentFromOccMolecule(mol);
+
     frag.asymmetricFragmentIndex =
         asymmetricMoleculeIndices[mol.asymmetric_molecule_idx()];
+    const auto &asymFrag = m_symmetryUniqueFragments[frag.asymmetricFragmentIndex];
     frag.index = idx;
+    getTransformation(asymFrag.atomIndices, frag.atomIndices, frag.asymmetricFragmentTransform);
     m_unitCellFragments.insert({idx, frag});
+    qDebug() << "Inserting unit cell fragment:" << frag.index;
+    for(const auto &atomIndex: frag.atomIndices) {
+      qDebug() << "AtomIndex: " << atomIndex;
+      FragmentIndex thisIndex = idx;
+      thisIndex.h = -atomIndex.x;
+      thisIndex.k = -atomIndex.y;
+      thisIndex.l = -atomIndex.z;
+      m_unitCellAtomFragments[atomIndex.unique] = thisIndex;
+      qDebug() << "Fragment for unit cell index" << atomIndex.unique << thisIndex;
+    }
   }
 
   auto adps = computeUnitCellAtomAdps(crystal);
@@ -325,16 +343,18 @@ const std::pair<int, int> &CrystalStructure::atomsForBond(int bondIndex) const {
 std::vector<GenericAtomIndex>
 CrystalStructure::atomIndicesForFragment(FragmentIndex fragmentIndex) const {
   const auto kv = m_fragments.find(fragmentIndex);
-  if(kv != m_fragments.end()) return kv->second.atomIndices;
+  if (kv != m_fragments.end())
+    return kv->second.atomIndices;
   return {};
 }
 
 void CrystalStructure::addAtomsByCrystalIndex(
-    std::vector<GenericAtomIndex> &unfilteredIndices, const AtomFlags &flags) {
+    const std::vector<GenericAtomIndex> &unfilteredIndices, const AtomFlags &flags) {
 
   // filter out already existing indices
   std::vector<GenericAtomIndex> indices;
   indices.reserve(unfilteredIndices.size());
+  setFlagForAtoms(unfilteredIndices, AtomFlag::Contact, false);
 
   std::copy_if(unfilteredIndices.begin(), unfilteredIndices.end(),
                std::back_inserter(indices), [&](const GenericAtomIndex &index) {
@@ -347,6 +367,7 @@ void CrystalStructure::addAtomsByCrystalIndex(
   std::vector<QString> l;
   const int numAtomsBefore = numberOfAtoms();
 
+
   {
     int i = 0;
     for (const auto &idx : indices) {
@@ -355,7 +376,7 @@ void CrystalStructure::addAtomsByCrystalIndex(
           uc_atoms.frac_pos.col(idx.unique) + occ::Vec3(idx.x, idx.y, idx.z);
       QString label = "";
       auto asymIdx = uc_atoms.asym_idx(idx.unique);
-      if (asymIdx < asym.labels.size()) {
+      if (asymIdx < asym.labels.size() && asymIdx >= 0) {
         label = QString::fromStdString(asym.labels[asymIdx]);
       }
       l.push_back(label);
@@ -506,48 +527,28 @@ void CrystalStructure::setShowVanDerWaalsContactAtoms(bool state) {
 
 void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
 
+
   bool haveContactAtoms = anyAtomHasFlags(AtomFlag::Contact);
   bool fragmentWasSelected{false};
 
-  int atomIndex = genericIndexToIndex(index);
+  FragmentIndex fragmentIndex = m_unitCellAtomFragments[index.unique];
+  fragmentIndex.h += index.x;
+  fragmentIndex.k += index.y;
+  fragmentIndex.l += index.z;
 
-  if (atomIndex >= 0) {
-    if (!atomFlagsSet(index, AtomFlag::Contact)) {
-      fragmentWasSelected =
-          atomsHaveFlags(atomIndicesForFragment(fragmentIndexForAtom(index)),
-                         AtomFlag::Selected);
-    }
-    setAtomFlag(index, AtomFlag::Contact, false);
+  qDebug() << "Atom index: " << index << "Fragment index: " << fragmentIndex;
+  const Fragment frag = makeFragmentFromFragmentIndex(fragmentIndex);
+
+  qDebug() << "Adding atom indices:";
+  for(const auto &idx: frag.atomIndices) {
+    qDebug() << idx;
   }
 
-  const auto &g = m_crystal.unit_cell_connectivity();
-  const auto &edges = g.edges();
-  GenericAtomIndexSet atomsToAdd;
+  addAtomsByCrystalIndex(frag.atomIndices, AtomFlag::NoFlag);
 
-  auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
-                     const EdgeDesc &e, const MillerIndex &hkl) {
-    GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
-    auto location = m_atomMap.find(atomIdx);
-    if (location != m_atomMap.end()) {
-      setAtomFlag(atomIdx, AtomFlag::Contact, false);
-      return;
-    }
-    atomsToAdd.insert(atomIdx);
-  };
-
-  auto covalentPredicate = [&edges](const EdgeDesc &e) {
-    return edges.at(e).connectionType == Connection::CovalentBond;
-  };
-
-  VertexDesc uc_vertex = index.unique;
-  filtered_connectivity_traversal_with_cell_offset(
-      g, uc_vertex, visitor, covalentPredicate, {index.x, index.y, index.z});
-
-  std::vector<GenericAtomIndex> indices(atomsToAdd.begin(), atomsToAdd.end());
-  addAtomsByCrystalIndex(indices, fragmentWasSelected ? AtomFlag::Selected
-                                                      : AtomFlag::NoFlag);
-  if (haveContactAtoms)
+  if (haveContactAtoms) {
     addVanDerWaalsContactAtoms();
+  }
   updateBondGraph();
 }
 void CrystalStructure::completeFragmentContaining(int atomIndex) {
@@ -577,8 +578,9 @@ bool CrystalStructure::hasIncompleteFragments() const {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for(const auto &[fragIndex, frag]: m_fragments) {
-    if(frag.size() == 0 ) continue;
+  for (const auto &[fragIndex, frag] : m_fragments) {
+    if (frag.size() == 0)
+      continue;
     const auto &idx = frag.atomIndices[0];
     VertexDesc uc_vertex = idx.unique;
     filtered_connectivity_traversal_with_cell_offset(
@@ -609,7 +611,7 @@ bool CrystalStructure::hasIncompleteSelectedFragments() const {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for(const auto &[fragIndex, frag]: m_fragments) {
+  for (const auto &[fragIndex, frag] : m_fragments) {
     // fragment is length 0 - should not happen
     if (frag.size() == 0)
       continue;
@@ -639,7 +641,7 @@ std::vector<FragmentIndex> CrystalStructure::completedFragments() const {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for(const auto &[fragIndex, frag]: m_fragments) {
+  for (const auto &[fragIndex, frag] : m_fragments) {
     if (frag.size() == 0)
       continue;
 
@@ -670,7 +672,7 @@ std::vector<FragmentIndex> CrystalStructure::completedFragments() const {
 
 std::vector<FragmentIndex> CrystalStructure::selectedFragments() const {
   std::vector<FragmentIndex> result;
-  for(const auto &[fragIndex, frag]: m_fragments) {
+  for (const auto &[fragIndex, frag] : m_fragments) {
     const auto &fragIndices = frag.atomIndices;
     if (fragIndices.size() == 1)
       continue;
@@ -702,7 +704,7 @@ void CrystalStructure::deleteIncompleteFragments() {
     return edges.at(e).connectionType == Connection::CovalentBond;
   };
 
-  for(const auto &[fragIndex, frag]: m_fragments) {
+  for (const auto &[fragIndex, frag] : m_fragments) {
     if (frag.size() == 0)
       continue;
     currentFragmentIndex = fragIndex;
@@ -1022,6 +1024,23 @@ CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
   return FragmentIndex{-1, 0, 0, 0};
 }
 
+
+Fragment CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) {
+  FragmentIndex unitCellIndex{idx.u, 0, 0, 0};
+  // TODO add error checking
+  Fragment result = m_unitCellFragments.at(unitCellIndex);
+  qDebug() << "Unit cell fragment:" << result;
+  // TODO asymmetric transform
+  for(auto &atomIndex: result.atomIndices) {
+    atomIndex.x += idx.h;
+    atomIndex.y += idx.k;
+    atomIndex.z += idx.l;
+    qDebug() << atomIndex;
+  }
+  qDebug() << "result:" << result;
+  return result;
+}
+
 Fragment CrystalStructure::makeFragment(
     const std::vector<GenericAtomIndex> &idxs) const {
   Fragment result;
@@ -1037,8 +1056,11 @@ Fragment CrystalStructure::makeFragment(
 
   if (kv != m_unitCellFragments.end()) {
     const auto &ucFrag = kv->second;
-    result.asymmetricFragmentIndex = ucFrag.asymmetricFragmentIndex; 
-    // TODO transform
+    result.asymmetricFragmentIndex = ucFrag.asymmetricFragmentIndex;
+    // translation from unit cell transformation
+    occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
+    Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
+    result.asymmetricFragmentTransform *= t;
   } else {
     const auto &uc_atoms = m_crystal.unit_cell_atoms();
     std::tie(result.asymmetricFragmentIndex,
