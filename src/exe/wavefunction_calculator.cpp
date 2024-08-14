@@ -1,13 +1,28 @@
 #include "wavefunction_calculator.h"
+#include "exefileutilities.h"
 #include "load_wavefunction.h"
 #include "molecular_wavefunction.h"
-#include "exefileutilities.h"
 #include "occwavefunctiontask.h"
 #include "orcatask.h"
 #include "settings.h"
 #include <QFile>
 #include <QTextStream>
 #include <occ/core/element.h>
+
+inline QString generateWavefunctionName(const wfn::Parameters &params) {
+  QString methodString = params.method + "/" + params.basis;
+  if (params.isXtbMethod()) {
+    methodString = params.method;
+  }
+  QString atomsString;
+  occ::Vec3 meanPos(0.0, 0.0, 0.0);
+  if (params.structure) {
+    atomsString = params.structure->formulaSumForAtoms(params.atoms, false).remove(' ');
+    meanPos = params.structure->atomicPositionsForIndices(params.atoms).rowwise().mean();
+  }
+
+  return QString("%1 %2 @ [%3, %4, %5]").arg(methodString).arg(atomsString).arg(meanPos(0)).arg(meanPos(1)).arg(meanPos(2));
+}
 
 inline xtb::Parameters wfn2xtb(const wfn::Parameters &params) {
   xtb::Parameters result;
@@ -43,7 +58,8 @@ WavefunctionCalculator::WavefunctionCalculator(QObject *parent)
   m_environment = QProcessEnvironment::systemEnvironment();
   QString dataDir =
       settings::readSetting(settings::keys::OCC_DATA_DIRECTORY).toString();
-  m_deleteWorkingFiles = settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool();
+  m_deleteWorkingFiles =
+      settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool();
   m_environment.insert("OCC_DATA_PATH", dataDir);
   m_environment.insert("OCC_BASIS_PATH", dataDir);
   m_xtb = new XtbEnergyCalculator(this);
@@ -56,15 +72,14 @@ void WavefunctionCalculator::setTaskManager(TaskManager *mgr) {
   m_xtb->setTaskManager(mgr);
 }
 
-Task * WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
+Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
   QString filename;
 
   auto idx = params.structure->atomsWithFlags(AtomFlag::Selected);
   occ::IVec nums = params.structure->atomicNumbersForIndices(idx);
   occ::Mat3N pos = params.structure->atomicPositionsForIndices(idx);
 
-  QString wavefunctionName =
-      QString("%1/%2").arg(params.method).arg(params.basis);
+  QString wavefunctionName = generateWavefunctionName(params);
   auto *task = new OccWavefunctionTask();
   task->setParameters(params);
   task->setProperty("name", wavefunctionName);
@@ -73,20 +88,17 @@ Task * WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
   task->setDeleteWorkingFiles(m_deleteWorkingFiles);
   QString wavefunctionFilename = task->wavefunctionFilename();
 
-
   connect(task, &Task::completed,
           [&, params, wavefunctionName, wavefunctionFilename]() {
             this->handleTaskComplete(params, wavefunctionFilename,
-                                        wavefunctionName);
+                                     wavefunctionName);
           });
 
   return task;
 }
 
-
-Task * WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
-  QString wavefunctionName =
-      QString("%1/%2").arg(params.method).arg(params.basis);
+Task *WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
+  QString wavefunctionName = generateWavefunctionName(params);
   auto *task = new OrcaWavefunctionTask();
   task->setParameters(params);
   task->setProperty("name", wavefunctionName);
@@ -96,11 +108,10 @@ Task * WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
   QString wavefunctionFilename = task->moldenFilename();
   qDebug() << "Molden filename" << wavefunctionFilename;
 
-
   connect(task, &Task::completed,
           [&, params, wavefunctionName, wavefunctionFilename]() {
             this->handleTaskComplete(params, wavefunctionFilename,
-                                         wavefunctionName);
+                                     wavefunctionName);
           });
 
   return task;
@@ -121,17 +132,16 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
 
   if (params.isXtbMethod()) {
     xtb::Parameters xtb_params = wfn2xtb(params);
-    xtb_params.name = QString("xtb_wfn_%1").arg(0);
+    xtb_params.name = generateWavefunctionName(params);
     start(xtb_params);
     return;
   }
 
-  Task * task = nullptr;
+  Task *task = nullptr;
   // TODO check which ones are needed
-  if(!m_orcaExecutable.isEmpty()) {
+  if (!m_orcaExecutable.isEmpty()) {
     task = makeOrcaTask(params);
-  }
-  else {
+  } else {
     task = makeOccTask(params);
   }
   auto taskId = m_taskManager->add(task);
@@ -150,7 +160,7 @@ void WavefunctionCalculator::start(xtb::Parameters params) {
 
 void WavefunctionCalculator::start_batch(
     const std::vector<wfn::Parameters> &wfn) {
-  QList<Task*> tasks;
+  QList<Task *> tasks;
   m_completedTaskCount = 0;
   m_totalTasks = wfn.size();
 
@@ -168,32 +178,31 @@ void WavefunctionCalculator::start_batch(
     if (params.isXtbMethod()) {
       xtb::Parameters xtb_params = wfn2xtb(params);
       // TODO Name generation based on fragment
-      xtb_params.name = QString("xtb_wfn_%1").arg(idx++);
+      xtb_params.name = generateWavefunctionName(params);
       start(xtb_params);
       continue;
     }
 
-    Task * task = nullptr;
+    Task *task = nullptr;
     // TODO check which ones are needed
-    if(!m_orcaExecutable.isEmpty()) {
+    if (!m_orcaExecutable.isEmpty()) {
       task = makeOrcaTask(params);
-    }
-    else {
+    } else {
       task = makeOccTask(params);
     }
 
     tasks.append(task);
   }
 
-  for(auto * task: tasks) {
+  for (auto *task : tasks) {
     // submit all the tasks at once
     auto taskId = m_taskManager->add(task);
   }
 }
 
 void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
-                                                   QString filename,
-                                                   QString name) {
+                                                QString filename,
+                                                QString name) {
   qDebug() << "Task" << name << "finished in WavefunctionCalculator";
   auto wfn = io::loadWavefunction(filename);
   qDebug() << "Loaded wavefunction from" << filename << wfn
@@ -202,7 +211,7 @@ void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
   m_completedTaskCount++;
 
   if (m_completedTaskCount == m_totalTasks) {
-      m_complete = true;
+    m_complete = true;
   }
 
   if (wfn) {
@@ -214,7 +223,7 @@ void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
     }
   }
 
-  if(m_deleteWorkingFiles) {
+  if (m_deleteWorkingFiles) {
     exe::deleteFile(filename);
   }
 }
@@ -222,9 +231,11 @@ void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
 void WavefunctionCalculator::handleXtbTaskComplete(xtb::Parameters params,
                                                    xtb::Result result) {
   qDebug() << "Task" << result.name << "finished in WavefunctionCalculator";
-  auto * wfn = new MolecularWavefunction();
-  bool success = io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
-  success = io::populateWavefunctionFromMoldenContents(wfn, result.moldenContents);
+  auto *wfn = new MolecularWavefunction();
+  bool success =
+      io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
+  success =
+      io::populateWavefunctionFromMoldenContents(wfn, result.moldenContents);
   wfn->setRawContents(result.moldenContents);
   wfn->setParameters(xtb2wfn(params));
   wfn->setFileFormat(wfn::FileFormat::Molden);
@@ -233,23 +244,23 @@ void WavefunctionCalculator::handleXtbTaskComplete(xtb::Parameters params,
   m_completedTaskCount++;
 
   if (m_completedTaskCount == m_totalTasks) {
-      qDebug() << "Setting complete to true";
-      m_complete = true;
+    qDebug() << "Setting complete to true";
+    m_complete = true;
   }
 
-  if(result.success) {
+  if (result.success) {
     auto kv = result.energy.find("total");
-    if(kv != result.energy.end()) {
+    if (kv != result.energy.end()) {
       wfn->setTotalEnergy(kv->second);
     }
-    for(const auto &[k, v]: result.energy) {
+    for (const auto &[k, v] : result.energy) {
       qDebug() << k << v;
     }
   }
   wfn->setObjectName(result.name);
   wfn->setParent(m_structure);
   if (m_complete) {
-      emit calculationComplete();
+    emit calculationComplete();
   }
 }
 
