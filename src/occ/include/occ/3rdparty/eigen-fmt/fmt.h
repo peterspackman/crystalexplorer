@@ -125,7 +125,7 @@ std::string format(const T &matrix, const FormatSpec &fmt) {
 
   auto out = fmt::memory_buffer();
   if (matrix.size() == 0) {
-    format_to(std::back_inserter(out), "{}{}", fmt.mat_prefix, fmt.mat_suffix);
+    fmt::format_to(std::back_inserter(out), "{}{}", fmt.mat_prefix, fmt.mat_suffix);
     return {out.data(), out.size()};
   }
 
@@ -159,22 +159,22 @@ std::string format(const T &matrix, const FormatSpec &fmt) {
   auto print_coeff = [&width, &out, &explicit_precision](const Scalar &v) {
     if (width > 0) {
       if (explicit_precision != 0) {
-        format_to(std::back_inserter(out), "{:{}.{}}", v, width,
+        fmt::format_to(std::back_inserter(out), "{:{}.{}}", v, width,
                   explicit_precision);
       } else {
-        format_to(std::back_inserter(out), "{:{}}", v, width);
+        fmt::format_to(std::back_inserter(out), "{:{}}", v, width);
       }
     } else {
       if (explicit_precision != 0) {
-        format_to(std::back_inserter(out), "{:.{}}", v, explicit_precision);
+        fmt::format_to(std::back_inserter(out), "{:.{}}", v, explicit_precision);
       } else {
-        format_to(std::back_inserter(out), "{}", v);
+        fmt::format_to(std::back_inserter(out), "{}", v);
       }
     }
   };
 
   auto print_string = [&out](const std::string &str) {
-    format_to(std::back_inserter(out), "{}", str);
+    fmt::format_to(std::back_inserter(out), "{}", str);
   };
 
   if (!fmt.dont_align_cols) {
@@ -364,7 +364,7 @@ struct formatter<
         // return print_matrix(data, ctx);
         ss << data.format(formatter);
       }
-      return format_to(ctx.out(), "{}", ss.str());
+      return fmt::format_to(ctx.out(), "{}", ss.str());
 #else
       return print_matrix(data, ctx);
 #endif
@@ -385,7 +385,7 @@ struct formatter<
   //! character parsed
   template <typename U>
   auto print_matrix(const U &data, format_context &ctx) -> decltype(ctx.out()) {
-    return format_to(ctx.out(), "{}", EigenFmt::format(data, format_));
+    return fmt::format_to(ctx.out(), "{}", EigenFmt::format(data, format_));
   }
 
   EigenFmt::FormatSpec format_;
