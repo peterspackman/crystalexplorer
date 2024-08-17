@@ -2,7 +2,7 @@
 #include <occ/3rdparty/nanoflann.hpp>
 #include <occ/core/linear_algebra.h>
 #include <vector>
-
+#include <memory>
 namespace occ::core {
 
 template <typename NumericType>

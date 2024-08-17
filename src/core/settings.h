@@ -70,6 +70,7 @@ const QString PSI4_EXECUTABLE = PSI4_GROUP + "/executablePath";
 const QString OCC_GROUP = "occ";
 const QString OCC_EXECUTABLE = OCC_GROUP + "/executablePath";
 const QString OCC_DATA_DIRECTORY = OCC_GROUP + "/dataDirectory";
+const QString OCC_PATH = OCC_GROUP + "";
 const QString OCC_NTHREADS = OCC_GROUP + "/numThreads";
 
 // Orca
