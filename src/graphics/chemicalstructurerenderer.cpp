@@ -605,7 +605,7 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
         int propertyIndex =
             availableProperties.indexOf(meshInstance->getSelectedProperty());
         // TODO transparency
-        float alpha = meshInstance->isTransparent() ? 0.8 : 1.0;
+        float alpha = meshInstance->isTransparent() ? 0.9 : 1.0;
 
         QVector3D selectionColor;
 
