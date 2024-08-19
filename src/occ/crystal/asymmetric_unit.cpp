@@ -1,4 +1,5 @@
 #include <occ/core/element.h>
+#include <fmt/core.h>
 #include <occ/crystal/asymmetric_unit.h>
 
 namespace occ::crystal {
