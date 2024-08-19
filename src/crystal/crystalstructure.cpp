@@ -274,19 +274,22 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
 
     frag.asymmetricFragmentIndex =
         asymmetricMoleculeIndices[mol.asymmetric_molecule_idx()];
-    const auto &asymFrag = m_symmetryUniqueFragments[frag.asymmetricFragmentIndex];
+    const auto &asymFrag =
+        m_symmetryUniqueFragments[frag.asymmetricFragmentIndex];
     frag.index = idx;
-    getTransformation(asymFrag.atomIndices, frag.atomIndices, frag.asymmetricFragmentTransform);
+    getTransformation(asymFrag.atomIndices, frag.atomIndices,
+                      frag.asymmetricFragmentTransform);
     m_unitCellFragments.insert({idx, frag});
     qDebug() << "Inserting unit cell fragment:" << frag.index;
-    for(const auto &atomIndex: frag.atomIndices) {
+    for (const auto &atomIndex : frag.atomIndices) {
       qDebug() << "AtomIndex: " << atomIndex;
       FragmentIndex thisIndex = idx;
       thisIndex.h = -atomIndex.x;
       thisIndex.k = -atomIndex.y;
       thisIndex.l = -atomIndex.z;
       m_unitCellAtomFragments[atomIndex.unique] = thisIndex;
-      qDebug() << "Fragment for unit cell index" << atomIndex.unique << thisIndex;
+      qDebug() << "Fragment for unit cell index" << atomIndex.unique
+               << thisIndex;
     }
   }
 
@@ -308,6 +311,30 @@ QString CrystalStructure::chemicalFormula(bool richText) const {
 
 FragmentIndex CrystalStructure::fragmentIndexForAtom(int atomIndex) const {
   return m_fragmentForAtom[atomIndex];
+}
+
+QColor CrystalStructure::getFragmentColor(FragmentIndex fragmentIndex) const {
+  const auto kv = m_fragments.find(fragmentIndex);
+  if (kv != m_fragments.end()) {
+    return kv->second.color;
+  }
+  return Qt::white;
+}
+
+void CrystalStructure::setFragmentColor(FragmentIndex fragment,
+                                        const QColor &color) {
+  auto kv = m_fragments.find(fragment);
+  if (kv != m_fragments.end()) {
+    kv->second.color = color;
+    emit atomsChanged();
+  }
+}
+
+void CrystalStructure::setAllFragmentColors(const QColor &color) {
+  for (auto &[fragIndex, frag] : m_fragments) {
+    frag.color = color;
+  }
+  emit atomsChanged();
 }
 
 FragmentIndex
@@ -349,7 +376,8 @@ CrystalStructure::atomIndicesForFragment(FragmentIndex fragmentIndex) const {
 }
 
 void CrystalStructure::addAtomsByCrystalIndex(
-    const std::vector<GenericAtomIndex> &unfilteredIndices, const AtomFlags &flags) {
+    const std::vector<GenericAtomIndex> &unfilteredIndices,
+    const AtomFlags &flags) {
 
   // filter out already existing indices
   std::vector<GenericAtomIndex> indices;
@@ -366,7 +394,6 @@ void CrystalStructure::addAtomsByCrystalIndex(
   const auto &asym = m_crystal.asymmetric_unit();
   std::vector<QString> l;
   const int numAtomsBefore = numberOfAtoms();
-
 
   {
     int i = 0;
@@ -527,7 +554,6 @@ void CrystalStructure::setShowVanDerWaalsContactAtoms(bool state) {
 
 void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
 
-
   bool haveContactAtoms = anyAtomHasFlags(AtomFlag::Contact);
   bool fragmentWasSelected{false};
 
@@ -540,7 +566,7 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
   const Fragment frag = makeFragmentFromFragmentIndex(fragmentIndex);
 
   qDebug() << "Adding atom indices:";
-  for(const auto &idx: frag.atomIndices) {
+  for (const auto &idx : frag.atomIndices) {
     qDebug() << idx;
   }
 
@@ -1024,14 +1050,13 @@ CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
   return FragmentIndex{-1, 0, 0, 0};
 }
 
-
 Fragment CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) {
   FragmentIndex unitCellIndex{idx.u, 0, 0, 0};
   // TODO add error checking
   Fragment result = m_unitCellFragments.at(unitCellIndex);
   qDebug() << "Unit cell fragment:" << result;
   // TODO asymmetric transform
-  for(auto &atomIndex: result.atomIndices) {
+  for (auto &atomIndex : result.atomIndices) {
     atomIndex.x += idx.h;
     atomIndex.y += idx.k;
     atomIndex.z += idx.l;

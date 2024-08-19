@@ -17,7 +17,6 @@ ChemicalStructure::ChemicalStructure(QObject *parent)
   m_treeModel = new ObjectTreeModel(this);
 }
 
-
 occ::Vec3 ChemicalStructure::atomPosition(GenericAtomIndex idx) const {
   int i = genericIndexToIndex(idx);
   return m_atomicPositions.col(i);
@@ -171,7 +170,8 @@ const AtomFlags &ChemicalStructure::atomFlags(GenericAtomIndex index) const {
   return m_flags.at(index);
 }
 
-bool ChemicalStructure::testAtomFlag(GenericAtomIndex idx, AtomFlag flag) const {
+bool ChemicalStructure::testAtomFlag(GenericAtomIndex idx,
+                                     AtomFlag flag) const {
   return m_flags.at(idx).testFlag(flag);
 }
 
@@ -181,7 +181,8 @@ void ChemicalStructure::setAtomFlags(GenericAtomIndex index,
   emit atomsChanged();
 }
 
-void ChemicalStructure::setAtomFlag(GenericAtomIndex idx, AtomFlag flag, bool on) {
+void ChemicalStructure::setAtomFlag(GenericAtomIndex idx, AtomFlag flag,
+                                    bool on) {
   m_flags[idx].setFlag(flag, on);
   emit atomsChanged();
 }
@@ -490,7 +491,7 @@ void ChemicalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
 
 std::vector<FragmentIndex> ChemicalStructure::completedFragments() const {
   std::vector<FragmentIndex> result;
-  for (const auto &[fragmentIndex, fragment]: m_fragments) {
+  for (const auto &[fragmentIndex, fragment] : m_fragments) {
     const auto &fragIndices = atomIndicesForFragment(fragmentIndex);
     if (fragIndices.size() == 0)
       continue;
@@ -501,7 +502,7 @@ std::vector<FragmentIndex> ChemicalStructure::completedFragments() const {
 
 std::vector<FragmentIndex> ChemicalStructure::selectedFragments() const {
   std::vector<FragmentIndex> result;
-  for(const auto &[fragmentIndex, fragment]: m_fragments) {
+  for (const auto &[fragmentIndex, fragment] : m_fragments) {
     const auto &fragIndices = atomIndicesForFragment(fragmentIndex);
     if (fragIndices.size() == 0)
       continue;
@@ -539,7 +540,8 @@ FragmentIndex ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
   return m_fragmentForAtom[atomIndex];
 }
 
-FragmentIndex ChemicalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
+FragmentIndex
+ChemicalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
   return m_fragmentForAtom[idx.unique];
 }
 
@@ -574,7 +576,8 @@ ChemicalStructure::atomIndicesForBond(int bondIndex) const {
 std::vector<GenericAtomIndex>
 ChemicalStructure::atomIndicesForFragment(FragmentIndex fragmentIndex) const {
   const auto kv = m_fragments.find(fragmentIndex);
-  if(kv == m_fragments.end()) return {};
+  if (kv == m_fragments.end())
+    return {};
   return kv->second.atomIndices;
 }
 
@@ -594,11 +597,7 @@ QColor ChemicalStructure::atomColor(GenericAtomIndex atomIndex) const {
   }
   case AtomColoring::Fragment: {
     auto fragIndex = fragmentIndexForAtom(atomIndex);
-    const auto kv = m_fragments.find(fragIndex);
-    if(kv != m_fragments.end()) {
-      return kv->second.color;
-    }
-    return Qt::white;
+    return getFragmentColor(fragIndex);
   }
   case AtomColoring::Index:
     return Qt::black;
@@ -887,22 +886,23 @@ ChemicalStructure::wavefunctionsAndTransformsForAtoms(
   return result;
 }
 
-Fragment::State
-ChemicalStructure::getSymmetryUniqueFragmentState(FragmentIndex fragmentIndex) const {
+Fragment::State ChemicalStructure::getSymmetryUniqueFragmentState(
+    FragmentIndex fragmentIndex) const {
   const auto kv = m_symmetryUniqueFragments.find(fragmentIndex);
-  if(kv == m_symmetryUniqueFragments.end()) return {};
+  if (kv == m_symmetryUniqueFragments.end())
+    return {};
   return kv->second.state;
 }
 
 void ChemicalStructure::setSymmetryUniqueFragmentState(
     FragmentIndex fragmentIndex, Fragment::State state) {
   const auto kv = m_symmetryUniqueFragments.find(fragmentIndex);
-  if(kv == m_symmetryUniqueFragments.end()) return;
+  if (kv == m_symmetryUniqueFragments.end())
+    return;
   kv->second.state = state;
 }
 
-const FragmentMap &
-ChemicalStructure::symmetryUniqueFragments() const {
+const FragmentMap &ChemicalStructure::symmetryUniqueFragments() const {
   return m_symmetryUniqueFragments;
 }
 
@@ -939,7 +939,7 @@ ChemicalStructure::findUniqueFragment(
   Eigen::Isometry3d transform;
   bool found = false;
   const auto &sym = symmetryUniqueFragments();
-  for (const auto &[asymIndex, asym]: sym) {
+  for (const auto &[asymIndex, asym] : sym) {
     found = getTransformation(idxs, asym.atomIndices, transform);
     if (found) {
       result = asymIndex;
@@ -956,7 +956,8 @@ ChemicalStructure::findUniqueFragment(
   return {result, transform};
 }
 
-FragmentPairs ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) const {
+FragmentPairs
+ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) const {
   FragmentPairs result;
   constexpr double tolerance = 1e-1;
   const auto &fragments = getFragments();
@@ -971,7 +972,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) co
   auto &molPairs = result.pairs;
   std::vector<FragmentIndex> candidateFragments;
   if (allFragments) {
-    for (const auto &[idx, frag]: fragments) {
+    for (const auto &[idx, frag] : fragments) {
       candidateFragments.push_back(idx);
     }
   } else {
@@ -981,7 +982,7 @@ FragmentPairs ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) co
   for (const auto &fragIndexA : candidateFragments) {
     const auto &fragA = fragments.at(fragIndexA);
     const auto asymIndex = fragA.asymmetricFragmentIndex;
-    for (const auto &[fragIndexB, fragB]: fragments) {
+    for (const auto &[fragIndexB, fragB] : fragments) {
       if (allFragments && (fragIndexB <= fragIndexA))
         continue;
 
@@ -990,8 +991,8 @@ FragmentPairs ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) co
         continue;
 
       FragmentDimer d(fragA, fragB);
-      d.fragmentIndexA = fragIndexA;
-      d.fragmentIndexB = fragIndexB;
+      d.index.a = fragIndexA;
+      d.index.b = fragIndexB;
 
       // Create a 3D point for the current pair
       Eigen::Vector3d point(d.nearestAtomDistance, d.centroidDistance,
@@ -1047,8 +1048,10 @@ FragmentPairs ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) co
         qDebug() << "Warning: " << dist_sqr << "no similar fragment pair";
         continue;
       }
-      if (pairs[idx] == d.fragments) {
+      const auto &pair = pairs[idx];
+      if (pair == d.fragments) {
         d.uniquePairIndex = idx;
+        d.forward = pair.index.equivalent(d.fragments.index);
       }
     }
   }
@@ -1056,14 +1059,22 @@ FragmentPairs ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) co
   return result;
 }
 
-
 CellIndexSet ChemicalStructure::occupiedCells() const {
-  return CellIndexSet{CellIndex{0,0,0}};
+  return CellIndexSet{CellIndex{0, 0, 0}};
 }
 
-void ChemicalStructure::setFragmentColor(FragmentIndex fragment, const QColor &color) {
+QColor ChemicalStructure::getFragmentColor(FragmentIndex fragmentIndex) const {
+  const auto kv = m_fragments.find(fragmentIndex);
+  if (kv != m_fragments.end()) {
+    return kv->second.color;
+  }
+  return Qt::white;
+}
+
+void ChemicalStructure::setFragmentColor(FragmentIndex fragment,
+                                         const QColor &color) {
   auto kv = m_fragments.find(fragment);
-  if(kv != m_fragments.end()) {
+  if (kv != m_fragments.end()) {
     kv->second.color = color;
     emit atomsChanged();
   }
@@ -1090,21 +1101,21 @@ QString ChemicalStructure::chemicalFormula(bool richText) const {
   return formulaSum(symbols, richText);
 }
 
-
-
-std::vector<AtomicDisplacementParameters> ChemicalStructure::atomicDisplacementParametersForAtoms(const std::vector<GenericAtomIndex> &idxs) const {
+std::vector<AtomicDisplacementParameters>
+ChemicalStructure::atomicDisplacementParametersForAtoms(
+    const std::vector<GenericAtomIndex> &idxs) const {
   return std::vector<AtomicDisplacementParameters>(idxs.size());
 }
 
-AtomicDisplacementParameters ChemicalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
+AtomicDisplacementParameters
+ChemicalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
   return AtomicDisplacementParameters{};
 }
-
 
 std::vector<GenericAtomIndex> ChemicalStructure::atomIndices() const {
   std::vector<GenericAtomIndex> result;
   result.reserve(numberOfAtoms());
-  for(int i = 0; i < numberOfAtoms(); i++) {
+  for (int i = 0; i < numberOfAtoms(); i++) {
     result.push_back(indexToGenericIndex(i));
   }
   return result;

@@ -1,12 +1,12 @@
 #pragma once
 #include "fragment_index.h"
 #include "generic_atom_index.h"
-#include <QDebug>
 #include <QColor>
-#include <occ/core/linear_algebra.h>
+#include <QDebug>
 #include <QVector3D>
+#include <occ/core/linear_algebra.h>
 
-struct DimerAtoms{
+struct DimerAtoms {
   std::vector<GenericAtomIndex> a;
   std::vector<GenericAtomIndex> b;
 };
@@ -24,7 +24,6 @@ struct Fragment {
     int charge{0};
     int multiplicity{1};
   };
-
 
   std::vector<GenericAtomIndex> atomIndices;
 
@@ -65,8 +64,7 @@ struct FragmentDimer {
   double nearestAtomDistance{0.0};
   double centerOfMassDistance{0.0};
   QString symmetry{"-"};
-  FragmentIndex fragmentIndexA{-1};
-  FragmentIndex fragmentIndexB{-1};
+  FragmentIndexPair index;
 
   bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
   bool operator==(const FragmentDimer &) const;

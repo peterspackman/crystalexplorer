@@ -1466,9 +1466,14 @@ void Scene::colorFragmentsByEnergyPair() {
     auto fragmentPairs = m_structure->findFragmentPairs(selectedFragments[0]);
     ColorMapFunc colorMap(ColorMapName::Viridis, 0,
                           fragmentPairs.uniquePairs.size() - 1);
-    for (const auto &[fragmentPair, idx] :
+    for (const auto &[fragmentPair, idx, forward] :
          fragmentPairs.pairs[selectedFragments[0]]) {
-      m_structure->setFragmentColor(fragmentPair.fragmentIndexB, colorMap(idx));
+      qDebug() << "Setting fragment color" << fragmentPair.index.b
+               << colorMap(idx);
+      QColor c = colorMap(idx);
+      if(!forward) c = c.darker();
+
+      m_structure->setFragmentColor(fragmentPair.index.b, c);
     }
     auto interactionMap = interactions->getInteractionsMatchingFragments(
         fragmentPairs.uniquePairs);

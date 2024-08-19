@@ -718,7 +718,7 @@ void InfoDocuments::insertInteractionEnergiesGroupedByPair(PairInteractions *res
 
   QSet<QString> uniqueComponents;
   for (const QString &model : sortedModels) {
-    for (const auto &result : results->filterByModel(model)) {
+    for (const auto &[index, result] : results->filterByModel(model)) {
       for (const auto &component : result->components()) {
         uniqueComponents.insert(component.first);
       }
@@ -740,7 +740,7 @@ void InfoDocuments::insertInteractionEnergiesGroupedByPair(PairInteractions *res
   int row = 1;
   for (const QString &model : sortedModels) {
     int interactionIndex = 0;
-    for (const auto *result : results->filterByModel(model)) {
+    for (const auto &[index, result] : results->filterByModel(model)) {
       insertColorBlock(table, cursor, row, 0, result->color());
 
       insertRightAlignedCellValue(table, cursor, row, 1, model);

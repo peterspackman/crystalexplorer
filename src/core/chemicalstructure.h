@@ -21,18 +21,21 @@
 
 using Transform = Eigen::Isometry3d;
 
-using FragmentMap = 
-  ankerl::unordered_dense::map<FragmentIndex, Fragment, FragmentIndexHash>;
+using FragmentMap =
+    ankerl::unordered_dense::map<FragmentIndex, Fragment, FragmentIndexHash>;
 
 struct FragmentPairs {
   struct SymmetryRelatedPair {
     FragmentDimer fragments;
     int uniquePairIndex{-1};
+    bool forward{false};
   };
   using MoleculeNeighbors = std::vector<SymmetryRelatedPair>;
 
   std::vector<FragmentDimer> uniquePairs;
-  ankerl::unordered_dense::map<FragmentIndex, MoleculeNeighbors, FragmentIndexHash> pairs;
+  ankerl::unordered_dense::map<FragmentIndex, MoleculeNeighbors,
+                               FragmentIndexHash>
+      pairs;
 };
 
 struct StructureFrame;
@@ -155,7 +158,7 @@ public:
   virtual const FragmentMap &symmetryUniqueFragments() const;
 
   virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &) const;
-  virtual const FragmentMap& getFragments() const;
+  virtual const FragmentMap &getFragments() const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
@@ -168,7 +171,8 @@ public:
   virtual void deleteAtoms(const std::vector<GenericAtomIndex> &);
   virtual bool hasIncompleteFragments() const;
   virtual bool hasIncompleteSelectedFragments() const;
-  virtual std::vector<GenericAtomIndex> atomIndicesForFragment(FragmentIndex) const;
+  virtual std::vector<GenericAtomIndex>
+      atomIndicesForFragment(FragmentIndex) const;
   virtual const std::pair<int, int> &atomsForBond(int) const;
   virtual std::pair<GenericAtomIndex, GenericAtomIndex>
   atomIndicesForBond(int) const;
@@ -182,9 +186,11 @@ public:
 
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
-  virtual FragmentPairs findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}) const;
+  virtual FragmentPairs
+  findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}) const;
 
-  virtual void setFragmentColor(FragmentIndex, const QColor&);
+  virtual QColor getFragmentColor(FragmentIndex) const;
+  virtual void setFragmentColor(FragmentIndex, const QColor &);
   virtual void setAllFragmentColors(const QColor &color);
 
   // dynamics data

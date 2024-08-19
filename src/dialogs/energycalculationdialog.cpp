@@ -124,7 +124,7 @@ bool EnergyCalculationDialog::handleStructureChange() {
     for(const auto &[idx, mpairs]: m_fragmentPairs.pairs) {
       qDebug() << "Key: " << idx;
     }
-    for (const auto &[pair, uniqueIndex] :
+    for (const auto &[pair, uniqueIndex, forward] :
          m_fragmentPairs.pairs.at(keyFragmentIndex)) {
       if (match(pair.b, keyFragment2)) {
         m_fragmentPairsToCalculate.push_back(

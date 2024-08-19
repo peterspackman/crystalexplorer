@@ -1,7 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
-#include <occ/3rdparty/eigen-fmt/fmt.h>
 
 namespace occ {
 using DMatRM =

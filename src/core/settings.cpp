@@ -20,9 +20,6 @@ static const QMap<QString, QVariant> defaults{
     {keys::ORCA_NTHREADS, ""},
     {keys::XTB_EXECUTABLE, ""},
     {keys::OCC_NTHREADS, 1},
-#if defined(Q_OS_LINUX)
-    {keys::OCC_PATH, GLOBAL_OCC_PATH},
-#endif
     {keys::OCC_EXECUTABLE, GLOBAL_OCC_EXECUTABLE},
     {keys::OCC_DATA_DIRECTORY, GLOBAL_OCC_DATA_DIRECTORY},
     {keys::XH_NORMALIZATION, false},

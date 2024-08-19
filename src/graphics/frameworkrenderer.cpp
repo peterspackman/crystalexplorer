@@ -91,7 +91,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
   auto color = m_interactionComponentColors.value(m_options.component, m_defaultInteractionComponentColor);
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
-    for (const auto &[pair, uniqueIndex] : molPairs) {
+    for (const auto &[pair, uniqueIndex, forward] : molPairs) {
       auto *interaction = uniqueInteractions[uniqueIndex];
       if (!interaction)
         continue;

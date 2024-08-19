@@ -1,8 +1,8 @@
 #pragma once
 #include "chemicalstructure.h"
-#include "fragment_index.h"
 #include "crystalplane.h"
 #include "dimer_graph.h"
+#include "fragment_index.h"
 #include <QHash>
 #include <ankerl/unordered_dense.h>
 #include <occ/crystal/crystal.h>
@@ -19,7 +19,9 @@ public:
   void setOccCrystal(const OccCrystal &);
   inline const auto &occCrystal() const { return m_crystal; }
 
-  void setPairInteractionsFromDimerAtoms(const QList<QList<PairInteraction*>> &, const QList<QList<DimerAtoms>> &);
+  void
+  setPairInteractionsFromDimerAtoms(const QList<QList<PairInteraction *>> &,
+                                    const QList<QList<DimerAtoms>> &);
 
   virtual inline StructureType structureType() const override {
     return StructureType::Crystal;
@@ -47,7 +49,8 @@ public:
   void deleteIncompleteFragments() override;
   void deleteAtoms(const std::vector<GenericAtomIndex> &) override;
 
-  std::vector<GenericAtomIndex> atomIndicesForFragment(FragmentIndex) const override;
+  std::vector<GenericAtomIndex>
+      atomIndicesForFragment(FragmentIndex) const override;
 
   const std::pair<int, int> &atomsForBond(int) const override;
   std::vector<HBondTriple>
@@ -75,6 +78,10 @@ public:
 
   std::vector<FragmentIndex> completedFragments() const override;
   std::vector<FragmentIndex> selectedFragments() const override;
+
+  QColor getFragmentColor(FragmentIndex) const override;
+  void setFragmentColor(FragmentIndex, const QColor &) override;
+  void setAllFragmentColors(const QColor &color) override;
 
   Fragment::State getSymmetryUniqueFragmentState(FragmentIndex) const override;
   void setSymmetryUniqueFragmentState(FragmentIndex, Fragment::State) override;
@@ -111,17 +118,17 @@ public:
       const std::vector<GenericAtomIndex> &idxs,
       const Eigen::Isometry3d &result) const override;
 
-  bool getTransformation(
-      const std::vector<GenericAtomIndex> &from_orig,
-      const std::vector<GenericAtomIndex> &to_orig,
-      Eigen::Isometry3d &result) const override;
+  bool getTransformation(const std::vector<GenericAtomIndex> &from_orig,
+                         const std::vector<GenericAtomIndex> &to_orig,
+                         Eigen::Isometry3d &result) const override;
 
-  [[nodiscard]] std::vector<AtomicDisplacementParameters> atomicDisplacementParametersForAtoms(const std::vector<GenericAtomIndex> &) const override;
-  [[nodiscard]] AtomicDisplacementParameters atomicDisplacementParameters(GenericAtomIndex) const override;
-
+  [[nodiscard]] std::vector<AtomicDisplacementParameters>
+  atomicDisplacementParametersForAtoms(
+      const std::vector<GenericAtomIndex> &) const override;
+  [[nodiscard]] AtomicDisplacementParameters
+      atomicDisplacementParameters(GenericAtomIndex) const override;
 
 private:
-
   Fragment makeFragmentFromFragmentIndex(FragmentIndex);
   FragmentIndex findUnitCellFragment(const Fragment &frag) const;
   Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol) const;
@@ -132,14 +139,15 @@ private:
   void removeVanDerWaalsContactAtoms();
   void deleteAtomsByOffset(const std::vector<int> &atomIndices);
 
-  void buildDimerGraph(double maxRadius=30.0);
+  void buildDimerGraph(double maxRadius = 30.0);
 
   OccCrystal m_crystal;
 
   std::vector<GenericAtomIndex> m_unitCellOffsets;
   ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash>
       m_atomMap;
-  ankerl::unordered_dense::map<int, AtomicDisplacementParameters> m_unitCellAdps;
+  ankerl::unordered_dense::map<int, AtomicDisplacementParameters>
+      m_unitCellAdps;
   ankerl::unordered_dense::map<int, FragmentIndex> m_unitCellAtomFragments;
 
   FragmentMap m_fragments;
@@ -153,9 +161,10 @@ private:
 
   occ::crystal::CrystalDimers m_unitCellDimers;
   PeriodicDimerGraph m_dimerGraph;
-  std::vector<PeriodicDimerGraph::VertexDescriptor>
-      m_dimerGraphVertices;
+  std::vector<PeriodicDimerGraph::VertexDescriptor> m_dimerGraphVertices;
   std::vector<PeriodicDimerGraph::EdgeDescriptor> m_dimerGraphEdges;
-  ankerl::unordered_dense::map<FragmentIndexPair, PeriodicDimerGraph::EdgeDescriptor, FragmentIndexPairHash> m_dimerEdgeMap;
-
+  ankerl::unordered_dense::map<FragmentIndexPair,
+                               PeriodicDimerGraph::EdgeDescriptor,
+                               FragmentIndexPairHash>
+      m_dimerEdgeMap;
 };
