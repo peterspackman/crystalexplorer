@@ -80,6 +80,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   if (m_options.display == FrameworkOptions::Display::None)
     return;
 
+  FragmentPairSettings pairSettings;
+  pairSettings.allowInversion = m_options.allowInversion;
   auto fragmentPairs = m_structure->findFragmentPairs();
   qDebug() << "Number of unique pairs:" << fragmentPairs.uniquePairs.size();
   auto interactionMap = m_interactions->getInteractionsMatchingFragments(
@@ -90,15 +92,27 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   if (uniqueInteractions.size() < fragmentPairs.uniquePairs.size())
     return;
 
-  auto color = m_interactionComponentColors.value(m_options.component, m_defaultInteractionComponentColor);
+  QColor color = m_options.customColor;
+  if(m_options.coloring == FrameworkOptions::Coloring::Component) {
+    color = m_interactionComponentColors.value(m_options.component, m_defaultInteractionComponentColor);
+  }
+
+  ColorMapFunc cmap(ColorMapName::Turbo, 0.0, 100.0);
+
   std::vector<std::pair<QColor, double>> energies;
   energies.reserve(uniqueInteractions.size());
+
   for(const auto *interaction: uniqueInteractions) {
     QColor c = color;
     double energy = 0.0;
     if (interaction) {
       energy = interaction->getComponent(m_options.component);
-      c = interaction->color();
+      if(m_options.coloring == FrameworkOptions::Coloring::Interaction) {
+        c = interaction->color();
+      }
+    }
+    if(m_options.coloring == FrameworkOptions::Coloring::Value) {
+      c = cmap(energy);
     }
     energies.push_back({c, energy});
   }

@@ -572,6 +572,8 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
   qDebug() << "have interactions";
 
   if (interactions->getCount() > 0) {
+    FragmentPairSettings pairSettings;
+    pairSettings.allowInversion = false;
     scene->colorFragmentsByEnergyPair();
     // These must be here for performance!
     cursor.beginEditBlock();

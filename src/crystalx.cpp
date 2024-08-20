@@ -1965,9 +1965,14 @@ void Crystalx::showEnergyFrameworkDialog() {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
+  auto * structure = scene->chemicalStructure();
+  if(!structure) return;
+  auto * interactions = structure->pairInteractions();
+  if(!interactions) return;
+  if(!interactions->haveInteractions()) return;
+
   if (childPropertyController) {
-    childPropertyController->setCurrentPairInteractions(
-        scene->chemicalStructure()->pairInteractions());
+    childPropertyController->setCurrentPairInteractions(interactions);
     childPropertyController->toggleShowEnergyFramework();
   }
 }

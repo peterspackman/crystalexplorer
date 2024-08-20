@@ -520,6 +520,20 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
   m_bondLineRenderer->draw();
   m_bondLineRenderer->release();
 
+  handleMeshesUpdate();
+
+  for (auto *meshRenderer : m_meshRenderers) {
+    meshRenderer->bind();
+    m_uniforms.apply(meshRenderer);
+    meshRenderer->draw();
+    meshRenderer->release();
+  }
+
+  m_pointCloudRenderer->bind();
+  m_uniforms.apply(m_pointCloudRenderer);
+  m_pointCloudRenderer->draw();
+  m_pointCloudRenderer->release();
+
   if (!forPicking) {
     m_labelRenderer->bind();
     m_uniforms.apply(m_labelRenderer);
@@ -536,20 +550,6 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_cellLinesRenderer->draw();
     m_cellLinesRenderer->release();
   }
-
-  handleMeshesUpdate();
-
-  for (auto *meshRenderer : m_meshRenderers) {
-    meshRenderer->bind();
-    m_uniforms.apply(meshRenderer);
-    meshRenderer->draw();
-    meshRenderer->release();
-  }
-
-  m_pointCloudRenderer->bind();
-  m_uniforms.apply(m_pointCloudRenderer);
-  m_pointCloudRenderer->draw();
-  m_pointCloudRenderer->release();
 
   if (forPicking) {
     m_uniforms.u_renderMode = storedRenderMode;

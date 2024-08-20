@@ -65,6 +65,7 @@ public:
                             const QString &component) const;
 
   int getCount(const QString &model = "") const;
+  bool haveInteractions(const QString &model = "") const;
 
 signals:
   void interactionAdded();

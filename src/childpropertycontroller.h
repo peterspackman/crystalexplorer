@@ -41,6 +41,7 @@ protected slots:
   void resetScale();
   void exportButtonClicked();
   void onMeshModelUpdate();
+  void onFrameworkColoringChanged();
 
 signals:
   void surfacePropertyChosen(int);
@@ -83,4 +84,5 @@ private:
   MeshPropertyModel *m_meshPropertyModel{nullptr};
   PairInteractions *m_pairInteractions{nullptr};
   QMap<QString, Mesh::ScalarPropertyRange> m_clampedProperties;
+  QColor m_customFrameworkColor{Qt::blue};
 };

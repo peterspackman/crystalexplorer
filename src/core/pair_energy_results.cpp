@@ -190,3 +190,8 @@ PairInteraction *PairInteractions::getInteraction(const QString &model,
 
   return result->second;
 }
+
+
+bool PairInteractions::haveInteractions(const QString &model) const {
+  return getCount(model) > 0;
+}

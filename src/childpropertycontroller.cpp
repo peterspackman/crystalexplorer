@@ -3,6 +3,7 @@
 #include <QCheckBox>
 #include <QDebug>
 #include <QLocale>
+#include <QColorDialog>
 
 #include "settings.h"
 
@@ -56,6 +57,21 @@ void ChildPropertyController::setup() {
   connect(exportSurfaceButton, &QPushButton::clicked, this,
           &ChildPropertyController::exportButtonClicked);
 
+  frameworkColorComboBox->blockSignals(true);
+  QStringList colorValues = availableFrameworkColoringOptions();
+  frameworkColorComboBox->insertItems(0, colorValues);
+  componentComboBox->setCurrentIndex(0);
+  frameworkColorComboBox->blockSignals(false);
+
+  frameworkColorToolButton->hide();
+  connect(frameworkColorToolButton, &QAbstractButton::clicked, [this]() {
+    QColor color = QColorDialog::getColor(m_customFrameworkColor, this);
+    if (color.isValid()) {
+      m_customFrameworkColor = color;
+      onFrameworkColoringChanged();
+    }
+  });
+
   // framework
   connect(showLinesButton, &QRadioButton::clicked,
           [this]() { setFrameworkDisplay(FrameworkOptions::Display::Lines); });
@@ -67,16 +83,19 @@ void ChildPropertyController::setup() {
           [this]() { setFrameworkDisplay(FrameworkOptions::Display::Tubes); });
 
   connect(modelComboBox, &QComboBox::currentIndexChanged,
-          [this]() { updatePairInteractionComponents();});
+          [this]() { updatePairInteractionComponents(); });
 
   connect(frameworkTubeSizeSpinBox, &QSpinBox::valueChanged,
-          [this]() { emitFrameworkOptions();});
+          [this]() { emitFrameworkOptions(); });
 
   connect(frameworkCutoffSpinBox, &QDoubleSpinBox::valueChanged,
-          [this]() { emitFrameworkOptions();});
+          [this]() { emitFrameworkOptions(); });
 
   connect(componentComboBox, &QComboBox::currentIndexChanged,
-          [this]() { emitFrameworkOptions();});
+          [this]() { emitFrameworkOptions(); });
+
+  connect(frameworkColorComboBox, &QComboBox::currentIndexChanged, this,
+          &ChildPropertyController::onFrameworkColoringChanged);
 
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
@@ -161,9 +180,11 @@ void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
 }
 
 void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
-  if(m_pairInteractions) {
-      disconnect(m_pairInteractions, &PairInteractions::interactionAdded, this, &ChildPropertyController::updatePairInteractionModels);
-      disconnect(m_pairInteractions, &PairInteractions::interactionRemoved, this, &ChildPropertyController::updatePairInteractionModels);
+  if (m_pairInteractions) {
+    disconnect(m_pairInteractions, &PairInteractions::interactionAdded, this,
+               &ChildPropertyController::updatePairInteractionModels);
+    disconnect(m_pairInteractions, &PairInteractions::interactionRemoved, this,
+               &ChildPropertyController::updatePairInteractionModels);
   }
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
@@ -173,9 +194,11 @@ void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
 
   if (m_pairInteractions) {
     setEnabled(m_pairInteractions->getCount() > 0);
-    if(m_pairInteractions) {
-        connect(m_pairInteractions, &PairInteractions::interactionAdded, this, &ChildPropertyController::updatePairInteractionModels);
-        connect(m_pairInteractions, &PairInteractions::interactionRemoved, this, &ChildPropertyController::updatePairInteractionModels);
+    if (m_pairInteractions) {
+      connect(m_pairInteractions, &PairInteractions::interactionAdded, this,
+              &ChildPropertyController::updatePairInteractionModels);
+      connect(m_pairInteractions, &PairInteractions::interactionRemoved, this,
+              &ChildPropertyController::updatePairInteractionModels);
     }
     updatePairInteractionModels();
   }
@@ -198,6 +221,7 @@ void ChildPropertyController::updatePairInteractionModels() {
 void ChildPropertyController::updatePairInteractionComponents() {
   if (!m_pairInteractions)
     return;
+
   QString currentComponent = componentComboBox->currentText();
   componentComboBox->blockSignals(true);
   auto values =
@@ -208,6 +232,7 @@ void ChildPropertyController::updatePairInteractionComponents() {
   auto idx = values.indexOf(currentComponent);
   componentComboBox->setCurrentIndex((idx >= 0) ? idx : 0);
   componentComboBox->blockSignals(false);
+
   emitFrameworkOptions();
 }
 
@@ -223,6 +248,8 @@ bool ChildPropertyController::toggleShowEnergyFramework() {
 void ChildPropertyController::setShowEnergyFramework(bool show) {
   if (!m_pairInteractions)
     return;
+  if (!m_pairInteractions->haveInteractions())
+    return;
 
   if (show) {
     if (m_frameworkDisplay == FrameworkOptions::Display::None) {
@@ -232,17 +259,39 @@ void ChildPropertyController::setShowEnergyFramework(bool show) {
         setFrameworkDisplay(FrameworkOptions::Display::Tubes);
       }
     }
-  }
-  else {
+  } else {
     setFrameworkDisplay(FrameworkOptions::Display::None);
   }
+}
+
+inline void setButtonColor(QAbstractButton *colorButton, QColor color) {
+  QPixmap pixmap = QPixmap(colorButton->iconSize());
+  pixmap.fill(color);
+  colorButton->setIcon(QIcon(pixmap));
+}
+
+void ChildPropertyController::onFrameworkColoringChanged() {
+  auto coloring =
+      frameworkColoringFromString(frameworkColorComboBox->currentText());
+  if (coloring == FrameworkOptions::Coloring::Custom) {
+    setButtonColor(frameworkColorToolButton, m_customFrameworkColor);
+    frameworkColorToolButton->show();
+  }
+  else {
+    frameworkColorToolButton->hide();
+  }
+  emitFrameworkOptions();
 }
 
 void ChildPropertyController::emitFrameworkOptions() {
   FrameworkOptions options;
   options.model = modelComboBox->currentText();
+  options.coloring =
+      frameworkColoringFromString(frameworkColorComboBox->currentText());
+  options.customColor = m_customFrameworkColor;
   options.component = componentComboBox->currentText();
-  options.scale = 0.001 * frameworkTubeSizeSpinBox->value(); // convert to A per kJ/mol
+  options.scale =
+      0.001 * frameworkTubeSizeSpinBox->value(); // convert to A per kJ/mol
   options.cutoff = frameworkCutoffSpinBox->value();
   options.display = m_frameworkDisplay;
   emit frameworkOptionsChanged(options);

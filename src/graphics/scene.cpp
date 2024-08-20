@@ -1459,11 +1459,10 @@ bool Scene::applyDisorderColoring() {
   return _highlightMode == HighlightMode::Normal && _disorderCycleIndex == -1;
 }
 
-void Scene::colorFragmentsByEnergyPair() {
+void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
   auto selectedFragments = m_structure->selectedFragments();
   if (selectedFragments.size() == 1) {
     auto *interactions = m_structure->pairInteractions();
-    FragmentPairSettings pairSettings;
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
     ColorMapFunc colorMap(ColorMapName::Viridis, 0,

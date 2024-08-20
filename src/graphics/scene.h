@@ -186,7 +186,7 @@ public:
   bool applyDisorderColoring();
   void togglePairHighlighting(bool);
 
-  void colorFragmentsByEnergyPair();
+  void colorFragmentsByEnergyPair(FragmentPairSettings settings = {});
   void clearFragmentColors();
 
   void setShowSurfaceInteriors(bool);
