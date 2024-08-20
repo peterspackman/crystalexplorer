@@ -1,6 +1,6 @@
 #include "crystalstructure.h"
-#include "occ/core/kabsch.h"
 #include <iostream>
+#include <occ/core/kabsch.h>
 
 using VertexDesc =
     typename occ::core::graph::PeriodicBondGraph::VertexDescriptor;
@@ -299,7 +299,7 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
         {i, AtomicDisplacementParameters(adps(0, i), adps(1, i), adps(2, i),
                                          adps(3, i), adps(4, i), adps(5, i))});
   }
-  buildDimerGraph();
+  buildDimerMappingTable();
   resetAtomsAndBonds();
 }
 
@@ -1300,64 +1300,120 @@ CrystalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
   return AtomicDisplacementParameters{};
 }
 
-void CrystalStructure::buildDimerGraph(double maxRadius) {
-  maxRadius = 30.0;
+void CrystalStructure::buildDimerMappingTable(double maxRadius) {
   m_unitCellDimers = m_crystal.unit_cell_dimers(maxRadius);
-  qDebug() << "Building dimer graph";
+  qDebug() << "Building dimer mapping table";
   qDebug() << "Unit cell molecules" << m_unitCellFragments.size();
   qDebug() << "Unique dimers:" << m_unitCellDimers.unique_dimers.size();
-  const size_t N = m_unitCellDimers.molecule_neighbors.size();
 
-  m_dimerGraphVertices.clear();
-  m_dimerGraphEdges.clear();
-  m_dimerGraph = PeriodicDimerGraph();
-  m_dimerEdgeMap.clear();
-  for (size_t i = 0; i < N; i++) {
-    m_dimerGraphVertices.push_back(
-        m_dimerGraph.add_vertex(PeriodicDimerVertex{i}));
+  m_dimerMappingTable = occ::crystal::DimerMappingTable::build_dimer_table(
+      m_crystal, m_unitCellDimers, true);
+  m_dimerMappingTableNoInv = occ::crystal::DimerMappingTable::build_dimer_table(
+      m_crystal, m_unitCellDimers, false);
+  qDebug() << "Built dimer mapping table";
+}
+
+/* Reminder
+struct FragmentPairs {
+  struct SymmetryRelatedPair {
+    FragmentDimer fragments;
+    int uniquePairIndex{-1};
+    bool forward{false};
+  };
+  using MoleculeNeighbors = std::vector<SymmetryRelatedPair>;
+
+  std::vector<FragmentDimer> uniquePairs;
+  ankerl::unordered_dense::map<FragmentIndex, MoleculeNeighbors,
+                               FragmentIndexHash>
+      pairs;
+};
+*/
+
+FragmentPairs
+CrystalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInversion) const {
+  using occ::crystal::DimerIndex;
+  using occ::crystal::DimerIndexHash;
+  using occ::crystal::SiteIndex;
+
+  FragmentPairs result;
+  result.allowInversion = allowInversion;
+  constexpr double tolerance = 1e-1;
+  const auto &fragments = getFragments();
+  const bool allFragments = keyFragment.u < 0;
+
+  const auto &dimerTable = allowInversion ? m_dimerMappingTable : m_dimerMappingTableNoInv;
+
+  std::vector<FragmentIndex> candidateFragments;
+  if (allFragments) {
+    for (const auto &[idx, frag] : fragments) {
+      candidateFragments.push_back(idx);
+    }
+  } else {
+    candidateFragments.push_back(keyFragment);
   }
 
-  int numConnections = 0;
+  ankerl::unordered_dense::map<DimerIndex, int, DimerIndexHash>
+      symmetryUniquePairMap;
 
-  auto addEdge = [&](const occ::core::Dimer &d, int asymIndex) {
-    PeriodicDimerEdge fwd;
-    int a = d.a().unit_cell_molecule_idx();
-    int b = d.b().unit_cell_molecule_idx();
-    const auto &shiftA = d.a().cell_shift();
-    const auto &shiftB = d.b().cell_shift();
+  for (const auto &fragIndexA : candidateFragments) {
+    const auto &fragA = fragments.at(fragIndexA);
+    for (const auto &[fragIndexB, fragB] : fragments) {
+      if (allFragments && (fragIndexB <= fragIndexA))
+        continue;
 
-    FragmentIndex fa{a, shiftA[0], shiftA[1], shiftA[2]};
-    FragmentIndex fb{b, shiftB[0], shiftB[1], shiftB[2]};
+      double distance = fragA.nearestAtom(fragB).distance;
+      if (distance <= tolerance)
+        continue;
 
-    fwd.nearestAtomDistance = d.nearest_distance();
-    fwd.centroidDistance = d.centroid_distance();
-    fwd.centerOfMassDistance = d.center_of_mass_distance();
-    fwd.sourceIndex = a;
-    fwd.targetIndex = b;
-    fwd.asymmetricDimerIndex = asymIndex;
+      // Create FragmentDimer object
+      FragmentDimer d(fragA, fragB);
+      d.index.a = fragIndexA;
+      d.index.b = fragIndexB;
 
-    fwd.h = shiftB[0] - shiftA[0];
-    fwd.k = shiftB[1] - shiftA[1];
-    fwd.l = shiftB[2] - shiftA[2];
+      DimerIndex dimerIndex = d.index.toDimerIndex();
+      if(!dimerTable.have_dimer(dimerIndex)) {
+        qDebug() << "Skipping dimer index:" << QString::fromStdString(fmt::format("{}", dimerIndex));
+        continue;
+      }
+      DimerIndex canonicalIndex = dimerTable.canonical_dimer_index(dimerIndex);
+      DimerIndex symmetryUniqueDimer =
+          dimerTable.symmetry_unique_dimer(canonicalIndex);
 
-    m_dimerGraphEdges.push_back(m_dimerGraph.add_edge(a, b, fwd));
-    m_dimerEdgeMap.insert({{fa, fb}, m_dimerGraphEdges.back()});
-    PeriodicDimerEdge back = fwd;
-    std::swap(back.sourceIndex, back.targetIndex);
-    back.h = -back.h;
-    back.k = -back.k;
-    back.l = -back.l;
-    m_dimerGraphEdges.push_back(m_dimerGraph.add_edge(b, a, back));
-    m_dimerEdgeMap.insert(
-        {FragmentIndexPair{fb, fa}, m_dimerGraphEdges.back()});
-    numConnections++;
-  };
+      int uniquePairIndex;
+      auto it = symmetryUniquePairMap.find(symmetryUniqueDimer);
+      if (it == symmetryUniquePairMap.end()) {
+        uniquePairIndex = result.uniquePairs.size();
+        result.uniquePairs.push_back(d);
+        symmetryUniquePairMap[symmetryUniqueDimer] = uniquePairIndex;
+      } else {
+        uniquePairIndex = it->second;
+      }
 
-  for (size_t i = 0; i < N; i++) {
-    for (const auto &[d, asymIndex] : m_unitCellDimers.molecule_neighbors[i]) {
-      addEdge(d, asymIndex);
+      FragmentPairs::SymmetryRelatedPair symmetryRelatedPair{
+          d, uniquePairIndex};
+
+      result.pairs[fragA.index].push_back(symmetryRelatedPair);
+
+      if (allFragments) {
+        result.pairs[fragB.index].push_back(
+            {FragmentDimer(fragB, fragA), uniquePairIndex});
+      }
     }
   }
 
-  qDebug() << "Found" << m_dimerGraphEdges.size() << "Dimer edges";
+  // Sort the pairs
+  auto fragmentDimerSortFunc = [](const FragmentDimer &a,
+                                  const FragmentDimer &b) {
+    return a.nearestAtomDistance < b.nearestAtomDistance;
+  };
+  auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
+                            const FragmentPairs::SymmetryRelatedPair &b) {
+    return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
+  };
+
+  for (auto &[idx, vec] : result.pairs) {
+    std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
+  }
+
+  return result;
 }

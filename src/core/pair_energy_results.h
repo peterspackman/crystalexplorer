@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QObject>
 #include <ankerl/unordered_dense.h>
+#include <occ/crystal/dimer_mapping_table.h>
 
 class PairInteraction : public QObject {
   Q_OBJECT
@@ -72,4 +73,6 @@ signals:
 private:
   ModelInteractions m_pairInteractions;
   ankerl::unordered_dense::map<QString, double> m_maxNearestDistance;
+  bool m_haveDimerMap{false};
+  occ::crystal::DimerMappingTable m_dimerMappingTable;
 };

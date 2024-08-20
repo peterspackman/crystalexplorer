@@ -89,6 +89,7 @@ void EnergyCalculationDialog::handleModelChange() {
 }
 
 bool EnergyCalculationDialog::handleStructureChange() {
+  // TODO check if energy model is symmetric i.e allowInversions should be set
   m_wavefunctions.clear();
   m_requiredWavefunctions.clear();
   if (!m_structure)
@@ -124,7 +125,7 @@ bool EnergyCalculationDialog::handleStructureChange() {
     for(const auto &[idx, mpairs]: m_fragmentPairs.pairs) {
       qDebug() << "Key: " << idx;
     }
-    for (const auto &[pair, uniqueIndex, forward] :
+    for (const auto &[pair, uniqueIndex] :
          m_fragmentPairs.pairs.at(keyFragmentIndex)) {
       if (match(pair.b, keyFragment2)) {
         m_fragmentPairsToCalculate.push_back(

@@ -6,6 +6,7 @@
 #include <QHash>
 #include <ankerl/unordered_dense.h>
 #include <occ/crystal/crystal.h>
+#include <occ/crystal/dimer_mapping_table.h>
 
 using OccCrystal = occ::crystal::Crystal;
 
@@ -51,6 +52,10 @@ public:
 
   std::vector<GenericAtomIndex>
       atomIndicesForFragment(FragmentIndex) const override;
+
+  FragmentPairs
+  findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}, bool allowInversion = true) const override;
+
 
   const std::pair<int, int> &atomsForBond(int) const override;
   std::vector<HBondTriple>
@@ -139,7 +144,7 @@ private:
   void removeVanDerWaalsContactAtoms();
   void deleteAtomsByOffset(const std::vector<int> &atomIndices);
 
-  void buildDimerGraph(double maxRadius = 30.0);
+  void buildDimerMappingTable(double maxRadius = 30.0);
 
   OccCrystal m_crystal;
 
@@ -160,11 +165,6 @@ private:
   std::vector<std::pair<int, int>> m_hydrogenBonds;
 
   occ::crystal::CrystalDimers m_unitCellDimers;
-  PeriodicDimerGraph m_dimerGraph;
-  std::vector<PeriodicDimerGraph::VertexDescriptor> m_dimerGraphVertices;
-  std::vector<PeriodicDimerGraph::EdgeDescriptor> m_dimerGraphEdges;
-  ankerl::unordered_dense::map<FragmentIndexPair,
-                               PeriodicDimerGraph::EdgeDescriptor,
-                               FragmentIndexPairHash>
-      m_dimerEdgeMap;
+  occ::crystal::DimerMappingTable m_dimerMappingTable;
+  occ::crystal::DimerMappingTable m_dimerMappingTableNoInv;
 };

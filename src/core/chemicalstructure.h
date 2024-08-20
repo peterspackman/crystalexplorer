@@ -28,8 +28,8 @@ struct FragmentPairs {
   struct SymmetryRelatedPair {
     FragmentDimer fragments;
     int uniquePairIndex{-1};
-    bool forward{false};
   };
+  bool allowInversion{false};
   using MoleculeNeighbors = std::vector<SymmetryRelatedPair>;
 
   std::vector<FragmentDimer> uniquePairs;
@@ -187,7 +187,7 @@ public:
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
   virtual FragmentPairs
-  findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}) const;
+  findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}, bool allowInversion = true) const;
 
   virtual QColor getFragmentColor(FragmentIndex) const;
   virtual void setFragmentColor(FragmentIndex, const QColor &);

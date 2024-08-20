@@ -1,6 +1,7 @@
 #pragma once
 #include <QDebug>
 #include <ankerl/unordered_dense.h>
+#include <occ/crystal/dimer_mapping_table.h>
 
 struct FragmentIndex {
   int u{0};
@@ -29,6 +30,14 @@ struct FragmentIndex {
   }
 
   inline bool isValid() const { return u >= 0; }
+
+  inline occ::crystal::SiteIndex toSiteIndex() const {
+    return occ::crystal::SiteIndex{u, occ::crystal::HKL{h, k, l}};
+  }
+
+  static inline FragmentIndex fromSiteIndex(const occ::crystal::SiteIndex &idx) {
+    return FragmentIndex{idx.offset, idx.hkl.h, idx.hkl.k, idx.hkl.l};
+  }
 };
 
 struct FragmentIndexHash {
@@ -102,6 +111,17 @@ struct FragmentIndexPair {
     }
 
     return false;
+  }
+
+  inline occ::crystal::DimerIndex toDimerIndex() const {
+    return occ::crystal::DimerIndex{a.toSiteIndex(), b.toSiteIndex()};
+  }
+
+  static inline FragmentIndexPair fromDimerIndex(const occ::crystal::DimerIndex &idx) {
+    return FragmentIndexPair{
+      FragmentIndex::fromSiteIndex(idx.a),
+      FragmentIndex::fromSiteIndex(idx.b)
+    };
   }
 };
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <fmt/core.h>
 #include <occ/core/linear_algebra.h>
 
 namespace occ::crystal {
@@ -45,15 +46,7 @@ struct HKL {
    * \return The magnitude of the lattice vector represented by this `HKL`
    * object, as a floating-point value.
    */
-  inline double d(const Mat3 &lattice) const {
-    return Vec3(h * lattice.col(0) + k * lattice.col(1) + l * lattice.col(2))
-        .norm();
-  }
-
-  inline Vec3 vector() const {
-    return Vec3(static_cast<double>(h), static_cast<double>(k),
-                static_cast<double>(l));
-  }
+  double d(const Mat3 &lattice) const;
 
   /// The maximum representable HKL structure
   static HKL maximum() {
@@ -67,20 +60,52 @@ struct HKL {
             std::numeric_limits<int>::min()};
   }
 
-  static HKL floor(const Vec3 &vec) {
-    HKL r;
-    r.h = static_cast<int>(std::floor(vec(0)));
-    r.k = static_cast<int>(std::floor(vec(1)));
-    r.l = static_cast<int>(std::floor(vec(2)));
-    return r;
+  static HKL floor(const Vec3 &vec, double tolerance=1e-8);
+  static HKL ceil(const Vec3 &vec);
+
+  Vec3 vector() const;
+  static HKL from_vector(const Vec3 &vec);
+
+  inline bool operator==(const HKL &rhs) const {
+    return (h == rhs.h) && (k == rhs.k) && (l == rhs.l);
   }
 
-  static HKL ceil(const Vec3 &vec) {
-    HKL r;
-    r.h = static_cast<int>(std::ceil(vec(0)));
-    r.k = static_cast<int>(std::ceil(vec(1)));
-    r.l = static_cast<int>(std::ceil(vec(2)));
-    return r;
+  inline bool operator!=(const HKL &rhs) const {
+    return (h != rhs.h) || (k != rhs.k) || (l != rhs.l);
+  }
+
+  inline HKL operator-(const HKL &rhs) const {
+    return HKL{h - rhs.h, k - rhs.k, l - rhs.l};
+  }
+
+  inline bool operator<(const HKL &rhs) const {
+    return std::tie(h, k, l) < std::tie(rhs.h, rhs.k, rhs.l);
+  }
+
+  inline bool operator>(const HKL &rhs) const {
+    return std::tie(h, k, l) > std::tie(rhs.h, rhs.k, rhs.l);
+  }
+
+  inline HKL operator+(const HKL &rhs) const {
+    return HKL{h + rhs.h, k + rhs.k, l + rhs.l};
+  }
+  inline HKL &operator+=(const HKL &rhs) {
+    h += rhs.h;
+    k += rhs.k;
+    l += rhs.l;
+    return *this;
+  }
+
+  inline HKL &operator-=(const HKL &rhs) {
+    h -= rhs.h;
+    k -= rhs.k;
+    l -= rhs.l;
+    return *this;
   }
 };
 } // namespace occ::crystal
+
+template <> struct fmt::formatter<occ::crystal::HKL> : formatter<int> {
+  auto format(const occ::crystal::HKL &,
+              format_context &ctx) const -> format_context::iterator;
+};

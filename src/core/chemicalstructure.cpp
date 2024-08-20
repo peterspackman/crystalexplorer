@@ -957,7 +957,8 @@ ChemicalStructure::findUniqueFragment(
 }
 
 FragmentPairs
-ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) const {
+ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInversion) const {
+  // TODO implement inversion treatment
   FragmentPairs result;
   constexpr double tolerance = 1e-1;
   const auto &fragments = getFragments();
@@ -1051,7 +1052,6 @@ ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment) const {
       const auto &pair = pairs[idx];
       if (pair == d.fragments) {
         d.uniquePairIndex = idx;
-        d.forward = pair.index.equivalent(d.fragments.index);
       }
     }
   }

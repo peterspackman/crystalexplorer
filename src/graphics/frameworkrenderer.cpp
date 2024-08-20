@@ -81,6 +81,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
     return;
 
   auto fragmentPairs = m_structure->findFragmentPairs();
+  qDebug() << "Number of unique pairs:" << fragmentPairs.uniquePairs.size();
   auto interactionMap = m_interactions->getInteractionsMatchingFragments(
       fragmentPairs.uniquePairs);
 
@@ -91,10 +92,13 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
   auto color = m_interactionComponentColors.value(m_options.component, m_defaultInteractionComponentColor);
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
-    for (const auto &[pair, uniqueIndex, forward] : molPairs) {
+    for (const auto &[pair, uniqueIndex] : molPairs) {
+      qDebug() << "Unique index:" << uniqueIndex;
       auto *interaction = uniqueInteractions[uniqueIndex];
-      if (!interaction)
+      if (!interaction) {
+        qDebug() << "No interaction found for" << pair.index;
         continue;
+      }
       auto ca = pair.a.centroid();
       QVector3D va(ca.x(), ca.y(), ca.z());
       auto cb = pair.b.centroid();
