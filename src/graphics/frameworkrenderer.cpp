@@ -91,26 +91,32 @@ void FrameworkRenderer::handleInteractionsUpdate() {
     return;
 
   auto color = m_interactionComponentColors.value(m_options.component, m_defaultInteractionComponentColor);
+  std::vector<std::pair<QColor, double>> energies;
+  energies.reserve(uniqueInteractions.size());
+  for(const auto *interaction: uniqueInteractions) {
+    QColor c = color;
+    double energy = 0.0;
+    if (interaction) {
+      energy = interaction->getComponent(m_options.component);
+      c = interaction->color();
+    }
+    energies.push_back({c, energy});
+  }
+
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
     for (const auto &[pair, uniqueIndex] : molPairs) {
-      qDebug() << "Unique index:" << uniqueIndex;
-      auto *interaction = uniqueInteractions[uniqueIndex];
-      if (!interaction) {
-        qDebug() << "No interaction found for" << pair.index;
-        continue;
-      }
-      auto ca = pair.a.centroid();
-      QVector3D va(ca.x(), ca.y(), ca.z());
-      auto cb = pair.b.centroid();
-      QVector3D vb(cb.x(), cb.y(), cb.z());
-      double energy = interaction->getComponent(m_options.component);
-      if (std::abs(energy) < m_options.cutoff)
+      auto [color, energy] = energies[uniqueIndex];
+      if (std::abs(energy) <= m_options.cutoff)
         continue;
       double scale = std::abs(energy * thickness());
       if (scale < 1e-4)
         continue;
 
-      color = interaction->color();
+      auto ca = pair.a.centroid();
+      QVector3D va(ca.x(), ca.y(), ca.z());
+      auto cb = pair.b.centroid();
+      QVector3D vb(cb.x(), cb.y(), cb.z());
+
       if (m_options.display == FrameworkOptions::Display::Tubes) {
         cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
                                                    color, scale);

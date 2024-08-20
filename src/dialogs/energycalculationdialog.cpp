@@ -103,7 +103,9 @@ bool EnergyCalculationDialog::handleStructureChange() {
   const auto &fragments = m_structure->getFragments();
   const auto keyFragmentIndex = selectedFragments[0];
   qDebug() << "Key fragment" << keyFragmentIndex;
-  m_fragmentPairs = m_structure->findFragmentPairs(keyFragmentIndex);
+  FragmentPairSettings pairSettings;
+  pairSettings.keyFragment = keyFragmentIndex;
+  m_fragmentPairs = m_structure->findFragmentPairs(pairSettings);
   m_fragmentPairsToCalculate.clear();
   const auto &keyFragment = fragments.at(keyFragmentIndex);
   const auto asymIndex = keyFragment.asymmetricFragmentIndex;

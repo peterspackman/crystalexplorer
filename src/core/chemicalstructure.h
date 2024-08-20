@@ -24,6 +24,11 @@ using Transform = Eigen::Isometry3d;
 using FragmentMap =
     ankerl::unordered_dense::map<FragmentIndex, Fragment, FragmentIndexHash>;
 
+struct FragmentPairSettings {
+  FragmentIndex keyFragment = FragmentIndex{-1};
+  bool allowInversion = true;
+};
+
 struct FragmentPairs {
   struct SymmetryRelatedPair {
     FragmentDimer fragments;
@@ -187,7 +192,7 @@ public:
   FragmentSymmetryRelation
   findUniqueFragment(const std::vector<GenericAtomIndex> &) const;
   virtual FragmentPairs
-  findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}, bool allowInversion = true) const;
+  findFragmentPairs(FragmentPairSettings settings = {}) const;
 
   virtual QColor getFragmentColor(FragmentIndex) const;
   virtual void setFragmentColor(FragmentIndex, const QColor &);

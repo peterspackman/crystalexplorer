@@ -1463,7 +1463,9 @@ void Scene::colorFragmentsByEnergyPair() {
   auto selectedFragments = m_structure->selectedFragments();
   if (selectedFragments.size() == 1) {
     auto *interactions = m_structure->pairInteractions();
-    auto fragmentPairs = m_structure->findFragmentPairs(selectedFragments[0]);
+    FragmentPairSettings pairSettings;
+    pairSettings.keyFragment = selectedFragments[0];
+    auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
     ColorMapFunc colorMap(ColorMapName::Viridis, 0,
                           fragmentPairs.uniquePairs.size() - 1);
     for (const auto &[fragmentPair, idx] :

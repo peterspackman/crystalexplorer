@@ -1330,18 +1330,19 @@ struct FragmentPairs {
 */
 
 FragmentPairs
-CrystalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInversion) const {
+CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
   using occ::crystal::DimerIndex;
   using occ::crystal::DimerIndexHash;
   using occ::crystal::SiteIndex;
 
   FragmentPairs result;
-  result.allowInversion = allowInversion;
+  result.allowInversion = settings.allowInversion;
   constexpr double tolerance = 1e-1;
   const auto &fragments = getFragments();
-  const bool allFragments = keyFragment.u < 0;
+  const bool allFragments = settings.keyFragment.u < 0;
 
-  const auto &dimerTable = allowInversion ? m_dimerMappingTable : m_dimerMappingTableNoInv;
+  const auto &dimerTable =
+      settings.allowInversion ? m_dimerMappingTable : m_dimerMappingTableNoInv;
 
   std::vector<FragmentIndex> candidateFragments;
   if (allFragments) {
@@ -1349,7 +1350,7 @@ CrystalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInversi
       candidateFragments.push_back(idx);
     }
   } else {
-    candidateFragments.push_back(keyFragment);
+    candidateFragments.push_back(settings.keyFragment);
   }
 
   ankerl::unordered_dense::map<DimerIndex, int, DimerIndexHash>
@@ -1371,8 +1372,7 @@ CrystalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInversi
       d.index.b = fragIndexB;
 
       DimerIndex dimerIndex = d.index.toDimerIndex();
-      if(!dimerTable.have_dimer(dimerIndex)) {
-        qDebug() << "Skipping dimer index:" << QString::fromStdString(fmt::format("{}", dimerIndex));
+      if (!dimerTable.have_dimer(dimerIndex)) {
         continue;
       }
       DimerIndex canonicalIndex = dimerTable.canonical_dimer_index(dimerIndex);
@@ -1389,8 +1389,8 @@ CrystalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInversi
         uniquePairIndex = it->second;
       }
 
-      FragmentPairs::SymmetryRelatedPair symmetryRelatedPair{
-          d, uniquePairIndex};
+      FragmentPairs::SymmetryRelatedPair symmetryRelatedPair{d,
+                                                             uniquePairIndex};
 
       result.pairs[fragA.index].push_back(symmetryRelatedPair);
 

@@ -957,13 +957,13 @@ ChemicalStructure::findUniqueFragment(
 }
 
 FragmentPairs
-ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInversion) const {
+ChemicalStructure::findFragmentPairs(FragmentPairSettings settings) const {
   // TODO implement inversion treatment
   FragmentPairs result;
   constexpr double tolerance = 1e-1;
   const auto &fragments = getFragments();
   const auto &uniqueFragments = symmetryUniqueFragments();
-  const bool allFragments = keyFragment.u < 0;
+  const bool allFragments = settings.keyFragment.u < 0;
   qDebug() << "Fragments" << fragments.size();
   qDebug() << "Unique fragments" << uniqueFragments.size();
 
@@ -977,7 +977,7 @@ ChemicalStructure::findFragmentPairs(FragmentIndex keyFragment, bool allowInvers
       candidateFragments.push_back(idx);
     }
   } else {
-    candidateFragments.push_back(keyFragment);
+    candidateFragments.push_back(settings.keyFragment);
   }
 
   for (const auto &fragIndexA : candidateFragments) {

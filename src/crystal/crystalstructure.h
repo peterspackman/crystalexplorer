@@ -54,7 +54,7 @@ public:
       atomIndicesForFragment(FragmentIndex) const override;
 
   FragmentPairs
-  findFragmentPairs(FragmentIndex keyFragment = FragmentIndex{-1}, bool allowInversion = true) const override;
+  findFragmentPairs(FragmentPairSettings settings = {}) const override;
 
 
   const std::pair<int, int> &atomsForBond(int) const override;
