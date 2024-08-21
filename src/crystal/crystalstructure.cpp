@@ -562,10 +562,8 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
   fragmentIndex.k += index.y;
   fragmentIndex.l += index.z;
 
-  qDebug() << "Atom index: " << index << "Fragment index: " << fragmentIndex;
   const Fragment frag = makeFragmentFromFragmentIndex(fragmentIndex);
 
-  qDebug() << "Adding atom indices:";
   for (const auto &idx : frag.atomIndices) {
     qDebug() << idx;
   }
@@ -1042,7 +1040,6 @@ CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
     auto offset = findCommonOffset(candidate, frag);
     if (offset.u >= 0) {
       offset.u = fragIndex.u;
-      qDebug() << "Found common offset at uc mol:" << offset;
       return offset;
     }
   }
@@ -1050,19 +1047,17 @@ CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
   return FragmentIndex{-1, 0, 0, 0};
 }
 
-Fragment CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) {
+Fragment CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   FragmentIndex unitCellIndex{idx.u, 0, 0, 0};
   // TODO add error checking
   Fragment result = m_unitCellFragments.at(unitCellIndex);
-  qDebug() << "Unit cell fragment:" << result;
   // TODO asymmetric transform
   for (auto &atomIndex : result.atomIndices) {
     atomIndex.x += idx.h;
     atomIndex.y += idx.k;
     atomIndex.z += idx.l;
-    qDebug() << atomIndex;
   }
-  qDebug() << "result:" << result;
+  result.index = idx;
   return result;
 }
 
@@ -1168,8 +1163,6 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
     const auto &molOffsets = offsets[i];
     for (int j = 0; j < molOffsets.size(); j++) {
       const auto &offset = molOffsets[j];
-      qDebug() << "Offset a" << offset.a.size();
-      qDebug() << "Offset b" << offset.b.size();
       idxs.insert(offset.a.begin(), offset.a.end());
       idxs.insert(offset.b.begin(), offset.b.end());
     }
@@ -1181,6 +1174,13 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
   addAtomsByCrystalIndex(idxsToAdd);
   updateBondGraph();
 
+  using occ::crystal::DimerIndex;
+  using occ::crystal::DimerIndexHash;
+
+  ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> added;
+
+  const auto &dimerMap = m_dimerMappingTableNoInv;
+
   auto *p = pairInteractions();
   for (int i = 0; i < interactions.size(); i++) {
     const auto &molInteractions = interactions[i];
@@ -1191,11 +1191,34 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
       auto fragB = makeFragment(offset.b);
       auto *pair = molInteractions[j];
       FragmentDimer d(fragA, fragB);
-      qDebug() << d;
+      DimerIndex idx = d.index.toDimerIndex();
+      DimerIndex canonical = dimerMap.canonical_dimer_index(idx);
+      DimerIndex unique = dimerMap.symmetry_unique_dimer(canonical);
+      auto uniquePairIndex = FragmentIndexPair::fromDimerIndex(unique);
+
+      const Fragment uFragA = makeFragmentFromFragmentIndex(uniquePairIndex.a);
+      const Fragment uFragB = makeFragmentFromFragmentIndex(uniquePairIndex.b);
+      FragmentDimer ud(uFragA, uFragB);
+      qDebug() << "Fragment dimer" << d.index;
+      qDebug() << "Unique dimer" << ud.index;
+
+      if (added.find(unique) != added.end()) {
+        qDebug() << "Should only import unique dimers:"
+                 << FragmentIndexPair::fromDimerIndex(unique);
+        continue;
+      }
+
+      for (const auto &related : dimerMap.symmetry_related_dimers(idx)) {
+        qDebug() << "Related:" << FragmentIndexPair::fromDimerIndex(related);
+      }
+
+      added.insert(unique);
+
       pair_energy::Parameters params;
-      params.fragmentDimer = d;
-      params.nearestAtomDistance = d.nearestAtomDistance;
-      params.centroidDistance = d.centroidDistance;
+      params.fragmentDimer = ud;
+      params.nearestAtomDistance = ud.nearestAtomDistance;
+      params.centroidDistance = ud.centroidDistance;
+      params.hasInversionSymmetry = false;
       pair->setParameters(params);
       p->add(pair);
     }
@@ -1353,23 +1376,21 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
     candidateFragments.push_back(settings.keyFragment);
   }
 
-  ankerl::unordered_dense::map<DimerIndex, int, DimerIndexHash>
-      symmetryUniquePairMap;
+  ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> symmetryUniquePairs;
+  ankerl::unordered_dense::map<DimerIndex, DimerIndex, DimerIndexHash>
+      symmetryUniqueMap;
 
   for (const auto &fragIndexA : candidateFragments) {
     const auto &fragA = fragments.at(fragIndexA);
     for (const auto &[fragIndexB, fragB] : fragments) {
-      if (allFragments && (fragIndexB <= fragIndexA))
+      if (fragIndexA == fragIndexB)
         continue;
-
       double distance = fragA.nearestAtom(fragB).distance;
       if (distance <= tolerance)
         continue;
 
       // Create FragmentDimer object
       FragmentDimer d(fragA, fragB);
-      d.index.a = fragIndexA;
-      d.index.b = fragIndexB;
 
       DimerIndex dimerIndex = d.index.toDimerIndex();
       if (!dimerTable.have_dimer(dimerIndex)) {
@@ -1378,27 +1399,25 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
       DimerIndex canonicalIndex = dimerTable.canonical_dimer_index(dimerIndex);
       DimerIndex symmetryUniqueDimer =
           dimerTable.symmetry_unique_dimer(canonicalIndex);
+      qDebug() << "Dimer" << FragmentIndexPair::fromDimerIndex(dimerIndex);
+      qDebug() << "Canonical"
+               << FragmentIndexPair::fromDimerIndex(canonicalIndex);
+      qDebug() << "symmetryUnique"
+               << FragmentIndexPair::fromDimerIndex(symmetryUniqueDimer);
+      symmetryUniqueMap.insert({dimerIndex, symmetryUniqueDimer});
+      symmetryUniquePairs.insert(symmetryUniqueDimer);
 
-      int uniquePairIndex;
-      auto it = symmetryUniquePairMap.find(symmetryUniqueDimer);
-      if (it == symmetryUniquePairMap.end()) {
-        uniquePairIndex = result.uniquePairs.size();
-        result.uniquePairs.push_back(d);
-        symmetryUniquePairMap[symmetryUniqueDimer] = uniquePairIndex;
-      } else {
-        uniquePairIndex = it->second;
-      }
-
-      FragmentPairs::SymmetryRelatedPair symmetryRelatedPair{d,
-                                                             uniquePairIndex};
-
+      FragmentPairs::SymmetryRelatedPair symmetryRelatedPair{d, -1};
       result.pairs[fragA.index].push_back(symmetryRelatedPair);
-
-      if (allFragments) {
-        result.pairs[fragB.index].push_back(
-            {FragmentDimer(fragB, fragA), uniquePairIndex});
-      }
     }
+  }
+
+  for (const auto &dimerIndex : symmetryUniquePairs) {
+    auto ab = FragmentIndexPair::fromDimerIndex(dimerIndex);
+    auto a = makeFragmentFromFragmentIndex(ab.a);
+    auto b = makeFragmentFromFragmentIndex(ab.b);
+    FragmentDimer d(a, b);
+    result.uniquePairs.push_back(d);
   }
 
   // Sort the pairs
@@ -1406,14 +1425,24 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
                                   const FragmentDimer &b) {
     return a.nearestAtomDistance < b.nearestAtomDistance;
   };
+
   auto molPairSortFunc = [](const FragmentPairs::SymmetryRelatedPair &a,
                             const FragmentPairs::SymmetryRelatedPair &b) {
     return a.fragments.nearestAtomDistance < b.fragments.nearestAtomDistance;
   };
 
+  std::stable_sort(result.uniquePairs.begin(), result.uniquePairs.end(),
+                   fragmentDimerSortFunc);
+
   for (auto &[idx, vec] : result.pairs) {
     std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
+    for (auto &[d, asym] : vec) {
+      auto u = FragmentIndexPair::fromDimerIndex(symmetryUniqueMap.at(d.index.toDimerIndex()));
+      const auto it =
+          std::find_if(result.uniquePairs.begin(), result.uniquePairs.end(),
+                       [&u](const FragmentDimer &x) { return x.index == u; });
+      asym = std::distance(result.uniquePairs.begin(), it);
+    }
   }
-
   return result;
 }

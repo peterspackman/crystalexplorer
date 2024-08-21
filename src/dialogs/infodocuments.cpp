@@ -573,8 +573,8 @@ void InfoDocuments::insertInteractionEnergiesIntoTextDocument(
 
   if (interactions->getCount() > 0) {
     FragmentPairSettings pairSettings;
-    pairSettings.allowInversion = false;
-    scene->colorFragmentsByEnergyPair();
+    pairSettings.allowInversion = interactions->hasInversionSymmetry();
+    scene->colorFragmentsByEnergyPair(pairSettings);
     // These must be here for performance!
     cursor.beginEditBlock();
     insertInteractionEnergiesGroupedByPair(interactions, cursor);

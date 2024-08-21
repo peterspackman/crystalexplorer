@@ -81,8 +81,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
     return;
 
   FragmentPairSettings pairSettings;
-  pairSettings.allowInversion = m_options.allowInversion;
-  auto fragmentPairs = m_structure->findFragmentPairs();
+  pairSettings.allowInversion = m_options.allowInversion & m_interactions->hasInversionSymmetry(m_options.model);
+  auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
   qDebug() << "Number of unique pairs:" << fragmentPairs.uniquePairs.size();
   auto interactionMap = m_interactions->getInteractionsMatchingFragments(
       fragmentPairs.uniquePairs);
@@ -102,11 +102,16 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   std::vector<std::pair<QColor, double>> energies;
   energies.reserve(uniqueInteractions.size());
 
+  for(const auto &pair: fragmentPairs.uniquePairs) {
+    qDebug() << pair.index;
+  }
+
   for(const auto *interaction: uniqueInteractions) {
     QColor c = color;
     double energy = 0.0;
     if (interaction) {
       energy = interaction->getComponent(m_options.component);
+      qDebug() << "Interaction found: " << interaction->pairIndex();
       if(m_options.coloring == FrameworkOptions::Coloring::Interaction) {
         c = interaction->color();
       }
@@ -116,6 +121,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
     }
     energies.push_back({c, energy});
   }
+
+  const bool inv = pairSettings.allowInversion;
 
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
     for (const auto &[pair, uniqueIndex] : molPairs) {
@@ -131,18 +138,30 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       auto cb = pair.b.centroid();
       QVector3D vb(cb.x(), cb.y(), cb.z());
 
-      if (m_options.display == FrameworkOptions::Display::Tubes) {
-        cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
-                                                   color, scale);
-
-        cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
-                                                   color, scale);
-
-        cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, vb,
-                                                    color, color, scale);
-      } else if (m_options.display == FrameworkOptions::Display::Lines) {
-        cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb, scale,
-                                            color);
+      if(inv) {
+        if (m_options.display == FrameworkOptions::Display::Tubes) {
+          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
+                                                     color, scale);
+          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
+                                                     color, scale);
+          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, vb,
+                                                      color, color, scale);
+        } else if (m_options.display == FrameworkOptions::Display::Lines) {
+          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb, scale,
+                                              color);
+        }
+      }
+      else {
+        vb = va + (vb - va) * 0.5;
+        if (m_options.display == FrameworkOptions::Display::Tubes) {
+          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
+                                                     color, scale);
+          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, vb,
+                                                      color, color, scale);
+        } else if (m_options.display == FrameworkOptions::Display::Lines) {
+          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb, scale,
+                                              color);
+        }
       }
     }
   }

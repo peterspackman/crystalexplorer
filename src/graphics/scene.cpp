@@ -1495,9 +1495,15 @@ void Scene::clearFragmentColors() {
 }
 
 void Scene::togglePairHighlighting(bool show) {
+  if(!m_structure) return;
+
   if (show) {
     _highlightMode = HighlightMode::Pair;
-    colorFragmentsByEnergyPair();
+    // TODO fix this to be more robust
+    auto *interactions = m_structure->pairInteractions();
+    FragmentPairSettings settings;
+    settings.allowInversion = interactions->hasInversionSymmetry();
+    colorFragmentsByEnergyPair(settings);
     _disorderCycleIndex = 0; // Turn off disorder highlighting
   } else {
     _highlightMode = HighlightMode::Normal;

@@ -132,6 +132,7 @@ FragmentDimer::FragmentDimer(const Fragment &fa, const Fragment &fb)
   nearestAtomDistance = fa.nearestAtom(fb).distance;
   centerOfMassDistance = (fb.centerOfMass() - fa.centerOfMass()).norm();
   centroidDistance = (fa.centroid() - fb.centroid()).norm();
+  index = FragmentIndexPair{fa.index, fb.index};
 }
 
 QDebug operator<<(QDebug debug, const Fragment &fragment) {

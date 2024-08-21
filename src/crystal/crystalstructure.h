@@ -134,7 +134,7 @@ public:
       atomicDisplacementParameters(GenericAtomIndex) const override;
 
 private:
-  Fragment makeFragmentFromFragmentIndex(FragmentIndex);
+  Fragment makeFragmentFromFragmentIndex(FragmentIndex) const;
   FragmentIndex findUnitCellFragment(const Fragment &frag) const;
   Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol) const;
 
