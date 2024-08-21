@@ -43,8 +43,39 @@ FileFormat fileFormatFromFilename(const QString &filename) {
   return FileFormat::OccWavefunction;
 }
 
-bool Parameters::isXtbMethod() const {
-  return xtb::isXtbMethod(method);
+// Array of all Program values
+inline constexpr std::array<Program, 6> availablePrograms = {
+    Program::Occ,    Program::Orca, Program::Gaussian,
+    Program::NWChem, Program::Psi4, Program::Xtb};
+
+QString programName(Program prog) {
+  using enum Program;
+  switch (prog) {
+  case Occ:
+    return "OCC";
+  case Orca:
+    return "Orca";
+  case Gaussian:
+    return "Gaussian";
+  case NWChem:
+    return "NWChem";
+  case Psi4:
+    return "Psi4";
+  case Xtb:
+    return "XTB";
+  }
+  return "OCC";
 }
+
+Program programFromName(const QString &name) {
+  QString lowercaseName = name.toLower();
+  for (const auto &prog: availablePrograms) {
+    QString candidate = programName(prog).toLower();
+    if (lowercaseName == candidate) return prog;
+  }
+  return Program::Occ;
+}
+
+bool Parameters::isXtbMethod() const { return xtb::isXtbMethod(method); }
 
 } // namespace wfn

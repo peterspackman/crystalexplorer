@@ -17,11 +17,19 @@ inline QString generateWavefunctionName(const wfn::Parameters &params) {
   QString atomsString;
   occ::Vec3 meanPos(0.0, 0.0, 0.0);
   if (params.structure) {
-    atomsString = params.structure->formulaSumForAtoms(params.atoms, false).remove(' ');
-    meanPos = params.structure->atomicPositionsForIndices(params.atoms).rowwise().mean();
+    atomsString =
+        params.structure->formulaSumForAtoms(params.atoms, false).remove(' ');
+    meanPos = params.structure->atomicPositionsForIndices(params.atoms)
+                  .rowwise()
+                  .mean();
   }
 
-  return QString("%1 %2 @ [%3, %4, %5]").arg(methodString).arg(atomsString).arg(meanPos(0)).arg(meanPos(1)).arg(meanPos(2));
+  return QString("%1 %2 @ [%3, %4, %5]")
+      .arg(methodString)
+      .arg(atomsString)
+      .arg(meanPos(0))
+      .arg(meanPos(1))
+      .arg(meanPos(2));
 }
 
 inline xtb::Parameters wfn2xtb(const wfn::Parameters &params) {
@@ -138,14 +146,21 @@ void WavefunctionCalculator::start(wfn::Parameters params) {
   }
 
   Task *task = nullptr;
-  // TODO check which ones are needed
-  if (!m_orcaExecutable.isEmpty()) {
-    task = makeOrcaTask(params);
-  } else {
+  switch (params.program) {
+  case wfn::Program::Occ:
     task = makeOccTask(params);
+    break;
+  case wfn::Program::Orca:
+    task = makeOrcaTask(params);
+    break;
+  default:
+    qWarning() << "Unsupported program" << wfn::programName(params.program);
+    break;
   }
-  auto taskId = m_taskManager->add(task);
-  qDebug() << "Single task started with id:" << taskId;
+  if (task) {
+    auto taskId = m_taskManager->add(task);
+    qDebug() << "Single task started with id:" << taskId;
+  }
 }
 
 void WavefunctionCalculator::start(xtb::Parameters params) {
@@ -184,14 +199,21 @@ void WavefunctionCalculator::start_batch(
     }
 
     Task *task = nullptr;
-    // TODO check which ones are needed
-    if (!m_orcaExecutable.isEmpty()) {
-      task = makeOrcaTask(params);
-    } else {
-      task = makeOccTask(params);
-    }
 
-    tasks.append(task);
+    switch (params.program) {
+    case wfn::Program::Occ:
+      task = makeOccTask(params);
+      break;
+    case wfn::Program::Orca:
+      task = makeOrcaTask(params);
+      break;
+    default:
+      qWarning() << "Unsupported program" << wfn::programName(params.program);
+      break;
+    }
+    if (task) {
+      tasks.append(task);
+    }
   }
 
   for (auto *task : tasks) {
@@ -205,6 +227,7 @@ void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
                                                 QString name) {
   qDebug() << "Task" << name << "finished in WavefunctionCalculator";
   auto wfn = io::loadWavefunction(filename);
+  wfn->setParameters(params);
   qDebug() << "Loaded wavefunction from" << filename << wfn
            << params.atoms.size();
   m_wavefunction = wfn;

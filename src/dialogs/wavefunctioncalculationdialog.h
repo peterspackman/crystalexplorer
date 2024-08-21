@@ -23,9 +23,11 @@ public:
   int multiplicity() const;
   void setMultiplicity(int mult);
 
-  QString program() const;
   QString method() const;
   QString basis() const;
+
+  QString selectedProgramName() const;
+  wfn::Program selectedProgram() const;
 
 
   const wfn::Parameters& getParameters() const;

@@ -8,10 +8,12 @@ class ChemicalStructure;
 namespace wfn {
 
 enum class FileFormat { OccWavefunction, Fchk, Molden, XtbJson };
+enum class Program {Occ, Orca, Gaussian, NWChem, Psi4, Xtb};
 
 struct Parameters {
   int charge{0};
   int multiplicity{1};
+  Program program{Program::Occ};
   QString method{"b3lyp"};
   QString basis{"def2-qzvp"};
   ChemicalStructure *structure{nullptr};
@@ -52,5 +54,8 @@ struct Result {
 QString fileFormatString(FileFormat);
 QString fileFormatSuffix(FileFormat);
 FileFormat fileFormatFromFilename(const QString &filename);
+
+QString programName(Program);
+Program programFromName(const QString &programString);
 
 } // namespace wfn

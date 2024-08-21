@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>ChildPropertyController</class>
  <widget class="QWidget" name="ChildPropertyController">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>469</width>
+    <height>291</height>
+   </rect>
+  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
     <horstretch>0</horstretch>
@@ -36,7 +44,7 @@
       <string/>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="surfaceOptionsTab">
       <property name="sizePolicy">
@@ -553,6 +561,13 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <layout class="QGridLayout" name="gridLayout_3">
+         <item row="1" column="1">
+          <widget class="QLabel" name="basisValue">
+           <property name="text">
+            <string>basis</string>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="1">
           <widget class="QLabel" name="basisLabel">
            <property name="font">
@@ -565,72 +580,7 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QDoubleSpinBox" name="scfValue">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-             <property name="buttonSymbols">
-              <enum>QAbstractSpinBox::NoButtons</enum>
-             </property>
-             <property name="decimals">
-              <number>8</number>
-             </property>
-             <property name="minimum">
-              <double>-99999999999999.984375000000000</double>
-             </property>
-             <property name="maximum">
-              <double>10000000000000000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="scfUnitsLabel">
-             <property name="maximumSize">
-              <size>
-               <width>15</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;E&lt;span style=&quot; vertical-align:sub;&quot;&gt;h&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLabel" name="fileSizeLabel">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>File size</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="methodValue">
-           <property name="text">
-            <string>method</string>
-           </property>
-          </widget>
-         </item>
          <item row="7" column="0">
-          <widget class="QSpinBox" name="chargeValue">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-           <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="0">
           <widget class="QLabel" name="chargeLabel">
            <property name="font">
             <font>
@@ -639,13 +589,6 @@
            </property>
            <property name="text">
             <string>Charge</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLabel" name="basisValue">
-           <property name="text">
-            <string>basis</string>
            </property>
           </widget>
          </item>
@@ -661,7 +604,48 @@
            </property>
           </widget>
          </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="fileFormatValue">
+           <property name="text">
+            <string>format</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="fileFormatLabel">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>File Format</string>
+           </property>
+          </widget>
+         </item>
          <item row="7" column="1">
+          <widget class="QLabel" name="multiplicityLabel">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Multiplicity</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="QSpinBox" name="numBasisValue">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::NoButtons</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="1">
           <widget class="QSpinBox" name="multiplicityValue">
            <property name="readOnly">
             <bool>true</bool>
@@ -683,6 +667,33 @@
            </property>
           </widget>
          </item>
+         <item row="3" column="1">
+          <widget class="QLabel" name="fileSizeValue">
+           <property name="text">
+            <string>0B</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QSpinBox" name="chargeValue">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::NoButtons</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="methodValue">
+           <property name="text">
+            <string>method</string>
+           </property>
+          </widget>
+         </item>
          <item row="4" column="0">
           <widget class="QLabel" name="scfLabel">
            <property name="font">
@@ -695,54 +706,37 @@
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
-          <widget class="QSpinBox" name="numBasisValue">
+         <item row="2" column="1">
+          <widget class="QLabel" name="fileSizeLabel">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>File size</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QDoubleSpinBox" name="scfValue">
            <property name="readOnly">
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
             <enum>QAbstractSpinBox::NoButtons</enum>
            </property>
-          </widget>
-         </item>
-         <item row="6" column="1">
-          <widget class="QLabel" name="asphericityLabel_2">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
+           <property name="suffix">
+            <string> Eh</string>
            </property>
-           <property name="text">
-            <string>Multiplicity</string>
+           <property name="decimals">
+            <number>8</number>
            </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="fileFormatLabel">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
+           <property name="minimum">
+            <double>-99999999999999.984375000000000</double>
            </property>
-           <property name="text">
-            <string>File Format</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="fileFormatValue">
-           <property name="text">
-            <string>format</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLabel" name="fileSizeValue">
-           <property name="text">
-            <string>0B</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           <property name="maximum">
+            <double>10000000000000000.000000000000000</double>
            </property>
           </widget>
          </item>

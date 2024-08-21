@@ -35,7 +35,7 @@ void WavefunctionCalculationDialog::initPrograms() {
     {"XTB", settings::readSetting(settings::keys::XTB_EXECUTABLE).toString()},
   };
 
-  QString preferred = "OCC";
+  QString preferred = settings::readSetting(settings::keys::PREFERRED_WAVEFUNCTION_SOURCE).toString();
   for (const auto &[source, exe] : programs) {
     if(exe.isEmpty()) continue;
     programComboBox->addItem(source);
@@ -85,7 +85,7 @@ void WavefunctionCalculationDialog::updateMethodOptions() {
   };
 
   methodComboBox->clear();
-  QString prog = program();
+  QString prog = selectedProgramName();
   QStringList options = programMethods[prog];
   for (const auto &method : options) {
     methodComboBox->addItem(method);
@@ -101,7 +101,7 @@ void WavefunctionCalculationDialog::updateBasisSetOptions() {
   };
 
   basisComboBox->clear();
-  if(program() != "XTB") {
+  if(selectedProgram() != wfn::Program::Xtb) {
     for (const auto &basis : basisSets) {
       basisComboBox->addItem(basis);
     }
@@ -127,6 +127,7 @@ bool WavefunctionCalculationDialog::isXtbMethod() const {
 void WavefunctionCalculationDialog::accept() {
   m_parameters.charge = charge();
   m_parameters.multiplicity = multiplicity();
+  m_parameters.program = selectedProgram();
   m_parameters.method = method();
   m_parameters.basis = basis();
 
@@ -135,7 +136,11 @@ void WavefunctionCalculationDialog::accept() {
   QDialog::accept();
 }
 
-QString WavefunctionCalculationDialog::program() const {
+wfn::Program WavefunctionCalculationDialog::selectedProgram() const {
+  return wfn::programFromName(programComboBox->currentText());
+}
+
+QString WavefunctionCalculationDialog::selectedProgramName() const {
   return programComboBox->currentText();
 }
 

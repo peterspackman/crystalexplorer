@@ -150,9 +150,14 @@ bool EnergyCalculationDialog::handleStructureChange() {
   for (const auto &uniqueIndex : wavefunctionsNeeded) {
     const auto &uniqueFrag = uniqueFragments.at(uniqueIndex);
     const auto &state = uniqueFrag.state;
-    m_requiredWavefunctions.emplace_back(
-        wfn::Parameters{state.charge, state.multiplicity, m_method, m_basis,
-                        m_structure, uniqueFrag.atomIndices});
+    wfn::Parameters params;
+    params.charge = state.charge;
+    params.multiplicity = state.multiplicity;
+    params.method = m_method;
+    params.basis = m_basis;
+    params.structure = m_structure;
+    params.atoms = uniqueFrag.atomIndices;
+    m_requiredWavefunctions.push_back(params);
   }
   return false;
 }
