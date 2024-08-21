@@ -9,8 +9,12 @@ set(SHADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/line.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/meshinstance.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/meshinstance.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/point.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/point.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/pointcloudinstance.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/pointcloudinstance.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/simple.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/simple.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/sphere_impostor.vert

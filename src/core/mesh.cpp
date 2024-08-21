@@ -26,7 +26,10 @@ Mesh::Mesh(Eigen::Ref<const VertexList> vertices,
 }
 
 Mesh::Mesh(Eigen::Ref<const VertexList> vertices, QObject *parent)
-    : QObject(parent), m_vertices(vertices) {}
+    : QObject(parent), m_vertices(vertices) {
+  m_vertexMask = Eigen::Matrix<bool, Eigen::Dynamic, 1>(m_vertices.cols());
+  resetVertexMask(true);
+}
 
 void Mesh::updateVertexFaceMapping() {
   m_facesUsingVertex = std::vector<std::vector<int>>(numberOfVertices());

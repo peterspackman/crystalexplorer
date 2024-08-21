@@ -14,6 +14,15 @@ const CrystalAtomRegion &Crystal::unit_cell_atoms() const {
   return m_unit_cell_atoms;
 }
 
+inline Mat3N clean_small_values(const Mat3N &v, double epsilon = 1e-14) {
+  return v.unaryExpr(
+      [epsilon](double x) { return (std::abs(x) < epsilon) ? 0.0 : x; });
+}
+
+inline Mat3N wrap_to_unit_cell(const Mat3N& v) {
+  return (v.array() - v.array().floor());
+}
+
 void Crystal::update_unit_cell_atoms() const {
   // TODO merge sites
   constexpr double merge_tolerance = 1e-2;
@@ -27,7 +36,8 @@ void Crystal::update_unit_cell_atoms() const {
   IVec sym;
   Mat3N uc_pos;
   std::tie(sym, uc_pos) = m_space_group.apply_all_symmetry_operations(pos);
-  uc_pos = uc_pos.unaryExpr([](const double x) { return fmod(x + 7.0, 1.0); });
+  uc_pos = clean_small_values(uc_pos);
+  uc_pos = wrap_to_unit_cell(uc_pos);
 
   occ::MaskArray mask(uc_pos.cols());
   mask.setConstant(false);

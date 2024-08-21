@@ -144,7 +144,7 @@ private:
   void removeVanDerWaalsContactAtoms();
   void deleteAtomsByOffset(const std::vector<int> &atomIndices);
 
-  void buildDimerMappingTable(double maxRadius = 30.0);
+  void buildDimerMappingTable(double maxRadius = 12.0);
 
   OccCrystal m_crystal;
 

@@ -1058,6 +1058,10 @@ Fragment CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) cons
     atomIndex.z += idx.l;
   }
   result.index = idx;
+  occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
+  Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
+  result.asymmetricFragmentTransform *= t;
+  qDebug() << "Made fragment from index" << idx;
   return result;
 }
 
@@ -1200,7 +1204,7 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
       const Fragment uFragB = makeFragmentFromFragmentIndex(uniquePairIndex.b);
       FragmentDimer ud(uFragA, uFragB);
       qDebug() << "Fragment dimer" << d.index;
-      qDebug() << "Unique dimer" << ud.index;
+      qDebug() << "Unique dimer" << ud.index << ud.nearestAtomDistance;
 
       if (added.find(unique) != added.end()) {
         qDebug() << "Should only import unique dimers:"
@@ -1216,8 +1220,8 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
 
       pair_energy::Parameters params;
       params.fragmentDimer = ud;
-      params.nearestAtomDistance = ud.nearestAtomDistance;
-      params.centroidDistance = ud.centroidDistance;
+      params.nearestAtomDistance = d.nearestAtomDistance;
+      params.centroidDistance = d.centroidDistance;
       params.hasInversionSymmetry = false;
       pair->setParameters(params);
       p->add(pair);
@@ -1417,6 +1421,7 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
     auto a = makeFragmentFromFragmentIndex(ab.a);
     auto b = makeFragmentFromFragmentIndex(ab.b);
     FragmentDimer d(a, b);
+    qDebug() << "UNIQUE" << d.index << d.nearestAtomDistance;
     result.uniquePairs.push_back(d);
   }
 

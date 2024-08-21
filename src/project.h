@@ -39,6 +39,7 @@ public:
   bool loadCrystalStructuresFromCifFile(const QString &);
   bool loadCrystalStructuresFromPdbFile(const QString &);
   bool loadCrystalClearJson(const QString &);
+  bool loadCrystalClearSurfaceJson(const QString &);
 
   bool hasFrames();
   int nextFrame(bool forward);

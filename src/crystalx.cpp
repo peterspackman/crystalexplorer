@@ -877,6 +877,11 @@ void Crystalx::loadExternalFileData(QString filename) {
     showStatusMessage(
         QString("Loading crystal clear output from %1").arg(filename));
     project->loadCrystalClearJson(filename);
+  }
+  else if(filename.endsWith("surface.json")) {
+    showStatusMessage(
+        QString("Loading crystal surface from %1").arg(filename));
+    project->loadCrystalClearSurfaceJson(filename);
   } else if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
     processCif(filename);
   } else if (extension == "pdb") {

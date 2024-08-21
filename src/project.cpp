@@ -326,6 +326,15 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
   return true;
 }
 
+bool Project::loadCrystalClearSurfaceJson(const QString &filename) {
+  auto * structure = currentStructure();
+  if(!structure) return false;
+  auto *crystal = qobject_cast<CrystalStructure*>(structure);
+  if(!crystal) return false;
+  io::loadCrystalClearSurfaceJson(filename, crystal);
+  return true;
+}
+
 bool Project::loadCrystalClearJson(const QString &filename) {
   CrystalStructure *crystal = io::loadCrystalClearJson(filename);
   Scene *scene = new Scene(crystal);

@@ -1,5 +1,6 @@
 #include <occ/crystal/crystal.h>
 #include <occ/crystal/dimer_mapping_table.h>
+#include <iostream>
 
 namespace occ::crystal {
 
@@ -36,32 +37,31 @@ inline Vec3 wrap_to_unit_cell(const Vec3 &v) {
 inline SiteIndex find_matching_position(const Mat3N &positions,
                                         const Vec3 &point,
                                         double tolerance = 1e-5) {
-  Vec3 cleaned_point = clean_small_values(point);
+    int matching_index = -1;
+    double min_distance = std::numeric_limits<double>::max();
+    Vec3 cell_offset = Vec3::Zero();
 
-  Vec3 wrapped_point = wrap_to_unit_cell(cleaned_point);
-  IVec3 cell_offset =
-      (cleaned_point.array() - wrapped_point.array()).round().cast<int>();
+    for (int i = 0; i < positions.cols(); i++) {
+        Vec3 diff = point - positions.col(i);
+        Vec3 wrapped_diff = diff.array() - diff.array().round();
+        Vec3 current_cell_offset = diff - wrapped_diff;
 
-  int matching_index = -1;
-  double min_distance = std::numeric_limits<double>::max();
-
-  for (int i = 0; i < positions.cols(); i++) {
-    Vec3 diff = wrapped_point - clean_small_values(positions.col(i));
-    diff = diff.array() - diff.array().round();
-    double d = diff.squaredNorm();
-
-    if (d < min_distance) {
-      min_distance = d;
-      matching_index = i;
+        double d = wrapped_diff.squaredNorm();
+        if (d < min_distance) {
+            min_distance = d;
+            matching_index = i;
+            cell_offset = current_cell_offset;
+        }
     }
-  }
 
-  if (min_distance < tolerance * tolerance) {
-    return SiteIndex{matching_index,
-                     HKL{cell_offset(0), cell_offset(1), cell_offset(2)}};
-  }
-
-  return SiteIndex{-1, HKL{cell_offset(0), cell_offset(1), cell_offset(2)}};
+    if (min_distance < tolerance * tolerance) {
+        return SiteIndex{matching_index, HKL{
+            static_cast<int>(std::round(cell_offset(0))),
+            static_cast<int>(std::round(cell_offset(1))),
+            static_cast<int>(std::round(cell_offset(2)))
+        }};
+    }
+    return SiteIndex{-1, HKL{0, 0, 0}};
 }
 
 std::pair<Vec3, Vec3>
@@ -115,6 +115,8 @@ DimerMappingTable::build_dimer_table(const Crystal &crystal,
   for (int i = 0; i < uc_mols.size(); i++) {
     table.m_centroids.col(i) = crystal.to_fractional(uc_mols[i].centroid());
   }
+
+  std::cout << "Centroids\n" << table.m_centroids.transpose() << '\n';
 
   const auto &symops = crystal.symmetry_operations();
   ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> unique_dimers_set;

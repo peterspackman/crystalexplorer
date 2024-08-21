@@ -16,7 +16,6 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   m_bondLineRenderer = new LineRenderer();
   m_cellLinesRenderer = new LineRenderer();
   m_highlightRenderer = new LineRenderer();
-  m_pointCloudRenderer = new PointCloudRenderer();
   m_frameworkRenderer = new FrameworkRenderer(m_structure);
 
   connect(m_structure, &ChemicalStructure::childAdded, this,
@@ -529,10 +528,12 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     meshRenderer->release();
   }
 
-  m_pointCloudRenderer->bind();
-  m_uniforms.apply(m_pointCloudRenderer);
-  m_pointCloudRenderer->draw();
-  m_pointCloudRenderer->release();
+  for (auto *renderer : m_pointCloudRenderers) {
+    renderer->bind();
+    m_uniforms.apply(renderer);
+    renderer->draw();
+    renderer->release();
+  }
 
   if (!forPicking) {
     m_labelRenderer->bind();
@@ -578,8 +579,9 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
 
   // TODO re-use mesh renderers
   m_meshRenderers.clear();
+  m_pointCloudRenderers.clear();
+
   m_meshIndexToMesh.clear();
-  m_pointCloudRenderer->clear();
   m_highlightRenderer->clear();
 
   if (m_selectionHandler) {
@@ -591,8 +593,48 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
       continue;
 
     if (mesh->numberOfFaces() == 0) {
-      m_pointCloudRenderer->addPoints(
-          cx::graphics::makePointCloudVertices(*mesh));
+      PointCloudInstanceRenderer *instanceRenderer = new PointCloudInstanceRenderer(mesh);
+      instanceRenderer->beginUpdates();
+      const auto &availableProperties = instanceRenderer->availableProperties();
+      for (auto *meshChild : child->children()) {
+        auto *meshInstance = qobject_cast<MeshInstance *>(meshChild);
+        if (!meshInstance || !meshInstance->isVisible())
+          continue;
+
+        int propertyIndex =
+            availableProperties.indexOf(meshInstance->getSelectedProperty());
+        // TODO transparency
+        float alpha = meshInstance->isTransparent() ? 0.8 : 1.0;
+
+        QVector3D selectionColor;
+
+        if (m_selectionHandler) {
+          auto selectionId = m_selectionHandler->add(SelectionType::Surface,
+                                                     m_meshIndexToMesh.size());
+          m_meshIndexToMesh.push_back(meshInstance);
+          selectionColor = m_selectionHandler->getColorFromId(selectionId);
+        }
+
+        MeshInstanceVertex v(meshInstance->translationVector(),
+                             meshInstance->rotationMatrix(), selectionColor,
+                             propertyIndex, alpha);
+        instanceRenderer->addInstance(v);
+
+        {
+          // face highlights
+          QColor color = Qt::red;
+          for (const int v : mesh->vertexHighlights()) {
+            const auto vertex = meshInstance->vertexVector3D(v);
+            const auto normal = meshInstance->vertexNormalVector3D(v);
+            cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
+                                                vertex + normal, 1.0, color);
+          }
+        }
+        instanceRenderer->endUpdates();
+        mesh->setRendererIndex(m_pointCloudRenderers.size());
+        m_pointCloudRenderers.push_back(instanceRenderer);
+      }
+
     } else {
       MeshInstanceRenderer *instanceRenderer = new MeshInstanceRenderer(mesh);
       instanceRenderer->beginUpdates();

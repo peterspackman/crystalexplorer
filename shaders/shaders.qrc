@@ -27,6 +27,8 @@
         <file>sphere_impostor_flat.frag</file>
         <file>point.frag</file>
         <file>point.vert</file>
+        <file>pointcloudinstance.frag</file>
+        <file>pointcloudinstance.vert</file>
         <file>selection.glsl</file>
         <file>crystalplane.frag</file>
         <file>crystalplane.vert</file>

@@ -11,7 +11,7 @@
 #include "meshinstance.h"
 #include "meshinstancerenderer.h"
 #include "meshrenderer.h"
-#include "pointcloudrenderer.h"
+#include "pointcloudinstancerenderer.h"
 #include "rendereruniforms.h"
 #include "renderselection.h"
 
@@ -137,7 +137,7 @@ private:
   EllipsoidRenderer *m_ellipsoidRenderer{nullptr};
   CylinderRenderer *m_cylinderRenderer{nullptr};
   std::vector<MeshInstanceRenderer *> m_meshRenderers;
-  PointCloudRenderer *m_pointCloudRenderer{nullptr};
+  std::vector<PointCloudInstanceRenderer *> m_pointCloudRenderers;
   FrameworkRenderer *m_frameworkRenderer{nullptr};
   BillboardRenderer *m_labelRenderer{nullptr};
 

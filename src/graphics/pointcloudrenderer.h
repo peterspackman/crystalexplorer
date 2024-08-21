@@ -1,5 +1,4 @@
 #pragma once
-
 #include "renderer.h"
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
