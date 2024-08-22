@@ -10,8 +10,9 @@
 #include <QSurfaceFormat>
 
 #include "crystalx.h"
-#include "settings.h"
+#include "default_paths.h"
 #include "globalconfiguration.h"
+#include "settings.h"
 
 void copySettingFromPreviousToCurrent(QString key) {
   QVariant currentValue = settings::readSetting(key);
@@ -29,20 +30,24 @@ void copySelectSettingsFromPreviousToCurrent() {
   copySettingFromPreviousToCurrent(settings::keys::GAUSSIAN_EXECUTABLE);
 }
 
-QString getPathToResources() {
-  QString pathToCrystalExplorer = QCoreApplication::applicationDirPath();
-#if defined(Q_OS_MACOS)
-  // On the Mac, we put the ancilliary bits in
-  // CrystalExplorer.app/Resources
-  QString pathToResources = pathToCrystalExplorer + "/../Resources/";
-#elif defined(Q_OS_LINUX)
-  QString pathToResources = "/usr/share/crystalexplorer/";
-#else
-  // On Windows, it's just in the CrystalExplorer
-  // executable directory
-  QString pathToResources = pathToCrystalExplorer + "/";
-#endif
-  return pathToResources;
+void addDefaultPathsIfNotSet() {
+  // Check and set OCC executable path
+  if (settings::readSetting(settings::keys::OCC_EXECUTABLE)
+          .toString()
+          .isEmpty()) {
+    QString occExecutablePath = cx::paths::determineOCCExecutablePath();
+    settings::writeSetting(settings::keys::OCC_EXECUTABLE, occExecutablePath);
+  }
+
+  // Check and set OCC data directory path
+  if (settings::readSetting(settings::keys::OCC_DATA_DIRECTORY)
+          .toString()
+          .isEmpty()) {
+    QString occDataDirectoryPath =
+        cx::paths::determineOCCDataDirectoryPath();
+    settings::writeSetting(settings::keys::OCC_DATA_DIRECTORY,
+                           occDataDirectoryPath);
+  }
 }
 
 void maybeReOpenFiles(Crystalx *cx) {
@@ -99,8 +104,9 @@ int main(int argc, char *argv[]) {
   // ensure default settings are written
 
   settings::writeAllDefaultSettings(false);
+  addDefaultPathsIfNotSet();
 
-  auto * config = GlobalConfiguration::getInstance();
+  auto *config = GlobalConfiguration::getInstance();
   config->load();
 
   Crystalx *cx = new Crystalx();

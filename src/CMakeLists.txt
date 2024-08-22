@@ -25,6 +25,7 @@ set(CRYSTALEXPLORER_HEADER_FILES
     childpropertycontroller.h
     confirmationbox.h
     crystalcontroller.h
+    default_paths.h
     crystalx.h
     dialoghtml.h
     glwindow.h

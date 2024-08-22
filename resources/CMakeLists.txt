@@ -1,22 +1,22 @@
 set(XDG_DESKTOP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/crystalexplorer.desktop PARENT_SCOPE)
-
 set(MESH_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/icosphere.obj
     PARENT_SCOPE
 )
-
 set(MESH_QRC "${CMAKE_CURRENT_SOURCE_DIR}/mesh.qrc" PARENT_SCOPE)
 
+# OCC version and archive setup
 set(OCC_VERSION "0.5.9")
-set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-linux-x86_64-static.tar.xz")
 if(WIN32)
     set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-windows-x86_64.tar.xz")
 elseif(APPLE)
     set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-macos-arm64.tar.xz")
+else()
+    set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-linux-x86_64-static.tar.xz")
 endif()
 
+# Set up OCC URL and download
 set(OCC_URL "https://github.com/peterspackman/occ/releases/download/v${OCC_VERSION}/${OCC_ARCHIVE_STRING}")
-
 message(STATUS "Attempting to download OCC from ${OCC_URL}")
 
 FetchContent_Declare(
@@ -24,7 +24,6 @@ FetchContent_Declare(
     URL ${OCC_URL}
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-
 FetchContent_GetProperties(OCC)
 if(NOT OCC_POPULATED)
     FetchContent_MakeAvailable(OCC)
@@ -53,7 +52,6 @@ install(PROGRAMS ${OCC_EXE}
     DESTINATION ${OCC_DESTINATION}
     COMPONENT Runtime
 )
-
 install(DIRECTORY ${OCC_SHARE_DIRECTORY} 
     DESTINATION ${RESOURCES_DESTINATION}
     COMPONENT Runtime
