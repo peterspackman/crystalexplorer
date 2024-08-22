@@ -573,6 +573,47 @@ void ChemicalStructureRenderer::clearMeshRenderers() {
   m_meshRenderers.clear();
 }
 
+template <class Renderer>
+void addInstanceToInstanceRenderer(
+    MeshInstance *instance, Renderer *instanceRenderer,
+    RenderSelection *selectionHandler,
+    std::vector<MeshInstance *> &meshIndexToMesh) {
+
+  const auto &availableProperties = instanceRenderer->availableProperties();
+  if (!instance || !instance->isVisible())
+    return;
+
+  int propertyIndex =
+      availableProperties.indexOf(instance->getSelectedProperty());
+  // TODO transparency
+  float alpha = instance->isTransparent() ? 0.8 : 1.0;
+
+  QVector3D selectionColor;
+
+  if (selectionHandler) {
+    auto selectionId =
+        selectionHandler->add(SelectionType::Surface, meshIndexToMesh.size());
+    meshIndexToMesh.push_back(instance);
+    selectionColor = selectionHandler->getColorFromId(selectionId);
+  }
+
+  MeshInstanceVertex v(instance->translationVector(),
+                       instance->rotationMatrix(), selectionColor,
+                       propertyIndex, alpha);
+  instanceRenderer->addInstance(v);
+}
+
+void ChemicalStructureRenderer::addFaceHighlightsForMeshInstance(Mesh *mesh, MeshInstance *meshInstance) {
+      // face highlights
+      QColor color = Qt::red;
+      for (const int v : mesh->vertexHighlights()) {
+        const auto vertex = meshInstance->vertexVector3D(v);
+        const auto normal = meshInstance->vertexNormalVector3D(v);
+        cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
+                                            vertex + normal, 1.0, color);
+      }
+}
+
 void ChemicalStructureRenderer::handleMeshesUpdate() {
   if (!m_meshesNeedsUpdate)
     return;
@@ -593,90 +634,34 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
       continue;
 
     if (mesh->numberOfFaces() == 0) {
-      PointCloudInstanceRenderer *instanceRenderer = new PointCloudInstanceRenderer(mesh);
+      PointCloudInstanceRenderer *instanceRenderer =
+          new PointCloudInstanceRenderer(mesh);
       instanceRenderer->beginUpdates();
-      const auto &availableProperties = instanceRenderer->availableProperties();
       for (auto *meshChild : child->children()) {
         auto *meshInstance = qobject_cast<MeshInstance *>(meshChild);
-        if (!meshInstance || !meshInstance->isVisible())
-          continue;
-
-        int propertyIndex =
-            availableProperties.indexOf(meshInstance->getSelectedProperty());
-        // TODO transparency
-        float alpha = meshInstance->isTransparent() ? 0.8 : 1.0;
-
-        QVector3D selectionColor;
-
-        if (m_selectionHandler) {
-          auto selectionId = m_selectionHandler->add(SelectionType::Surface,
-                                                     m_meshIndexToMesh.size());
-          m_meshIndexToMesh.push_back(meshInstance);
-          selectionColor = m_selectionHandler->getColorFromId(selectionId);
-        }
-
-        MeshInstanceVertex v(meshInstance->translationVector(),
-                             meshInstance->rotationMatrix(), selectionColor,
-                             propertyIndex, alpha);
-        instanceRenderer->addInstance(v);
-
-        {
-          // face highlights
-          QColor color = Qt::red;
-          for (const int v : mesh->vertexHighlights()) {
-            const auto vertex = meshInstance->vertexVector3D(v);
-            const auto normal = meshInstance->vertexNormalVector3D(v);
-            cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
-                                                vertex + normal, 1.0, color);
-          }
-        }
-        instanceRenderer->endUpdates();
+        addInstanceToInstanceRenderer<PointCloudInstanceRenderer>(
+            meshInstance, instanceRenderer, m_selectionHandler,
+            m_meshIndexToMesh);
+        addFaceHighlightsForMeshInstance(mesh, meshInstance);
         mesh->setRendererIndex(m_pointCloudRenderers.size());
-        m_pointCloudRenderers.push_back(instanceRenderer);
       }
+      instanceRenderer->endUpdates();
+      m_pointCloudRenderers.push_back(instanceRenderer);
 
     } else {
       MeshInstanceRenderer *instanceRenderer = new MeshInstanceRenderer(mesh);
       instanceRenderer->beginUpdates();
-      const auto &availableProperties = instanceRenderer->availableProperties();
       for (auto *meshChild : child->children()) {
         auto *meshInstance = qobject_cast<MeshInstance *>(meshChild);
-        if (!meshInstance || !meshInstance->isVisible())
-          continue;
+        addInstanceToInstanceRenderer<MeshInstanceRenderer>(
+            meshInstance, instanceRenderer, m_selectionHandler,
+            m_meshIndexToMesh);
 
-        int propertyIndex =
-            availableProperties.indexOf(meshInstance->getSelectedProperty());
-        // TODO transparency
-        float alpha = meshInstance->isTransparent() ? 0.8 : 1.0;
-
-        QVector3D selectionColor;
-
-        if (m_selectionHandler) {
-          auto selectionId = m_selectionHandler->add(SelectionType::Surface,
-                                                     m_meshIndexToMesh.size());
-          m_meshIndexToMesh.push_back(meshInstance);
-          selectionColor = m_selectionHandler->getColorFromId(selectionId);
-        }
-
-        MeshInstanceVertex v(meshInstance->translationVector(),
-                             meshInstance->rotationMatrix(), selectionColor,
-                             propertyIndex, alpha);
-        instanceRenderer->addInstance(v);
-
-        {
-          // face highlights
-          QColor color = Qt::red;
-          for (const int v : mesh->vertexHighlights()) {
-            const auto vertex = meshInstance->vertexVector3D(v);
-            const auto normal = meshInstance->vertexNormalVector3D(v);
-            cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
-                                                vertex + normal, 1.0, color);
-          }
-        }
-        instanceRenderer->endUpdates();
+        addFaceHighlightsForMeshInstance(mesh, meshInstance);
         mesh->setRendererIndex(m_meshRenderers.size());
-        m_meshRenderers.push_back(instanceRenderer);
       }
+      instanceRenderer->endUpdates();
+      m_meshRenderers.push_back(instanceRenderer);
     }
   }
   m_meshesNeedsUpdate = false;

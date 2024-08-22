@@ -107,6 +107,7 @@ private:
   void handleMeshesUpdate();
 
   void clearMeshRenderers();
+  void addFaceHighlightsForMeshInstance(Mesh *, MeshInstance *);
   QList<TextLabel> getCurrentLabels();
 
   [[nodiscard]] bool shouldSkipAtom(int idx) const;
