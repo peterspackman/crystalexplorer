@@ -37,7 +37,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::BACKGROUND_COLOR, "white"},
     {keys::NONE_PROPERTY_COLOR, "#e6cdcd"}, // string rep of rgb, 230,205,0
     {keys::ATOM_LABEL_COLOR, "black"},
-    {keys::BOND_THICKNESS, 65}, // percent of hydrogen covalent radius
+    {keys::BOND_THICKNESS, 30}, // percent of hydrogen covalent radius
     {keys::CONTACT_LINE_THICKNESS, 30},
     {keys::RESET_ELEMENTS_ELEMENTDATATXTFILE, true},
     // Close contacts
@@ -85,7 +85,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::DEPTH_FOG_DENSITY, GLOBAL_DEPTH_FOG_DENSITY},
     {keys::DEPTH_FOG_OFFSET, GLOBAL_DEPTH_FOG_OFFSET},
     // molecule lighting ...
-    {keys::MATERIAL_ROUGHNESS, 0.25f},
+    {keys::MATERIAL_ROUGHNESS, 0.15f},
     {keys::MATERIAL_METALLIC, 0.05f},
     {keys::SCREEN_GAMMA, 2.2f},
     // other ...
