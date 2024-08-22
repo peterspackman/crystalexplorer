@@ -15,10 +15,10 @@ out highp vec4 f_color;
 #include "pbr.glsl"
 
 vec3 applyMaskEffect(vec3 color, float maskValue) {
-    float darkenFactor = 0.7;
+    float darkenFactor = 0.3;
     float edgeWidth = 0.1;
     float edgeFactor = smoothstep(1.0 - edgeWidth, 1.0, maskValue);
-    return mix(color, vec3(0.2), edgeFactor);
+    return mix(color, color * darkenFactor, edgeFactor);
 }
 
 void main()

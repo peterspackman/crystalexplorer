@@ -1465,7 +1465,7 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
     auto *interactions = m_structure->pairInteractions();
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
-    ColorMapFunc colorMap(ColorMapName::Viridis, 0,
+    ColorMapFunc colorMap(ColorMapName::Austria, 0,
                           fragmentPairs.uniquePairs.size() - 1);
     for (const auto &[fragmentPair, idx] :
          fragmentPairs.pairs[selectedFragments[0]]) {

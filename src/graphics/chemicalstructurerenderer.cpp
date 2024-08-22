@@ -535,6 +535,8 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     renderer->release();
   }
 
+  m_frameworkRenderer->draw();
+
   if (!forPicking) {
     m_labelRenderer->bind();
     m_uniforms.apply(m_labelRenderer);
@@ -557,7 +559,6 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_uniforms.u_selectionMode = false;
   }
 
-  m_frameworkRenderer->draw();
 }
 
 void ChemicalStructureRenderer::updateRendererUniforms(
