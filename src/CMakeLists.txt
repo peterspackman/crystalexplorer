@@ -45,10 +45,8 @@ qt_wrap_ui(CRYSTALEXPLORER_UI_FILES
 
 if(WIN32)
     set(CRYSTALEXPLORER_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/windows_metafile.rc")
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/windows_metafile.rc.in"
-        "${CRYSTALEXPLORER_RC_FILE}"
-    )
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/windows_metafile.rc" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    file(COPY ${WINDOWS_ICON_FILE} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 # Set the executable details
