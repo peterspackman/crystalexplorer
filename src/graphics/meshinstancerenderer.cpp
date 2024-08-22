@@ -159,8 +159,8 @@ void MeshInstanceRenderer::setMesh(Mesh *mesh) {
 
       for (size_t i = 0; i < vals.rows(); i++) {
         QColor color = cmap(vals(i));
-        if(!vertexMask(i)) color = color.darker();
-        propertyData.push_back(color.redF());
+        int sign = vertexMask(i) ? 1 : -1;
+        propertyData.push_back(sign * color.redF());
         propertyData.push_back(color.greenF());
         propertyData.push_back(color.blueF());
         propertyData.push_back(color.alphaF());

@@ -12,6 +12,7 @@ out highp vec3 v_normal;
 out highp vec3 v_position;
 flat out highp vec4 v_selection_id;
 flat out int v_selected;
+out float v_mask;
 
 
 uniform mat4 u_modelViewProjectionMat;
@@ -33,6 +34,8 @@ void main()
 
   int offset = u_numVertices * int(property_index) + gl_VertexID;
   vec4 color = texelFetch(u_propertyBuffer, offset);
+  v_mask = (color.r < 0) ? 1.0 : 0;
+  color.r = abs(color.r);
 
   v_color = vec4(color.rgb, alpha);
 
