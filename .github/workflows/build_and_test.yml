@@ -29,7 +29,7 @@ jobs:
         include:
           - os: macos-latest
             name: "macos-arm64"
-            qtarch: "arm64"
+            qtarch: "clang_64"
           - os: windows-latest
             name: "windows-x86_64"
             qtarch: "win64_msvc2019_64"
