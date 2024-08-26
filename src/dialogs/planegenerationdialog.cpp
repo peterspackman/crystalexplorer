@@ -2,7 +2,7 @@
 #include "ui_planegenerationdialog.h"
 #include <QColorDialog>
 
-void setButtonColor(QAbstractButton *colorButton, QColor color) {
+inline void setButtonColor(QAbstractButton *colorButton, QColor color) {
   QString styleSheet = QString("background-color: %1;").arg(color.name());
   colorButton->setStyleSheet(styleSheet);
 }

@@ -1,8 +1,12 @@
 #include "frameworkoptions.h"
+#include <array>
 
-using enum FrameworkOptions::Coloring;
-inline constexpr std::array<FrameworkOptions::Coloring, 4> availableColorings =
-    {Component, Value, Interaction, Custom};
+inline constexpr std::array<FrameworkOptions::Coloring, 4> availableColorings = {
+  FrameworkOptions::Coloring::Component,
+  FrameworkOptions::Coloring::Value,
+  FrameworkOptions::Coloring::Interaction,
+  FrameworkOptions::Coloring::Custom
+};
 
 QStringList availableFrameworkColoringOptions() {
   QStringList result;
@@ -14,15 +18,16 @@ QStringList availableFrameworkColoringOptions() {
 
 QString frameworkColoringToString(FrameworkOptions::Coloring coloring) {
   switch (coloring) {
-  case Component:
+  case FrameworkOptions::Coloring::Component:
     return "Component";
-  case Value:
+  case FrameworkOptions::Coloring::Value:
     return "Value";
-  case Interaction:
+  case FrameworkOptions::Coloring::Interaction:
     return "Interaction";
-  case Custom:
+  case FrameworkOptions::Coloring::Custom:
     return "Custom";
   }
+  return "Custom";
 }
 
 FrameworkOptions::Coloring frameworkColoringFromString(const QString &s) {
@@ -31,5 +36,5 @@ FrameworkOptions::Coloring frameworkColoringFromString(const QString &s) {
       return c;
     }
   }
-  return Component;
+  return FrameworkOptions::Coloring::Component;
 }

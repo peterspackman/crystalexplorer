@@ -31,6 +31,7 @@ target_link_libraries(
     Qt6::Core Qt6::Gui Qt6::Concurrent
     Eigen3::Eigen sbf_cpp fmt::fmt
     occ_core
+    occ_crystal
 )
 
 target_compile_features(cx_core PUBLIC cxx_std_20)

@@ -152,15 +152,16 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   }
 
   for (const auto &[edge_desc, edge] : m_bondGraph.edges()) {
+    std::pair<int, int> pair{static_cast<int>(edge.source), static_cast<int>(edge.target)};
     switch (edge.connectionType) {
     case Connection::CovalentBond:
-      m_covalentBonds.push_back({edge.source, edge.target});
+      m_covalentBonds.push_back(pair);
       break;
     case Connection::HydrogenBond:
-      m_hydrogenBonds.push_back({edge.source, edge.target});
+      m_hydrogenBonds.push_back(pair);
       break;
     case Connection::CloseContact:
-      m_vdwContacts.push_back({edge.source, edge.target});
+      m_vdwContacts.push_back(pair);
       break;
     }
   }

@@ -1,3 +1,4 @@
+#pragma once
 #include "externalprogram.h"
 #include "wavefunction_parameters.h"
 

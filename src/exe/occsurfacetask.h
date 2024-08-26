@@ -1,3 +1,4 @@
+#pragma once
 #include "externalprogram.h"
 #include "isosurface_parameters.h"
 

@@ -49,19 +49,18 @@ inline constexpr std::array<Program, 6> availablePrograms = {
     Program::NWChem, Program::Psi4, Program::Xtb};
 
 QString programName(Program prog) {
-  using enum Program;
   switch (prog) {
-  case Occ:
+  case Program::Occ:
     return "OCC";
-  case Orca:
+  case Program::Orca:
     return "Orca";
-  case Gaussian:
+  case Program::Gaussian:
     return "Gaussian";
-  case NWChem:
+  case Program::NWChem:
     return "NWChem";
-  case Psi4:
+  case Program::Psi4:
     return "Psi4";
-  case Xtb:
+  case Program::Xtb:
     return "XTB";
   }
   return "OCC";

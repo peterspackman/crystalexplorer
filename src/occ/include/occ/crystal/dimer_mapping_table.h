@@ -1,20 +1,14 @@
 #pragma once
 #include <fmt/core.h>
 #include <occ/core/graph.h>
+#include <occ/core/dimer.h>
+#include <occ/crystal/crystal.h>
 #include <occ/crystal/site_index.h>
 #include <occ/crystal/unitcell.h>
 #include <utility>
 #include <vector>
 
-namespace occ::core {
-class Dimer;
-}
-
 namespace occ::crystal {
-
-class Crystal;
-class SiteMappingTable;
-class CrystalDimers;
 
 struct DimerIndex {
   SiteIndex a;
@@ -61,9 +55,10 @@ using DimerMappingGraph =
 
 class DimerMappingTable {
 public:
-  static DimerMappingTable build_dimer_table(const Crystal &crystal,
-                                             const CrystalDimers &dimers,
-                                             bool consider_inversion);
+  DimerMappingTable() = default;
+  DimerMappingTable(const Crystal &crystal,
+                    const CrystalDimers &dimers,
+                    bool consider_inversion);
 
   DimerIndex symmetry_unique_dimer(const DimerIndex &dimer) const;
   std::vector<DimerIndex>

@@ -1,3 +1,4 @@
+#pragma once
 #include "externalprogram.h"
 #include "xtb_parameters.h"
 

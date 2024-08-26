@@ -1,3 +1,4 @@
+#pragma once
 #include <QMutex>
 #include <QMutexLocker>
 #include "isosurface_parameters.h"

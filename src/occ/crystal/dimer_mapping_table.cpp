@@ -102,21 +102,19 @@ DimerMappingTable::canonical_dimer_index(const DimerIndex &idx) const {
   return normalized;
 }
 
-DimerMappingTable
-DimerMappingTable::build_dimer_table(const Crystal &crystal,
-                                     const CrystalDimers &dimers,
-                                     bool consider_inversion) {
-  DimerMappingTable table;
-  table.m_consider_inversion = consider_inversion;
-  table.m_cell = crystal.unit_cell();
+DimerMappingTable::DimerMappingTable(const Crystal &crystal,
+                  const CrystalDimers &dimers,
+                  bool consider_inversion) {
+  m_consider_inversion = consider_inversion;
+  m_cell = crystal.unit_cell();
 
   const auto &uc_mols = crystal.unit_cell_molecules();
-  table.m_centroids = Mat3N(3, uc_mols.size());
+  m_centroids = Mat3N(3, uc_mols.size());
   for (int i = 0; i < uc_mols.size(); i++) {
-    table.m_centroids.col(i) = crystal.to_fractional(uc_mols[i].centroid());
+    m_centroids.col(i) = crystal.to_fractional(uc_mols[i].centroid());
   }
 
-  std::cout << "Centroids\n" << table.m_centroids.transpose() << '\n';
+  std::cout << "Centroids\n" << m_centroids.transpose() << '\n';
 
   const auto &symops = crystal.symmetry_operations();
   ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> unique_dimers_set;
@@ -124,54 +122,52 @@ DimerMappingTable::build_dimer_table(const Crystal &crystal,
   for (const auto &mol_dimers : dimers.molecule_neighbors) {
     for (const auto &[dimer, asym_idx] : mol_dimers) {
 
-      auto [a_pos, b_pos] = table.dimer_positions(dimer);
-      DimerIndex ab = table.dimer_index(dimer);
-      DimerIndex norm_ab = table.normalized_dimer_index(ab);
-      DimerIndex canonical_ab = table.canonical_dimer_index(ab);
+      auto [a_pos, b_pos] = dimer_positions(dimer);
+      DimerIndex ab = dimer_index(dimer);
+      DimerIndex norm_ab = normalized_dimer_index(ab);
+      DimerIndex canonical_ab = canonical_dimer_index(ab);
 
       if (unique_dimers_set.insert(canonical_ab).second) {
-        table.m_unique_dimers.push_back(canonical_ab);
-        table.m_unique_dimer_map[canonical_ab] = canonical_ab;
-        table.m_symmetry_unique_dimer_map[canonical_ab] = canonical_ab;
+        m_unique_dimers.push_back(canonical_ab);
+        m_unique_dimer_map[canonical_ab] = canonical_ab;
+        m_symmetry_unique_dimer_map[canonical_ab] = canonical_ab;
 
         std::vector<DimerIndex> related_dimers;
         for (const auto &symop : symops) {
           Vec3 ta = symop.apply(a_pos);
           Vec3 tb = symop.apply(b_pos);
-          DimerIndex symmetry_ab = table.dimer_index(ta, tb);
+          DimerIndex symmetry_ab = dimer_index(ta, tb);
           DimerIndex canonical_symmetry_ab =
-              table.canonical_dimer_index(symmetry_ab);
+              canonical_dimer_index(symmetry_ab);
 
           if (unique_dimers_set.insert(canonical_symmetry_ab).second) {
-            table.m_unique_dimers.push_back(canonical_symmetry_ab);
-            table.m_symmetry_unique_dimer_map[canonical_symmetry_ab] =
+            m_unique_dimers.push_back(canonical_symmetry_ab);
+            m_symmetry_unique_dimer_map[canonical_symmetry_ab] =
                 canonical_ab;
           }
           related_dimers.push_back(canonical_symmetry_ab);
-          table.m_unique_dimer_map[canonical_symmetry_ab] =
+          m_unique_dimer_map[canonical_symmetry_ab] =
               canonical_symmetry_ab;
         }
-        table.m_symmetry_related_dimers[canonical_ab] = related_dimers;
+        m_symmetry_related_dimers[canonical_ab] = related_dimers;
       }
 
       // Always map both ab and normalized ab to the canonical dimer
-      table.m_unique_dimer_map[ab] = canonical_ab;
-      table.m_unique_dimer_map[norm_ab] = canonical_ab;
-      table.m_symmetry_unique_dimer_map[ab] =
-          table.m_symmetry_unique_dimer_map[canonical_ab];
-      table.m_symmetry_unique_dimer_map[norm_ab] =
-          table.m_symmetry_unique_dimer_map[canonical_ab];
+      m_unique_dimer_map[ab] = canonical_ab;
+      m_unique_dimer_map[norm_ab] = canonical_ab;
+      m_symmetry_unique_dimer_map[ab] =
+          m_symmetry_unique_dimer_map[canonical_ab];
+      m_symmetry_unique_dimer_map[norm_ab] =
+          m_symmetry_unique_dimer_map[canonical_ab];
     }
   }
 
   // Populate m_symmetry_unique_dimers
-  for (const auto &dimer : table.m_unique_dimers) {
-    if (table.m_symmetry_unique_dimer_map[dimer] == dimer) {
-      table.m_symmetry_unique_dimers.push_back(dimer);
+  for (const auto &dimer : m_unique_dimers) {
+    if (m_symmetry_unique_dimer_map[dimer] == dimer) {
+      m_symmetry_unique_dimers.push_back(dimer);
     }
   }
-
-  return table;
 }
 
 bool DimerMappingTable::have_dimer(const DimerIndex &dimer) const {

@@ -25,6 +25,7 @@ QString edgeTypeString(Connection conn) {
   case Connection::CovalentBond:
     return "COV";
   }
+  return "?";
 }
 
 template <typename T, typename Pred>
@@ -1333,28 +1334,12 @@ void CrystalStructure::buildDimerMappingTable(double maxRadius) {
   qDebug() << "Unit cell molecules" << m_unitCellFragments.size();
   qDebug() << "Unique dimers:" << m_unitCellDimers.unique_dimers.size();
 
-  m_dimerMappingTable = occ::crystal::DimerMappingTable::build_dimer_table(
+  m_dimerMappingTable = occ::crystal::DimerMappingTable(
       m_crystal, m_unitCellDimers, true);
-  m_dimerMappingTableNoInv = occ::crystal::DimerMappingTable::build_dimer_table(
+  m_dimerMappingTableNoInv = occ::crystal::DimerMappingTable(
       m_crystal, m_unitCellDimers, false);
   qDebug() << "Built dimer mapping table";
 }
-
-/* Reminder
-struct FragmentPairs {
-  struct SymmetryRelatedPair {
-    FragmentDimer fragments;
-    int uniquePairIndex{-1};
-    bool forward{false};
-  };
-  using MoleculeNeighbors = std::vector<SymmetryRelatedPair>;
-
-  std::vector<FragmentDimer> uniquePairs;
-  ankerl::unordered_dense::map<FragmentIndex, MoleculeNeighbors,
-                               FragmentIndexHash>
-      pairs;
-};
-*/
 
 FragmentPairs
 CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {

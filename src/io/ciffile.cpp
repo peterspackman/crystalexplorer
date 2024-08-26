@@ -113,52 +113,51 @@ inline void setAtomData(int index, const std::vector<AtomField> &fields,
                         const gemmi::cif::Loop &loop, CifAtomData &atom,
                         AdpData &adp) {
   using gemmi::cif::as_number;
-  using enum AtomField;
 
   for (int field_index = 0; field_index < fields.size(); field_index++) {
     const auto &field = fields[field_index];
     const auto &value = loop.val(index, field_index);
     switch (field) {
-    case Label:
+    case AtomField::Label:
       atom.siteLabel = value;
       break;
-    case Element:
+    case AtomField::Element:
       atom.element = value;
       break;
-    case FracX:
+    case AtomField::FracX:
       atom.position[0] = as_number(value);
       break;
-    case FracY:
+    case AtomField::FracY:
       atom.position[1] = as_number(value);
       break;
-    case FracZ:
+    case AtomField::FracZ:
       atom.position[2] = as_number(value);
       break;
-    case AdpType:
+    case AtomField::AdpType:
       atom.adp_type = value;
       break;
-    case Uiso:
+    case AtomField::Uiso:
       atom.uiso = as_number(value);
       break;
-    case AdpLabel:
+    case AtomField::AdpLabel:
       adp.anisoLabel = value;
       break;
-    case AdpU11:
+    case AtomField::AdpU11:
       adp.u11 = as_number(value);
       break;
-    case AdpU22:
+    case AtomField::AdpU22:
       adp.u22 = as_number(value);
       break;
-    case AdpU33:
+    case AtomField::AdpU33:
       adp.u33 = as_number(value);
       break;
-    case AdpU12:
+    case AtomField::AdpU12:
       adp.u12 = as_number(value);
       break;
-    case AdpU13:
+    case AtomField::AdpU13:
       adp.u13 = as_number(value);
       break;
-    case AdpU23:
+    case AtomField::AdpU23:
       adp.u23 = as_number(value);
       break;
     default:
