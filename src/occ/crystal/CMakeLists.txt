@@ -1,6 +1,8 @@
 add_library(occ_crystal
     "${CMAKE_CURRENT_SOURCE_DIR}/asymmetric_unit.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/crystal.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/dimer_mapping_table.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/hkl.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/spacegroup.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/symmetryoperation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/unitcell.cpp"
@@ -10,7 +12,7 @@ add_library(occ_crystal
 target_link_libraries(occ_crystal
     PUBLIC 
     occ_core
-    gemmi::gemmi
+    gemmi::gemmi_cpp
 )
 target_include_directories(occ_crystal PUBLIC 
     ${OCC_INCLUDE_DIR} 

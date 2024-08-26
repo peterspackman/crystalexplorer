@@ -6,7 +6,8 @@ in vec4 v_colorB;
 in vec3 v_normal;
 in vec3 v_position;
 in vec3 v_cylinderPosition;
-flat in vec4 v_selection_id;
+flat in vec4 v_selection_idA;
+flat in vec4 v_selection_idB;
 flat in int v_selectedA;
 flat in int v_selectedB;
 out vec4 f_color;
@@ -48,7 +49,12 @@ float sphOcclusion( in vec3 pos, in vec3 nor, in vec4 sph )
 void main()
 {
     if(u_renderMode == 0) {
-        f_color = v_selection_id;
+        if(v_cylinderPosition.z < 0) {
+            f_color = v_selection_idA;
+        }
+        else {
+            f_color = v_selection_idB;
+        }
     }
     else if(u_renderMode == 1) {
         vec4 color;
@@ -63,7 +69,7 @@ void main()
         vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
         colorLinear = flatWithNormalOutline(u_cameraPosVec, v_position, v_normal, colorLinear);
         f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
-        if(u_depthFogColor.r >= 0.0) f_color = mix(f_color, vec4(u_depthFogColor, 1.0), fogFactor(u_depthFogDensity, clamp(gl_FragCoord.z - u_depthFogOffset, 0, 1.0f)));
+        f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
     }
    else {
        vec4 color;
@@ -89,6 +95,6 @@ void main()
        // since we're passing things through in camera space, the camera is located at the origin
        colorLinear = PBRLighting(u_cameraPosVec, v_position, v_normal, lights, material);
        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
-       if(u_depthFogColor.r >= 0.0) f_color = mix(f_color, vec4(u_depthFogColor, 1.0), fogFactor(u_depthFogDensity, clamp(gl_FragCoord.z - u_depthFogOffset, 0, 1.0f)));
+       f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
    }
 }

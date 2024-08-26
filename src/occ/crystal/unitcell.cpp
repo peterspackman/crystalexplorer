@@ -4,8 +4,8 @@
 namespace occ::crystal {
 
 UnitCell::UnitCell()
-    : m_lengths{1, 1, 1}, m_angles{occ::units::PI / 2, occ::units::PI / 2,
-                                   occ::units::PI / 2} {}
+    : m_lengths{1, 1, 1},
+      m_angles{occ::units::PI / 2, occ::units::PI / 2, occ::units::PI / 2} {}
 
 UnitCell::UnitCell(const Vec3 &lengths, const Vec3 &angles)
     : m_lengths{lengths}, m_angles{angles} {
@@ -82,8 +82,11 @@ void UnitCell::update_cell_matrices() {
   m_volume =
       a * b * c * sqrt(1 - ca * ca - cb * cb - cg * cg + 2 * ca * cb * cg);
 
-  m_direct << a, b * cg, c * cb, 0.0, b * sg, c * (ca - cb * cg) / sg, 0.0, 0.0,
-      m_volume / (a * b * sg);
+  // clang-format off
+  m_direct << a,   b * cg,  c * cb, 
+              0.0, b * sg,  c * (ca - cb * cg) / sg,
+              0.0,    0.0,  m_volume / (a * b * sg);
+  // clang-format on
 
   m_reciprocal << 1 / a, 0.0, 0.0, -cg / (a * sg), 1 / (b * sg), 0.0,
       b * c * (ca * cg - cb) / (m_volume * sg),
@@ -177,6 +180,38 @@ UnitCell monoclinic_cell(double a, double b, double c, double angle) {
 UnitCell triclinic_cell(double a, double b, double c, double alpha, double beta,
                         double gamma) {
   return UnitCell(a, b, c, alpha, beta, gamma);
+}
+
+Mat3 UnitCell::adp_adhoc_direct() const {
+  return m_direct * m_reciprocal.colwise().norm().asDiagonal();
+}
+
+Mat3 UnitCell::adp_adhoc_inverse() const {
+  return m_inverse.rowwise().normalized();
+}
+
+inline Mat6N convert_adps(const Mat6N &adps, const Mat3N &T) {
+  Mat6N result(adps.rows(), adps.cols());
+  Mat3 adp_tensor;
+  for (int i = 0; i < adps.cols(); ++i) {
+    // clang-format off
+    adp_tensor << adps(0, i), adps(3, i), adps(4, i),
+                  adps(3, i), adps(1, i), adps(5, i),
+                  adps(4, i), adps(5, i), adps(2, i);
+    // clang-format on
+
+    const Mat3 r = T * adp_tensor * T.transpose();
+    result.col(i) << r(0, 0), r(1, 1), r(2, 2), r(0, 1), r(0, 2), r(1, 2);
+  }
+  return result;
+}
+
+Mat6N UnitCell::to_cartesian_adp(const Mat6N &adps) const {
+  return convert_adps(adps, adp_adhoc_direct());
+}
+
+Mat6N UnitCell::to_fractional_adp(const Mat6N &adps) const {
+  return convert_adps(adps, adp_adhoc_inverse());
 }
 
 } // namespace occ::crystal

@@ -11,6 +11,8 @@
         <file>triangle.vert</file>
         <file>mesh.frag</file>
         <file>mesh.vert</file>
+        <file>meshinstance.frag</file>
+        <file>meshinstance.vert</file>
         <file>line.frag</file>
         <file>line.vert</file>
         <file>ellipse.vert</file>
@@ -25,6 +27,9 @@
         <file>sphere_impostor_flat.frag</file>
         <file>point.frag</file>
         <file>point.vert</file>
+        <file>pointcloudinstance.frag</file>
+        <file>pointcloudinstance.vert</file>
+        <file>selection.glsl</file>
         <file>crystalplane.frag</file>
         <file>crystalplane.vert</file>
         <file>uniforms.glsl</file>

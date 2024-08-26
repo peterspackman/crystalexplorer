@@ -1,48 +1,53 @@
 #include "colormap.h"
+#include "settings.h"
 #include <QDebug>
 
 namespace impl {
 
-template<typename T> 
+template <typename T>
 inline constexpr T clamp_range(T x, T lower = 0, T upper = 1) noexcept {
-    return (x < lower) ? lower : (x > upper) ? upper : x;
+  return (x < lower) ? lower : (x > upper) ? upper : x;
 }
 
 inline float linear(float a, float b, float t) noexcept {
-    return a * (1 - t) + b * t;
+  return a * (1 - t) + b * t;
 }
 
 inline QColor linearColorMap(double x, const std::vector<QColor> &data) {
-    const double a  = clamp_range(x) * (data.size() - 1);
-    const double i  = std::floor(a);
-    const double t  = a - i;
-    const QColor& colorA = data[static_cast<std::size_t>(i)];
-    const QColor& colorB = data[static_cast<std::size_t>(std::ceil(a))];
+  const double a = clamp_range(x) * (data.size() - 1);
+  const double i = std::floor(a);
+  const double t = a - i;
+  const QColor &colorA = data[static_cast<std::size_t>(i)];
+  const QColor &colorB = data[static_cast<std::size_t>(std::ceil(a))];
 
-    float h1, s1, v1;
-    float h2, s2, v2;
-    colorA.getRgbF(&h1, &s1, &v1);
-    colorB.getRgbF(&h2, &s2, &v2);
+  float h1, s1, v1;
+  float h2, s2, v2;
+  colorA.getRgbF(&h1, &s1, &v1);
+  colorB.getRgbF(&h2, &s2, &v2);
 
-    return QColor::fromRgbF(linear(h1, h2, t), linear(s1, s2, t), linear(v1, v2, t));
+  return QColor::fromRgbF(linear(h1, h2, t), linear(s1, s2, t),
+                          linear(v1, v2, t));
 }
 
 inline double quantize(double x, uint_fast8_t levels) {
-    levels = std::max(uint_fast8_t{1}, std::min(levels, uint_fast8_t{255}));
+  levels = std::max(uint_fast8_t{1}, std::min(levels, uint_fast8_t{255}));
 
-    const double interval = 255.0 / levels;
+  const double interval = 255.0 / levels;
 
-    constexpr double eps = 0.0005;
-    const unsigned int index = static_cast<uint_fast8_t>((x * 255.0 - eps) / interval);
+  constexpr double eps = 0.0005;
+  const unsigned int index =
+      static_cast<uint_fast8_t>((x * 255.0 - eps) / interval);
 
-    const unsigned int upper = static_cast<uint_fast8_t>(index * interval + interval);
-    const unsigned int lower = static_cast<uint_fast8_t>(upper - interval);
+  const unsigned int upper =
+      static_cast<uint_fast8_t>(index * interval + interval);
+  const unsigned int lower = static_cast<uint_fast8_t>(upper - interval);
 
-    const double middle = static_cast<double>(upper + lower) * 0.5 / 255.0;
-    return middle;
+  const double middle = static_cast<double>(upper + lower) * 0.5 / 255.0;
+  return middle;
 }
 
 namespace colors {
+// TODO move this to JSON, indexing by QString
 inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.2081, 0.1663, 0.5292),
     QColor::fromRgbF(0.2091, 0.1721, 0.5411),
@@ -78,7 +83,7 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.0213, 0.3792, 0.8796),
     QColor::fromRgbF(0.0136, 0.3853, 0.8815),
     QColor::fromRgbF(0.0086, 0.3911, 0.8827),
-    QColor::fromRgbF(0.006,  0.3965, 0.8833),
+    QColor::fromRgbF(0.006, 0.3965, 0.8833),
     QColor::fromRgbF(0.0051, 0.4017, 0.8834),
     QColor::fromRgbF(0.0054, 0.4066, 0.8831),
     QColor::fromRgbF(0.0067, 0.4113, 0.8825),
@@ -97,10 +102,10 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.0549, 0.464, 0.8611),
     QColor::fromRgbF(0.0582, 0.4677, 0.8589),
     QColor::fromRgbF(0.0612, 0.4714, 0.8568),
-    QColor::fromRgbF(0.064,  0.4751, 0.8546),
+    QColor::fromRgbF(0.064, 0.4751, 0.8546),
     QColor::fromRgbF(0.0666, 0.4788, 0.8525),
     QColor::fromRgbF(0.0689, 0.4825, 0.8503),
-    QColor::fromRgbF(0.071,  0.4862, 0.8481),
+    QColor::fromRgbF(0.071, 0.4862, 0.8481),
     QColor::fromRgbF(0.0729, 0.4899, 0.846),
     QColor::fromRgbF(0.0746, 0.4937, 0.8439),
     QColor::fromRgbF(0.0761, 0.4974, 0.8418),
@@ -118,7 +123,7 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.0698, 0.5479, 0.8247),
     QColor::fromRgbF(0.0668, 0.5527, 0.8243),
     QColor::fromRgbF(0.0636, 0.5577, 0.8239),
-    QColor::fromRgbF(0.06,   0.5627, 0.8237),
+    QColor::fromRgbF(0.06, 0.5627, 0.8237),
     QColor::fromRgbF(0.0562, 0.5677, 0.8234),
     QColor::fromRgbF(0.0523, 0.5727, 0.8231),
     QColor::fromRgbF(0.0484, 0.5777, 0.8228),
@@ -138,7 +143,7 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.0235, 0.6352, 0.798),
     QColor::fromRgbF(0.0233, 0.6384, 0.7948),
     QColor::fromRgbF(0.0231, 0.6415, 0.7916),
-    QColor::fromRgbF(0.023,  0.6445, 0.7881),
+    QColor::fromRgbF(0.023, 0.6445, 0.7881),
     QColor::fromRgbF(0.0229, 0.6474, 0.7846),
     QColor::fromRgbF(0.0227, 0.6503, 0.781),
     QColor::fromRgbF(0.0227, 0.6531, 0.7773),
@@ -157,12 +162,12 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.0629, 0.6854, 0.7221),
     QColor::fromRgbF(0.0692, 0.6877, 0.7173),
     QColor::fromRgbF(0.0755, 0.6899, 0.7126),
-    QColor::fromRgbF(0.082,  0.6921, 0.7078),
+    QColor::fromRgbF(0.082, 0.6921, 0.7078),
     QColor::fromRgbF(0.0889, 0.6943, 0.7029),
     QColor::fromRgbF(0.0956, 0.6965, 0.6979),
     QColor::fromRgbF(0.1031, 0.6986, 0.6929),
     QColor::fromRgbF(0.1104, 0.7007, 0.6878),
-    QColor::fromRgbF(0.118,  0.7028, 0.6827),
+    QColor::fromRgbF(0.118, 0.7028, 0.6827),
     QColor::fromRgbF(0.1258, 0.7049, 0.6775),
     QColor::fromRgbF(0.1335, 0.7069, 0.6723),
     QColor::fromRgbF(0.1418, 0.7089, 0.6669),
@@ -186,7 +191,7 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.3177, 0.7394, 0.563),
     QColor::fromRgbF(0.3289, 0.7406, 0.557),
     QColor::fromRgbF(0.3405, 0.7417, 0.5512),
-    QColor::fromRgbF(0.352,  0.7428, 0.5453),
+    QColor::fromRgbF(0.352, 0.7428, 0.5453),
     QColor::fromRgbF(0.3635, 0.7438, 0.5396),
     QColor::fromRgbF(0.3753, 0.7446, 0.5339),
     QColor::fromRgbF(0.3869, 0.7454, 0.5283),
@@ -199,7 +204,7 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.4672, 0.7487, 0.4924),
     QColor::fromRgbF(0.4783, 0.7489, 0.4877),
     QColor::fromRgbF(0.4892, 0.7491, 0.4831),
-    QColor::fromRgbF(0.5,    0.7491, 0.4786),
+    QColor::fromRgbF(0.5, 0.7491, 0.4786),
     QColor::fromRgbF(0.5106, 0.7492, 0.4741),
     QColor::fromRgbF(0.5212, 0.7492, 0.4698),
     QColor::fromRgbF(0.5315, 0.7491, 0.4655),
@@ -212,20 +217,20 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.6009, 0.7476, 0.4374),
     QColor::fromRgbF(0.6103, 0.7473, 0.4335),
     QColor::fromRgbF(0.6197, 0.7469, 0.4298),
-    QColor::fromRgbF(0.629,  0.7465, 0.4261),
+    QColor::fromRgbF(0.629, 0.7465, 0.4261),
     QColor::fromRgbF(0.6382, 0.746, 0.4224),
     QColor::fromRgbF(0.6473, 0.7456, 0.4188),
     QColor::fromRgbF(0.6564, 0.7451, 0.4152),
     QColor::fromRgbF(0.6653, 0.7446, 0.4116),
     QColor::fromRgbF(0.6742, 0.7441, 0.4081),
-    QColor::fromRgbF(0.683,  0.7435, 0.4046),
+    QColor::fromRgbF(0.683, 0.7435, 0.4046),
     QColor::fromRgbF(0.6918, 0.743, 0.4011),
     QColor::fromRgbF(0.7004, 0.7424, 0.3976),
     QColor::fromRgbF(0.7091, 0.7418, 0.3942),
     QColor::fromRgbF(0.7176, 0.7412, 0.3908),
     QColor::fromRgbF(0.7261, 0.7405, 0.3874),
     QColor::fromRgbF(0.7346, 0.7399, 0.384),
-    QColor::fromRgbF(0.743,  0.7392, 0.3806),
+    QColor::fromRgbF(0.743, 0.7392, 0.3806),
     QColor::fromRgbF(0.7513, 0.7385, 0.3773),
     QColor::fromRgbF(0.7596, 0.7378, 0.3739),
     QColor::fromRgbF(0.7679, 0.7372, 0.3706),
@@ -241,12 +246,12 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.8484, 0.7301, 0.337),
     QColor::fromRgbF(0.8563, 0.7294, 0.3336),
     QColor::fromRgbF(0.8642, 0.7288, 0.33),
-    QColor::fromRgbF(0.872,  0.7282, 0.3265),
+    QColor::fromRgbF(0.872, 0.7282, 0.3265),
     QColor::fromRgbF(0.8798, 0.7276, 0.3229),
     QColor::fromRgbF(0.8877, 0.7271, 0.3193),
     QColor::fromRgbF(0.8954, 0.7266, 0.3156),
     QColor::fromRgbF(0.9032, 0.7262, 0.3117),
-    QColor::fromRgbF(0.911,  0.7259, 0.3078),
+    QColor::fromRgbF(0.911, 0.7259, 0.3078),
     QColor::fromRgbF(0.9187, 0.7256, 0.3038),
     QColor::fromRgbF(0.9264, 0.7256, 0.2996),
     QColor::fromRgbF(0.9341, 0.7256, 0.2953),
@@ -263,11 +268,11 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.9973, 0.7524, 0.231),
     QColor::fromRgbF(0.9986, 0.7573, 0.2251),
     QColor::fromRgbF(0.9991, 0.7624, 0.2195),
-    QColor::fromRgbF(0.999,  0.7675, 0.2141),
+    QColor::fromRgbF(0.999, 0.7675, 0.2141),
     QColor::fromRgbF(0.9985, 0.7726, 0.209),
     QColor::fromRgbF(0.9976, 0.7778, 0.2042),
     QColor::fromRgbF(0.9964, 0.7829, 0.1995),
-    QColor::fromRgbF(0.995,  0.788, 0.1949),
+    QColor::fromRgbF(0.995, 0.788, 0.1949),
     QColor::fromRgbF(0.9933, 0.7931, 0.1905),
     QColor::fromRgbF(0.9914, 0.7981, 0.1863),
     QColor::fromRgbF(0.9894, 0.8032, 0.1821),
@@ -285,44 +290,35 @@ inline const std::vector<QColor> Parula{
     QColor::fromRgbF(0.9638, 0.8659, 0.1343),
     QColor::fromRgbF(0.9623, 0.8716, 0.1301),
     QColor::fromRgbF(0.9611, 0.8774, 0.1258),
-    QColor::fromRgbF(0.96,   0.8834, 0.1215),
+    QColor::fromRgbF(0.96, 0.8834, 0.1215),
     QColor::fromRgbF(0.9593, 0.8895, 0.1171),
     QColor::fromRgbF(0.9588, 0.8958, 0.1126),
     QColor::fromRgbF(0.9586, 0.9022, 0.1082),
     QColor::fromRgbF(0.9587, 0.9088, 0.1036),
     QColor::fromRgbF(0.9591, 0.9155, 0.099),
     QColor::fromRgbF(0.9599, 0.9225, 0.0944),
-    QColor::fromRgbF(0.961,  0.9296, 0.0897),
+    QColor::fromRgbF(0.961, 0.9296, 0.0897),
     QColor::fromRgbF(0.9624, 0.9368, 0.085),
     QColor::fromRgbF(0.9641, 0.9443, 0.0802),
     QColor::fromRgbF(0.9662, 0.9518, 0.0753),
     QColor::fromRgbF(0.9685, 0.9595, 0.0703),
-    QColor::fromRgbF(0.971,  0.9673, 0.0651),
+    QColor::fromRgbF(0.971, 0.9673, 0.0651),
     QColor::fromRgbF(0.9736, 0.9752, 0.0597),
-    QColor::fromRgbF(0.9763, 0.9831, 0.0538)
-};
+    QColor::fromRgbF(0.9763, 0.9831, 0.0538)};
 
 inline const std::vector<QColor> Heat{
-    QColor::fromRgbF(0.0, 0.0, 1.0),
-    QColor::fromRgbF(0.0, 1.0, 1.0),
-    QColor::fromRgbF(0.0, 1.0, 0.0),
-    QColor::fromRgbF(1.0, 1.0, 0.0),
-    QColor::fromRgbF(1.0, 0.0, 0.0)
-};
+    QColor::fromRgbF(0.0, 0.0, 1.0), QColor::fromRgbF(0.0, 1.0, 1.0),
+    QColor::fromRgbF(0.0, 1.0, 0.0), QColor::fromRgbF(1.0, 1.0, 0.0),
+    QColor::fromRgbF(1.0, 0.0, 0.0)};
 
 inline const std::vector<QColor> Jet{
-    QColor::fromRgbF(0.0, 0.0, 0.5),
-    QColor::fromRgbF(0.0, 0.0, 1.0),
-    QColor::fromRgbF(0.0, 0.5, 1.0),
-    QColor::fromRgbF(0.0, 1.0, 1.0),
-    QColor::fromRgbF(0.5, 1.0, 0.5),
-    QColor::fromRgbF(1.0, 1.0, 0.0),
-    QColor::fromRgbF(1.0, 0.5, 0.0),
-    QColor::fromRgbF(1.0, 0.0, 0.0),
-    QColor::fromRgbF(0.5, 0.0, 0.0)
-};
+    QColor::fromRgbF(0.0, 0.0, 0.5), QColor::fromRgbF(0.0, 0.0, 1.0),
+    QColor::fromRgbF(0.0, 0.5, 1.0), QColor::fromRgbF(0.0, 1.0, 1.0),
+    QColor::fromRgbF(0.5, 1.0, 0.5), QColor::fromRgbF(1.0, 1.0, 0.0),
+    QColor::fromRgbF(1.0, 0.5, 0.0), QColor::fromRgbF(1.0, 0.0, 0.0),
+    QColor::fromRgbF(0.5, 0.0, 0.0)};
 
-inline const std::vector<QColor> Turbo {
+inline const std::vector<QColor> Turbo{
     QColor::fromRgbF(0.18995, 0.07176, 0.23217),
     QColor::fromRgbF(0.19483, 0.08339, 0.26149),
     QColor::fromRgbF(0.19956, 0.09498, 0.29024),
@@ -578,8 +574,7 @@ inline const std::vector<QColor> Turbo {
     QColor::fromRgbF(0.51989, 0.02756, 0.00780),
     QColor::fromRgbF(0.50664, 0.02354, 0.00863),
     QColor::fromRgbF(0.49321, 0.01963, 0.00955),
-    QColor::fromRgbF(0.47960, 0.01583, 0.01055)
-};
+    QColor::fromRgbF(0.47960, 0.01583, 0.01055)};
 
 inline const std::vector<QColor> Magma{
     QColor::fromRgbF(0.001462, 0.000466, 0.013866),
@@ -837,8 +832,7 @@ inline const std::vector<QColor> Magma{
     QColor::fromRgbF(0.988033, 0.970012, 0.727077),
     QColor::fromRgbF(0.987691, 0.977154, 0.734536),
     QColor::fromRgbF(0.987387, 0.984288, 0.742002),
-    QColor::fromRgbF(0.987053, 0.991438, 0.749504)
-};
+    QColor::fromRgbF(0.987053, 0.991438, 0.749504)};
 
 inline const std::vector<QColor> Inferno{
     QColor::fromRgbF(0.001462, 0.000466, 0.013866),
@@ -1096,8 +1090,7 @@ inline const std::vector<QColor> Inferno{
     QColor::fromRgbF(0.971162, 0.985282, 0.602154),
     QColor::fromRgbF(0.976511, 0.989753, 0.616760),
     QColor::fromRgbF(0.982257, 0.994109, 0.631017),
-    QColor::fromRgbF(0.988362, 0.998364, 0.644924)
-};
+    QColor::fromRgbF(0.988362, 0.998364, 0.644924)};
 
 inline const std::vector<QColor> Plasma{
     QColor::fromRgbF(0.050383, 0.029803, 0.527975),
@@ -1355,8 +1348,7 @@ inline const std::vector<QColor> Plasma{
     QColor::fromRgbF(0.946602, 0.955190, 0.150328),
     QColor::fromRgbF(0.944152, 0.961916, 0.146861),
     QColor::fromRgbF(0.941896, 0.968590, 0.140956),
-    QColor::fromRgbF(0.940015, 0.975158, 0.131326)
-};
+    QColor::fromRgbF(0.940015, 0.975158, 0.131326)};
 
 inline const std::vector<QColor> Viridis{
     QColor::fromRgbF(0.267004, 0.004874, 0.329415),
@@ -1614,8 +1606,7 @@ inline const std::vector<QColor> Viridis{
     QColor::fromRgbF(0.964894, 0.902323, 0.123941),
     QColor::fromRgbF(0.974417, 0.903590, 0.130215),
     QColor::fromRgbF(0.983868, 0.904867, 0.136897),
-    QColor::fromRgbF(0.993248, 0.906157, 0.143936)
-};
+    QColor::fromRgbF(0.993248, 0.906157, 0.143936)};
 
 inline const std::vector<QColor> Cividis{
     QColor::fromRgbF(0.0000, 0.1262, 0.3015),
@@ -1873,16 +1864,14 @@ inline const std::vector<QColor> Cividis{
     QColor::fromRgbF(1.0000, 0.9057, 0.2593),
     QColor::fromRgbF(1.0000, 0.9094, 0.2634),
     QColor::fromRgbF(1.0000, 0.9131, 0.2680),
-    QColor::fromRgbF(1.0000, 0.9169, 0.2731)
-};
+    QColor::fromRgbF(1.0000, 0.9169, 0.2731)};
 
-inline const std::vector<QColor> Github {
+inline const std::vector<QColor> Github{
     QColor::fromRgbF(0.933333, 0.933333, 0.933333),
     QColor::fromRgbF(0.776470, 0.894117, 0.545098),
     QColor::fromRgbF(0.482352, 0.788235, 0.435294),
     QColor::fromRgbF(0.137254, 0.603921, 0.231372),
-    QColor::fromRgbF(0.098039, 0.380392, 0.152941)
-};
+    QColor::fromRgbF(0.098039, 0.380392, 0.152941)};
 
 inline const std::vector<QColor> CubeHelix{
     QColor::fromRgbF(0.000000, 0.000000, 0.000000),
@@ -2140,304 +2129,547 @@ inline const std::vector<QColor> CubeHelix{
     QColor::fromRgbF(0.979088, 0.993744, 0.983635),
     QColor::fromRgbF(0.986161, 0.995828, 0.988820),
     QColor::fromRgbF(0.993136, 0.997910, 0.994276),
-    QColor::fromRgbF(1.000000, 1.000000, 1.000000)
+    QColor::fromRgbF(1.000000, 1.000000, 1.000000)};
+
+inline const std::vector<QColor> HSV{
+    QColor::fromRgbF(1.0000, 0.0000, 0.0000),
+    QColor::fromRgbF(1.0000, 0.0234, 0.0000),
+    QColor::fromRgbF(1.0000, 0.0469, 0.0000),
+    QColor::fromRgbF(1.0000, 0.0703, 0.0000),
+    QColor::fromRgbF(1.0000, 0.0938, 0.0000),
+    QColor::fromRgbF(1.0000, 0.1172, 0.0000),
+    QColor::fromRgbF(1.0000, 0.1406, 0.0000),
+    QColor::fromRgbF(1.0000, 0.1641, 0.0000),
+    QColor::fromRgbF(1.0000, 0.1875, 0.0000),
+    QColor::fromRgbF(1.0000, 0.2109, 0.0000),
+    QColor::fromRgbF(1.0000, 0.2344, 0.0000),
+    QColor::fromRgbF(1.0000, 0.2578, 0.0000),
+    QColor::fromRgbF(1.0000, 0.2812, 0.0000),
+    QColor::fromRgbF(1.0000, 0.3047, 0.0000),
+    QColor::fromRgbF(1.0000, 0.3281, 0.0000),
+    QColor::fromRgbF(1.0000, 0.3516, 0.0000),
+    QColor::fromRgbF(1.0000, 0.3750, 0.0000),
+    QColor::fromRgbF(1.0000, 0.3984, 0.0000),
+    QColor::fromRgbF(1.0000, 0.4219, 0.0000),
+    QColor::fromRgbF(1.0000, 0.4453, 0.0000),
+    QColor::fromRgbF(1.0000, 0.4688, 0.0000),
+    QColor::fromRgbF(1.0000, 0.4922, 0.0000),
+    QColor::fromRgbF(1.0000, 0.5156, 0.0000),
+    QColor::fromRgbF(1.0000, 0.5391, 0.0000),
+    QColor::fromRgbF(1.0000, 0.5625, 0.0000),
+    QColor::fromRgbF(1.0000, 0.5859, 0.0000),
+    QColor::fromRgbF(1.0000, 0.6094, 0.0000),
+    QColor::fromRgbF(1.0000, 0.6328, 0.0000),
+    QColor::fromRgbF(1.0000, 0.6562, 0.0000),
+    QColor::fromRgbF(1.0000, 0.6797, 0.0000),
+    QColor::fromRgbF(1.0000, 0.7031, 0.0000),
+    QColor::fromRgbF(1.0000, 0.7266, 0.0000),
+    QColor::fromRgbF(1.0000, 0.7500, 0.0000),
+    QColor::fromRgbF(1.0000, 0.7734, 0.0000),
+    QColor::fromRgbF(1.0000, 0.7969, 0.0000),
+    QColor::fromRgbF(1.0000, 0.8203, 0.0000),
+    QColor::fromRgbF(1.0000, 0.8438, 0.0000),
+    QColor::fromRgbF(1.0000, 0.8672, 0.0000),
+    QColor::fromRgbF(1.0000, 0.8906, 0.0000),
+    QColor::fromRgbF(1.0000, 0.9141, 0.0000),
+    QColor::fromRgbF(1.0000, 0.9375, 0.0000),
+    QColor::fromRgbF(1.0000, 0.9609, 0.0000),
+    QColor::fromRgbF(1.0000, 0.9844, 0.0000),
+    QColor::fromRgbF(0.9922, 1.0000, 0.0000),
+    QColor::fromRgbF(0.9688, 1.0000, 0.0000),
+    QColor::fromRgbF(0.9453, 1.0000, 0.0000),
+    QColor::fromRgbF(0.9219, 1.0000, 0.0000),
+    QColor::fromRgbF(0.8984, 1.0000, 0.0000),
+    QColor::fromRgbF(0.8750, 1.0000, 0.0000),
+    QColor::fromRgbF(0.8516, 1.0000, 0.0000),
+    QColor::fromRgbF(0.8281, 1.0000, 0.0000),
+    QColor::fromRgbF(0.8047, 1.0000, 0.0000),
+    QColor::fromRgbF(0.7812, 1.0000, 0.0000),
+    QColor::fromRgbF(0.7578, 1.0000, 0.0000),
+    QColor::fromRgbF(0.7344, 1.0000, 0.0000),
+    QColor::fromRgbF(0.7109, 1.0000, 0.0000),
+    QColor::fromRgbF(0.6875, 1.0000, 0.0000),
+    QColor::fromRgbF(0.6641, 1.0000, 0.0000),
+    QColor::fromRgbF(0.6406, 1.0000, 0.0000),
+    QColor::fromRgbF(0.6172, 1.0000, 0.0000),
+    QColor::fromRgbF(0.5938, 1.0000, 0.0000),
+    QColor::fromRgbF(0.5703, 1.0000, 0.0000),
+    QColor::fromRgbF(0.5469, 1.0000, 0.0000),
+    QColor::fromRgbF(0.5234, 1.0000, 0.0000),
+    QColor::fromRgbF(0.5000, 1.0000, 0.0000),
+    QColor::fromRgbF(0.4766, 1.0000, 0.0000),
+    QColor::fromRgbF(0.4531, 1.0000, 0.0000),
+    QColor::fromRgbF(0.4297, 1.0000, 0.0000),
+    QColor::fromRgbF(0.4062, 1.0000, 0.0000),
+    QColor::fromRgbF(0.3828, 1.0000, 0.0000),
+    QColor::fromRgbF(0.3594, 1.0000, 0.0000),
+    QColor::fromRgbF(0.3359, 1.0000, 0.0000),
+    QColor::fromRgbF(0.3125, 1.0000, 0.0000),
+    QColor::fromRgbF(0.2891, 1.0000, 0.0000),
+    QColor::fromRgbF(0.2656, 1.0000, 0.0000),
+    QColor::fromRgbF(0.2422, 1.0000, 0.0000),
+    QColor::fromRgbF(0.2188, 1.0000, 0.0000),
+    QColor::fromRgbF(0.1953, 1.0000, 0.0000),
+    QColor::fromRgbF(0.1719, 1.0000, 0.0000),
+    QColor::fromRgbF(0.1484, 1.0000, 0.0000),
+    QColor::fromRgbF(0.1250, 1.0000, 0.0000),
+    QColor::fromRgbF(0.1016, 1.0000, 0.0000),
+    QColor::fromRgbF(0.0781, 1.0000, 0.0000),
+    QColor::fromRgbF(0.0547, 1.0000, 0.0000),
+    QColor::fromRgbF(0.0312, 1.0000, 0.0000),
+    QColor::fromRgbF(0.0078, 1.0000, 0.0000),
+    QColor::fromRgbF(0.0000, 1.0000, 0.0156),
+    QColor::fromRgbF(0.0000, 1.0000, 0.0391),
+    QColor::fromRgbF(0.0000, 1.0000, 0.0625),
+    QColor::fromRgbF(0.0000, 1.0000, 0.0859),
+    QColor::fromRgbF(0.0000, 1.0000, 0.1094),
+    QColor::fromRgbF(0.0000, 1.0000, 0.1328),
+    QColor::fromRgbF(0.0000, 1.0000, 0.1562),
+    QColor::fromRgbF(0.0000, 1.0000, 0.1797),
+    QColor::fromRgbF(0.0000, 1.0000, 0.2031),
+    QColor::fromRgbF(0.0000, 1.0000, 0.2266),
+    QColor::fromRgbF(0.0000, 1.0000, 0.2500),
+    QColor::fromRgbF(0.0000, 1.0000, 0.2734),
+    QColor::fromRgbF(0.0000, 1.0000, 0.2969),
+    QColor::fromRgbF(0.0000, 1.0000, 0.3203),
+    QColor::fromRgbF(0.0000, 1.0000, 0.3438),
+    QColor::fromRgbF(0.0000, 1.0000, 0.3672),
+    QColor::fromRgbF(0.0000, 1.0000, 0.3906),
+    QColor::fromRgbF(0.0000, 1.0000, 0.4141),
+    QColor::fromRgbF(0.0000, 1.0000, 0.4375),
+    QColor::fromRgbF(0.0000, 1.0000, 0.4609),
+    QColor::fromRgbF(0.0000, 1.0000, 0.4844),
+    QColor::fromRgbF(0.0000, 1.0000, 0.5078),
+    QColor::fromRgbF(0.0000, 1.0000, 0.5312),
+    QColor::fromRgbF(0.0000, 1.0000, 0.5547),
+    QColor::fromRgbF(0.0000, 1.0000, 0.5781),
+    QColor::fromRgbF(0.0000, 1.0000, 0.6016),
+    QColor::fromRgbF(0.0000, 1.0000, 0.6250),
+    QColor::fromRgbF(0.0000, 1.0000, 0.6484),
+    QColor::fromRgbF(0.0000, 1.0000, 0.6719),
+    QColor::fromRgbF(0.0000, 1.0000, 0.6953),
+    QColor::fromRgbF(0.0000, 1.0000, 0.7188),
+    QColor::fromRgbF(0.0000, 1.0000, 0.7422),
+    QColor::fromRgbF(0.0000, 1.0000, 0.7656),
+    QColor::fromRgbF(0.0000, 1.0000, 0.7891),
+    QColor::fromRgbF(0.0000, 1.0000, 0.8125),
+    QColor::fromRgbF(0.0000, 1.0000, 0.8359),
+    QColor::fromRgbF(0.0000, 1.0000, 0.8594),
+    QColor::fromRgbF(0.0000, 1.0000, 0.8828),
+    QColor::fromRgbF(0.0000, 1.0000, 0.9062),
+    QColor::fromRgbF(0.0000, 1.0000, 0.9297),
+    QColor::fromRgbF(0.0000, 1.0000, 0.9531),
+    QColor::fromRgbF(0.0000, 1.0000, 0.9766),
+    QColor::fromRgbF(0.0000, 1.0000, 1.0000),
+    QColor::fromRgbF(0.0000, 0.9766, 1.0000),
+    QColor::fromRgbF(0.0000, 0.9531, 1.0000),
+    QColor::fromRgbF(0.0000, 0.9297, 1.0000),
+    QColor::fromRgbF(0.0000, 0.9062, 1.0000),
+    QColor::fromRgbF(0.0000, 0.8828, 1.0000),
+    QColor::fromRgbF(0.0000, 0.8594, 1.0000),
+    QColor::fromRgbF(0.0000, 0.8359, 1.0000),
+    QColor::fromRgbF(0.0000, 0.8125, 1.0000),
+    QColor::fromRgbF(0.0000, 0.7891, 1.0000),
+    QColor::fromRgbF(0.0000, 0.7656, 1.0000),
+    QColor::fromRgbF(0.0000, 0.7422, 1.0000),
+    QColor::fromRgbF(0.0000, 0.7188, 1.0000),
+    QColor::fromRgbF(0.0000, 0.6953, 1.0000),
+    QColor::fromRgbF(0.0000, 0.6719, 1.0000),
+    QColor::fromRgbF(0.0000, 0.6484, 1.0000),
+    QColor::fromRgbF(0.0000, 0.6250, 1.0000),
+    QColor::fromRgbF(0.0000, 0.6016, 1.0000),
+    QColor::fromRgbF(0.0000, 0.5781, 1.0000),
+    QColor::fromRgbF(0.0000, 0.5547, 1.0000),
+    QColor::fromRgbF(0.0000, 0.5312, 1.0000),
+    QColor::fromRgbF(0.0000, 0.5078, 1.0000),
+    QColor::fromRgbF(0.0000, 0.4844, 1.0000),
+    QColor::fromRgbF(0.0000, 0.4609, 1.0000),
+    QColor::fromRgbF(0.0000, 0.4375, 1.0000),
+    QColor::fromRgbF(0.0000, 0.4141, 1.0000),
+    QColor::fromRgbF(0.0000, 0.3906, 1.0000),
+    QColor::fromRgbF(0.0000, 0.3672, 1.0000),
+    QColor::fromRgbF(0.0000, 0.3438, 1.0000),
+    QColor::fromRgbF(0.0000, 0.3203, 1.0000),
+    QColor::fromRgbF(0.0000, 0.2969, 1.0000),
+    QColor::fromRgbF(0.0000, 0.2734, 1.0000),
+    QColor::fromRgbF(0.0000, 0.2500, 1.0000),
+    QColor::fromRgbF(0.0000, 0.2266, 1.0000),
+    QColor::fromRgbF(0.0000, 0.2031, 1.0000),
+    QColor::fromRgbF(0.0000, 0.1797, 1.0000),
+    QColor::fromRgbF(0.0000, 0.1562, 1.0000),
+    QColor::fromRgbF(0.0000, 0.1328, 1.0000),
+    QColor::fromRgbF(0.0000, 0.1094, 1.0000),
+    QColor::fromRgbF(0.0000, 0.0859, 1.0000),
+    QColor::fromRgbF(0.0000, 0.0625, 1.0000),
+    QColor::fromRgbF(0.0000, 0.0391, 1.0000),
+    QColor::fromRgbF(0.0000, 0.0156, 1.0000),
+    QColor::fromRgbF(0.0078, 0.0000, 1.0000),
+    QColor::fromRgbF(0.0312, 0.0000, 1.0000),
+    QColor::fromRgbF(0.0547, 0.0000, 1.0000),
+    QColor::fromRgbF(0.0781, 0.0000, 1.0000),
+    QColor::fromRgbF(0.1016, 0.0000, 1.0000),
+    QColor::fromRgbF(0.1250, 0.0000, 1.0000),
+    QColor::fromRgbF(0.1484, 0.0000, 1.0000),
+    QColor::fromRgbF(0.1719, 0.0000, 1.0000),
+    QColor::fromRgbF(0.1953, 0.0000, 1.0000),
+    QColor::fromRgbF(0.2188, 0.0000, 1.0000),
+    QColor::fromRgbF(0.2422, 0.0000, 1.0000),
+    QColor::fromRgbF(0.2656, 0.0000, 1.0000),
+    QColor::fromRgbF(0.2891, 0.0000, 1.0000),
+    QColor::fromRgbF(0.3125, 0.0000, 1.0000),
+    QColor::fromRgbF(0.3359, 0.0000, 1.0000),
+    QColor::fromRgbF(0.3594, 0.0000, 1.0000),
+    QColor::fromRgbF(0.3828, 0.0000, 1.0000),
+    QColor::fromRgbF(0.4062, 0.0000, 1.0000),
+    QColor::fromRgbF(0.4297, 0.0000, 1.0000),
+    QColor::fromRgbF(0.4531, 0.0000, 1.0000),
+    QColor::fromRgbF(0.4766, 0.0000, 1.0000),
+    QColor::fromRgbF(0.5000, 0.0000, 1.0000),
+    QColor::fromRgbF(0.5234, 0.0000, 1.0000),
+    QColor::fromRgbF(0.5469, 0.0000, 1.0000),
+    QColor::fromRgbF(0.5703, 0.0000, 1.0000),
+    QColor::fromRgbF(0.5938, 0.0000, 1.0000),
+    QColor::fromRgbF(0.6172, 0.0000, 1.0000),
+    QColor::fromRgbF(0.6406, 0.0000, 1.0000),
+    QColor::fromRgbF(0.6641, 0.0000, 1.0000),
+    QColor::fromRgbF(0.6875, 0.0000, 1.0000),
+    QColor::fromRgbF(0.7109, 0.0000, 1.0000),
+    QColor::fromRgbF(0.7344, 0.0000, 1.0000),
+    QColor::fromRgbF(0.7578, 0.0000, 1.0000),
+    QColor::fromRgbF(0.7812, 0.0000, 1.0000),
+    QColor::fromRgbF(0.8047, 0.0000, 1.0000),
+    QColor::fromRgbF(0.8281, 0.0000, 1.0000),
+    QColor::fromRgbF(0.8516, 0.0000, 1.0000),
+    QColor::fromRgbF(0.8750, 0.0000, 1.0000),
+    QColor::fromRgbF(0.8984, 0.0000, 1.0000),
+    QColor::fromRgbF(0.9219, 0.0000, 1.0000),
+    QColor::fromRgbF(0.9453, 0.0000, 1.0000),
+    QColor::fromRgbF(0.9688, 0.0000, 1.0000),
+    QColor::fromRgbF(0.9922, 0.0000, 1.0000),
+    QColor::fromRgbF(1.0000, 0.0000, 0.9844),
+    QColor::fromRgbF(1.0000, 0.0000, 0.9609),
+    QColor::fromRgbF(1.0000, 0.0000, 0.9375),
+    QColor::fromRgbF(1.0000, 0.0000, 0.9141),
+    QColor::fromRgbF(1.0000, 0.0000, 0.8906),
+    QColor::fromRgbF(1.0000, 0.0000, 0.8672),
+    QColor::fromRgbF(1.0000, 0.0000, 0.8438),
+    QColor::fromRgbF(1.0000, 0.0000, 0.8203),
+    QColor::fromRgbF(1.0000, 0.0000, 0.7969),
+    QColor::fromRgbF(1.0000, 0.0000, 0.7734),
+    QColor::fromRgbF(1.0000, 0.0000, 0.7500),
+    QColor::fromRgbF(1.0000, 0.0000, 0.7266),
+    QColor::fromRgbF(1.0000, 0.0000, 0.7031),
+    QColor::fromRgbF(1.0000, 0.0000, 0.6797),
+    QColor::fromRgbF(1.0000, 0.0000, 0.6562),
+    QColor::fromRgbF(1.0000, 0.0000, 0.6328),
+    QColor::fromRgbF(1.0000, 0.0000, 0.6094),
+    QColor::fromRgbF(1.0000, 0.0000, 0.5859),
+    QColor::fromRgbF(1.0000, 0.0000, 0.5625),
+    QColor::fromRgbF(1.0000, 0.0000, 0.5391),
+    QColor::fromRgbF(1.0000, 0.0000, 0.5156),
+    QColor::fromRgbF(1.0000, 0.0000, 0.4922),
+    QColor::fromRgbF(1.0000, 0.0000, 0.4688),
+    QColor::fromRgbF(1.0000, 0.0000, 0.4453),
+    QColor::fromRgbF(1.0000, 0.0000, 0.4219),
+    QColor::fromRgbF(1.0000, 0.0000, 0.3984),
+    QColor::fromRgbF(1.0000, 0.0000, 0.3750),
+    QColor::fromRgbF(1.0000, 0.0000, 0.3516),
+    QColor::fromRgbF(1.0000, 0.0000, 0.3281),
+    QColor::fromRgbF(1.0000, 0.0000, 0.3047),
+    QColor::fromRgbF(1.0000, 0.0000, 0.2812),
+    QColor::fromRgbF(1.0000, 0.0000, 0.2578),
+    QColor::fromRgbF(1.0000, 0.0000, 0.2344),
+    QColor::fromRgbF(1.0000, 0.0000, 0.2109),
+    QColor::fromRgbF(1.0000, 0.0000, 0.1875),
+    QColor::fromRgbF(1.0000, 0.0000, 0.1641),
+    QColor::fromRgbF(1.0000, 0.0000, 0.1406),
+    QColor::fromRgbF(1.0000, 0.0000, 0.1172),
+    QColor::fromRgbF(1.0000, 0.0000, 0.0938),
+    QColor::fromRgbF(1.0000, 0.0000, 0.0703),
+    QColor::fromRgbF(1.0000, 0.0000, 0.0469),
+    QColor::fromRgbF(1.0000, 0.0000, 0.0234),
 };
-
-inline const std::vector<QColor> HSV {
-    QColor::fromRgbF(1.0000,0.0000,0.0000),
-    QColor::fromRgbF(1.0000,0.0234,0.0000),
-    QColor::fromRgbF(1.0000,0.0469,0.0000),
-    QColor::fromRgbF(1.0000,0.0703,0.0000),
-    QColor::fromRgbF(1.0000,0.0938,0.0000),
-    QColor::fromRgbF(1.0000,0.1172,0.0000),
-    QColor::fromRgbF(1.0000,0.1406,0.0000),
-    QColor::fromRgbF(1.0000,0.1641,0.0000),
-    QColor::fromRgbF(1.0000,0.1875,0.0000),
-    QColor::fromRgbF(1.0000,0.2109,0.0000),
-    QColor::fromRgbF(1.0000,0.2344,0.0000),
-    QColor::fromRgbF(1.0000,0.2578,0.0000),
-    QColor::fromRgbF(1.0000,0.2812,0.0000),
-    QColor::fromRgbF(1.0000,0.3047,0.0000),
-    QColor::fromRgbF(1.0000,0.3281,0.0000),
-    QColor::fromRgbF(1.0000,0.3516,0.0000),
-    QColor::fromRgbF(1.0000,0.3750,0.0000),
-    QColor::fromRgbF(1.0000,0.3984,0.0000),
-    QColor::fromRgbF(1.0000,0.4219,0.0000),
-    QColor::fromRgbF(1.0000,0.4453,0.0000),
-    QColor::fromRgbF(1.0000,0.4688,0.0000),
-    QColor::fromRgbF(1.0000,0.4922,0.0000),
-    QColor::fromRgbF(1.0000,0.5156,0.0000),
-    QColor::fromRgbF(1.0000,0.5391,0.0000),
-    QColor::fromRgbF(1.0000,0.5625,0.0000),
-    QColor::fromRgbF(1.0000,0.5859,0.0000),
-    QColor::fromRgbF(1.0000,0.6094,0.0000),
-    QColor::fromRgbF(1.0000,0.6328,0.0000),
-    QColor::fromRgbF(1.0000,0.6562,0.0000),
-    QColor::fromRgbF(1.0000,0.6797,0.0000),
-    QColor::fromRgbF(1.0000,0.7031,0.0000),
-    QColor::fromRgbF(1.0000,0.7266,0.0000),
-    QColor::fromRgbF(1.0000,0.7500,0.0000),
-    QColor::fromRgbF(1.0000,0.7734,0.0000),
-    QColor::fromRgbF(1.0000,0.7969,0.0000),
-    QColor::fromRgbF(1.0000,0.8203,0.0000),
-    QColor::fromRgbF(1.0000,0.8438,0.0000),
-    QColor::fromRgbF(1.0000,0.8672,0.0000),
-    QColor::fromRgbF(1.0000,0.8906,0.0000),
-    QColor::fromRgbF(1.0000,0.9141,0.0000),
-    QColor::fromRgbF(1.0000,0.9375,0.0000),
-    QColor::fromRgbF(1.0000,0.9609,0.0000),
-    QColor::fromRgbF(1.0000,0.9844,0.0000),
-    QColor::fromRgbF(0.9922,1.0000,0.0000),
-    QColor::fromRgbF(0.9688,1.0000,0.0000),
-    QColor::fromRgbF(0.9453,1.0000,0.0000),
-    QColor::fromRgbF(0.9219,1.0000,0.0000),
-    QColor::fromRgbF(0.8984,1.0000,0.0000),
-    QColor::fromRgbF(0.8750,1.0000,0.0000),
-    QColor::fromRgbF(0.8516,1.0000,0.0000),
-    QColor::fromRgbF(0.8281,1.0000,0.0000),
-    QColor::fromRgbF(0.8047,1.0000,0.0000),
-    QColor::fromRgbF(0.7812,1.0000,0.0000),
-    QColor::fromRgbF(0.7578,1.0000,0.0000),
-    QColor::fromRgbF(0.7344,1.0000,0.0000),
-    QColor::fromRgbF(0.7109,1.0000,0.0000),
-    QColor::fromRgbF(0.6875,1.0000,0.0000),
-    QColor::fromRgbF(0.6641,1.0000,0.0000),
-    QColor::fromRgbF(0.6406,1.0000,0.0000),
-    QColor::fromRgbF(0.6172,1.0000,0.0000),
-    QColor::fromRgbF(0.5938,1.0000,0.0000),
-    QColor::fromRgbF(0.5703,1.0000,0.0000),
-    QColor::fromRgbF(0.5469,1.0000,0.0000),
-    QColor::fromRgbF(0.5234,1.0000,0.0000),
-    QColor::fromRgbF(0.5000,1.0000,0.0000),
-    QColor::fromRgbF(0.4766,1.0000,0.0000),
-    QColor::fromRgbF(0.4531,1.0000,0.0000),
-    QColor::fromRgbF(0.4297,1.0000,0.0000),
-    QColor::fromRgbF(0.4062,1.0000,0.0000),
-    QColor::fromRgbF(0.3828,1.0000,0.0000),
-    QColor::fromRgbF(0.3594,1.0000,0.0000),
-    QColor::fromRgbF(0.3359,1.0000,0.0000),
-    QColor::fromRgbF(0.3125,1.0000,0.0000),
-    QColor::fromRgbF(0.2891,1.0000,0.0000),
-    QColor::fromRgbF(0.2656,1.0000,0.0000),
-    QColor::fromRgbF(0.2422,1.0000,0.0000),
-    QColor::fromRgbF(0.2188,1.0000,0.0000),
-    QColor::fromRgbF(0.1953,1.0000,0.0000),
-    QColor::fromRgbF(0.1719,1.0000,0.0000),
-    QColor::fromRgbF(0.1484,1.0000,0.0000),
-    QColor::fromRgbF(0.1250,1.0000,0.0000),
-    QColor::fromRgbF(0.1016,1.0000,0.0000),
-    QColor::fromRgbF(0.0781,1.0000,0.0000),
-    QColor::fromRgbF(0.0547,1.0000,0.0000),
-    QColor::fromRgbF(0.0312,1.0000,0.0000),
-    QColor::fromRgbF(0.0078,1.0000,0.0000),
-    QColor::fromRgbF(0.0000,1.0000,0.0156),
-    QColor::fromRgbF(0.0000,1.0000,0.0391),
-    QColor::fromRgbF(0.0000,1.0000,0.0625),
-    QColor::fromRgbF(0.0000,1.0000,0.0859),
-    QColor::fromRgbF(0.0000,1.0000,0.1094),
-    QColor::fromRgbF(0.0000,1.0000,0.1328),
-    QColor::fromRgbF(0.0000,1.0000,0.1562),
-    QColor::fromRgbF(0.0000,1.0000,0.1797),
-    QColor::fromRgbF(0.0000,1.0000,0.2031),
-    QColor::fromRgbF(0.0000,1.0000,0.2266),
-    QColor::fromRgbF(0.0000,1.0000,0.2500),
-    QColor::fromRgbF(0.0000,1.0000,0.2734),
-    QColor::fromRgbF(0.0000,1.0000,0.2969),
-    QColor::fromRgbF(0.0000,1.0000,0.3203),
-    QColor::fromRgbF(0.0000,1.0000,0.3438),
-    QColor::fromRgbF(0.0000,1.0000,0.3672),
-    QColor::fromRgbF(0.0000,1.0000,0.3906),
-    QColor::fromRgbF(0.0000,1.0000,0.4141),
-    QColor::fromRgbF(0.0000,1.0000,0.4375),
-    QColor::fromRgbF(0.0000,1.0000,0.4609),
-    QColor::fromRgbF(0.0000,1.0000,0.4844),
-    QColor::fromRgbF(0.0000,1.0000,0.5078),
-    QColor::fromRgbF(0.0000,1.0000,0.5312),
-    QColor::fromRgbF(0.0000,1.0000,0.5547),
-    QColor::fromRgbF(0.0000,1.0000,0.5781),
-    QColor::fromRgbF(0.0000,1.0000,0.6016),
-    QColor::fromRgbF(0.0000,1.0000,0.6250),
-    QColor::fromRgbF(0.0000,1.0000,0.6484),
-    QColor::fromRgbF(0.0000,1.0000,0.6719),
-    QColor::fromRgbF(0.0000,1.0000,0.6953),
-    QColor::fromRgbF(0.0000,1.0000,0.7188),
-    QColor::fromRgbF(0.0000,1.0000,0.7422),
-    QColor::fromRgbF(0.0000,1.0000,0.7656),
-    QColor::fromRgbF(0.0000,1.0000,0.7891),
-    QColor::fromRgbF(0.0000,1.0000,0.8125),
-    QColor::fromRgbF(0.0000,1.0000,0.8359),
-    QColor::fromRgbF(0.0000,1.0000,0.8594),
-    QColor::fromRgbF(0.0000,1.0000,0.8828),
-    QColor::fromRgbF(0.0000,1.0000,0.9062),
-    QColor::fromRgbF(0.0000,1.0000,0.9297),
-    QColor::fromRgbF(0.0000,1.0000,0.9531),
-    QColor::fromRgbF(0.0000,1.0000,0.9766),
-    QColor::fromRgbF(0.0000,1.0000,1.0000),
-    QColor::fromRgbF(0.0000,0.9766,1.0000),
-    QColor::fromRgbF(0.0000,0.9531,1.0000),
-    QColor::fromRgbF(0.0000,0.9297,1.0000),
-    QColor::fromRgbF(0.0000,0.9062,1.0000),
-    QColor::fromRgbF(0.0000,0.8828,1.0000),
-    QColor::fromRgbF(0.0000,0.8594,1.0000),
-    QColor::fromRgbF(0.0000,0.8359,1.0000),
-    QColor::fromRgbF(0.0000,0.8125,1.0000),
-    QColor::fromRgbF(0.0000,0.7891,1.0000),
-    QColor::fromRgbF(0.0000,0.7656,1.0000),
-    QColor::fromRgbF(0.0000,0.7422,1.0000),
-    QColor::fromRgbF(0.0000,0.7188,1.0000),
-    QColor::fromRgbF(0.0000,0.6953,1.0000),
-    QColor::fromRgbF(0.0000,0.6719,1.0000),
-    QColor::fromRgbF(0.0000,0.6484,1.0000),
-    QColor::fromRgbF(0.0000,0.6250,1.0000),
-    QColor::fromRgbF(0.0000,0.6016,1.0000),
-    QColor::fromRgbF(0.0000,0.5781,1.0000),
-    QColor::fromRgbF(0.0000,0.5547,1.0000),
-    QColor::fromRgbF(0.0000,0.5312,1.0000),
-    QColor::fromRgbF(0.0000,0.5078,1.0000),
-    QColor::fromRgbF(0.0000,0.4844,1.0000),
-    QColor::fromRgbF(0.0000,0.4609,1.0000),
-    QColor::fromRgbF(0.0000,0.4375,1.0000),
-    QColor::fromRgbF(0.0000,0.4141,1.0000),
-    QColor::fromRgbF(0.0000,0.3906,1.0000),
-    QColor::fromRgbF(0.0000,0.3672,1.0000),
-    QColor::fromRgbF(0.0000,0.3438,1.0000),
-    QColor::fromRgbF(0.0000,0.3203,1.0000),
-    QColor::fromRgbF(0.0000,0.2969,1.0000),
-    QColor::fromRgbF(0.0000,0.2734,1.0000),
-    QColor::fromRgbF(0.0000,0.2500,1.0000),
-    QColor::fromRgbF(0.0000,0.2266,1.0000),
-    QColor::fromRgbF(0.0000,0.2031,1.0000),
-    QColor::fromRgbF(0.0000,0.1797,1.0000),
-    QColor::fromRgbF(0.0000,0.1562,1.0000),
-    QColor::fromRgbF(0.0000,0.1328,1.0000),
-    QColor::fromRgbF(0.0000,0.1094,1.0000),
-    QColor::fromRgbF(0.0000,0.0859,1.0000),
-    QColor::fromRgbF(0.0000,0.0625,1.0000),
-    QColor::fromRgbF(0.0000,0.0391,1.0000),
-    QColor::fromRgbF(0.0000,0.0156,1.0000),
-    QColor::fromRgbF(0.0078,0.0000,1.0000),
-    QColor::fromRgbF(0.0312,0.0000,1.0000),
-    QColor::fromRgbF(0.0547,0.0000,1.0000),
-    QColor::fromRgbF(0.0781,0.0000,1.0000),
-    QColor::fromRgbF(0.1016,0.0000,1.0000),
-    QColor::fromRgbF(0.1250,0.0000,1.0000),
-    QColor::fromRgbF(0.1484,0.0000,1.0000),
-    QColor::fromRgbF(0.1719,0.0000,1.0000),
-    QColor::fromRgbF(0.1953,0.0000,1.0000),
-    QColor::fromRgbF(0.2188,0.0000,1.0000),
-    QColor::fromRgbF(0.2422,0.0000,1.0000),
-    QColor::fromRgbF(0.2656,0.0000,1.0000),
-    QColor::fromRgbF(0.2891,0.0000,1.0000),
-    QColor::fromRgbF(0.3125,0.0000,1.0000),
-    QColor::fromRgbF(0.3359,0.0000,1.0000),
-    QColor::fromRgbF(0.3594,0.0000,1.0000),
-    QColor::fromRgbF(0.3828,0.0000,1.0000),
-    QColor::fromRgbF(0.4062,0.0000,1.0000),
-    QColor::fromRgbF(0.4297,0.0000,1.0000),
-    QColor::fromRgbF(0.4531,0.0000,1.0000),
-    QColor::fromRgbF(0.4766,0.0000,1.0000),
-    QColor::fromRgbF(0.5000,0.0000,1.0000),
-    QColor::fromRgbF(0.5234,0.0000,1.0000),
-    QColor::fromRgbF(0.5469,0.0000,1.0000),
-    QColor::fromRgbF(0.5703,0.0000,1.0000),
-    QColor::fromRgbF(0.5938,0.0000,1.0000),
-    QColor::fromRgbF(0.6172,0.0000,1.0000),
-    QColor::fromRgbF(0.6406,0.0000,1.0000),
-    QColor::fromRgbF(0.6641,0.0000,1.0000),
-    QColor::fromRgbF(0.6875,0.0000,1.0000),
-    QColor::fromRgbF(0.7109,0.0000,1.0000),
-    QColor::fromRgbF(0.7344,0.0000,1.0000),
-    QColor::fromRgbF(0.7578,0.0000,1.0000),
-    QColor::fromRgbF(0.7812,0.0000,1.0000),
-    QColor::fromRgbF(0.8047,0.0000,1.0000),
-    QColor::fromRgbF(0.8281,0.0000,1.0000),
-    QColor::fromRgbF(0.8516,0.0000,1.0000),
-    QColor::fromRgbF(0.8750,0.0000,1.0000),
-    QColor::fromRgbF(0.8984,0.0000,1.0000),
-    QColor::fromRgbF(0.9219,0.0000,1.0000),
-    QColor::fromRgbF(0.9453,0.0000,1.0000),
-    QColor::fromRgbF(0.9688,0.0000,1.0000),
-    QColor::fromRgbF(0.9922,0.0000,1.0000),
-    QColor::fromRgbF(1.0000,0.0000,0.9844),
-    QColor::fromRgbF(1.0000,0.0000,0.9609),
-    QColor::fromRgbF(1.0000,0.0000,0.9375),
-    QColor::fromRgbF(1.0000,0.0000,0.9141),
-    QColor::fromRgbF(1.0000,0.0000,0.8906),
-    QColor::fromRgbF(1.0000,0.0000,0.8672),
-    QColor::fromRgbF(1.0000,0.0000,0.8438),
-    QColor::fromRgbF(1.0000,0.0000,0.8203),
-    QColor::fromRgbF(1.0000,0.0000,0.7969),
-    QColor::fromRgbF(1.0000,0.0000,0.7734),
-    QColor::fromRgbF(1.0000,0.0000,0.7500),
-    QColor::fromRgbF(1.0000,0.0000,0.7266),
-    QColor::fromRgbF(1.0000,0.0000,0.7031),
-    QColor::fromRgbF(1.0000,0.0000,0.6797),
-    QColor::fromRgbF(1.0000,0.0000,0.6562),
-    QColor::fromRgbF(1.0000,0.0000,0.6328),
-    QColor::fromRgbF(1.0000,0.0000,0.6094),
-    QColor::fromRgbF(1.0000,0.0000,0.5859),
-    QColor::fromRgbF(1.0000,0.0000,0.5625),
-    QColor::fromRgbF(1.0000,0.0000,0.5391),
-    QColor::fromRgbF(1.0000,0.0000,0.5156),
-    QColor::fromRgbF(1.0000,0.0000,0.4922),
-    QColor::fromRgbF(1.0000,0.0000,0.4688),
-    QColor::fromRgbF(1.0000,0.0000,0.4453),
-    QColor::fromRgbF(1.0000,0.0000,0.4219),
-    QColor::fromRgbF(1.0000,0.0000,0.3984),
-    QColor::fromRgbF(1.0000,0.0000,0.3750),
-    QColor::fromRgbF(1.0000,0.0000,0.3516),
-    QColor::fromRgbF(1.0000,0.0000,0.3281),
-    QColor::fromRgbF(1.0000,0.0000,0.3047),
-    QColor::fromRgbF(1.0000,0.0000,0.2812),
-    QColor::fromRgbF(1.0000,0.0000,0.2578),
-    QColor::fromRgbF(1.0000,0.0000,0.2344),
-    QColor::fromRgbF(1.0000,0.0000,0.2109),
-    QColor::fromRgbF(1.0000,0.0000,0.1875),
-    QColor::fromRgbF(1.0000,0.0000,0.1641),
-    QColor::fromRgbF(1.0000,0.0000,0.1406),
-    QColor::fromRgbF(1.0000,0.0000,0.1172),
-    QColor::fromRgbF(1.0000,0.0000,0.0938),
-    QColor::fromRgbF(1.0000,0.0000,0.0703),
-    QColor::fromRgbF(1.0000,0.0000,0.0469),
-    QColor::fromRgbF(1.0000,0.0000,0.0234),
+inline const std::vector<QColor> Archambault{
+    QColor("#381a61"), QColor("#f9d14a"), QColor("#ab3329"), QColor("#88a0dc"),
+    QColor("#e78429"), QColor("#ed968c"), QColor("#7c4b73"),
 };
-}
+inline const std::vector<QColor> Austria{
+    QColor("#a40000"), QColor("#16317d"), QColor("#007e2f"), QColor("#ffcd12"),
+    QColor("#721b3e"), QColor("#b86092"), QColor("#00b7a7"),
+};
+inline const std::vector<QColor> Benedictus{
+    QColor("#c5daf6"), QColor("#f9b4c9"), QColor("#6996e3"), QColor("#9a133d"),
+    QColor("#ffffff"), QColor("#d8527c"), QColor("#1a318b"), QColor("#f28aaa"),
+    QColor("#eaf3ff"), QColor("#b93961"), QColor("#4060c8"), QColor("#f9e0e8"),
+    QColor("#a1c2ed"),
+};
+inline const std::vector<QColor> Cassatt1{
+    QColor("#e3aba7"), QColor("#9d9dc7"), QColor("#b1615c"), QColor("#5a5a83"),
+    QColor("#edd7d9"), QColor("#c9c9dd"), QColor("#d88782"), QColor("#8282aa"),
+};
+inline const std::vector<QColor> Cassatt2{
+    QColor("#7fa074"), QColor("#90719f"), QColor("#2c4b27"), QColor("#2d223c"),
+    QColor("#dec5da"), QColor("#c1d1aa"), QColor("#574571"), QColor("#0e2810"),
+    QColor("#b695bc"), QColor("#466c4b"),
+};
+inline const std::vector<QColor> Cross{
+    QColor("#eb7926"), QColor("#62929a"), QColor("#c969a1"),
+    QColor("#004f63"), QColor("#ce4441"), QColor("#859b6c"),
+    QColor("#ee8577"), QColor("#ffbb44"), QColor("#122451"),
+};
+inline const std::vector<QColor> Degas{
+    QColor("#418979"), QColor("#96410e"), QColor("#591d06"), QColor("#e5a335"),
+    QColor("#556219"), QColor("#053c29"), QColor("#2b614e"),
+};
+inline const std::vector<QColor> Demuth{
+    QColor("#41485f"), QColor("#f7c267"), QColor("#591c19"), QColor("#8b8b99"),
+    QColor("#b64f32"), QColor("#d39a2d"), QColor("#5d6174"), QColor("#9b332b"),
+    QColor("#b9b9b8"), QColor("#262d42"),
+};
+inline const std::vector<QColor> Derain{
+    QColor("#aab5d5"), QColor("#97c684"), QColor("#808fe1"), QColor("#454a74"),
+    QColor("#efc86e"), QColor("#6f9969"), QColor("#5c66a8"),
+};
+inline const std::vector<QColor> Egypt{
+    QColor("#dd5129"),
+    QColor("#0f7ba2"),
+    QColor("#43b284"),
+    QColor("#fab255"),
+};
+inline const std::vector<QColor> Gauguin{
+    QColor("#811e18"), QColor("#4c6216"), QColor("#c88a2c"),
+    QColor("#9e4013"), QColor("#b04948"), QColor("#1a472a"),
+};
+inline const std::vector<QColor> Greek{
+    QColor("#8d1c06"), QColor("#e67424"), QColor("#f5c34d"),
+    QColor("#3c0d03"), QColor("#ed9b49"),
+};
+inline const std::vector<QColor> Hiroshige{
+    QColor("#aadce0"), QColor("#ef8a47"), QColor("#376795"), QColor("#f7aa58"),
+    QColor("#72bcd5"), QColor("#ffe6b7"), QColor("#e76254"), QColor("#1e466e"),
+    QColor("#ffd06f"), QColor("#528fad"),
+};
+inline const std::vector<QColor> Hokusai1{
+    QColor("#b75347"), QColor("#224b5e"), QColor("#e09351"), QColor("#94b594"),
+    QColor("#edc775"), QColor("#6d2f20"), QColor("#df7e66"),
+};
+inline const std::vector<QColor> Hokusai2{
+    QColor("#134b73"), QColor("#72aeb6"), QColor("#2f70a1"),
+    QColor("#abc9c8"), QColor("#0a3351"), QColor("#4692b0"),
+};
+inline const std::vector<QColor> Hokusai3{
+    QColor("#5a97c1"), QColor("#95c36e"), QColor("#295384"),
+    QColor("#74c8c3"), QColor("#d8d97a"), QColor("#0a2e57"),
+};
+inline const std::vector<QColor> Homer1{
+    QColor("#c3f4f6"), QColor("#df7700"), QColor("#a62f00"), QColor("#6ad5e8"),
+    QColor("#f5b642"), QColor("#32b2da"), QColor("#fff179"), QColor("#551f00"),
+};
+inline const std::vector<QColor> Homer2{
+    QColor("#e9851d"), QColor("#165d43"), QColor("#bf3626"), QColor("#f9c53b"),
+    QColor("#788f33"), QColor("#e9724c"), QColor("#aeac4c"),
+};
+inline const std::vector<QColor> Ingres{
+    QColor("#2e77ab"), QColor("#d1b252"), QColor("#18527e"), QColor("#a97f2f"),
+    QColor("#06314e"), QColor("#7e5522"), QColor("#041d2c"), QColor("#472c0b"),
+};
+inline const std::vector<QColor> Isfahan1{
+    QColor("#178f92"), QColor("#845d29"), QColor("#4fb6ca"), QColor("#175f5d"),
+    QColor("#4e3910"), QColor("#1d1f54"), QColor("#d8c29d"),
+};
+inline const std::vector<QColor> Isfahan2{
+    QColor("#34b6c6"), QColor("#ddc000"), QColor("#79ad41"),
+    QColor("#4063a3"), QColor("#d7aca1"),
+};
+inline const std::vector<QColor> Java{
+    QColor("#663171"), QColor("#e2998a"), QColor("#cf3a36"),
+    QColor("#0c7156"), QColor("#ea7428"),
+};
+inline const std::vector<QColor> Johnson{
+    QColor("#f6c200"), QColor("#a00e00"), QColor("#0086a8"),
+    QColor("#d04e00"), QColor("#132b69"),
+};
+inline const std::vector<QColor> Juarez{
+    QColor("#a82203"), QColor("#208cc0"), QColor("#f1af3a"),
+    QColor("#cf5e4e"), QColor("#637b31"), QColor("#003967"),
+};
+inline const std::vector<QColor> Kandinsky{
+    QColor("#3b7c70"),
+    QColor("#ce9642"),
+    QColor("#898e9f"),
+    QColor("#3b3a3e"),
+};
+inline const std::vector<QColor> Klimt{
+    QColor("#3c4b99"), QColor("#c93f55"), QColor("#eacc62"),
+    QColor("#469d76"), QColor("#924099"), QColor("#df9ed4"),
+};
+inline const std::vector<QColor> Lakota{
+    QColor("#04a3bd"), QColor("#f0be3d"), QColor("#931e18"),
+    QColor("#da7901"), QColor("#247d3f"), QColor("#20235b"),
+};
+inline const std::vector<QColor> Manet{
+    QColor("#225e92"), QColor("#d29c44"), QColor("#43429b"), QColor("#ebc174"),
+    QColor("#4585b7"), QColor("#183571"), QColor("#5e65be"), QColor("#80521c"),
+    QColor("#7ec5f4"), QColor("#3b2319"), QColor("#ede2cc"),
+};
+inline const std::vector<QColor> Monet{
+    QColor("#749e89"), QColor("#c399a2"), QColor("#7d87b2"),
+    QColor("#abccbe"), QColor("#e3cacf"), QColor("#c2cae3"),
+    QColor("#4e6d58"), QColor("#9f6e71"), QColor("#41507b"),
+};
+inline const std::vector<QColor> Moreau{
+    QColor("#792504"), QColor("#527baa"), QColor("#bc7524"), QColor("#8dadca"),
+    QColor("#082844"), QColor("#421600"), QColor("#104839"),
+};
+inline const std::vector<QColor> Morgenstern{
+    QColor("#a56457"), QColor("#ffb178"), QColor("#ffc680"), QColor("#db8872"),
+    QColor("#dfbbc8"), QColor("#b08ba5"), QColor("#7c668c"),
+};
+inline const std::vector<QColor> Nattier{
+    QColor("#52271c"), QColor("#184948"), QColor("#c08e39"), QColor("#7f793c"),
+    QColor("#022a2a"), QColor("#944839"), QColor("#565c33"),
+};
+inline const std::vector<QColor> Navajo{
+    QColor("#660d20"), QColor("#e59a52"), QColor("#edce79"),
+    QColor("#094568"), QColor("#e1c59a"),
+};
+inline const std::vector<QColor> NewKingdom{
+    QColor("#9eb4e0"), QColor("#e1846c"), QColor("#e6bb9e"),
+    QColor("#9c6849"), QColor("#735852"),
+};
+inline const std::vector<QColor> Nizami{
+    QColor("#8cc8bc"), QColor("#b83326"), QColor("#7da7ea"), QColor("#1d4497"),
+    QColor("#c8570d"), QColor("#5773c0"), QColor("#edb144"), QColor("#dd7867"),
+};
+inline const std::vector<QColor> OKeeffe1{
+    QColor("#7db0ea"), QColor("#f6f2ee"), QColor("#6b200c"), QColor("#ee956a"),
+    QColor("#225bb2"), QColor("#da6c42"), QColor("#133e7e"), QColor("#fbc2a9"),
+    QColor("#973d21"), QColor("#bad6f9"), QColor("#447fdd"),
+};
+inline const std::vector<QColor> OKeeffe2{
+    QColor("#92351e"), QColor("#fbe3c2"), QColor("#b9563f"), QColor("#e69c6b"),
+    QColor("#f2c88f"), QColor("#d37750"), QColor("#ecb27d"),
+};
+inline const std::vector<QColor> Paquin{
+    QColor("#47632a"), QColor("#f7dea3"), QColor("#831818"), QColor("#98ab76"),
+    QColor("#f78462"), QColor("#f05b43"), QColor("#feac81"), QColor("#748f46"),
+    QColor("#c62320"), QColor("#ced1af"), QColor("#275024"),
+};
+inline const std::vector<QColor> Peru1{
+    QColor("#1c9d7c"), QColor("#b5361c"), QColor("#369cc9"),
+    QColor("#e35e28"), QColor("#31c7ba"), QColor("#3a507f"),
+};
+inline const std::vector<QColor> Peru2{
+    QColor("#b36c06"), QColor("#65150b"), QColor("#c0431f"), QColor("#f19425"),
+    QColor("#961f1f"), QColor("#533d14"), QColor("#c59349"),
+};
+inline const std::vector<QColor> Pillement{
+    QColor("#44636f"), QColor("#738e8e"), QColor("#697852"),
+    QColor("#2b4655"), QColor("#a9845b"), QColor("#0f252f"),
+};
+inline const std::vector<QColor> Pissaro{
+    QColor("#1a5270"), QColor("#4c825d"), QColor("#8dc7dc"), QColor("#134130"),
+    QColor("#0e2a4d"), QColor("#508ca7"), QColor("#8cae9e"),
+};
+inline const std::vector<QColor> Redon{
+    QColor("#5b859e"), QColor("#1e395f"), QColor("#75884b"), QColor("#1e5a46"),
+    QColor("#df8d71"), QColor("#af4f2f"), QColor("#d48f90"), QColor("#732f30"),
+    QColor("#ab84a5"), QColor("#59385c"), QColor("#d8b847"), QColor("#b38711"),
+};
+inline const std::vector<QColor> Renoir{
+    QColor("#2f357c"), QColor("#b0799a"), QColor("#e69b00"), QColor("#355828"),
+    QColor("#6c5d9e"), QColor("#bf3729"), QColor("#e48171"), QColor("#f5bb50"),
+    QColor("#9d9cd5"), QColor("#17154f"), QColor("#f6b3b0"), QColor("#ada43b"),
+};
+inline const std::vector<QColor> Robert{
+    QColor("#375624"), QColor("#18505f"), QColor("#6ca4a0"),
+    QColor("#11341a"), QColor("#062e3d"), QColor("#487a7c"),
+};
+inline const std::vector<QColor> Signac{
+    QColor("#2b9b81"), QColor("#fe9b00"), QColor("#f4c40f"), QColor("#fbe183"),
+    QColor("#633372"), QColor("#9b3441"), QColor("#e6a2a6"), QColor("#92c051"),
+    QColor("#1f6e9c"), QColor("#9f5691"), QColor("#e87b89"), QColor("#d8443c"),
+    QColor("#de597c"), QColor("#aa7aa1"),
+};
+inline const std::vector<QColor> Stevens{
+    QColor("#ba5c3f"), QColor("#307d7f"), QColor("#598c4c"),
+    QColor("#a13213"), QColor("#042e4e"), QColor("#470c00"),
+};
+inline const std::vector<QColor> Tam{
+    QColor("#ef8737"), QColor("#341648"), QColor("#ffd353"), QColor("#9f2d55"),
+    QColor("#ffb242"), QColor("#62205f"), QColor("#de4f33"), QColor("#bb292c"),
+};
+inline const std::vector<QColor> Tara{
+    QColor("#eab1c6"), QColor("#e18a1f"), QColor("#d35e17"),
+    QColor("#829d44"), QColor("#e9b109"),
+};
+inline const std::vector<QColor> Thomas{
+    QColor("#4457a5"), QColor("#c44d76"), QColor("#7caf5c"), QColor("#59386c"),
+    QColor("#b24422"), QColor("#13315f"), QColor("#447861"), QColor("#b1a1cc"),
+};
+inline const std::vector<QColor> Tiepolo{
+    QColor("#802417"), QColor("#c06636"), QColor("#17486f"), QColor("#e8b960"),
+    QColor("#ce9344"), QColor("#646e3b"), QColor("#508ea2"), QColor("#2b5851"),
+};
+inline const std::vector<QColor> Troy{
+    QColor("#6c1d0e"), QColor("#235070"), QColor("#c27668"), QColor("#7ba0b4"),
+    QColor("#421401"), QColor("#0a2d46"), QColor("#8b3a2b"), QColor("#44728c"),
+};
+inline const std::vector<QColor> Tsimshian{
+    QColor("#2673a3"), QColor("#582310"), QColor("#473d7d"), QColor("#318f49"),
+    QColor("#582310"), QColor("#0cb4bb"), QColor("#82c45f"),
+};
+inline const std::vector<QColor> VanGogh1{
+    QColor("#6b6ca3"), QColor("#87bcbd"), QColor("#6f9954"), QColor("#969bc7"),
+    QColor("#89ab7c"), QColor("#434475"), QColor("#2c2d54"),
+};
+inline const std::vector<QColor> VanGogh2{
+    QColor("#bd3106"), QColor("#5b7314"), QColor("#454b87"), QColor("#d9700e"),
+    QColor("#89a6bb"), QColor("#eebe04"), QColor("#c3d6ce"), QColor("#e9a00e"),
+};
+inline const std::vector<QColor> VanGogh3{
+    QColor("#1e3d14"), QColor("#447243"), QColor("#e7e5cc"), QColor("#669d62"),
+    QColor("#192813"), QColor("#c2d6a4"), QColor("#9cc184"), QColor("#1f5b25"),
+};
+inline const std::vector<QColor> Veronese{
+    QColor("#2c6b67"), QColor("#67322e"), QColor("#122c43"), QColor("#99610a"),
+    QColor("#c38f16"), QColor("#175449"), QColor("#6e948c"),
+};
+inline const std::vector<QColor> Wissing{
+    QColor("#7c291e"), QColor("#ba7233"), QColor("#2d5380"),
+    QColor("#3a4421"), QColor("#4b1d0d"),
+};
+} // namespace colors
 
-}
-
+} // namespace impl
 
 QColor triColorMap(double x, double minValue, double maxValue,
-	const QColor& startColor,
-	const QColor& midColor,
-	const QColor& endColor) {
+                   const QColor &startColor, const QColor &midColor,
+                   const QColor &endColor) {
 
-    // Because the midColor is tied to 0 when using a "color mapped from color
-    // range"
-    // we can't allow minValue to become positive nor the maxValue to become
-    // negative
-    constexpr double LIMIT = 0.0001;
-    minValue = (minValue > 0.0) ? -LIMIT : minValue;
-    maxValue = (maxValue < 0.0) ? LIMIT : maxValue;
+  // Because the midColor is tied to 0 when using a "color mapped from color
+  // range"
+  // we can't allow minValue to become positive nor the maxValue to become
+  // negative
+  constexpr double LIMIT = 0.0001;
+  minValue = (minValue > 0.0) ? -LIMIT : minValue;
+  maxValue = (maxValue < 0.0) ? LIMIT : maxValue;
 
-    QColor color = (x < 0.0) ? startColor : endColor;
-    double denom = (x < 0.0) ? minValue : maxValue;
-    double factor = 1.0 - x / denom;
+  QColor color = (x < 0.0) ? startColor : endColor;
+  double denom = (x < 0.0) ? minValue : maxValue;
+  double factor = 1.0 - x / denom;
 
-    if (factor > 0.0) {
-	return QColor::fromRgbF(
-		(color.redF() + (midColor.redF() - color.redF()) * factor),
-		(color.greenF() + (midColor.greenF() - color.greenF()) * factor),
-		(color.blueF() + (midColor.blueF() - color.blueF()) * factor)
-		);
-    }
-    return color;
+  if (factor > 0.0) {
+    return QColor::fromRgbF(
+        (color.redF() + (midColor.redF() - color.redF()) * factor),
+        (color.greenF() + (midColor.greenF() - color.greenF()) * factor),
+        (color.blueF() + (midColor.blueF() - color.blueF()) * factor));
+  }
+  return color;
 }
 
-QColor colorMappedFromHueRange(double value, double minValue,
-                               double maxValue, bool reverse,
-                               double minHue, double maxHue) {
-  
-  QColor color;
+QColor colorMappedFromHueRange(double value, double minValue, double maxValue,
+                               bool reverse, double minHue, double maxHue) {
 
   double newValue = std::max(std::min(value, maxValue), value);
   double range = maxValue - minValue;
@@ -2454,66 +2686,244 @@ QColor colorMappedFromHueRange(double value, double minValue,
   return QColor::fromHsvF(h, 1.0, 1.0).toRgb();
 }
 
+// Use the macro in the function
+inline const std::vector<QColor> &colorsFromName(ColorMapName name) {
+  switch (name) {
+  case ColorMapName::Parula:
+    return impl::colors::Parula;
+  case ColorMapName::Heat:
+    return impl::colors::Heat;
+  case ColorMapName::Jet:
+    return impl::colors::Jet;
+  case ColorMapName::Turbo:
+    return impl::colors::Turbo;
+  case ColorMapName::Magma:
+    return impl::colors::Magma;
+  case ColorMapName::Inferno:
+    return impl::colors::Inferno;
+  case ColorMapName::Plasma:
+    return impl::colors::Plasma;
+  case ColorMapName::Viridis:
+    return impl::colors::Viridis;
+  case ColorMapName::Cividis:
+    return impl::colors::Cividis;
+  case ColorMapName::Github:
+    return impl::colors::Github;
+  case ColorMapName::Archambault:
+    return impl::colors::Archambault;
+  case ColorMapName::Austria:
+    return impl::colors::Austria;
+  case ColorMapName::Benedictus:
+    return impl::colors::Benedictus;
+  case ColorMapName::Cassatt1:
+    return impl::colors::Cassatt1;
+  case ColorMapName::Cassatt2:
+    return impl::colors::Cassatt2;
+  case ColorMapName::Cross:
+    return impl::colors::Cross;
+  case ColorMapName::Degas:
+    return impl::colors::Degas;
+  case ColorMapName::Demuth:
+    return impl::colors::Demuth;
+  case ColorMapName::Derain:
+    return impl::colors::Derain;
+  case ColorMapName::Egypt:
+    return impl::colors::Egypt;
+  case ColorMapName::Gauguin:
+    return impl::colors::Gauguin;
+  case ColorMapName::Greek:
+    return impl::colors::Greek;
+  case ColorMapName::Hiroshige:
+    return impl::colors::Hiroshige;
+  case ColorMapName::Hokusai1:
+    return impl::colors::Hokusai1;
+  case ColorMapName::Hokusai2:
+    return impl::colors::Hokusai2;
+  case ColorMapName::Hokusai3:
+    return impl::colors::Hokusai3;
+  case ColorMapName::Homer1:
+    return impl::colors::Homer1;
+  case ColorMapName::Homer2:
+    return impl::colors::Homer2;
+  case ColorMapName::Ingres:
+    return impl::colors::Ingres;
+  case ColorMapName::Isfahan1:
+    return impl::colors::Isfahan1;
+  case ColorMapName::Isfahan2:
+    return impl::colors::Isfahan2;
+  case ColorMapName::Java:
+    return impl::colors::Java;
+  case ColorMapName::Johnson:
+    return impl::colors::Johnson;
+  case ColorMapName::Juarez:
+    return impl::colors::Juarez;
+  case ColorMapName::Kandinsky:
+    return impl::colors::Kandinsky;
+  case ColorMapName::Klimt:
+    return impl::colors::Klimt;
+  case ColorMapName::Lakota:
+    return impl::colors::Lakota;
+  case ColorMapName::Manet:
+    return impl::colors::Manet;
+  case ColorMapName::Monet:
+    return impl::colors::Monet;
+  case ColorMapName::Moreau:
+    return impl::colors::Moreau;
+  case ColorMapName::Morgenstern:
+    return impl::colors::Morgenstern;
+  case ColorMapName::Nattier:
+    return impl::colors::Nattier;
+  case ColorMapName::Navajo:
+    return impl::colors::Navajo;
+  case ColorMapName::NewKingdom:
+    return impl::colors::NewKingdom;
+  case ColorMapName::Nizami:
+    return impl::colors::Nizami;
+  case ColorMapName::OKeeffe1:
+    return impl::colors::OKeeffe1;
+  case ColorMapName::OKeeffe2:
+    return impl::colors::OKeeffe2;
+  case ColorMapName::Paquin:
+    return impl::colors::Paquin;
+  case ColorMapName::Peru1:
+    return impl::colors::Peru1;
+  case ColorMapName::Peru2:
+    return impl::colors::Peru2;
+  case ColorMapName::Pillement:
+    return impl::colors::Pillement;
+  case ColorMapName::Pissaro:
+    return impl::colors::Pissaro;
+  case ColorMapName::Redon:
+    return impl::colors::Redon;
+  case ColorMapName::Renoir:
+    return impl::colors::Renoir;
+  case ColorMapName::Robert:
+    return impl::colors::Robert;
+  case ColorMapName::Signac:
+    return impl::colors::Signac;
+  case ColorMapName::Stevens:
+    return impl::colors::Stevens;
+  case ColorMapName::Tam:
+    return impl::colors::Tam;
+  case ColorMapName::Tara:
+    return impl::colors::Tara;
+  case ColorMapName::Thomas:
+    return impl::colors::Thomas;
+  case ColorMapName::Tiepolo:
+    return impl::colors::Tiepolo;
+  case ColorMapName::Troy:
+    return impl::colors::Troy;
+  case ColorMapName::Tsimshian:
+    return impl::colors::Tsimshian;
+  case ColorMapName::VanGogh1:
+    return impl::colors::VanGogh1;
+  case ColorMapName::VanGogh2:
+    return impl::colors::VanGogh2;
+  case ColorMapName::VanGogh3:
+    return impl::colors::VanGogh3;
+  case ColorMapName::Veronese:
+    return impl::colors::Veronese;
+  case ColorMapName::Wissing:
+    return impl::colors::Wissing;
+  // Add more cases as needed
+  default:
+    return impl::colors::Viridis;
+  }
+}
 
 QColor linearColorMap(double x, ColorMapName name) {
-    switch (name)
-    {
-	case ColorMapName::Parula:
-	    return impl::linearColorMap(x, impl::colors::Parula);
-	case ColorMapName::Heat:
-	    return impl::linearColorMap(x, impl::colors::Heat);
-	case ColorMapName::Jet:
-	    return impl::linearColorMap(x, impl::colors::Jet);
-	case ColorMapName::Turbo:
-	    return impl::linearColorMap(x, impl::colors::Turbo);
-	case ColorMapName::Magma:
-	    return impl::linearColorMap(x, impl::colors::Magma);
-	case ColorMapName::Inferno:
-	    return impl::linearColorMap(x, impl::colors::Inferno);
-	case ColorMapName::Plasma:
-	    return impl::linearColorMap(x, impl::colors::Plasma);
-	case ColorMapName::Viridis:
-	    return impl::linearColorMap(x, impl::colors::Viridis);
-	case ColorMapName::Cividis:
-	    return impl::linearColorMap(x, impl::colors::Cividis);
-	case ColorMapName::Github:
-	    return impl::linearColorMap(x, impl::colors::Github);
-	case ColorMapName::Cubehelix:
-	    return impl::linearColorMap(x, impl::colors::CubeHelix);
-	case ColorMapName::HSV:
-	    return impl::linearColorMap(x, impl::colors::HSV);
-	default:
-	    break;
-    }
-    return impl::linearColorMap(x, impl::colors::Viridis);
+  return impl::linearColorMap(x, colorsFromName(name));
 }
 
-QColor quantizedLinearColorMap(double x, unsigned int num_levels, ColorMapName name) {
-    return linearColorMap(impl::quantize(x, num_levels), name);
+QColor quantizedLinearColorMap(double x, unsigned int num_levels,
+                               ColorMapName name) {
+  return linearColorMap(impl::quantize(x, num_levels), name);
 }
 
-
-
-ColorMapFunc::ColorMapFunc(ColorMapName n) : name(n) {}
-ColorMapFunc::ColorMapFunc(ColorMapName n, double minValue, double maxValue) : name(n), lower(minValue), upper(maxValue) {}
+ColorMapFunc::ColorMapFunc(ColorMapName n) : name(n) {
+  noneColor = QColor(
+      settings::readSetting(settings::keys::NONE_PROPERTY_COLOR).toString());
+}
+ColorMapFunc::ColorMapFunc(ColorMapName n, double minValue, double maxValue)
+    : name(n), lower(minValue), upper(maxValue) {
+  noneColor = QColor(
+      settings::readSetting(settings::keys::NONE_PROPERTY_COLOR).toString());
+}
 
 QColor ColorMapFunc::operator()(double x) const {
-    switch(name) {
-	case ColorMapName::CE_None:
-	    // TODO fetch color from settings
-	    return Qt::white;
-	    break;
-	case ColorMapName::CE_bwr:
-	    return triColorMap(x, lower, upper, Qt::red, Qt::white, Qt::blue);
-	    break;
-	case ColorMapName::CE_rgb: {
-	    const double minHue = 0.0;
-	    const double maxHue = 2.0 / 3.0;
-	    return colorMappedFromHueRange(x, lower, upper, reverse, minHue, maxHue);
-	    break;
-        }
-	default:
-	    return linearColorMap((x - lower )/ (upper - lower), name);
-	    break;
-    }
+  switch (name) {
+  case ColorMapName::CE_None:
+    return noneColor;
+    break;
+  case ColorMapName::CE_bwr:
+    return triColorMap(x, lower, upper, Qt::red, Qt::white, Qt::blue);
+    break;
+  case ColorMapName::CE_rgb: {
+    const double minHue = 0.0;
+    const double maxHue = 2.0 / 3.0;
+    return colorMappedFromHueRange(x, lower, upper, reverse, minHue, maxHue);
+    break;
+  }
+  default:
+    return linearColorMap((x - lower) / (upper - lower), name);
+    break;
+  }
+}
+
+std::vector<ColorMapName> availableColorMaps() {
+  return std::vector<ColorMapName>{
+      ColorMapName::Parula,    ColorMapName::Heat,    ColorMapName::Jet,
+      ColorMapName::Turbo,     ColorMapName::Hot,     ColorMapName::Gray,
+      ColorMapName::Magma,     ColorMapName::Inferno, ColorMapName::Plasma,
+      ColorMapName::Viridis,   ColorMapName::Cividis, ColorMapName::Github,
+      ColorMapName::Cubehelix, ColorMapName::HSV,     ColorMapName::CE_bwr,
+      ColorMapName::CE_rgb,    ColorMapName::CE_None};
+}
+
+ColorMapName colorMapFromString(const QString &s) {
+  const auto &maps = availableColorMaps();
+  for (int i = 0; i < maps.size(); i++) {
+    if (s == colorMapToString(maps[i]))
+      return maps[i];
+  }
+  return ColorMapName::CE_None;
+}
+
+const char *colorMapToString(ColorMapName name) {
+  switch (name) {
+  case ColorMapName::Parula:
+    return "Parula";
+  case ColorMapName::Heat:
+    return "Heat";
+  case ColorMapName::Jet:
+    return "Jet";
+  case ColorMapName::Turbo:
+    return "Turbo";
+  case ColorMapName::Hot:
+    return "Hot";
+  case ColorMapName::Gray:
+    return "Gray";
+  case ColorMapName::Magma:
+    return "Magma";
+  case ColorMapName::Inferno:
+    return "Inferno";
+  case ColorMapName::Plasma:
+    return "Plasma";
+  case ColorMapName::Viridis:
+    return "Viridis";
+  case ColorMapName::Cividis:
+    return "Cividis";
+  case ColorMapName::Github:
+    return "Github";
+  case ColorMapName::Cubehelix:
+    return "Cubehelix";
+  case ColorMapName::HSV:
+    return "HSV";
+  case ColorMapName::CE_bwr:
+    return "CE Blue-White-Red";
+  case ColorMapName::CE_rgb:
+    return "CE Red-Green-Blue";
+  default:
+    return "None";
+  }
 }

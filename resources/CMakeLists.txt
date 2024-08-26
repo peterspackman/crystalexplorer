@@ -1,58 +1,61 @@
-set(TONTO_EXE ${CMAKE_CURRENT_SOURCE_DIR}/tonto)
-set(TONTO_ARCHIVE_STRING "tonto-gfortran-x86_64-linux.tar.gz")
-if(WIN32)
-    set(TONTO_EXE "${TONTO_EXE}.exe")
-    set(TONTO_ARCHIVE_STRING "tonto-mingw-w64-x86_64-windows.tar.gz")
-elseif(APPLE)
-    set(TONTO_ARCHIVE_STRING "tonto-gfortran-x86_64-osx.tar.gz")
-endif()
-
-set(TONTO_VERSION "v21a"
-    CACHE STRING "Tonto version string (will be used to fetch from github releases).")
-set(TONTO_URL "https://github.com/dylan-jayatilaka/tonto/releases/download/${TONTO_VERSION}/${TONTO_ARCHIVE_STRING}")
-if(NOT EXISTS "${TONTO_EXE}")
-    message(STATUS "Downloading tonto release from ${TONTO_URL}")
-    set(destination "${CMAKE_CURRENT_SOURCE_DIR}/${TONTO_ARCHIVE_STRING}")
-    file(DOWNLOAD "${TONTO_URL}" "${destination}"
-        SHOW_PROGRESS
-        STATUS status
-        LOG log)
-    list(GET status 0 error_code)
-    if(error_code )
-        file(REMOVE ${destination})
-        # If the file cannot be found on the server,
-        # we assume it isn't supposed to have it.
-        # We fail with all other errors.
-        if( NOT error_code EQUAL 19 AND     # FTP: Invalid file / file not found
-            NOT error_code EQUAL 22         # HTTP: HTTP response code said error
-        )
-            list( GET status 1 error_message )
-            message(FATAL_ERROR "Failed to download file tonto HTTP/FTP: ${error_message}" )
-        endif()
-    endif()
-    message(STATUS "Extracting")
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvf "${TONTO_ARCHIVE_STRING}"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-    message(STATUS "Done extracting tonto")
-endif()
-set(DESKTOP ${CMAKE_CURRENT_SOURCE_DIR}/crystalexplorer.desktop)
-set(BASIS_SETS ${CMAKE_CURRENT_SOURCE_DIR}/basis_sets)
-set(ELEMENT_DATA ${CMAKE_CURRENT_SOURCE_DIR}/elementdata.txt)
-
-message(STATUS "elementdata.txt will be installed in ${RESOURCES_DESTINATION}")
-install(FILES ${ELEMENT_DATA} DESTINATION ${RESOURCES_DESTINATION}
-    COMPONENT Runtime)
-message(STATUS "tonto will be installed in ${TONTO_DESTINATION}")
-install(PROGRAMS ${TONTO_EXE} DESTINATION ${TONTO_DESTINATION}
-    COMPONENT Runtime)
-message(STATUS "basis_sets will be installed in ${RESOURCES_DESTINATION}")
-install(DIRECTORY ${BASIS_SETS} DESTINATION ${RESOURCES_DESTINATION}
-    COMPONENT Runtime)
-
-
+set(XDG_DESKTOP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/crystalexplorer.desktop PARENT_SCOPE)
 set(MESH_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/icosphere.obj
     PARENT_SCOPE
 )
-
 set(MESH_QRC "${CMAKE_CURRENT_SOURCE_DIR}/mesh.qrc" PARENT_SCOPE)
+
+# OCC version and archive setup
+set(OCC_VERSION "0.6.3")
+if(WIN32)
+    set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-windows-x86_64.tar.xz")
+elseif(APPLE)
+    set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-macos-arm64.tar.xz")
+else()
+    set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-linux-x86_64-static.tar.xz")
+endif()
+
+# Set up OCC URL and download
+set(OCC_URL "https://github.com/peterspackman/occ/releases/download/v${OCC_VERSION}/${OCC_ARCHIVE_STRING}")
+message(STATUS "Attempting to download OCC from ${OCC_URL}")
+
+FetchContent_Declare(
+    OCC
+    URL ${OCC_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_GetProperties(OCC)
+if(NOT OCC_POPULATED)
+    FetchContent_MakeAvailable(OCC)
+endif()
+
+# Set paths based on the extracted content
+set(OCC_EXE ${occ_SOURCE_DIR}/bin/occ${CMAKE_EXECUTABLE_SUFFIX})
+set(OCC_SHARE_DIRECTORY ${occ_SOURCE_DIR}/share)
+
+# Check if the executable exists and print appropriate message
+if(EXISTS ${OCC_EXE})
+    message(STATUS "OCC executable successfully downloaded and found at: ${OCC_EXE}")
+else()
+    message(WARNING "OCC executable not found at expected location: ${OCC_EXE}")
+endif()
+
+# Check if the share directory exists and print appropriate message
+if(IS_DIRECTORY ${OCC_SHARE_DIRECTORY})
+    message(STATUS "OCC share directory found at: ${OCC_SHARE_DIRECTORY}")
+else()
+    message(WARNING "OCC share directory not found at expected location: ${OCC_SHARE_DIRECTORY}")
+endif()
+
+# Installation commands
+install(PROGRAMS ${OCC_EXE} 
+    DESTINATION ${OCC_DESTINATION}
+    COMPONENT Runtime
+)
+install(DIRECTORY ${OCC_SHARE_DIRECTORY} 
+    DESTINATION ${RESOURCES_DESTINATION}
+    COMPONENT Runtime
+)
+
+message(STATUS "OCC executable will be installed in ${OCC_DESTINATION}")
+message(STATUS "OCC data will be installed in ${RESOURCES_DESTINATION}")

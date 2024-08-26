@@ -165,3 +165,9 @@ float fogFactor(float density, float fc) {
     float result = exp(-pow(density * fc, 2.0));
     return 1.0 - clamp(result, 0.0, 1.0);
 }
+
+vec4 applyFog(vec4 color, vec3 fogColor, float offset, float density, float depth) {
+    if(fogColor.r < 0.0) return color;
+    // since we have inverted depth it's offset - depth not vice-versa
+    return mix(color, vec4(fogColor, 1.0), fogFactor(density, clamp(offset - depth, 0, 1.0f)));
+}

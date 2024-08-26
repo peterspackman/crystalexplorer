@@ -1,21 +1,20 @@
-#include <QDebug>
-#include <QMouseEvent>
 #include <QColorDialog>
+#include <QDebug>
 #include <QInputDialog>
-#include <QVector2D>
-#include <QToolTip>
-#include <cmath>
 #include <QMenu>
+#include <QMouseEvent>
+#include <QToolTip>
+#include <QVector2D>
+#include <cmath>
 
 #include "elementdata.h"
 #include "globals.h"
 #include "glwindow.h"
 #include "graphics.h"
 #include "mathconstants.h"
-#include "settings.h"
 #include "renderselection.h"
+#include "settings.h"
 #include <fmt/core.h>
-
 
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) { init(); }
 
@@ -43,9 +42,9 @@ void GLWindow::init() {
   _hadHits = false;
   _mouseMoved = false;
 
-  setSelectionMode(picking);
+  setSelectionMode(SelectionMode::Pick);
 
-  _shiftKeyHeld = false;
+  m_shiftKeyHeld = false;
 
   setFocusPolicy(Qt::StrongFocus);
 
@@ -62,8 +61,7 @@ void GLWindow::init() {
   _majorAxisZ = 0;
   _majorSpeed = 0;
 
-  _singleMouseClick = true;
-  _doubleMouseClick = false;
+  m_singleMouseClick = true;
   _elementEditor = nullptr;
   m_textLayer = QImage(size(), QImage::Format_ARGB32);
 }
@@ -81,23 +79,19 @@ void GLWindow::setMouseMode(MouseMode mode) {
 }
 
 void GLWindow::setSelectionMode(SelectionMode mode) {
-  selectionMode = mode;
+  m_selectionMode = mode;
 
-  if (scene) {
-    scene->setSelectionColor(selectionColors[selectionMode]);
-  }
-
-  switch (selectionMode) {
-  case picking:
+  switch (m_selectionMode) {
+  case SelectionMode::Pick:
     if (scene) {
       scene->setSelectStatusForAllAtoms(false);
     }
     break;
-  case distance:
-  case angle:
-  case dihedral:
-  case outOfPlaneBend:
-  case inPlaneBend:
+  case SelectionMode::Distance:
+  case SelectionMode::Angle:
+  case SelectionMode::Dihedral:
+  case SelectionMode::OutOfPlaneBend:
+  case SelectionMode::InPlaneBend:
     numberOfSelections = 0;
     if (scene) {
       scene->setSelectStatusForAllAtoms(false);
@@ -130,9 +124,9 @@ void GLWindow::makeFrameBufferObject() {
     delete m_framebuffer;
     m_framebuffer = nullptr;
   }
-  if(m_resolvedFramebuffer) {
-      delete m_resolvedFramebuffer;
-      m_resolvedFramebuffer = nullptr;
+  if (m_resolvedFramebuffer) {
+    delete m_resolvedFramebuffer;
+    m_resolvedFramebuffer = nullptr;
   }
 
   // Create the FBO
@@ -144,7 +138,6 @@ void GLWindow::makeFrameBufferObject() {
   int h = std::max(1, static_cast<int>(height() * devicePixelRatio()));
   m_framebuffer = new QOpenGLFramebufferObject(w, h, format);
   m_resolvedFramebuffer = new QOpenGLFramebufferObject(w, h);
-
 }
 
 /*!
@@ -230,6 +223,7 @@ void GLWindow::initializeGL() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
+  glDepthFunc(GL_GREATER);
 
   // One of the following commands is necessary to stop the shading problems
   // that occur when rescaling.  Without one of the following, when the picture
@@ -304,12 +298,12 @@ void GLWindow::setProjection(GLfloat width, GLfloat height) {
   GLfloat top = height / VIEWING_VOLUME_FAR;
   m_projection.setToIdentity();
   if (usePerspectiveProjection) {
-    m_projection.frustum(left, right, bottom, top, perspectiveNearValue,
-                         VIEWING_VOLUME_FAR);
+    m_projection.frustum(left, right, bottom, top, VIEWING_VOLUME_FAR,
+                         perspectiveNearValue);
 
   } else {
-    m_projection.ortho(left, right, bottom, top, frontClippingPlane,
-                       VIEWING_VOLUME_FAR);
+    m_projection.ortho(left, right, bottom, top, VIEWING_VOLUME_FAR,
+                       frontClippingPlane);
   }
 }
 
@@ -330,14 +324,14 @@ void GLWindow::paintGL() {
   }
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearDepth(0);
   setModelView();
   drawScene(false);
   m_framebuffer->release();
 
-  m_framebuffer->blitFramebuffer(m_resolvedFramebuffer,
-                                 QRect(QPoint(), m_resolvedFramebuffer->size()),
-                               m_framebuffer,
-                                 QRect(QPoint(), m_framebuffer->size()));
+  m_framebuffer->blitFramebuffer(
+      m_resolvedFramebuffer, QRect(QPoint(), m_resolvedFramebuffer->size()),
+      m_framebuffer, QRect(QPoint(), m_framebuffer->size()));
   glDisable(GL_DEPTH_TEST);
 
   QOpenGLFramebufferObject::bindDefault();
@@ -345,6 +339,7 @@ void GLWindow::paintGL() {
   glBindTexture(GL_TEXTURE_2D, m_resolvedFramebuffer->texture());
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearDepth(0);
   // Draw the screen-filling quad
   m_postprocessShader->bind();
   m_postprocessShader->setUniformValue(
@@ -371,8 +366,10 @@ QImage GLWindow::renderToImage(int scaleFactor, bool for_picking) {
   }
   if (for_picking) {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearDepth(0);
   }
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearDepth(0);
   drawScene(for_picking);
   fbo.release();
 
@@ -380,16 +377,21 @@ QImage GLWindow::renderToImage(int scaleFactor, bool for_picking) {
   if (for_picking) {
     const QColor &color = scene->backgroundColor();
     glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+    glClearDepth(0);
   }
   doneCurrent();
   return result;
 }
 
 bool GLWindow::renderToPovRay(QTextStream &ts) {
+  qDebug() << "renderToPovRay";
+  return false;
+  /*
   if (!scene)
     return false;
   scene->exportToPovrayTextStream(ts);
   return true;
+  */
 }
 
 void GLWindow::setModelView() {
@@ -406,7 +408,7 @@ void GLWindow::setModelView() {
     GLfloat scale = scene->scale();
     m_view.scale(scale, scale, scale);
     m_view = m_view * scene->orientation().transformationMatrix();
-    Vector3q origin = scene->origin();
+    occ::Vec3 origin = scene->origin();
 
     m_view.translate(-origin.x(), -origin.y(), -origin.z());
     if (animateScene) {
@@ -473,7 +475,7 @@ bool GLWindow::event(QEvent *event) {
 void GLWindow::keyPressEvent(QKeyEvent *event) {
   switch (event->key()) {
   case Qt::Key_Shift:
-    _shiftKeyHeld = true;
+    m_shiftKeyHeld = true;
     event->accept();
     break;
   case Qt::Key_I:
@@ -491,7 +493,7 @@ void GLWindow::keyPressEvent(QKeyEvent *event) {
 void GLWindow::keyReleaseEvent(QKeyEvent *event) {
   switch (event->key()) {
   case Qt::Key_Shift:
-    _shiftKeyHeld = false;
+    m_shiftKeyHeld = false;
     event->accept();
     break;
   case Qt::Key_I:
@@ -504,43 +506,41 @@ void GLWindow::keyReleaseEvent(QKeyEvent *event) {
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *event) {
-  _singleMouseClick = true;
+  m_singleMouseClick = true;
 
   if (event->button() == Qt::LeftButton) {
     _leftMouseButtonHeld = true;
     savedMousePosition = event->pos();
 
-    switch (selectionMode) {
-    case picking:
+    switch (m_selectionMode) {
+      case SelectionMode::Pick:
       handleLeftMousePressForPicking(event);
       break;
-    case distance:
-      handleMousePressForMeasurement(MeasurementType::Distance, event->pos());
+      case SelectionMode::Distance:
+      handleMousePressForMeasurement(MeasurementType::Distance, event);
       break;
-    case angle:
-      handleMousePressForMeasurement(MeasurementType::Angle, event->pos());
+      case SelectionMode::Angle:
+      handleMousePressForMeasurement(MeasurementType::Angle, event);
       break;
-    case dihedral:
-      handleMousePressForMeasurement(MeasurementType::Dihedral, event->pos());
+      case SelectionMode::Dihedral:
+      handleMousePressForMeasurement(MeasurementType::Dihedral, event);
       break;
-    case outOfPlaneBend:
-      handleMousePressForMeasurement(MeasurementType::OutOfPlaneBend,
-                                     event->pos());
+      case SelectionMode::OutOfPlaneBend:
+      handleMousePressForMeasurement(MeasurementType::OutOfPlaneBend, event);
       break;
-    case inPlaneBend:
-      handleMousePressForMeasurement(MeasurementType::InPlaneBend,
-                                     event->pos());
+      case SelectionMode::InPlaneBend:
+      handleMousePressForMeasurement(MeasurementType::InPlaneBend, event);
       break;
     }
   } else if (event->button() == Qt::RightButton) {
     _rightMouseButtonHeld = true;
     if (event->modifiers() == Qt::ControlModifier) {
       handleObjectInformationDisplay(event->pos());
-    } else if (selectionMode == picking) {
+    } else if (m_selectionMode == SelectionMode::Pick) {
       handleRightMousePress(event->pos());
     }
   }
-  _singleMouseClick = false;
+  m_singleMouseClick = false;
 }
 
 void GLWindow::handleLeftMousePressForPicking(QMouseEvent *event) {
@@ -617,16 +617,30 @@ void GLWindow::handleObjectInformationDisplay(QPoint pos) {
         break;
       }
       case SelectionType::Surface: {
-        auto surface = scene->selectedSurface();
-        QVector3D centroid = surface->centroid();
-        info = QString::fromStdString(fmt::format(
-            "<b>Surface type</b>: {}<br/>"
-            "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
-            "<b>Volume</b>:       {:9.3f}<br/>"
-            "<b>Surface area</b>: {:9.3f}",
-            surface->surfaceName().toStdString(), centroid.x(), centroid.y(),
-            centroid.z(), surface->volume(), surface->area()));
-        setObjectInformationTextAndPosition(info, pos);
+        // TODO get surface info;
+        auto selection = scene->selectedSurface();
+        if (selection.surface) {
+          QVector3D centroid(0.0f, 0.0f, 0.0f);
+          auto *mesh = selection.surface->mesh();
+          QString surfaceName = mesh->objectName();
+          QString surfaceInstance = selection.surface->objectName();
+          QString property = selection.property;
+          double value = selection.propertyValue;
+          double area = mesh->surfaceArea();
+          double volume = mesh->volume();
+          info = QString::fromStdString(fmt::format(
+              "<b>Surface</b>: {}<br/>"
+              "<b>Instance</b>: {}<br/>"
+              "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
+              "<b>Volume</b>:       {:9.3f}<br/>"
+              "<b>Surface area</b>: {:9.3f}<br/>"
+              "<b>Property</b>: {}<br/>"
+              "<b>Property Value</b>: {:9.3f}",
+              surfaceName.toStdString(), surfaceInstance.toStdString(),
+              centroid.x(), centroid.y(), centroid.z(), volume, area,
+              property.toStdString(), value));
+          setObjectInformationTextAndPosition(info, pos);
+        }
         break;
       }
       case SelectionType::None:
@@ -641,98 +655,56 @@ void GLWindow::showMessage(const QString &message) {
   QToolTip::showText(mapToGlobal(QPoint(50, height() - 100)), message);
 }
 
+
+void GLWindow::showMessageOnGraphicsView(QString message) {
+  showMessage(message);
+}
+
 void GLWindow::setObjectInformationTextAndPosition(QString text, QPoint pos) {
   QToolTip::showText(mapToGlobal(pos), text);
 }
 
 void GLWindow::handleMousePressForMeasurement(MeasurementType type,
-                                              QPoint pos) {
-  QVector4D selectionPos;
+                                              QMouseEvent *event) {
 
-  QColor color = pickObjectAt(pos);
+  QColor color = pickObjectAt(event->pos());
 
-  selectionPos = scene->processMeasurementSingleClick(color, _doubleMouseClick);
+  auto selection =
+      scene->processMeasurementSingleClick(color, event->modifiers().testFlag(Qt::ShiftModifier));
 
   // is valid position?
-  if (selectionPos.w() == -1) {
+  if (selection.index == -1) {
     redraw();
     return;
   }
   if (type == MeasurementType::Distance) {
-
-    if (_doubleMouseClick) {
-      // If mouse has been double-clicked,
-      // then this routine has already been run through for the first click.
-      // So, for double-click, we need to reset some things.
-      if (numberOfSelections == 0) {
-        numberOfSelections = 1;
-        m_currentMeasurement.clearPositions();
-        scene->removeLastMeasurement();
-      } else if (numberOfSelections == 1) {
-        numberOfSelections = 0;
-        m_currentMeasurement.removeLastPosition();
-      }
-    }
-
     if (numberOfSelections == 0) {
 
       m_currentMeasurement = Measurement(type);
-      _firstSelectionForMeasurement = selectionPos;
-      _firstSelectionWasDoubleClick = _doubleMouseClick;
+      m_firstSelectionForMeasurement = selection;
       numberOfSelections++;
 
     } else if (numberOfSelections == Measurement::totalPositions(type) - 1) {
-
-      _secondSelectionWasDoubleClick = _doubleMouseClick;
 
       if (type == MeasurementType::Distance) {
 
         // For single-click we assume a single atom or single surface
         // triangle has been selected.
-        // For double-click we assume a whole fragment or whole surface has
+        // For shift-click we assume a whole fragment or whole surface has
         // been selected.
         // In the latter case, we find the minimum distances.
 
         // Pair of minimum positions for calculating distance and plotting
         // distance line.
-        QPair<QVector3D, QVector3D> pair;
+        auto d = scene->positionsForDistanceMeasurement(m_firstSelectionForMeasurement, selection);
+        qDebug() << "Valid measurement: " << d.valid;
 
-        // The OpenGL name indices for the two objects chosen == atom, bond,
-        // surface
-        int glName1 = _firstSelectionForMeasurement.w();
-        int glName2 = selectionPos.w();
-
-        // SelectionType == noSelection, atomSelection, bondSelection,
-        // surfaceSelection
-        // int == index of the object; for a bond this will be the first
-        // atom of the bond.
-        QPair<SelectionType, int> object1 =
-            scene->selectionTypeAndIndexOfGraphicalObject(glName1, true);
-        QPair<SelectionType, int> object2 =
-            scene->selectionTypeAndIndexOfGraphicalObject(glName2, true);
-
-        QVector3D pos1 = _firstSelectionForMeasurement.toVector3D();
-        QVector3D pos2 = selectionPos.toVector3D();
-
-        if (_firstSelectionWasDoubleClick && _secondSelectionWasDoubleClick) {
-
-          pair = scene->positionsForDistanceMeasurement(object1, object2);
-        } else if (_firstSelectionWasDoubleClick) {
-
-          pair = scene->positionsForDistanceMeasurement(object1, pos2);
-
-        } else if (_secondSelectionWasDoubleClick) {
-          pair = scene->positionsForDistanceMeasurement(object2, pos1);
-        } else {
-
-          // No double clicks, so no whole fragments or surfaces
-          // The objects are each single atom or single triangle only.
-          pair = QPair<QVector3D, QVector3D>(pos1, pos2);
+        if(d.valid) {
+          m_currentMeasurement.addPosition(d.a);
+          m_currentMeasurement.addPosition(d.b);
+          scene->addMeasurement(m_currentMeasurement);
+          scene->setSelectStatusForAllAtoms(false);
         }
-        m_currentMeasurement.addPosition(pair.first);
-        m_currentMeasurement.addPosition(pair.second);
-        scene->addMeasurement(m_currentMeasurement);
-        scene->setSelectStatusForAllAtoms(false);
       }
       numberOfSelections = 0;
     }
@@ -741,15 +713,15 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 
     if (numberOfSelections == 0) {
       m_currentMeasurement = Measurement(type);
-      m_currentMeasurement.addPosition(selectionPos.toVector3D());
+      m_currentMeasurement.addPosition(selection.position);
       numberOfSelections++;
     } else if (numberOfSelections == Measurement::totalPositions(type) - 1) {
-      m_currentMeasurement.addPosition(selectionPos.toVector3D());
+      m_currentMeasurement.addPosition(selection.position);
       scene->addMeasurement(m_currentMeasurement);
       scene->setSelectStatusForAllAtoms(false);
       numberOfSelections = 0;
     } else {
-      m_currentMeasurement.addPosition(selectionPos.toVector3D());
+      m_currentMeasurement.addPosition(selection.position);
       numberOfSelections++;
     }
   }
@@ -758,19 +730,10 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 }
 
 void GLWindow::mouseDoubleClickEvent(QMouseEvent *event) {
-  _doubleMouseClick = true;
   if (event->button() == Qt::LeftButton) {
     savedMousePosition = event->pos();
 
-    if (selectionMode == distance) {
-      // For double-click, allow a distance measurement
-      // For single-click we assume a single atom or single surface triangle has
-      // been selected.
-      // For double-click we assume a whole fragment or whole surface has been
-      // selected.
-      // In the latter case, we find the minimum distances.
-      handleMousePressForMeasurement(MeasurementType::Distance, event->pos());
-    } else if (mouseModeAllowsSelection[mouseMode]) {
+    if (mouseModeAllowsSelection[mouseMode]) {
       QColor color = pickObjectAt(event->pos());
       _hadHits = scene->processSelectionDoubleClick(color);
       if (_hadHits) {
@@ -778,7 +741,6 @@ void GLWindow::mouseDoubleClickEvent(QMouseEvent *event) {
       }
     }
   }
-  _doubleMouseClick = false;
 }
 
 /*
@@ -808,14 +770,18 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
                            &GLWindow::contextualDeleteFragmentWithBond);
     break;
   case SelectionType::Surface: {
-    Surface *surface = scene->selectedSurface();
-    if (surface) {
+    const auto &selection = scene->selectedSurface();
+    if (selection.surface) {
+      auto * mesh = selection.surface->mesh();
+      if(!mesh) break;
+
       contextMenu->addAction(tr("Hide Surface"), this,
                              &GLWindow::contextualHideSurface);
       contextMenu->addAction(tr("Delete Surface"), this,
                              &GLWindow::contextualDeleteSurface);
 
-      if (surface->isHirshfeldBased()) {
+
+      if (mesh->kind() == isosurface::Kind::Hirshfeld) {
         contextMenu->addAction(tr("Generate Internal Fragment"), this,
                                &GLWindow::contextualGenerateInternalFragment);
         contextMenu->addAction(tr("Generate External Fragment"), this,
@@ -830,23 +796,6 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
       contextMenu->addAction(tr("Select Atoms Outside Surface"), this,
                              &GLWindow::contextualSelectAtomsOutsideSurface);
 
-      if (surface->currentProperty()->type() ==
-          IsosurfacePropertyDetails::Type::None) {
-        contextMenu->addAction(tr("Edit Surface Color"), this,
-                               &GLWindow::contextualEditNonePropertyColor);
-        contextMenu->addAction(tr("Reset Surface Color"), this,
-                               &GLWindow::contextualResetNonePropertyColor);
-      }
-
-      if (surface->isCapped()) {
-        if (surface->capsVisible()) {
-          contextMenu->addAction(tr("Hide Surface Caps"), this,
-                                 &GLWindow::contextualHideSurfaceCaps);
-        } else {
-          contextMenu->addAction(tr("Show Surface Caps"), this,
-                                 &GLWindow::contextualShowSurfaceCaps);
-        }
-      }
     }
     break;
   }
@@ -892,13 +841,15 @@ void GLWindow::contextualGenerateExternalFragment() {
 void GLWindow::contextualHideSurface() {
   Q_ASSERT(scene);
 
-  emit surfaceHideRequest(scene->selectedSurfaceIndex());
+  // TODO
+  // emit surfaceHideRequest(scene->selectedSurfaceIndex());
 }
 
 void GLWindow::contextualDeleteSurface() {
   Q_ASSERT(scene);
 
-  emit surfaceDeleteRequest(scene->selectedSurfaceIndex());
+  // TODO
+  // emit surfaceDeleteRequest(scene->selectedSurfaceIndex());
 }
 
 void GLWindow::contextualShowSurfaceCaps() { showSurfaceCaps(true); }
@@ -908,9 +859,12 @@ void GLWindow::contextualHideSurfaceCaps() { showSurfaceCaps(false); }
 void GLWindow::showSurfaceCaps(bool show) {
   Q_ASSERT(scene);
 
+  // TODO
+  /*
   Surface *surface = scene->selectedSurface();
   surface->setCapsVisible(show);
   redraw();
+  */
 }
 
 void GLWindow::contextualCompletePickedAtom() {
@@ -930,15 +884,19 @@ void GLWindow::contextualCompleteSelectedBond() {
 }
 
 void GLWindow::contextualEditNonePropertyColor() {
-  QColor color = QColorDialog::getColor(ColorSchemer::getNoneColor());
+  // TODO fetch none color
+  QColor noneColor = Qt::white;
+  QColor color = QColorDialog::getColor(noneColor);
   if (color.isValid()) {
-    scene->currentSurface()->setNonePropertyColor(color);
+    // TODO set none color
+    // scene->currentSurface()->setNonePropertyColor(color);
     redraw();
   }
 }
 
 void GLWindow::contextualResetNonePropertyColor() {
-  scene->currentSurface()->updateNoneProperty();
+  // TODO update none color
+  // scene->currentSurface()->updateNoneProperty();
   redraw();
 }
 
@@ -1030,7 +988,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
 
     contextMenu->addSeparator();
 
-    if (scene->unitCellBoxIsVisible()) {
+    if (scene->showCells()) {
       contextMenu->addAction(tr("Hide Unit Cell Axes"), this,
                              &GLWindow::contextualHideUnitCellBox);
     } else {
@@ -1038,7 +996,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
                              &GLWindow::contextualShowUnitCellBox);
     }
 
-    if (scene->atomicLabelsVisible()) {
+    if (scene->showAtomLabels()) {
       contextMenu->addAction(tr("Hide Atom Labels"), this,
                              &GLWindow::contextualToggleAtomicLabels);
     } else {
@@ -1047,7 +1005,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
     }
 
     if (scene->hasHydrogens()) {
-      if (scene->hydrogensAreVisible()) {
+      if (scene->showHydrogenAtoms()) {
         contextMenu->addAction(tr("Hide Hydrogen Atoms"), this,
                                &GLWindow::contextualHideHydrogens);
       } else {
@@ -1110,14 +1068,21 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
     if (scene->hasSelectedAtoms()) {
       contextMenu->addAction(tr("Remove Selected Atoms"), this,
                              &GLWindow::contextualRemoveSelectedAtoms);
-      contextMenu->addAction(tr("Set Color of Selected Atoms"), this,
-                             &GLWindow::contextualColorSelectedAtoms);
+      contextMenu->addAction(tr("Set Color of Selected Atoms"), [this]() {
+          contextualColorSelection(false);
+      });      contextMenu->addAction(tr("Set Color of Selected Fragments"), [this]() {
+          contextualColorSelection(true);
+      });
     }
+
     if (scene->hasAtomsWithCustomColor()) {
       contextMenu->addAction(tr("Reset All Atom Colors"), this,
                              &GLWindow::contextualResetCustomAtomColors);
     }
+    addColorBySubmenu(contextMenu);
 
+    // TODO handle surface case
+    /*
     if (scene->hasSurface()) {
       contextMenu->addSeparator();
 
@@ -1131,9 +1096,24 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
                                &GLWindow::contextualShowAllSurfaces);
       }
     }
+    */
   }
 
   // Add general actions that don't depend on having a crystal here
+}
+
+void GLWindow::addColorBySubmenu(QMenu *menu) {
+    QMenu* colorByMenu = menu->addMenu(tr("Color Atoms By..."));
+    colorByMenu->addAction(tr("Element"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Element); });
+    colorByMenu->addAction(tr("Fragment"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Fragment); });
+}
+
+void GLWindow::updateAtomColoring(ChemicalStructure::AtomColoring coloring) {
+    if(!scene) return;
+    auto * structure = scene->chemicalStructure();
+    if(!structure) return;
+    structure->setAtomColoring(coloring);
+    redraw();
 }
 
 void GLWindow::getNewBackgroundColor() {
@@ -1153,9 +1133,9 @@ void GLWindow::updateBackgroundColor(QColor color) {
 
 void GLWindow::updateSurfacesForFingerprintWindow() {
   if (scene) {
-    scene->setNeedsUpdate();
+    scene->handleSurfacesNeedUpdate();
+    redraw();
   }
-  redraw();
 }
 
 void GLWindow::screenGammaChanged() {
@@ -1193,6 +1173,7 @@ void GLWindow::setBackgroundColor(QColor color) {
   updateDepthFading();
   makeCurrent();
   glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+  glClearDepth(0);
   doneCurrent();
 }
 
@@ -1216,7 +1197,7 @@ void GLWindow::contextualHideSuppressedAtoms() { showSuppressedAtoms(false); }
 void GLWindow::contextualShowSuppressedAtoms() { showSuppressedAtoms(true); }
 
 void GLWindow::showHydrogens(bool show) {
-  scene->setShowHydrogens(show);
+  scene->setShowHydrogenAtoms(show);
   redraw();
 }
 
@@ -1252,13 +1233,13 @@ void GLWindow::contextualSelectSuppressedAtoms() {
 
 void GLWindow::contextualHideUnitCellBox() {
   Q_ASSERT(scene);
-  scene->setUnitCellBoxVisible(false);
+  scene->setShowCells(false);
   redraw();
 }
 
 void GLWindow::contextualShowUnitCellBox() {
   Q_ASSERT(scene);
-  scene->setUnitCellBoxVisible(true);
+  scene->setShowCells(true);
   redraw();
 }
 
@@ -1276,20 +1257,26 @@ void GLWindow::contextualRemoveIncompleteFragments() {
 
 void GLWindow::contextualToggleAtomicLabels() {
   Q_ASSERT(scene);
-  scene->setAtomicLabelsVisible(!scene->atomicLabelsVisible());
+  scene->toggleShowAtomLabels();
   redraw();
 }
 
 void GLWindow::contextualHideAllSurfaces() {
+  qDebug() << "contextualHideAllSurfaces";
+  /*
   Q_ASSERT(scene);
   scene->setSurfaceVisibilities(false);
   redraw();
+  */
 }
 
 void GLWindow::contextualShowAllSurfaces() {
+  qDebug() << "contextualShowAllSurfaces";
+  /*
   Q_ASSERT(scene);
   scene->setSurfaceVisibilities(true);
   redraw();
+  */
 }
 
 void GLWindow::contextualSuppressSelectedAtoms() {
@@ -1322,11 +1309,11 @@ void GLWindow::contextualUnbondSelectedAtoms() {
   redraw();
 }
 
-void GLWindow::contextualColorSelectedAtoms() {
+void GLWindow::contextualColorSelection(bool fragments) {
   Q_ASSERT(scene);
   QColor color = QColorDialog::getColor(Qt::red, 0);
   if (color.isValid()) {
-    scene->colorSelectedAtoms(color);
+    scene->colorSelectedAtoms(color, fragments);
     redraw();
   }
 }
@@ -1342,7 +1329,7 @@ void GLWindow::contextualResetCustomAtomColors() {
 // We should have access to project here not just crystal
 void GLWindow::contextualRemoveSelectedAtoms() {
   Q_ASSERT(scene);
-  scene->discardSelectedAtoms();
+  scene->deleteSelectedAtoms();
   redraw();
 }
 
@@ -1355,12 +1342,11 @@ QColor GLWindow::pickObjectAt(QPoint pos) {
 
   const bool needDevicePixelRatio{false};
   int factor = 1;
-  if(needDevicePixelRatio) {
-      qDebug() << "Device pixel ratio: " << devicePixelRatio();
-      factor = devicePixelRatio();
+  if (needDevicePixelRatio) {
+    qDebug() << "Device pixel ratio: " << devicePixelRatio();
+    factor = devicePixelRatio();
   }
-  auto color = QColor(m_pickingImage.pixel(pos.x() * factor,
-                                           pos.y() * factor));
+  auto color = QColor(m_pickingImage.pixel(pos.x() * factor, pos.y() * factor));
   return color;
 }
 
@@ -1375,7 +1361,7 @@ void GLWindow::mouseReleaseEvent(QMouseEvent *event) {
 
     // Clear selection when clicking on background
     if (mouseModeAllowsSelection[mouseMode] && !_hadHits && !_mouseMoved &&
-        selectionMode == picking) {
+        m_selectionMode == SelectionMode::Pick) {
       scene->setSelectStatusForAllAtoms(false);
     }
 
@@ -1409,8 +1395,8 @@ void GLWindow::mouseMoveEvent(QMouseEvent *event) {
     float dx = 15 * delta.x() / winHeight;
     float dy = 15 * delta.y() / winWidth;
     auto T = scene->orientation().transformationMatrix();
-    Vector3q upVector(T(0, 0), T(0, 1), T(0, 2));
-    Vector3q rightVector(T(1, 0), T(1, 1), T(1, 2));
+    occ::Vec3 upVector(T(0, 0), T(0, 1), T(0, 2));
+    occ::Vec3 rightVector(T(1, 0), T(1, 1), T(1, 2));
     scene->translateOrigin(-dx * upVector + dy * rightVector);
     savedMousePosition = mousePosition;
     break;
@@ -1512,7 +1498,6 @@ void GLWindow::setCurrentCrystal(Project *project) {
   scene = project->currentScene();
 
   if (scene) {
-    scene->setSelectionColor(selectionColors[selectionMode]);
     scene->screenGammaChanged();
     scene->materialChanged();
     getViewAngleAndScaleFromScene();
@@ -1616,8 +1601,8 @@ inline std::string axis_string(float a, float b, float c) {
 void GLWindow::viewMillerDirection(float x, float y, float z) {
   if (!scene)
     return;
-  Vector3q direction =
-      scene->convertToCartesian(Vector3q(x, y, z)).normalized();
+  occ::Vec3 direction =
+      scene->convertToCartesian(occ::Vec3(x, y, z)).normalized();
   viewDownVector(direction);
   std::string view_string = axis_string(x, y, z);
   showMessage(QString::fromStdString(
@@ -1625,7 +1610,7 @@ void GLWindow::viewMillerDirection(float x, float y, float z) {
   emit transformationMatrixChanged();
 }
 
-void GLWindow::viewDownVector(const Vector3q v) {
+void GLWindow::viewDownVector(const occ::Vec3 &v) {
   if (!scene)
     return;
   auto t = scene->orientation().transformationMatrix();

@@ -23,7 +23,7 @@ void main()
        vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
        colorLinear = flatWithNormalOutline(u_cameraPosVec, v_position, v_normal, colorLinear);
        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
-       if(u_depthFogColor.r >= 0.0) f_color = mix(f_color, vec4(u_depthFogColor, 1.0), fogFactor(u_depthFogDensity, clamp(gl_FragCoord.z - u_depthFogOffset, 0, 1.0f)));
+       f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
    }
    else {
        PBRMaterial material;
@@ -38,6 +38,6 @@ void main()
        // since we're passing things through in camera space, the camera is located at the origin
        vec3 colorLinear = PBRLighting(u_cameraPosVec, v_position, v_normal, lights, material);
        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), v_color.w * v_color.w);
-       if(u_depthFogColor.r >= 0.0) f_color = mix(f_color, vec4(u_depthFogColor, 1.0), fogFactor(u_depthFogDensity, clamp(gl_FragCoord.z - u_depthFogOffset, 0, 1.0f)));
+       f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
    }
 }

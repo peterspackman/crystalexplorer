@@ -5,9 +5,9 @@
 #include <QVector>
 #include <QAbstractItemModel>
 
-#include "jobparameters.h"
 #include "packingdialog.h" // access to enum UnitCellPackingCriteria
 #include "scene.h"
+#include "frameworkoptions.h"
 
 /*!
  \class Project
@@ -25,15 +25,11 @@ public:
   Project(QObject *parent = 0);
   ~Project();
   void reset();
-  bool loadCrystalData(const JobParameters &);
-  bool loadCrystalDataTonto(const QString &cxs, const QString &cif);
-  bool loadSurfaceData(const JobParameters &);
   Scene *currentScene();
   ChemicalStructure *currentStructure();
   const Scene *currentScene() const;
   Scene *previousCrystal();
   QStringList sceneTitles();
-  QList<ScenePeriodicity> scenePeriodicities() const;
   int currentCrystalIndex() { return m_currentSceneIndex; }
   bool saveToFile(QString);
   bool hasUnsavedChanges() { return m_haveUnsavedChanges; }
@@ -41,14 +37,19 @@ public:
 
   bool loadChemicalStructureFromXyzFile(const QString &);
   bool loadCrystalStructuresFromCifFile(const QString &);
+  bool loadCrystalStructuresFromPdbFile(const QString &);
+  bool loadCrystalClearJson(const QString &);
+  bool loadCrystalClearSurfaceJson(const QString &);
+
+  bool hasFrames();
+  int nextFrame(bool forward);
+  int setCurrentFrame(int frame);
 
   bool previouslySaved();
   QString saveFilename();
-  void removeContactAtoms();
   int numberOfCrystals() { return m_scenes.size(); }
   bool currentHasSelectedAtoms() const;
   bool currentHasSurface() const;
-  void addMonomerEnergyToCurrent(const MonomerEnergy &m);
 
   // Abstract Item Model methods
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -59,6 +60,7 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
 public slots:
+  void frameworkOptionsChanged(FrameworkOptions);
   void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
   void setCurrentCrystal(int);
   void setCurrentCrystal(int, bool);
@@ -74,27 +76,18 @@ public slots:
   void toggleSuppressedAtoms(bool);
   void toggleCloseContacts(bool);
   void toggleHydrogenBonds(bool);
-  void updateHydrogenBondsForCurrent(QString, QString, double, bool);
+  void updateHydrogenBondCriteria(HBondCriteria);
   void cycleDisorderHighlighting();
-  void cycleEnergyFramework(bool cycleBackwards = false);
-  void updateEnergyFramework();
-  void turnOffEnergyFramework();
-  void updateEnergyTheoryForEnergyFramework(EnergyTheory);
 
   void updateAllCrystalsForChangeInElementData();
 
-  void toggleCC1(bool);
-  void toggleCC2(bool);
-  void toggleCC3(bool);
-  void toggleCloseContact(int, bool);
-  void updateCloseContactsForCurrent(int, QString, QString, double);
+  void updateCloseContactsCriteria(int, CloseContactCriteria);
+
   void removeIncompleteFragmentsForCurrentCrystal();
   void removeSelectedAtomsForCurrentCrystal();
   void resetCurrentCrystal();
 
   void showAtomsWithinRadius(float, bool);
-
-  void toggleAtomsForFingerprintSelectionFilter(bool);
 
   void suppressSelectedAtoms();
   void unsuppressSelectedAtoms();
@@ -108,6 +101,7 @@ public slots:
   void removeAllMeasurements();
 
 signals:
+  void showMessage(QString);
   void projectChanged(Project *);
   void projectSaved();
   void selectedSceneChanged(int);
@@ -118,6 +112,8 @@ signals:
   void currentCrystalReset();
   void currentCrystalViewChanged();
   void structureChanged();
+  void clickedSurface(QModelIndex);
+  void clickedSurfacePropertyValue(float);
 
 private:
   void init();

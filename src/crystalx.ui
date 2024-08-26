@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>43</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -96,6 +96,9 @@
     <addaction name="separator"/>
     <addaction name="calculateVoidDomainsAction"/>
     <addaction name="setFragmentChargesAction"/>
+    <addaction name="separator"/>
+    <addaction name="nextFrameAction"/>
+    <addaction name="previousFrameAction"/>
    </widget>
    <widget class="QMenu" name="helpMenu">
     <property name="title">
@@ -463,7 +466,7 @@
     <string>Complete fragments</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+C</string>
+    <string>C</string>
    </property>
   </action>
   <action name="toggleContactAtomsAction">
@@ -940,7 +943,7 @@
   <action name="calculateEnergiesAction">
    <property name="icon">
     <iconset resource="../icons/crystalexplorer.qrc">
-     <normaloff>:/images/energy.png</normaloff>:/images/energy.png</iconset>
+     <normaloff>:/images/interaction_energies.png</normaloff>:/images/interaction_energies.png</iconset>
    </property>
    <property name="text">
     <string>Calculate Energies...</string>
@@ -1081,7 +1084,7 @@
   <action name="generateWavefunctionAction">
    <property name="icon">
     <iconset resource="../icons/crystalexplorer.qrc">
-     <normaloff>:/images/molecule_icon.png</normaloff>:/images/molecule_icon.png</iconset>
+     <normaloff>:/images/psi.png</normaloff>:/images/psi.png</iconset>
    </property>
    <property name="text">
     <string>Generate Wavefunction</string>
@@ -1091,6 +1094,34 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+G</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="nextFrameAction">
+   <property name="text">
+    <string>Next Frame</string>
+   </property>
+   <property name="toolTip">
+    <string>Cycle to the next frame of the trajectory</string>
+   </property>
+   <property name="shortcut">
+    <string>N</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="previousFrameAction">
+   <property name="text">
+    <string>Previous Frame</string>
+   </property>
+   <property name="toolTip">
+    <string>Cycle to the previous frame of the trajectory</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>

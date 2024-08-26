@@ -10,31 +10,22 @@
 #include "crystalcontroller.h"
 #include "fingerprintwindow.h"
 #include "glwindow.h"
-#include "jobparameters.h"
 #include "project.h"
-#include "surfacecontroller.h"
+#include "childpropertycontroller.h"
 #include "viewtoolbar.h"
-
-#include "gaussianinterface.h"
-#include "nwcheminterface.h"
-#include "occinterface.h"
-#include "orcainterface.h"
-#include "psi4interface.h"
-#include "tontointerface.h"
-#include "xtbinterface.h"
 
 #include "animationsettingsdialog.h"
 #include "celllimitsdialog.h"
-#include "chargedialog.h"
+#include "fragmentstatedialog.h"
 #include "closecontactsdialog.h"
 #include "depthfadingandclippingdialog.h"
 #include "energycalculationdialog.h"
-#include "frameworkdialog.h"
 #include "infoviewer.h"
 #include "planegenerationdialog.h"
 #include "preferencesdialog.h"
 #include "surfacegenerationdialog.h"
 #include "wavefunctioncalculationdialog.h"
+#include "pair_energy_parameters.h"
 
 // background tasks
 #include "taskmanager.h"
@@ -68,25 +59,20 @@ public:
   void loadExternalFileData(QString);
 
 public slots:
-  void generateSurface(const JobParameters &, std::optional<Wavefunction>);
-  void generateSurfaceNew(isosurface::Parameters);
+  void handleBusyStateChange(bool);
+  void generateSurface(isosurface::Parameters);
   void generateSurfaceRequiringWavefunction(isosurface::Parameters, wfn::Parameters);
-  void getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex>&, int, int);
+  wfn::Parameters getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex>&, int, int);
   void generateWavefunction(wfn::Parameters);
-  void calculateMonomerEnergy(const JobParameters &);
-  void returnToJobRequiringWavefunction();
-  void tontoJobFinished(TontoExitStatus, JobType);
-  void occJobFinished(bool, JobType);
-  void orcaJobFinished(bool, JobType);
-  void xtbJobFinished(bool, JobType);
-  void wavefunctionJobFinished(bool);
   void jobRunning();
   void jobCancelled(QString);
   void uncheckContactAtomsAction();
   void displayFingerprint();
   void passCurrentCrystalToFingerprintWindow();
-  void passCurrentSurfaceVisibilityToSurfaceController();
-  void calculateEnergies(const JobParameters &, const QVector<Wavefunction> &);
+
+  void calculatePairEnergies(pair_energy::EnergyModelParameters);
+  void calculatePairEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters);
+
   void showInfo(InfoType);
   void showTaskManagerWidget();
   void updateInfo(InfoType);
@@ -111,24 +97,16 @@ private slots:
   void removeFileFromHistory(const QString &);
   void updateWindowTitle();
   void quit();
-  void showTontoStdin();
-  void showTontoStdout();
-  void showGaussianStdout();
-  void showNWChemStdout();
-  void showPsi4Output();
-  void showOccOutput();
   void getSurfaceParametersFromUser();
   void updateCloseContactOptions();
   void setMoleculeStyleForCurrent();
   void setEllipsoidStyleWithProbabilityForCurrent();
   void toggleDrawHydrogenEllipsoids(bool);
   void updateMenuOptionsForScene();
-  void updateMenuOptionsForSurface(Surface *);
   void newProject();
   void saveProject();
   void saveProjectAs();
   void exportAs();
-  void exportSelectedSurface();
   QString suggestedProjectFilename();
   void showPreferencesDialog();
   void helpAboutActionDialog();
@@ -155,7 +133,6 @@ private slots:
   void allowCloneSurfaceAction();
   void allowCalculateEnergiesAction();
   void showEnergyCalculationDialog();
-  void calculateVoidDomains();
 
   void showEnergyFrameworkDialog();
   void cycleEnergyFrameworkBackwards();
@@ -163,11 +140,9 @@ private slots:
 
   void showCrystalPlaneDialog();
 
-  void setFragmentCharges();
+  void setFragmentStates();
 
-  void updateSurfaceControllerForNewProperty();
   void handleTransformationMatrixUpdate();
-  void backgroundTaskFinished();
 
   void taskManagerTaskComplete(TaskID);
   void taskManagerTaskError(TaskID, QString);
@@ -175,6 +150,7 @@ private slots:
   void taskManagerTaskRemoved(TaskID);
 
   void handleStructureChange();
+  void handleGenerateWavefunctionAction();
 
 private:
   void init();
@@ -186,12 +162,11 @@ private:
   void initGlWindow();
   void initFingerprintWindow();
   void initInfoViewer();
-  void initInterfaces();
   void createRecentFileActionsAndAddToFileMenu();
   void addExitOptionToFileMenu();
   void createToolbars();
   void createDockWidgets();
-  void createSurfaceControllerDockWidget();
+  void createChildPropertyControllerDockWidget();
   void createCrystalControllerDockWidget();
   void initConnections();
   void initMenuConnections();
@@ -201,6 +176,7 @@ private:
   void updateRecentFileActions(QStringList);
   void updateWorkingDirectories(const QString &);
   void processCif(QString &);
+  void processPdb(QString &);
   void loadXyzFile(const QString &);
 
   void showLoadingMessageBox(QString);
@@ -216,9 +192,6 @@ private:
   void enableCloneSurfaceAction(bool);
   void enableCalculateEnergiesAction(bool);
 
-  void cloneVoidSurface(Scene *);
-  void cloneGeneralSurface(Scene *);
-
   bool overrideBondLengths();
   void showStatusMessage(QString);
   void viewFile(QString, int width = 620, int height = 600,
@@ -232,46 +205,26 @@ private:
                           QString htmlColor);
   void initDepthFadingAndClippingDialog();
 
-  void readSurfaceFile();
-
-  void returnToSurfaceGeneration();
-  void returnToEnergyCalculation();
-
-  void writeMorokumaInput(DeprecatedCrystal *);
-  void generateSurfaceWithProductProperty(DeprecatedCrystal *);
-  void tryCalculateAnotherEnergy();
-
-  bool getCharges(DeprecatedCrystal *);
-  bool getChargesFromUser(DeprecatedCrystal *);
+  bool getFragmentStatesIfMultipleFragments(ChemicalStructure *);
+  bool getFragmentStatesFromUser(ChemicalStructure *);
 
   Project *project{nullptr};
   GLWindow *glWindow{nullptr};
-  JobParameters jobParams;
   ViewToolbar *viewToolbar{nullptr};
-  SurfaceController *surfaceController{nullptr};
+  ChildPropertyController *childPropertyController{nullptr};
   CrystalController *crystalController{nullptr};
-  SurfaceGenerationDialog *m_oldSurfaceGenerationDialog{nullptr};
-  SurfaceGenerationDialog *m_newSurfaceGenerationDialog{nullptr};
+  SurfaceGenerationDialog *m_surfaceGenerationDialog{nullptr};
   WavefunctionCalculationDialog *wavefunctionCalculationDialog{nullptr};
-  EnergyCalculationDialog *energyCalculationDialog{nullptr};
+  EnergyCalculationDialog *m_energyCalculationDialog{nullptr};
   FingerprintWindow *fingerprintWindow{nullptr};
   PreferencesDialog *preferencesDialog{nullptr};
   CloseContactDialog *m_closeContactDialog{nullptr};
   DepthFadingAndClippingDialog *depthFadingAndClippingDialog{nullptr};
-  FrameworkDialog *frameworkDialog{nullptr};
-  ChargeDialog *chargeDialog{nullptr};
+  FragmentStateDialog *m_fragmentStateDialog{nullptr};
   InfoViewer *infoViewer{nullptr};
   PlaneGenerationDialog *m_planeGenerationDialog{nullptr};
 
-  TontoInterface *tontoInterface{nullptr};
-  GaussianInterface *gaussianInterface{nullptr};
-  NWChemInterface *nwchemInterface{nullptr};
-  Psi4Interface *psi4Interface{nullptr};
-  OccInterface *m_occInterface{nullptr};
-  OrcaInterface *m_orcaInterface{nullptr};
-  XTBInterface *m_xtbInterface{nullptr};
-
-  QDockWidget *surfaceControllerDockWidget{nullptr};
+  QDockWidget *childPropertyControllerDockWidget{nullptr};
   QDockWidget *crystalControllerDockWidget{nullptr};
   QAction *quitAction{nullptr};
   QAction *recentFileActions[MAXHISTORYSIZE];
@@ -279,8 +232,8 @@ private:
   QMessageBox *loadingMessageBox{nullptr};
   AnimationSettingsDialog *_animationSettingsDialog{nullptr};
   QAction *_clearRecentFileAction{nullptr};
-  QMenu *_thermalEllipsoidMenu{nullptr};
-  QAction *_drawHEllipsoidsAction{nullptr};
+  QMenu *m_thermalEllipsoidMenu{nullptr};
+  QAction *m_drawHEllipsoidsAction{nullptr};
 
   QProgressBar *_jobProgress{nullptr};
   QToolButton *_jobCancel{nullptr};
@@ -291,7 +244,6 @@ private:
 
   QPair<QVector3D, QVector3D> _savedCellLimits;
   QMap<QString, DrawingStyle> m_drawingStyleLabelToDrawingStyle;
-  QFutureWatcher<bool> m_futureWatcher;
 
   TaskManager * m_taskManager{nullptr};
   TaskManagerWidget * m_taskManagerWidget{nullptr};

@@ -16,6 +16,7 @@ public:
 public slots:
   void show();
   void updateGlwindowBackgroundColor(QColor);
+  void populateExecutablesFromPath(bool override=false);
 
 signals:
   void resetElementData();
@@ -35,7 +36,6 @@ signals:
   void textSettingsChanged();
 
 private slots:
-  void getTontoPath();
   void getValueForExternalProgramSetting(QStandardItem *item);
   void handleExternalProgramSettingsDoubleClick(const QModelIndex &index);
   void restoreDefaultExternalProgramSetting();
@@ -56,7 +56,6 @@ private slots:
   void updateSliderPerspective();
   void contextualGlwindowBackgroundColor();
   void restoreExpertSettings();
-  void setInternalBasisset();
   void setEnergiesTableDecimalPlaces(int);
   void setEnergiesColorScheme(int);
   void setJmolColors(bool);
@@ -69,6 +68,7 @@ private slots:
   void setLightIntensities(double);
   void setTextSliders(int);
   void restoreDefaultLightingSettings();
+  void onTextFontFamilyChanged(const QFont &font);
 
 private:
   void updateLightPositions();

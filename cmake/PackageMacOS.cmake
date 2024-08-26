@@ -14,7 +14,7 @@ install(CODE "
 	\\\\( \
 	-name \\\"*.dylib\\\" \
 	-o -name \\\"*.framework\\\" \
-	-o -name \\\"tonto\\\" \
+	-o -name \\\"occ\\\" \
 	-maxdepth 1 \
 	\\\\) \
 	-exec codesign --force --sign - {} \\\;\"

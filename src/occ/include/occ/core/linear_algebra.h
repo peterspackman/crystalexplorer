@@ -34,6 +34,8 @@ using Mat4 = Eigen::Matrix4d;
 using Mat4ConstRef = Eigen::Ref<const Mat4>;
 using Mat4N = Eigen::Matrix4Xd;
 using MatN4 = Eigen::MatrixX4d;
+using Mat6N = Eigen::Matrix<double, 6, Eigen::Dynamic>;
+using Mat6 = Eigen::Matrix<double, 6, 6>;
 
 using CMat = Eigen::MatrixXcd;
 using CMat3N = Eigen::MatrixX3cd;

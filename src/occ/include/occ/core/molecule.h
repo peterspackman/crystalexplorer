@@ -488,6 +488,9 @@ public:
    */
   const auto &unit_cell_idx() const { return m_uc_idx; }
 
+  void set_unit_cell_atom_shift(const IMat3N &shifts) { m_uc_atom_shift = shifts; }
+  const auto &unit_cell_atom_shift() const { return m_uc_atom_shift; }
+
   /**
    * Get the asymmetric unit atom indices for all atoms in this Molecule
    *
@@ -726,6 +729,7 @@ private:
   IVec m_atomicNumbers;
   Mat3N m_positions;
   IVec m_uc_idx;
+  IMat3N m_uc_atom_shift;
   IVec m_asym_idx;
   IVec m_asym_symop;
   std::vector<std::pair<size_t, size_t>> m_bonds;

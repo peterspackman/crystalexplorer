@@ -515,6 +515,7 @@ public:
    * the crystal.
    */
   CrystalDimers unit_cell_dimers(double distance_tolerance) const;
+
   /**
    * \brief Returns a string representing the symmetry of a dimer in the
    * crystal lattice.

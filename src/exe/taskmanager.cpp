@@ -21,63 +21,73 @@ TaskID TaskManager::add(Task* task, bool start) {
 
     m_taskCount++;
     emit taskAdded(id);
-    if(start) task->start();
+
+    if(start) {
+        if (getCurrentConcurrency() + getTaskThreadCount(task) <= m_maxConcurrentTasks) {
+            bool nowBusy = m_currentConcurrentTasks == 0;
+            m_currentConcurrentTasks += getTaskThreadCount(task);
+            task->start();
+            if(nowBusy) {
+                emit busyStateChanged(true);
+            }
+        } else {
+            m_pendingTasks.enqueue(id);
+        }
+    }
+
     return id;
 }
 
 void TaskManager::remove(TaskID taskId) {
     if (m_tasks.contains(taskId)) {
-	emit taskRemoved(taskId); // emit before we actually remove it
-
-	Task* task = m_tasks.value(taskId);
-	m_tasks.remove(taskId);
-	task->deleteLater(); // Safely delete the task
-
-	if(task->isFinished()) {
-	    m_completeCount--;
-	}
-	m_taskCount--;
+        emit taskRemoved(taskId);
+        Task* task = m_tasks.value(taskId);
+        m_tasks.remove(taskId);
+        if(task->isRunning()) {
+            m_currentConcurrentTasks -= getTaskThreadCount(task);
+            if(m_currentConcurrentTasks == 0) {
+                emit busyStateChanged(false);
+            }
+        }
+        task->deleteLater();
+        if(task->isFinished()) {
+            m_completeCount--;
+        }
+        m_taskCount--;
+        m_pendingTasks.removeAll(taskId);
+        startNextTask();
     }
 }
 
 Task* TaskManager::get(TaskID taskId) const {
-    if (m_tasks.contains(taskId)) {
-	return m_tasks.value(taskId);
-    }
-    return nullptr;
-}
-
-
-void TaskManager::runBlocking(TaskID id) {
-    Task * task = get(id);
-    if(task == nullptr) {
-	qDebug() << "No such task found: " << id;
-	return;
-    }
-    qDebug() << "Starting task" << id;
-
-    QEventLoop loop;
-    QObject::connect(task, &Task::completed, &loop, &QEventLoop::quit);
-    QObject::connect(task, &Task::progressText, [](QString text) {
-	qDebug() << "@" << text;
-    });
-    QObject::connect(task, &Task::progress, [](int progress) {
-	qDebug() << "@prog" << progress;
-    });
-    task->start();
-    loop.exec();
+    return m_tasks.value(taskId, nullptr);
 }
 
 void TaskManager::handleTaskComplete(TaskID id) {
+    Task* task = get(id);
+    if (task) {
+        m_currentConcurrentTasks -= getTaskThreadCount(task);
+        if(m_currentConcurrentTasks == 0) {
+            emit busyStateChanged(false);
+        }
+    }
     m_completeCount++;
     emit taskComplete(id);
+    startNextTask();
 }
 
 void TaskManager::handleTaskError(TaskID id, QString err) {
+    Task* task = get(id);
+    if (task) {
+        m_currentConcurrentTasks -= getTaskThreadCount(task);
+        if(m_currentConcurrentTasks == 0) {
+            emit busyStateChanged(false);
+        }
+    }
     m_completeCount++;
     emit taskError(id, err);
+    startNextTask();
 }
-
 
 int TaskManager::numFinished() const {
     return m_completeCount;
@@ -85,4 +95,36 @@ int TaskManager::numFinished() const {
 
 int TaskManager::numTasks() const {
     return m_taskCount;
+}
+
+void TaskManager::setMaximumConcurrency(int max) {
+    m_maxConcurrentTasks = max;
+    startNextTask();
+}
+
+int TaskManager::getCurrentConcurrency() const {
+    return m_currentConcurrentTasks;
+}
+
+void TaskManager::startNextTask() {
+    while (!m_pendingTasks.isEmpty()) {
+        TaskID nextTaskId = m_pendingTasks.head();
+        Task* nextTask = get(nextTaskId);
+        if (nextTask && getCurrentConcurrency() + getTaskThreadCount(nextTask) <= m_maxConcurrentTasks) {
+            m_pendingTasks.dequeue();
+            bool nowBusy = m_currentConcurrentTasks == 0;
+            m_currentConcurrentTasks += getTaskThreadCount(nextTask);
+            if(nowBusy) {
+                emit busyStateChanged(true);
+            }
+            nextTask->start();
+        } else {
+            break;
+        }
+    }
+}
+
+int TaskManager::getTaskThreadCount(Task* task) const {
+    if(!task) return 1;
+    return task->properties().value("threads", 1).toInt();
 }

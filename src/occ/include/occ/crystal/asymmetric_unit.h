@@ -71,6 +71,13 @@ struct AsymmetricUnit {
   Vec charges;
 
   /**
+   * \brief The anisotropic displacement parameters of the atoms in the unit
+   * cell, expressed as a (6, N) matrix matrix of columns of (u11, u22, u33,
+   * u12, u13, u23)
+   */
+  Mat6N adps;
+
+  /**
    * \brief The labels of the atoms in the unit cell, expressed as a vector of
    * strings of size n. Each string represents the label of the corresponding
    * atom.

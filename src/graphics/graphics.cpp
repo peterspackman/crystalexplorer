@@ -5,18 +5,17 @@
 #include <QtDebug>
 #include <cmath>
 
-#include "graphics.h"
 #include "colormap.h"
-#include "signed_distance_field.h"
+#include "graphics.h"
 #include "mathconstants.h"
+#include "signed_distance_field.h"
+#include "settings.h"
 
 namespace cx::graphics {
 
-void addCircleToCircleRenderer(CircleRenderer &c,
-                                         const QVector3D &position,
-                                         const QVector3D &right,
-                                         const QVector3D &up,
-                                         const QColor &color) {
+void addCircleToCircleRenderer(CircleRenderer &c, const QVector3D &position,
+                               const QVector3D &right, const QVector3D &up,
+                               const QColor &color) {
   QVector4D col(color.redF(), color.greenF(), color.blueF(), color.alphaF());
   c.addVertices({
       CircleVertex(position, right, up, col, {1, 1}),
@@ -26,9 +25,9 @@ void addCircleToCircleRenderer(CircleRenderer &c,
   });
 }
 
-void addPlaneToCrystalPlaneRenderer(
-    CrystalPlaneRenderer &c, const QVector3D &origin, const QVector3D &a, const QVector3D &b, 
-    const QColor &color) {
+void addPlaneToCrystalPlaneRenderer(CrystalPlaneRenderer &c,
+                                    const QVector3D &origin, const QVector3D &a,
+                                    const QVector3D &b, const QColor &color) {
   QVector4D col(color.redF(), color.greenF(), color.blueF(), 0.5);
   c.addVertices({
       CrystalPlaneVertex(origin, a, b, col, {0, 0}),
@@ -38,11 +37,10 @@ void addPlaneToCrystalPlaneRenderer(
   });
 }
 
-void addPartialDiskToCircleRenderer(CircleRenderer &c,
-                                              const QVector3D &v0,
-                                              const QVector3D &v1,
-                                              const QVector3D &origin,
-                                              const QColor &color) {
+void addPartialDiskToCircleRenderer(CircleRenderer &c, const QVector3D &v0,
+                                    const QVector3D &v1,
+                                    const QVector3D &origin,
+                                    const QColor &color) {
   QVector4D col(color.redF(), color.greenF(), color.blueF(), color.alphaF());
 
   float l0 = v0.length();
@@ -65,9 +63,8 @@ void addPartialDiskToCircleRenderer(CircleRenderer &c,
                  CircleVertex(origin, right, up, col, {-1, 1}, 0.0, cosTheta)});
 }
 
-void addCurvedLineBetweenVectors(CircleRenderer &c, QVector3D v0,
-                                           QVector3D v1, QVector3D origin,
-                                           QColor color) {
+void addCurvedLineBetweenVectors(CircleRenderer &c, QVector3D v0, QVector3D v1,
+                                 QVector3D origin, QColor color) {
   QVector4D col(color.redF(), color.greenF(), color.blueF(), color.alphaF());
 
   float l0 = v0.length();
@@ -91,9 +88,10 @@ void addCurvedLineBetweenVectors(CircleRenderer &c, QVector3D v0,
        CircleVertex(origin, right, up, col, {-1, 1}, 0.9f, cosTheta)});
 }
 
-void addCurvedLineToLineRenderer(
-    LineRenderer &r, const QVector3D &pointA, const QVector3D &pointB,
-    const QVector3D &origin, float lineWidth, const QColor &color) {
+void addCurvedLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
+                                 const QVector3D &pointB,
+                                 const QVector3D &origin, float lineWidth,
+                                 const QColor &color) {
   QVector3D col(color.redF(), color.greenF(), color.blueF());
 
   float l0 = pointA.length();
@@ -125,9 +123,8 @@ void addCurvedLineToLineRenderer(
 }
 
 LineRenderer *createLineRenderer(const QVector3D &pointA,
-                                           const QVector3D &pointB,
-                                           float lineWidth,
-                                           const QColor &color) {
+                                 const QVector3D &pointB, float lineWidth,
+                                 const QColor &color) {
   QVector3D col(color.redF(), color.greenF(), color.blueF());
   return new LineRenderer({
       LineVertex(pointA, pointB, col, col, QVector2D(-1, 1), lineWidth),
@@ -138,8 +135,8 @@ LineRenderer *createLineRenderer(const QVector3D &pointA,
 }
 
 void addLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
-                                     const QVector3D &pointB, float lineWidth,
-                                     const QColor &color) {
+                           const QVector3D &pointB, float lineWidth,
+                           const QColor &color) {
   QVector3D col(color.redF(), color.greenF(), color.blueF());
   r.addLines({
       LineVertex(pointA, pointB, col, col, QVector2D(-1, 1), lineWidth),
@@ -149,9 +146,10 @@ void addLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
   });
 }
 
-void addDashedLineToLineRenderer(
-    LineRenderer &r, const QVector3D &pointA, const QVector3D &pointB,
-    float lineWidth, const QColor &color, float dashLength, float dashSpacing) {
+void addDashedLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
+                                 const QVector3D &pointB, float lineWidth,
+                                 const QColor &color, float dashLength,
+                                 float dashSpacing) {
   // TODO sort this out in the shader, should be much more efficient
   size_t num_dashes = (pointB - pointA).length() / (dashLength + dashSpacing);
   QVector3D col(color.redF(), color.greenF(), color.blueF());
@@ -180,9 +178,9 @@ void addDashedLineToLineRenderer(
 }
 
 void addSphereToSphereRenderer(SphereImpostorRenderer *r,
-                                         const QVector3D &position,
-                                         const QColor &color, float radius,
-                                         const QVector3D &id, bool selected) {
+                               const QVector3D &position, const QColor &color,
+                               float radius, const QVector3D &id,
+                               bool selected) {
 
   QVector4D col(selected ? -color.redF() - 0.0001f : color.redF(),
                 color.greenF(), color.blueF(), color.alphaF());
@@ -193,11 +191,10 @@ void addSphereToSphereRenderer(SphereImpostorRenderer *r,
 }
 
 void addEllipsoidToEllipsoidRenderer(EllipsoidRenderer *r,
-                                               const QVector3D &position,
-                                               const QMatrix3x3 &transform,
-                                               const QColor &color,
-                                               const QVector3D &id,
-                                               bool selected) {
+                                     const QVector3D &position,
+                                     const QMatrix3x3 &transform,
+                                     const QColor &color, const QVector3D &id,
+                                     bool selected) {
   QVector3D col(selected ? -color.redF() - 0.0001f : color.redF(),
                 -color.greenF(), color.blueF());
   r->addInstance(EllipsoidInstance(
@@ -207,10 +204,9 @@ void addEllipsoidToEllipsoidRenderer(EllipsoidRenderer *r,
 }
 
 void addSphereToEllipsoidRenderer(EllipsoidRenderer *r,
-                                            const QVector3D &position,
-                                            const QColor &color, float radius,
-                                            const QVector3D &id,
-                                            bool selected) {
+                                  const QVector3D &position,
+                                  const QColor &color, float radius,
+                                  const QVector3D &id, bool selected) {
   QVector3D col(selected ? -color.redF() - 0.0001f : color.redF(),
                 color.greenF(), color.blueF());
   r->addInstance(EllipsoidInstance(position, QVector3D(radius, 0.0f, 0.0f),
@@ -218,11 +214,14 @@ void addSphereToEllipsoidRenderer(EllipsoidRenderer *r,
                                    QVector3D(0.0f, 0.0f, radius), col, id));
 }
 
-void addTextToBillboardRenderer(BillboardRenderer &b,
-                                          const QVector3D &position,
-                                          const QString &text) {
+void addTextToBillboardRenderer(BillboardRenderer &b, const QVector3D &position,
+                                const QString &text) {
   if (!b.hasTextureForText(text)) {
-    QFont font("Sans", 128);
+    QString fontName =
+        settings::readSetting(settings::keys::TEXT_FONT_FAMILY).toString();
+    int fontSize =
+        settings::readSetting(settings::keys::TEXT_FONT_SIZE).toInt();
+    QFont font(fontName, fontSize);
     font.setWeight(QFont::Weight::Bold);
     QFontMetrics fm(font);
     int padding = 5;
@@ -268,10 +267,12 @@ void addTextToBillboardRenderer(BillboardRenderer &b,
   }
 }
 
-void addCylinderToCylinderRenderer(
-    CylinderImpostorRenderer *r, const QVector3D &pointA,
-    const QVector3D &pointB, const QColor &colorA, const QColor &colorB,
-    float radius, const QVector3D &id, bool selectedA, bool selectedB) {
+void addCylinderToCylinderRenderer(CylinderImpostorRenderer *r,
+                                   const QVector3D &pointA,
+                                   const QVector3D &pointB,
+                                   const QColor &colorA, const QColor &colorB,
+                                   float radius, const QVector3D &id,
+                                   bool selectedA, bool selectedB) {
   QVector3D colA(selectedA ? -colorA.redF() : colorA.redF(), colorA.greenF(),
                  colorA.blueF());
   QVector3D colB(selectedB ? -colorB.redF() : colorB.redF(), colorB.greenF(),
@@ -290,10 +291,11 @@ void addCylinderToCylinderRenderer(
                                          QVector3D(1, -1, 1), id, radius)});
 }
 
-void addCylinderToCylinderRenderer(
-    CylinderRenderer *r, const QVector3D &pointA, const QVector3D &pointB,
-    const QColor &colorA, const QColor &colorB, float radius,
-    const QVector3D &id, bool selectedA, bool selectedB) {
+void addCylinderToCylinderRenderer(CylinderRenderer *r, const QVector3D &pointA,
+                                   const QVector3D &pointB,
+                                   const QColor &colorA, const QColor &colorB,
+                                   float radius, const QVector3D &id,
+                                   bool selectedA, bool selectedB) {
   QVector3D colA(selectedA ? -colorA.redF() : colorA.redF(), colorA.greenF(),
                  colorA.blueF());
   QVector3D colB(selectedB ? -colorB.redF() : colorB.redF(), colorB.greenF(),
@@ -324,42 +326,43 @@ void viewDownVector(const QVector3D &v, QMatrix4x4 &mat) {
   mat.rotate(q);
 }
 
-std::vector<PointCloudVertex> makePointCloudVertices(const Mesh &pointCloud, ColorSettings colorSettings) {
-    const auto numVertices = pointCloud.numberOfVertices();
-    if(numVertices <= 0) return {};
+std::vector<PointCloudVertex>
+makePointCloudVertices(const Mesh &pointCloud, ColorSettings colorSettings) {
+  const auto numVertices = pointCloud.numberOfVertices();
+  if (numVertices <= 0)
+    return {};
 
-    std::vector<PointCloudVertex> vertices;
-    const auto &pc_vertices = pointCloud.vertices();
-    const auto &prop = pointCloud.vertexProperty(colorSettings.property);
-    if(prop.size() == 0) {
-	colorSettings.minValue = 0.0f;
-	colorSettings.maxValue = 0.0f;
+  std::vector<PointCloudVertex> vertices;
+  const auto &pc_vertices = pointCloud.vertices();
+  const auto &prop = pointCloud.vertexProperty(colorSettings.property);
+  if (prop.size() == 0) {
+    colorSettings.minValue = 0.0f;
+    colorSettings.maxValue = 0.0f;
+  } else if (colorSettings.findRange) {
+    colorSettings.minValue = prop.minCoeff();
+    colorSettings.maxValue = prop.maxCoeff();
+  }
+
+  QVector3D vec;
+  QVector3D col;
+  for (auto i = 0; i < numVertices; i++) {
+    vec.setX(static_cast<float>(pc_vertices(0, i)));
+    vec.setY(static_cast<float>(pc_vertices(1, i)));
+    vec.setZ(static_cast<float>(pc_vertices(2, i)));
+    QColor color = Qt::black;
+
+    if (prop.rows() > i) {
+      float x = (static_cast<float>(prop(i)) - colorSettings.minValue) /
+                (colorSettings.maxValue - colorSettings.minValue);
+      color = linearColorMap(x, colorSettings.colorMap);
     }
-    else if(colorSettings.findRange) {
-	colorSettings.minValue = prop.minCoeff();
-	colorSettings.maxValue = prop.maxCoeff();
-    }
 
-
-    QVector3D vec;
-    QVector3D col;
-    for(auto i = 0; i < numVertices; i++) {
-	vec.setX(static_cast<float>(pc_vertices(0, i)));
-	vec.setY(static_cast<float>(pc_vertices(1, i)));
-	vec.setZ(static_cast<float>(pc_vertices(2, i)));
-	QColor color = Qt::black;
-
-	if(prop.rows() > i) {
-	    float x = (static_cast<float>(prop(i)) - colorSettings.minValue) / (colorSettings.maxValue - colorSettings.minValue);
-	    color = linearColorMap(x, colorSettings.colorMap);
-	}
-
-	col.setX(color.redF());
-	col.setY(color.greenF());
-	col.setZ(color.blueF());
-	vertices.emplace_back(vec, col);
-    }
-    return vertices;
+    col.setX(color.redF());
+    col.setY(color.greenF());
+    col.setZ(color.blueF());
+    vertices.emplace_back(vec, col);
+  }
+  return vertices;
 }
 
-}
+} // namespace cx::graphics

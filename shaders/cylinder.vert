@@ -14,7 +14,8 @@ out vec4 v_colorB;
 out vec3 v_normal;
 out vec3 v_position;
 out vec3 v_cylinderPosition;
-flat out vec4 v_selection_id;
+flat out vec4 v_selection_idA;
+flat out vec4 v_selection_idB;
 flat out int v_selectedA;
 flat out int v_selectedB;
 
@@ -70,7 +71,10 @@ void main()
     v_position = posTransformed.xyz + T;
     v_colorA = vec4(abs(colorA), 1.0f);
     v_colorB = vec4(abs(colorB), 1.0f);
-    v_selection_id = vec4(selectionIdA, 1.0);
+
+    v_selection_idA = vec4(selectionIdA, 1.0);
+    v_selection_idB = vec4(selectionIdB, 1.0);
+
     gl_Position = u_modelViewProjectionMat * vec4(v_position, 1.0);
 }
 

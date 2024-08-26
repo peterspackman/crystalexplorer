@@ -10,6 +10,8 @@
 #include <QSurfaceFormat>
 
 #include "crystalx.h"
+#include "default_paths.h"
+#include "globalconfiguration.h"
 #include "settings.h"
 
 void copySettingFromPreviousToCurrent(QString key) {
@@ -28,37 +30,24 @@ void copySelectSettingsFromPreviousToCurrent() {
   copySettingFromPreviousToCurrent(settings::keys::GAUSSIAN_EXECUTABLE);
 }
 
-void writePathsToResourcesInSettings(const QString pathToResources) {
-  settings::writeSettings({
-    {settings::keys::ELEMENTDATA_FILE, settings::GLOBAL_ELEMENTDATA_FILE},
-#if defined(Q_OS_LINUX)
-        {settings::keys::TONTO_EXECUTABLE,
-         settings::GLOBAL_TONTO_PATH + settings::GLOBAL_TONTO_EXECUTABLE},
-#else
-        {settings::keys::TONTO_EXECUTABLE,
-         pathToResources + settings::GLOBAL_TONTO_EXECUTABLE},
-#endif
-        {settings::keys::TONTO_BASIS_DIRECTORY,
-         pathToResources +
-             settings::GLOBAL_TONTO_BASIS_DIRECTORY}, // location of Tonto
-                                                      // basis sets
-  });
-}
+void addDefaultPathsIfNotSet() {
+  // Check and set OCC executable path
+  if (settings::readSetting(settings::keys::OCC_EXECUTABLE)
+          .toString()
+          .isEmpty()) {
+    QString occExecutablePath = cx::paths::determineOCCExecutablePath();
+    settings::writeSetting(settings::keys::OCC_EXECUTABLE, occExecutablePath);
+  }
 
-QString getPathToResources() {
-  QString pathToCrystalExplorer = QCoreApplication::applicationDirPath();
-#if defined(Q_OS_MACOS)
-  // On the Mac, we put the ancilliary bits in
-  // CrystalExplorer.app/Resources
-  QString pathToResources = pathToCrystalExplorer + "/../Resources/";
-#elif defined(Q_OS_LINUX)
-  QString pathToResources = "/usr/share/crystalexplorer/";
-#else
-  // On Windows, it's just in the CrystalExplorer
-  // executable directory
-  QString pathToResources = pathToCrystalExplorer + "/";
-#endif
-  return pathToResources;
+  // Check and set OCC data directory path
+  if (settings::readSetting(settings::keys::OCC_DATA_DIRECTORY)
+          .toString()
+          .isEmpty()) {
+    QString occDataDirectoryPath =
+        cx::paths::determineOCCDataDirectoryPath();
+    settings::writeSetting(settings::keys::OCC_DATA_DIRECTORY,
+                           occDataDirectoryPath);
+  }
 }
 
 void maybeReOpenFiles(Crystalx *cx) {
@@ -76,6 +65,7 @@ void maybeReOpenFiles(Crystalx *cx) {
 }
 
 int main(int argc, char *argv[]) {
+  QApplication::addLibraryPath("./");
   QSurfaceFormat format;
   format.setDepthBufferSize(
       settings::readSetting(settings::keys::SURFACE_DEPTH_BUFFER_SIZE).toInt());
@@ -113,14 +103,12 @@ int main(int argc, char *argv[]) {
   parser.process(app);
 
   // ensure default settings are written
+
   settings::writeAllDefaultSettings(false);
-  if (parser.isSet(resourcesOption)) {
-    QString resourcesPath = parser.value(resourcesOption);
-    resourcesPath = QFileInfo(resourcesPath).canonicalFilePath() + "/";
-    writePathsToResourcesInSettings(resourcesPath);
-  } else {
-    writePathsToResourcesInSettings(getPathToResources());
-  }
+  addDefaultPathsIfNotSet();
+
+  auto *config = GlobalConfiguration::getInstance();
+  config->load();
 
   Crystalx *cx = new Crystalx();
   cx->show();

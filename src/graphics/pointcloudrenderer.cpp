@@ -114,5 +114,5 @@ void PointCloudRenderer::updateBuffers() {
   m_vertex.bind();
   m_vertex.allocate(m_points.data(), static_cast<int>(sizeof(PointCloudVertex) *
                                                       m_points.size()));
-  qDebug() << "Allocated " << m_points.size() << "points for point cloud";
+  qDebug() << "Allocated" << m_points.size() << "points for point cloud";
 }

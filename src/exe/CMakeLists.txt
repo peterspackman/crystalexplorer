@@ -2,13 +2,16 @@ add_library(cx_exe
     "${CMAKE_CURRENT_SOURCE_DIR}/exefileutilities.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/externalprogram.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/mocktask.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/occpairtask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occsurfacetask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occwavefunctiontask.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/orcatask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/task.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanagerwidget.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tonto.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefunction_calculator.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xtb_energy_calculator.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xtbtask.cpp"
 )
 
 target_link_libraries(
@@ -16,6 +19,7 @@ target_link_libraries(
     unordered_dense::unordered_dense
     occ_core
     cx_core
+    cx_io
     Qt6::Gui
     Qt6::Widgets
     Qt6::Core

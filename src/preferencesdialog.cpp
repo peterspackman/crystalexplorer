@@ -4,12 +4,13 @@
 #include <QMessageBox>
 #include <QtDebug>
 
-#include "colorschemer.h"
+#include "colormap.h"
 #include "elementeditor.h"
-#include "gaussianinterface.h"
 #include "globals.h"
 #include "preferencesdialog.h"
 #include "settings.h"
+
+#include "exefileutilities.h"
 
 enum PreferencesRoles { PreferencesKeyRole = Qt::UserRole + 1 };
 
@@ -33,6 +34,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent)
     m_externalProgramSettingsKeys.insert(group,
                                          settings::settingsFromGroup(group));
   }
+  populateExecutablesFromPath(false);
 
   m_lightColorKeys.insert(lightAmbientColour->objectName(),
                           settings::keys::LIGHT_AMBIENT);
@@ -72,15 +74,6 @@ PreferencesDialog::PreferencesDialog(QWidget *parent)
 }
 
 void PreferencesDialog::init() {
-  // Initially we want the user defined Tonto executable to be the default Tonto
-  // executable.
-  // The user can change this, and this stay the choice while Crystal Explorer
-  // is running.
-  QString tontoDefault =
-      settings::readSetting(settings::keys::TONTO_EXECUTABLE).toString();
-  settings::writeSettingIfEmpty(settings::keys::TONTO_USER_EXECUTABLE,
-                                tontoDefault);
-
   enablePerspectiveSlider(buttonPerspective->isChecked());
 
   configurationFilePath->setText(settings::filePath());
@@ -98,15 +91,18 @@ void PreferencesDialog::init() {
   showLightPositionsCheckBox->setChecked(
       settings::readSetting(settings::keys::SHOW_LIGHT_POSITIONS).toBool());
 
-  ColorScheme currentScheme = colorSchemeFromString(
+  ColorMapName currentScheme = colorMapFromString(
       settings::readSetting(settings::keys::ENERGY_COLOR_SCHEME).toString());
   int idx = 0;
-  for (const auto &scheme : availableColorSchemes) {
-    energyColorSchemeComboBox->addItem(colorSchemeName(scheme));
+  for (const auto &scheme : availableColorMaps()) {
+    energyColorSchemeComboBox->addItem(colorMapToString(scheme));
     if (scheme == currentScheme)
       energyColorSchemeComboBox->setCurrentIndex(idx);
     idx++;
   }
+  textFontComboBox->setCurrentFont(
+      QFont(settings::readSetting(settings::keys::TEXT_FONT_FAMILY).toString(),
+            settings::readSetting(settings::keys::TEXT_FONT_SIZE).toInt()));
 }
 
 void PreferencesDialog::initConnections() {
@@ -235,20 +231,14 @@ void PreferencesDialog::initConnections() {
           &PreferencesDialog::setTextSliders);
   connect(textSmoothingWidthSlider, &QAbstractSlider::valueChanged, this,
           &PreferencesDialog::setTextSliders);
+  connect(textFontComboBox, &QFontComboBox::currentFontChanged, this,
+          &PreferencesDialog::onTextFontFamilyChanged);
 
   // Advanced settings
   // There is no connections for widgets: deleteWorkingFilesCheckBox and
-  // disableXHNormalisationCheckBox
+  // enableXHNormalisationCheckBox
   // When accept is called on the preferences dialog, the CrystalExplorer
   // QSettings are updated accordingly.
-
-  connect(clementiRoettiRadioButton, &QRadioButton::toggled, this,
-          &PreferencesDialog::setInternalBasisset);
-  connect(thakkarRadioButton, &QRadioButton::toggled, this,
-          &PreferencesDialog::setInternalBasisset);
-
-  connect(tontoPathButton, &QPushButton::clicked, this,
-          &PreferencesDialog::getTontoPath);
 
   connect(restoreExpertSettingsButton, &QPushButton::clicked, this,
           &PreferencesDialog::restoreExpertSettings);
@@ -283,14 +273,6 @@ void PreferencesDialog::enablePerspectiveSlider(bool enable) {
 void PreferencesDialog::updateSliderPerspective() {
   // Note we don't bother saving the sliders value to the QSettings
   emit setOpenglProjection(true, sliderPerspective->value());
-}
-
-void PreferencesDialog::getTontoPath() {
-  QString tontoExe = QFileDialog::getOpenFileName(
-      0, tr("Path to Tonto Executable"), tontoPathLineEdit->text());
-  if (!tontoExe.isEmpty()) {
-    tontoPathLineEdit->setText(tontoExe);
-  }
 }
 
 void PreferencesDialog::restoreDefaultExternalProgramSetting() {
@@ -333,16 +315,16 @@ void PreferencesDialog::getValueForExternalProgramSetting(QStandardItem *item) {
     return;
   }
   const QString &setting = settingItem->text();
+  qDebug() << "Setting is" << setting;
   if (setting == "executablePath") {
     QString path = QFileDialog::getOpenFileName(
         0, QString("Executable path for %1").arg(item->parent()->text()),
         currentValue);
     if (!path.isEmpty())
       item->setText(path);
-  } else if (setting == "basisSetDirectory") {
+  } else if (setting == "dataDirectory") {
     QString path = QFileDialog::getExistingDirectory(
-        0,
-        QString("Basis set directory path for %1").arg(item->parent()->text()),
+        0, QString("Data path for %1").arg(item->parent()->text()),
         currentValue);
     if (!path.isEmpty())
       item->setText(path);
@@ -362,7 +344,7 @@ void PreferencesDialog::show() {
 }
 
 void PreferencesDialog::updateLightsFromSettings() {
-    blockSignals(true);
+  blockSignals(true);
   lightPositionGroupBox->setHidden(
       settings::readSetting(settings::keys::LIGHT_TRACKS_CAMERA).toBool());
 
@@ -456,7 +438,7 @@ void PreferencesDialog::restoreDefaultLightingSettings() {
 }
 
 void PreferencesDialog::loadExternalProgramSettings() {
-  QStringList wavefunctionSources = {"Tonto"};
+  QStringList wavefunctionSources = {"OCC"};
 
   m_externalProgramSettingsModel->clear();
   m_externalProgramSettingsModel->setColumnCount(3);
@@ -526,14 +508,6 @@ void PreferencesDialog::updateDialogFromSettings() {
   autoloadLastFileCheckBox->setChecked(
       settings::readSetting(settings::keys::AUTOLOAD_LAST_FILE).toBool());
 
-  // Tonto
-  QString tontoDefault =
-      settings::readSetting(settings::keys::TONTO_EXECUTABLE).toString();
-  settings::writeSettingIfEmpty(settings::keys::TONTO_USER_EXECUTABLE,
-                                tontoDefault);
-  tontoPathLineEdit->setText(
-      settings::readSetting(settings::keys::TONTO_USER_EXECUTABLE).toString());
-
   loadExternalProgramSettings();
 
   // Display Preferences
@@ -581,27 +555,12 @@ void PreferencesDialog::updateDialogFromSettings() {
   sliderPerspective->setValue(GLOBAL_PERSPECTIVE_LEVEL);
 
   // Advanced Preferences
-  disableXHNormalisationCheckBox->setChecked(
-      settings::readSetting(settings::keys::DISABLE_XH_NORMALIZATION).toBool());
+  enableXHNormalisationCheckBox->setChecked(
+      settings::readSetting(settings::keys::XH_NORMALIZATION).toBool());
   deleteWorkingFilesCheckBox->setChecked(
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool());
   writeGaussianCPFilesCheckBox->setChecked(
       settings::readSetting(settings::keys::WRITE_GAUSSIAN_CP_FILES).toBool());
-  useSBFFilesForSurfaceGeneration->setChecked(
-      settings::readSetting(settings::keys::USE_SBF_INTERFACE).toBool());
-  useOccNotTontoCheckBox->setChecked(
-      settings::readSetting(settings::keys::USE_OCC_NOT_TONTO).toBool());
-  experimentalEnergiesCheckBox->setChecked(
-      settings::readSetting(
-          settings::keys::ENABLE_EXPERIMENTAL_INTERACTION_ENERGIES)
-          .toBool());
-  experimentalFeatureFlagCheckBox->setChecked(
-      settings::readSetting(settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG)
-          .toBool());
-  bool useClementi =
-      settings::readSetting(settings::keys::USE_CLEMENTI).toBool();
-  useClementi ? clementiRoettiRadioButton->setChecked(true)
-              : thakkarRadioButton->setChecked(true);
   energyPrecisionSpinBox->setValue(
       settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt());
 
@@ -637,19 +596,10 @@ void PreferencesDialog::updateSettingsFromDialog() {
        // Advanced Preferences
        {settings::keys::DELETE_WORKING_FILES,
         deleteWorkingFilesCheckBox->isChecked()},
-       {settings::keys::DISABLE_XH_NORMALIZATION,
-        disableXHNormalisationCheckBox->isChecked()},
+       {settings::keys::XH_NORMALIZATION,
+        enableXHNormalisationCheckBox->isChecked()},
        {settings::keys::WRITE_GAUSSIAN_CP_FILES,
         writeGaussianCPFilesCheckBox->isChecked()},
-       {settings::keys::USE_SBF_INTERFACE,
-        useSBFFilesForSurfaceGeneration->isChecked()},
-       {settings::keys::USE_OCC_NOT_TONTO, useOccNotTontoCheckBox->isChecked()},
-       {settings::keys::USE_CLEMENTI, clementiRoettiRadioButton->isChecked()},
-       {settings::keys::TONTO_USER_EXECUTABLE, tontoPathLineEdit->text()},
-       {settings::keys::ENABLE_EXPERIMENTAL_INTERACTION_ENERGIES,
-        experimentalEnergiesCheckBox->isChecked()},
-       {settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG,
-        experimentalFeatureFlagCheckBox->isChecked()},
        {settings::keys::PREFERRED_WAVEFUNCTION_SOURCE,
         preferredWavefunctionSourceComboBox->currentText()}});
   updateExternalProgramSettings();
@@ -866,32 +816,14 @@ void PreferencesDialog::resetAllElements() {
   }
 }
 
-void PreferencesDialog::setInternalBasisset() {
-  settings::writeSetting(settings::keys::USE_CLEMENTI,
-                         clementiRoettiRadioButton->isChecked());
-}
-
 void PreferencesDialog::restoreExpertSettings() {
 
   settings::restoreDefaultSettings(
-      {settings::keys::DELETE_WORKING_FILES, settings::keys::USE_CLEMENTI,
-       settings::keys::DISABLE_XH_NORMALIZATION,
-       settings::keys::TONTO_EXECUTABLE,
-       settings::keys::ENABLE_EXPERIMENTAL_INTERACTION_ENERGIES});
+      {settings::keys::DELETE_WORKING_FILES, settings::keys::XH_NORMALIZATION});
   deleteWorkingFilesCheckBox->setChecked(
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool());
-  clementiRoettiRadioButton->setChecked(
-      settings::readSetting(settings::keys::USE_CLEMENTI).toBool());
-  thakkarRadioButton->setChecked(
-      !settings::readSetting(settings::keys::USE_CLEMENTI).toBool());
-  disableXHNormalisationCheckBox->setChecked(
-      settings::readSetting(settings::keys::DISABLE_XH_NORMALIZATION).toBool());
-  tontoPathLineEdit->setText(
-      settings::readSetting(settings::keys::TONTO_EXECUTABLE).toString());
-  experimentalEnergiesCheckBox->setChecked(
-      settings::readSetting(
-          settings::keys::ENABLE_EXPERIMENTAL_INTERACTION_ENERGIES)
-          .toBool());
+  enableXHNormalisationCheckBox->setChecked(
+      settings::readSetting(settings::keys::XH_NORMALIZATION).toBool());
 }
 
 void PreferencesDialog::setEnergyFrameworkPositiveColor() {
@@ -905,4 +837,36 @@ void PreferencesDialog::setEnergyFrameworkPositiveColor() {
     setButtonColor(energyFrameworkPositiveColorButton, color);
     emit redrawCrystalForPreferencesChange();
   }
+}
+
+void PreferencesDialog::populateExecutablesFromPath(bool override) {
+
+  for (auto kv = m_externalProgramSettingsKeys.constKeyValueBegin();
+       kv != m_externalProgramSettingsKeys.constKeyValueEnd(); kv++) {
+    QString group = kv->first;
+    QString currentSetting =
+        settings::readSetting(group + "/executablePath").toString();
+    if (!(override || currentSetting.isEmpty()))
+      continue;
+    auto availableSettings = kv->second;
+    qDebug() << "Populate empty executables for" << group;
+    QStringList names;
+    if (availableSettings.contains("executableNames")) {
+      names = settings::readSetting(group + "/executableNames").toStringList();
+    } else {
+      names.push_back(group);
+    }
+    for (const auto &name : names) {
+      auto result = exe::findProgramInPath(name);
+      if (!result.isEmpty()) {
+        settings::writeSetting(group + "/executablePath", result);
+        break;
+      }
+    }
+  }
+}
+
+void PreferencesDialog::onTextFontFamilyChanged(const QFont &font) {
+  settings::writeSetting(settings::keys::TEXT_FONT_FAMILY, font.family());
+  settings::writeSetting(settings::keys::TEXT_FONT_SIZE, font.pointSize());
 }

@@ -2,6 +2,7 @@
 #include <QColor>
 #include <QDataStream>
 #include <QString>
+#include <vector>
 
 class Element {
   friend QDataStream &operator<<(QDataStream &, const Element &);
@@ -35,6 +36,9 @@ private:
   float _mass;
   QColor _color;
 };
+
+QString formulaSum(const std::vector<QString> &elements, bool richText = false);
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Stream Functions

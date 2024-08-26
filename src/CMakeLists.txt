@@ -1,189 +1,52 @@
 add_subdirectory(occ)
-add_subdirectory(config)
 add_subdirectory(core)
 add_subdirectory(exe)
 add_subdirectory(io)
 add_subdirectory(crystal)
 add_subdirectory(graphics)
+add_subdirectory(pair_energy)
 add_subdirectory(volume)
+add_subdirectory(dialogs)
 
 # Source files
 set(CRYSTALEXPLORER_SOURCE_FILES
-    animationsettingsdialog.cpp
-    asymmetricunit.cpp
-    atom.cpp
-    celllimitsdialog.cpp
-    chargedialog.cpp
-    ciffile.cpp
-    closecontactsdialog.cpp
-    colordelegate.cpp
-    colorschemer.cpp
+    childpropertycontroller.cpp
     confirmationbox.cpp
-    deprecatedcrystal.cpp
     crystalcontroller.cpp
-    crystaldata.cpp
-    crystalplanegenerator.cpp
-    crystalsurfacehandler.cpp
     crystalx.cpp
-    depthfadingandclippingdialog.cpp
     dialoghtml.cpp
-    elementeditor.cpp
-    energycalculationdialog.cpp
-    energydata.cpp
-    fileeditor.cpp
-    fingerprintoptions.cpp
-    fingerprintplot.cpp
-    fingerprintwindow.cpp
-    fragmentpairenergyjob.cpp
-    frameworkdialog.cpp
-    gaussianinterface.cpp
     glwindow.cpp
-    gltfexporter.cpp
-    infodocuments.cpp
-    infoviewer.cpp
-    jobparameters.cpp
-    measurement.cpp
-    nwcheminterface.cpp
-    occinterface.cpp
-    orbitcamera.cpp
-    orcainterface.cpp
-    orientation.cpp
-    packingdialog.cpp
-    planegenerationdialog.cpp
-    periodictabledialog.cpp
     preferencesdialog.cpp
     project.cpp
-    psi4interface.cpp
-    quantumchemistryinterface.cpp
-    scene.cpp
-    settings.cpp
-    spacegroup.cpp
-    surface.cpp
-    surfacecontroller.cpp
-    surfacedata.cpp
-    surfacedescription.cpp
-    surfacedropdown.cpp
-    surfacegenerationdialog.cpp
-    surfaceproperty.cpp
-    tasksequence.cpp
-    tontointerface.cpp
-    unitcell.cpp
     viewtoolbar.cpp
-    wavefunction.cpp
-    wavefunctioncalculationdialog.cpp
-    xtbinterface.cpp
 )
 
 set(CRYSTALEXPLORER_HEADER_FILES
-    animationsettingsdialog.h
-    asymmetricunit.h
-    atom.h
-    atomid.h
-    cameraoptions.h
-    celllimitsdialog.h
-    chargedialog.h
-    chargemultiplicitypair.h
-    ciffile.h
-    closecontactsdialog.h
-    colordelegate.h
-    colorschemer.h
+    childpropertycontroller.h
     confirmationbox.h
-    deprecatedcrystal.h
     crystalcontroller.h
-    crystaldata.h
-    crystalplanegenerator.h
-    crystalsurfacehandler.h
+    default_paths.h
     crystalx.h
-    depthfadingandclippingdialog.h
     dialoghtml.h
-    elementeditor.h
-    energycalculationdialog.h
-    energydata.h
-    energydescription.h
-    fileeditor.h
-    fingerprintoptions.h
-    fingerprintplot.h
-    fingerprintwindow.h
-    fragmentpairenergyjob.h
-    fragmentpairinfo.h
-    frameworkdescription.h
-    frameworkdialog.h
-    gaussianinterface.h
-    globals.h
     glwindow.h
-    gltfexporter.h
-    infodocuments.h
-    infoviewer.h
-    jobparameters.h
-    measurement.h
-    nwcheminterface.h
-    occinterface.h
-    orcainterface.h
-    orbitcamera.h
-    orientation.h
-    packingdialog.h
-    periodictabledialog.h
-    planegenerationdialog.h
     preferencesdialog.h
     project.h
-    psi4interface.h
-    qeigen.h
-    quantumchemistryinterface.h
-    scene.h
-    settings.h
-    spacegroup.h
-    stldatastream.h
-    surface.h
-    surfacecontroller.h
-    surfacedata.h
-    surfacedescription.h
-    surfacedropdown.h
-    surfacegenerationdialog.h
-    surfaceproperty.h
-    vanderwaalscontact.h
-    version.h
-    xtbinterface.h
-    tasksequence.h
-    tontointerface.h
-    transformablewavefunction.h
-    unitcell.h
     viewtoolbar.h
-    wavefunction.h
-    wavefunctioncalculationdialog.h
 )
 
 
-set(CRYSTALEXPLORER_UI_FILES 
-    animationsettingsdialog.ui
-    celllimitsdialog.ui
-    chargedialog.ui
-    closecontactsdialog.ui
+qt_wrap_ui(CRYSTALEXPLORER_UI_FILES 
+    childpropertycontroller.ui
     crystalcontroller.ui
     crystalx.ui
-    depthfadingandclippingdialog.ui
-    elementeditor.ui
-    energycalculationdialog.ui
-    fileeditor.ui
-    fingerprintoptions.ui
-    frameworkdialog.ui
-    infochooserdialog.ui
-    infoviewer.ui
-    packingdialog.ui
-    periodictabledialog.ui
-    planegenerationdialog.ui
     preferencesdialog.ui
-    surfacecontroller.ui
-    surfacegenerationdialog.ui
-    wavefunctioncalculationdialog.ui
 )
 
 
 if(WIN32)
     set(CRYSTALEXPLORER_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/windows_metafile.rc")
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/windows_metafile.rc.in"
-	"${CRYSTALEXPLORER_RC_FILE}"
-    )
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/windows_metafile.rc" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    file(COPY ${WINDOWS_ICON_FILE} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 # Set the executable details
@@ -207,6 +70,8 @@ target_link_libraries(
     cx_io
     cx_crystal
     cx_graphics
+    cx_pair_energy
+    cx_dialogs
     Qt6::Widgets Qt6::Concurrent
     Qt6::OpenGLWidgets Qt6::DBus
 )
