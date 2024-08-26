@@ -54,8 +54,19 @@
       "inherits": "base",
       "displayName": "Windows x86_64 Config",
       "description": "Target Windows x86_64 with Ninja generator",
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "external"
+      },
       "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
         "CPACK_SYSTEM_NAME": "windows-x86_64"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
       }
     }
   ],
