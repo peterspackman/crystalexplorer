@@ -6,7 +6,7 @@ set(MESH_FILES
 set(MESH_QRC "${CMAKE_CURRENT_SOURCE_DIR}/mesh.qrc" PARENT_SCOPE)
 
 # OCC version and archive setup
-set(OCC_VERSION "0.5.9")
+set(OCC_VERSION "0.6.3")
 if(WIN32)
     set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-windows-x86_64.tar.xz")
 elseif(APPLE)

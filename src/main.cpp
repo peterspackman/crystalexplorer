@@ -65,6 +65,7 @@ void maybeReOpenFiles(Crystalx *cx) {
 }
 
 int main(int argc, char *argv[]) {
+  QApplication::addLibraryPath("./");
   QSurfaceFormat format;
   format.setDepthBufferSize(
       settings::readSetting(settings::keys::SURFACE_DEPTH_BUFFER_SIZE).toInt());
