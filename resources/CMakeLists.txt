@@ -7,13 +7,7 @@ set(MESH_QRC "${CMAKE_CURRENT_SOURCE_DIR}/mesh.qrc" PARENT_SCOPE)
 
 # OCC version and archive setup
 set(OCC_VERSION "0.6.3")
-if(WIN32)
-    set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-windows-x86_64.tar.xz")
-elseif(APPLE)
-    set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-macos-arm64.tar.xz")
-else()
-    set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-linux-x86_64-static.tar.xz")
-endif()
+set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-${CPACK_SYSTEM_NAME}.tar.xz")
 
 # Set up OCC URL and download
 set(OCC_URL "https://github.com/peterspackman/occ/releases/download/v${OCC_VERSION}/${OCC_ARCHIVE_STRING}")

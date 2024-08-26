@@ -26,7 +26,11 @@ jobs:
     
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
+        include:
+          - os: macos-latest
+            name: "macos-arm64"
+          - os: windows-latest
+            name: "windows-x86_64"
 
     steps:
     - uses: actions/checkout@v3
@@ -46,10 +50,9 @@ jobs:
         cache: true
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
+      run: cmake --preset ${{ matrix.name }}
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      run: cmake --build --preset ${{ matrix.name }}
 
     - name: Package with CPack
       working-directory: ${{github.workspace}}/build
@@ -60,10 +63,11 @@ jobs:
         echo "PACKAGE_NAME=${PACKAGE_FILE}" >> $GITHUB_ENV
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: binaries-${{ github.sha }}
+        name: crystalexplorer-binaries-${{ matrix.name }}
         path: ${{env.PACKAGE_NAME}}
+        overwrite: true
 
   create-release:
     runs-on: ubuntu-latest
@@ -74,13 +78,13 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Download Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: binaries
-        name: binaries-${{ github.sha }}
+        name: crystalexplorer-binaries-*
 
     - name: Make GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          binaries-${{ github.sha }}/*
+          binaries/*
