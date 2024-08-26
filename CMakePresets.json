@@ -55,8 +55,7 @@
       "displayName": "Windows x86_64 Config",
       "description": "Target Windows x86_64 with Ninja generator",
       "cacheVariables": {
-        "CPACK_SYSTEM_NAME": "windows-x86_64",
-        "CMAKE_CXX_FLAGS": "-O2 -mmacos-version-min=11.0"
+        "CPACK_SYSTEM_NAME": "windows-x86_64"
       }
     }
   ],
