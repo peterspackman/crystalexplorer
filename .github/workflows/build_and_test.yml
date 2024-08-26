@@ -58,11 +58,11 @@ jobs:
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        cmake --preset ${{ matrix.preset }}
+        cmake --preset ${{ matrix.name }}
 
     - name: Configure CMake (macOS)
       if: runner.os != 'Windows'
-      run: cmake --preset ${{ matrix.preset }}
+      run: cmake --preset ${{ matrix.name }}
 
     - name: Build
       run: cmake --build --preset ${{ matrix.name }}
