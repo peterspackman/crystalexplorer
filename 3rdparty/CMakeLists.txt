@@ -13,13 +13,6 @@ endif()
 
 
 CPMAddPackage(
-    NAME sbf_cpp
-    GITHUB_REPOSITORY "peterspackman/sbf-cpp"
-    GIT_TAG main
-    EXCLUDE_FROM_ALL YES
-)
-
-CPMAddPackage(
     NAME unordered_dense
     GITHUB_REPOSITORY "martinus/unordered_dense"
     VERSION "4.1.2"

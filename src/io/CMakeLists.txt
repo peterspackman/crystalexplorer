@@ -19,7 +19,7 @@ target_link_libraries(
     cx_core
     cx_graphics
     Qt6::Core Qt6::Gui
-    Eigen3::Eigen sbf_cpp fmt::fmt
+    Eigen3::Eigen fmt::fmt
     unordered_dense::unordered_dense
     occ_core
     occ_crystal

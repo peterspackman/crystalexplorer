@@ -29,7 +29,7 @@ add_library(cx_core
 target_link_libraries(
     cx_core PUBLIC 
     Qt6::Core Qt6::Gui Qt6::Concurrent
-    Eigen3::Eigen sbf_cpp fmt::fmt
+    Eigen3::Eigen fmt::fmt
     occ_core
     occ_crystal
 )
