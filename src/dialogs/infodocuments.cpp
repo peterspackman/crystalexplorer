@@ -5,11 +5,12 @@
 #include <fmt/core.h>
 #include <occ/core/element.h>
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 // General Crystal Info
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 inline const char *INFO_HORIZONTAL_RULE =
-    "----------------------------------------------------------------------\n";
+    "--------------------------------------------------------------------------"
+    "------------\n";
 
 void InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(
     QTextDocument *document, Scene *scene) {
@@ -55,136 +56,6 @@ void InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(
     insertRightAlignedCellValue(table, cursor, row, 1, values[row]);
   }
   cursor.endEditBlock();
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Atomic Coordinates Info
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void InfoDocuments::insertAtomicCoordinatesIntoTextDocument(
-    QTextDocument *document, Scene *scene) {
-  Q_ASSERT(scene);
-
-  QTextCursor cursor = QTextCursor(document);
-
-  cursor.beginEditBlock();
-  insertAtomicCoordinatesWithAtomDescription(cursor, scene,
-                                             AtomDescription::CartesianInfo);
-  insertAtomicCoordinatesWithAtomDescription(cursor, scene,
-                                             AtomDescription::FractionalInfo);
-  cursor.endEditBlock();
-}
-
-void InfoDocuments::insertAtomicCoordinatesWithAtomDescription(
-    QTextCursor cursor, Scene *scene, AtomDescription AtomDescription) {
-  ChemicalStructure *structure = scene->chemicalStructure();
-  if (!structure)
-    return;
-  const auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
-  const auto unselectedAtoms =
-      structure->atomsWithFlags(AtomFlag::Selected, false);
-  qDebug() << "Selected atoms: " << selectedAtoms.size();
-  if (selectedAtoms.size() > 0) {
-    insertAtomicCoordinatesSection(cursor, "Selected Atoms", structure,
-                                   selectedAtoms, AtomDescription);
-  }
-  qDebug() << "Unselected atoms: " << unselectedAtoms.size();
-  if (unselectedAtoms.size() > 0) {
-    insertAtomicCoordinatesSection(cursor, "Unselected Atoms", structure,
-                                   unselectedAtoms, AtomDescription);
-  }
-
-  /*
-  int numFragments = crystal->numberOfFragments();
-  QString header = QString("All Atoms [%1 molecule%2]")
-                       .arg(numFragments)
-                       .arg(numFragments > 1 ? "s" : "");
-  insertAtomicCoordinatesHeader(cursor, header, crystal->atoms().size(),
-                                AtomDescription);
-  foreach (int fragIndex, crystal->fragmentIndices()) {
-    SymopId symopId = crystal->symopIdForFragment(fragIndex);
-    if (symopId != NOSYMOP) {
-      QString symopString = crystal->spaceGroup().symopAsString(symopId);
-      cursor.insertText("[" + symopString + "]\n");
-    }
-    insertAtomicCoordinates(cursor, crystal->atomsForFragment(fragIndex),
-                            AtomDescription);
-  }
-  */
-}
-
-void InfoDocuments::insertAtomicCoordinatesSection(
-    QTextCursor cursor, QString title, ChemicalStructure *structure,
-    const std::vector<GenericAtomIndex> &atoms,
-    AtomDescription AtomDescription) {
-  if (atoms.size() == 0) {
-    return;
-  }
-
-  auto format = cursor.charFormat();
-  format.setFontStyleHint(QFont::Monospace);
-  insertAtomicCoordinatesHeader(cursor, title, atoms.size(), AtomDescription);
-  insertAtomicCoordinates(cursor, structure, atoms, AtomDescription);
-}
-
-void InfoDocuments::insertAtomicCoordinatesHeader(
-    QTextCursor cursor, QString title, int numAtoms,
-    AtomDescription AtomDescription) {
-  // Determine coordinate system fom AtomDescription
-  QString coords;
-  switch (AtomDescription) {
-  case AtomDescription::CartesianInfo:
-    coords = "Cartesian";
-    break;
-  case AtomDescription::FractionalInfo:
-    coords = "fractional";
-    break;
-  default:
-    Q_ASSERT(false);
-  }
-
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-  cursor.insertText(title + "\n");
-  cursor.insertText(QString("%1 atom%2, %3 coordinates\n")
-                        .arg(numAtoms)
-                        .arg(numAtoms > 1 ? "s" : "")
-                        .arg(coords));
-  cursor.insertText(QString::fromStdString(
-      fmt::format("{:<6s} {:<6s} {:>20s} {:>20s} {:>20s} {:>4s}\n", "Label",
-                  "Symbol", "x", "y", "z", "Occ.")));
-  cursor.insertText(INFO_HORIZONTAL_RULE);
-}
-
-void InfoDocuments::insertAtomicCoordinates(
-    QTextCursor cursor, ChemicalStructure *structure,
-    const std::vector<GenericAtomIndex> &atoms,
-    AtomDescription atomDescription) {
-  if (!structure)
-    return;
-
-  switch (atomDescription) {
-  case AtomDescription::CartesianInfo: {
-    auto nums = structure->atomicNumbersForIndices(atoms);
-    auto pos = structure->atomicPositionsForIndices(atoms);
-    auto labels = structure->labelsForIndices(atoms);
-
-    for (int i = 0; i < nums.rows(); i++) {
-      std::string symbol = occ::core::Element(nums(i)).symbol();
-      std::string s = fmt::format(
-          "{:<6s} {:<6s} {: 20.12f} {: 20.12f} {: 20.12f} {:4.3f}\n",
-          labels[i].toStdString(), symbol, pos(0, i), pos(1, i), pos(2, i),
-          1.0);
-      cursor.insertText(QString::fromStdString(s));
-    }
-    break;
-  }
-  case AtomDescription::FractionalInfo: {
-    break;
-  }
-  default:
-    break;
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -706,8 +577,10 @@ QList<QString> getOrderedComponents(QSet<QString> uniqueComponents) {
   return sortedComponents;
 }
 
-void InfoDocuments::insertInteractionEnergiesGroupedByPair(PairInteractions *results, QTextCursor cursor) {
-  if(!results) return;
+void InfoDocuments::insertInteractionEnergiesGroupedByPair(
+    PairInteractions *results, QTextCursor cursor) {
+  if (!results)
+    return;
   const int eprec =
       settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt();
 
@@ -737,7 +610,6 @@ void InfoDocuments::insertInteractionEnergiesGroupedByPair(PairInteractions *res
   QTextTable *table = createTable(cursor, numLines, tableHeader.size());
 
   insertTableHeader(table, cursor, tableHeader);
-
 
   int row = 1;
   for (const QString &model : sortedModels) {

@@ -25,20 +25,7 @@
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QTextEdit" name="crystalTextEdit">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="lineWrapMode">
-          <enum>QTextEdit::WidgetWidth</enum>
-         </property>
-         <property name="lineWrapColumnOrWidth">
-          <number>0</number>
-         </property>
-        </widget>
+        <widget class="CrystalInfoDocument" name="crystalInfoDocument" native="true"/>
        </item>
       </layout>
      </widget>
@@ -48,7 +35,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QTextEdit" name="atomsTextEdit"/>
+        <widget class="AtomInfoDocument" name="atomInfoDocument" native="true"/>
        </item>
       </layout>
      </widget>
@@ -86,6 +73,20 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>AtomInfoDocument</class>
+   <extends>QWidget</extends>
+   <header>atominfodocument.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CrystalInfoDocument</class>
+   <extends>QWidget</extends>
+   <header>crystalinfodocument.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>buttonBox</tabstop>
  </tabstops>

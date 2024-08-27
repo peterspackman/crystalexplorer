@@ -1048,7 +1048,8 @@ CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
   return FragmentIndex{-1, 0, 0, 0};
 }
 
-Fragment CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
+Fragment
+CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   FragmentIndex unitCellIndex{idx.u, 0, 0, 0};
   // TODO add error checking
   Fragment result = m_unitCellFragments.at(unitCellIndex);
@@ -1334,10 +1335,10 @@ void CrystalStructure::buildDimerMappingTable(double maxRadius) {
   qDebug() << "Unit cell molecules" << m_unitCellFragments.size();
   qDebug() << "Unique dimers:" << m_unitCellDimers.unique_dimers.size();
 
-  m_dimerMappingTable = occ::crystal::DimerMappingTable(
-      m_crystal, m_unitCellDimers, true);
-  m_dimerMappingTableNoInv = occ::crystal::DimerMappingTable(
-      m_crystal, m_unitCellDimers, false);
+  m_dimerMappingTable =
+      occ::crystal::DimerMappingTable(m_crystal, m_unitCellDimers, true);
+  m_dimerMappingTableNoInv =
+      occ::crystal::DimerMappingTable(m_crystal, m_unitCellDimers, false);
   qDebug() << "Built dimer mapping table";
 }
 
@@ -1427,7 +1428,8 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
   for (auto &[idx, vec] : result.pairs) {
     std::stable_sort(vec.begin(), vec.end(), molPairSortFunc);
     for (auto &[d, asym] : vec) {
-      auto u = FragmentIndexPair::fromDimerIndex(symmetryUniqueMap.at(d.index.toDimerIndex()));
+      auto u = FragmentIndexPair::fromDimerIndex(
+          symmetryUniqueMap.at(d.index.toDimerIndex()));
       const auto it =
           std::find_if(result.uniquePairs.begin(), result.uniquePairs.end(),
                        [&u](const FragmentDimer &x) { return x.index == u; });
@@ -1435,4 +1437,12 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
     }
   }
   return result;
+}
+
+occ::Mat3N CrystalStructure::convertCoordinates(
+    const occ::Mat3N &pos, ChemicalStructure::CoordinateConversion conv) const {
+  if (conv == ChemicalStructure::CoordinateConversion::FracToCart) {
+    return m_crystal.to_cartesian(pos);
+  }
+  return m_crystal.to_fractional(pos);
 }

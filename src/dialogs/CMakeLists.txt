@@ -21,10 +21,13 @@ qt_wrap_ui(DIALOG_UI_HEADERS
 qt_add_library(cx_dialogs STATIC
     ${DIALOG_UI_HEADERS}
     "${CMAKE_CURRENT_SOURCE_DIR}/animationsettingsdialog.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/atominfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/celllimitsdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/closecontactcriteriawidget.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/closecontactsdialog.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/collapsibledocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/colordelegate.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/crystalinfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/depthfadingandclippingdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/elementeditor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/energycalculationdialog.cpp"
@@ -41,6 +44,7 @@ qt_add_library(cx_dialogs STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/planegenerationdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/surfacedropdown.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/surfacegenerationdialog.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/surfaceinfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefunctioncalculationdialog.cpp"
 )
 

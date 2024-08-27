@@ -57,6 +57,11 @@ public:
     Crystal  // 3D periodic
   };
 
+  enum class CoordinateConversion {
+    CartToFrac,
+    FracToCart
+  };
+
   enum class AtomColoring { Element, Fragment, Index };
 
   explicit ChemicalStructure(QObject *parent = nullptr);
@@ -93,6 +98,8 @@ public:
 
   inline void setName(const QString &name) { m_name = name; }
   inline const auto &name() const { return m_name; }
+
+  virtual occ::Mat3N convertCoordinates(const occ::Mat3N &pos, CoordinateConversion) const;
 
   // colors
   QColor atomColor(GenericAtomIndex atomIndex) const;

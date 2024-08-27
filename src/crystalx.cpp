@@ -12,6 +12,7 @@
 #include <QUrl>
 #include <QtDebug>
 
+#include "atominfodocument.h"
 #include "confirmationbox.h"
 #include "crystalx.h"
 #include "dialoghtml.h"
@@ -1459,7 +1460,8 @@ void Crystalx::exportAs() {
 
     if (filename.toLower().endsWith(".png")) {
       QImage img = glWindow->exportToImage(scaleFactor, backgroundColor);
-      qDebug() << "Exporting image with scale factor" << scaleFactor << "resolution" << img.size();
+      qDebug() << "Exporting image with scale factor" << scaleFactor
+               << "resolution" << img.size();
       success = img.save(filename);
     } else {
       QFile outputFile(filename);
@@ -1814,7 +1816,7 @@ void Crystalx::calculatePairEnergiesWithExistingWavefunctions(
   connect(calc, &PairEnergyCalculator::calculationComplete, this,
           [this, calc]() {
             qDebug() << "Calculation of pair energies complete";
-            showInfo(InfoType::InteractionEnergyInfo);
+            showInfo(InfoType::InteractionEnergy);
             calc->deleteLater();
           });
 
@@ -1913,45 +1915,27 @@ void Crystalx::showInfo(InfoType infoType) {
 void Crystalx::updateInfo(InfoType infoType) {
   Scene *scene = project->currentScene();
   Q_ASSERT(scene);
-  QTextDocument *document = infoViewer->document(infoType);
-  document->clear();
 
-  QString title;
   switch (infoType) {
-  case GeneralCrystalInfo:
-    InfoDocuments::insertGeneralCrystalInfoIntoTextDocument(document, scene);
-    break;
-  case AtomCoordinateInfo:
-    InfoDocuments::insertAtomicCoordinatesIntoTextDocument(document, scene);
-    break;
-  case InteractionEnergyInfo:
-    InfoDocuments::insertInteractionEnergiesIntoTextDocument(document, scene);
-    break;
-  case CurrentSurfaceInfo:
-    // TODO surface info documents
-    /*
-    if (fingerprintWindow && scene->currentSurface() &&
-      scene->currentSurface()->isFingerprintable()) {
-      FingerprintBreakdown breakdown = fingerprintWindow->fingerprintBreakdown(
-        scene->crystal()->listOfElementSymbols());
-      InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(document, scene,
-                                                              breakdown);
-    } else {
-      InfoDocuments::insertCurrentSurfaceInfoIntoTextDocument(
-        document, scene, FingerprintBreakdown());
-    }
-    */
+  default: {
+    infoViewer->setScene(scene);
     break;
   }
-
-  infoViewer->setDocument(document, infoType);
+  case InfoType::InteractionEnergy: {
+    QTextDocument *document = infoViewer->document(infoType);
+    document->clear();
+    InfoDocuments::insertInteractionEnergiesIntoTextDocument(document, scene);
+    infoViewer->setDocument(document, infoType);
+    break;
+  }
+  }
 }
 
 void Crystalx::setInfoTabSpecificViewOptions(InfoType infoType) {
   Scene *scene = project->currentScene();
   Q_ASSERT(scene);
 
-  if (infoType == InteractionEnergyInfo) {
+  if (infoType == InfoType::InteractionEnergy) {
     scene->togglePairHighlighting(true);
   } else {
     scene->togglePairHighlighting(false);

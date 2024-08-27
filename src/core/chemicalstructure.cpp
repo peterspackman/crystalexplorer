@@ -152,7 +152,8 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   }
 
   for (const auto &[edge_desc, edge] : m_bondGraph.edges()) {
-    std::pair<int, int> pair{static_cast<int>(edge.source), static_cast<int>(edge.target)};
+    std::pair<int, int> pair{static_cast<int>(edge.source),
+                             static_cast<int>(edge.target)};
     switch (edge.connectionType) {
     case Connection::CovalentBond:
       m_covalentBonds.push_back(pair);
@@ -1120,4 +1121,9 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomIndices() const {
     result.push_back(indexToGenericIndex(i));
   }
   return result;
+}
+
+occ::Mat3N ChemicalStructure::convertCoordinates(
+    const occ::Mat3N &pos, ChemicalStructure::CoordinateConversion) const {
+  return pos;
 }

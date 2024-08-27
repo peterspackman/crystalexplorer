@@ -41,6 +41,7 @@ public:
   }
 
   inline const auto &spaceGroup() const { return m_crystal.space_group(); }
+  occ::Mat3N convertCoordinates(const occ::Mat3N &pos, ChemicalStructure::CoordinateConversion) const override;
 
   FragmentIndex fragmentIndexForAtom(int) const override;
   FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const override;

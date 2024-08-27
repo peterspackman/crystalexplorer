@@ -8,6 +8,34 @@ InfoViewer::InfoViewer(QWidget *parent) : QDialog(parent) {
   initConnections();
 }
 
+QTextDocument *InfoViewer::document(InfoType infoType) {
+  QTextDocument *doc = nullptr;
+  switch (infoType) {
+  default:
+    return nullptr;
+  case InfoType::InteractionEnergy:
+    doc = energiesTextEdit->document();
+    break;
+  }
+  return doc;
+}
+
+void InfoViewer::setDocument(QTextDocument *document, InfoType infoType) {
+  switch (infoType) {
+  default:
+    qWarning() << "Use setScene";
+    break;
+  case InfoType::InteractionEnergy:
+    energiesTextEdit->setDocument(document);
+    break;
+  }
+}
+
+void InfoViewer::setScene(Scene *scene) {
+  crystalInfoDocument->updateScene(scene);
+  atomInfoDocument->updateScene(scene);
+}
+
 void InfoViewer::init() {
   Qt::WindowFlags flags = windowFlags();
   setWindowFlags(flags | Qt::WindowStaysOnTopHint);
@@ -42,55 +70,18 @@ void InfoViewer::tabChanged(int tabIndex) {
   emit tabChangedTo(currentTab());
 }
 
-QTextDocument *InfoViewer::document(InfoType infoType) {
-  QTextDocument *doc;
-
-  switch (infoType) {
-  case GeneralCrystalInfo:
-    doc = crystalTextEdit->document();
-    break;
-  case AtomCoordinateInfo:
-    doc = atomsTextEdit->document();
-    break;
-  case CurrentSurfaceInfo:
-    doc = surfaceTextEdit->document();
-    break;
-  case InteractionEnergyInfo:
-    doc = energiesTextEdit->document();
-    break;
-  }
-  return doc;
-}
-
-void InfoViewer::setDocument(QTextDocument *document, InfoType infoType) {
-  switch (infoType) {
-  case GeneralCrystalInfo:
-    crystalTextEdit->setDocument(document);
-    break;
-  case AtomCoordinateInfo:
-    atomsTextEdit->setDocument(document);
-    break;
-  case CurrentSurfaceInfo:
-    surfaceTextEdit->setDocument(document);
-    break;
-  case InteractionEnergyInfo:
-    energiesTextEdit->setDocument(document);
-    break;
-  }
-}
-
 void InfoViewer::setTab(InfoType infoType) {
   switch (infoType) {
-  case GeneralCrystalInfo:
+  case InfoType::Crystal:
     tabWidget->setCurrentWidget(crystalTab);
     break;
-  case AtomCoordinateInfo:
+  case InfoType::Atoms:
     tabWidget->setCurrentWidget(atomsTab);
     break;
-  case CurrentSurfaceInfo:
+  case InfoType::Surface:
     tabWidget->setCurrentWidget(surfaceTab);
     break;
-  case InteractionEnergyInfo:
+  case InfoType::InteractionEnergy:
     tabWidget->setCurrentWidget(energiesTab);
     break;
   }
@@ -104,16 +95,16 @@ InfoType InfoViewer::currentTab() {
   InfoType result;
   switch (tabWidget->currentIndex()) {
   case 0:
-    result = GeneralCrystalInfo;
+    result = InfoType::Crystal;
     break;
   case 1:
-    result = AtomCoordinateInfo;
+    result = InfoType::Atoms;
     break;
   case 2:
-    result = CurrentSurfaceInfo;
+    result = InfoType::Surface;
     break;
   case 3:
-    result = InteractionEnergyInfo;
+    result = InfoType::InteractionEnergy;
     break;
   }
   return result;
@@ -127,7 +118,7 @@ void InfoViewer::updateInfoViewerForCrystalChange() {
 
 void InfoViewer::updateInfoViewerForSurfaceChange() {
   if (isVisible()) {
-    if (currentTab() == CurrentSurfaceInfo) {
+    if (currentTab() == InfoType::Surface) {
       updateCurrentTab();
     }
   }

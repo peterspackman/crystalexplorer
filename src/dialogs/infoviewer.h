@@ -1,22 +1,23 @@
 #pragma once
+#include "atominfodocument.h"
 #include "ui_infoviewer.h"
 #include <QDialog>
 
-enum InfoType {
-  GeneralCrystalInfo,
-  AtomCoordinateInfo,
-  InteractionEnergyInfo,
-  CurrentSurfaceInfo
+enum class InfoType {
+  Crystal,
+  Atoms,
+  Surface,
+  InteractionEnergy,
 };
 
 class InfoViewer : public QDialog, public Ui::InfoViewer {
   Q_OBJECT
-
 public:
-  InfoViewer(QWidget *);
+  InfoViewer(QWidget *parent = nullptr);
   void show();
   QTextDocument *document(InfoType);
   void setDocument(QTextDocument *, InfoType);
+  void setScene(Scene *);
   void setTab(InfoType);
   void updateCurrentTab();
   InfoType currentTab();
@@ -31,10 +32,11 @@ signals:
 
 private slots:
   void tabChanged(int index);
-  void accept();
-  void reject();
+  void accept() override;
+  void reject() override;
 
 private:
   void init();
   void initConnections();
+  AtomInfoDocument *m_atomInfoDocument{nullptr};
 };
