@@ -16,6 +16,7 @@
 #include "crystalx.h"
 #include "dialoghtml.h"
 #include "elementdata.h"
+#include "exportdialog.h"
 #include "infodocuments.h"
 #include "isosurface_calculator.h"
 #include "mathconstants.h"
@@ -877,10 +878,8 @@ void Crystalx::loadExternalFileData(QString filename) {
     showStatusMessage(
         QString("Loading crystal clear output from %1").arg(filename));
     project->loadCrystalClearJson(filename);
-  }
-  else if(filename.endsWith("surface.json")) {
-    showStatusMessage(
-        QString("Loading crystal surface from %1").arg(filename));
+  } else if (filename.endsWith("surface.json")) {
+    showStatusMessage(QString("Loading crystal surface from %1").arg(filename));
     project->loadCrystalClearSurfaceJson(filename);
   } else if (extension == CIF_EXTENSION || extension == CIF2_EXTENSION) {
     processCif(filename);
@@ -1441,29 +1440,38 @@ void Crystalx::exportAs() {
   if (!project->currentScene())
     return;
 
-  QString filter = "Portable Network Graphics (*.png);;POV-ray (*.pov)";
   QFileInfo fi(project->currentScene()->title());
   QString suggestedFilename = fi.baseName() + ".png";
-  QString filename = QFileDialog::getSaveFileName(0, tr("Export graphics"),
-                                                  suggestedFilename, filter);
 
+  ExportDialog dialog(this);
+  QImage previewImage = glWindow->renderToImage(1);
+  dialog.updateImage(previewImage);
+  dialog.updateFilePath(suggestedFilename);
+  dialog.updateBackgroundColor(glWindow->backgroundColor());
+
+  QString filename{""};
   bool success = false;
-  if (filename.isEmpty())
-    return;
+  if (dialog.exec() == QDialog::Accepted) {
+    // The user clicked OK
+    filename = dialog.currentFilePath();
+    int scaleFactor = dialog.currentResolutionScale();
+    QColor backgroundColor = dialog.currentBackgroundColor();
 
-  if (filename.toLower().endsWith(".png")) {
-    QImage img = glWindow->renderToImage(1);
-    success = img.save(filename);
-  } else {
-    QFile outputFile(filename);
-    outputFile.open(QIODevice::WriteOnly);
-    if (outputFile.isOpen()) {
-      QTextStream outStream(&outputFile);
-      success = glWindow->renderToPovRay(outStream);
+    if (filename.toLower().endsWith(".png")) {
+      QImage img = glWindow->exportToImage(scaleFactor, backgroundColor);
+      qDebug() << "Exporting image with scale factor" << scaleFactor << "resolution" << img.size();
+      success = img.save(filename);
+    } else {
+      QFile outputFile(filename);
+      outputFile.open(QIODevice::WriteOnly);
+      if (outputFile.isOpen()) {
+        QTextStream outStream(&outputFile);
+        success = glWindow->renderToPovRay(outStream);
+      }
     }
   }
 
-  if (success) {
+  if (!filename.isEmpty()) {
     showStatusMessage("Saved current graphics state to " + filename);
   }
 }
@@ -1970,11 +1978,14 @@ void Crystalx::showEnergyFrameworkDialog() {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  auto * structure = scene->chemicalStructure();
-  if(!structure) return;
-  auto * interactions = structure->pairInteractions();
-  if(!interactions) return;
-  if(!interactions->haveInteractions()) return;
+  auto *structure = scene->chemicalStructure();
+  if (!structure)
+    return;
+  auto *interactions = structure->pairInteractions();
+  if (!interactions)
+    return;
+  if (!interactions->haveInteractions())
+    return;
 
   if (childPropertyController) {
     childPropertyController->setCurrentPairInteractions(interactions);

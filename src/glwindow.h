@@ -54,6 +54,7 @@ public:
   Scene *currentScene() const { return scene; }
 
   QImage renderToImage(int scaleFactor, bool for_picking = false);
+  QImage exportToImage(int scaleFactor = 1, const QColor & background = Qt::white);
   bool renderToPovRay(QTextStream &);
 
 public slots:

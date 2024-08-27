@@ -350,6 +350,36 @@ void GLWindow::paintGL() {
   m_postprocessShader->release();
 }
 
+QImage GLWindow::exportToImage(int scaleFactor, const QColor &background) {
+  makeCurrent();
+  int w = width() * scaleFactor;
+  int h = height() * scaleFactor;
+  glViewport(0, 0, w, h);
+
+  setModelView();
+  QOpenGLFramebufferObject fbo(w, h,
+                               QOpenGLFramebufferObject::CombinedDepthStencil);
+
+  fbo.bind();
+  if (enableDepthTest) {
+    glEnable(GL_DEPTH_TEST);
+  }
+  glClearColor(background.redF(), background.greenF(), background.blueF(), background.alphaF());
+  glClearDepth(0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearDepth(0);
+  drawScene(false);
+  fbo.release();
+
+  QImage result(fbo.toImage());
+  const QColor &color = scene->backgroundColor();
+  glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+  glClearDepth(0);
+
+  doneCurrent();
+  return result;
+}
+
 QImage GLWindow::renderToImage(int scaleFactor, bool for_picking) {
   makeCurrent();
   int w = width() * scaleFactor;
