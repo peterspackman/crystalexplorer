@@ -12,13 +12,11 @@
 #include <QUrl>
 #include <QtDebug>
 
-#include "atominfodocument.h"
 #include "confirmationbox.h"
 #include "crystalx.h"
 #include "dialoghtml.h"
 #include "elementdata.h"
 #include "exportdialog.h"
-#include "infodocuments.h"
 #include "isosurface_calculator.h"
 #include "mathconstants.h"
 #include "pair_energy_calculator.h"
@@ -196,8 +194,6 @@ void Crystalx::initFingerprintWindow() {
 void Crystalx::initInfoViewer() {
   infoViewer = new InfoViewer(this);
   connect(infoViewer, &InfoViewer::tabChangedTo, this, &Crystalx::updateInfo);
-  connect(infoViewer, &InfoViewer::tabChangedTo, this,
-          &Crystalx::setInfoTabSpecificViewOptions);
   connect(infoViewer, &InfoViewer::infoViewerClosed, this,
           &Crystalx::tidyUpAfterInfoViewerClosed);
 }
@@ -1904,31 +1900,22 @@ void Crystalx::handleStructureChange() {
 // Info Documents
 //
 ////////////////////////////////////////////////////////////////////////////////////
-void Crystalx::showInfoViewer() { infoViewer->show(); }
+void Crystalx::showInfoViewer() {
+  updateInfo(infoViewer->currentTab());
+  infoViewer->show();
+}
 
 void Crystalx::showInfo(InfoType infoType) {
-  updateInfo(infoType);
   infoViewer->setTab(infoType);
   showInfoViewer();
 }
 
 void Crystalx::updateInfo(InfoType infoType) {
   Scene *scene = project->currentScene();
-  Q_ASSERT(scene);
-
-  switch (infoType) {
-  default: {
-    infoViewer->setScene(scene);
-    break;
-  }
-  case InfoType::InteractionEnergy: {
-    QTextDocument *document = infoViewer->document(infoType);
-    document->clear();
-    InfoDocuments::insertInteractionEnergiesIntoTextDocument(document, scene);
-    infoViewer->setDocument(document, infoType);
-    break;
-  }
-  }
+  if (!scene)
+    return;
+  setInfoTabSpecificViewOptions(infoType);
+  infoViewer->setScene(scene);
 }
 
 void Crystalx::setInfoTabSpecificViewOptions(InfoType infoType) {

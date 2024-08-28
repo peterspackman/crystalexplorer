@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="crystalTab">
       <attribute name="title">
@@ -45,7 +45,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QTextEdit" name="surfaceTextEdit"/>
+        <widget class="SurfaceInfoDocument" name="surfaceInfoDocument" native="true"/>
        </item>
       </layout>
      </widget>
@@ -55,7 +55,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QTextEdit" name="energiesTextEdit"/>
+        <widget class="InteractionInfoDocument" name="interactionsInfoDocument" native="true"/>
        </item>
       </layout>
      </widget>
@@ -84,6 +84,18 @@
    <class>CrystalInfoDocument</class>
    <extends>QWidget</extends>
    <header>crystalinfodocument.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>InteractionInfoDocument</class>
+   <extends>QWidget</extends>
+   <header>interactioninfodocument.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SurfaceInfoDocument</class>
+   <extends>QWidget</extends>
+   <header>surfaceinfodocument.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

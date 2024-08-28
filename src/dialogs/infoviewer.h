@@ -15,8 +15,6 @@ class InfoViewer : public QDialog, public Ui::InfoViewer {
 public:
   InfoViewer(QWidget *parent = nullptr);
   void show();
-  QTextDocument *document(InfoType);
-  void setDocument(QTextDocument *, InfoType);
   void setScene(Scene *);
   void setTab(InfoType);
   void updateCurrentTab();

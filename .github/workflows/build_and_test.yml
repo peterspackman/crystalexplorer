@@ -43,7 +43,6 @@ jobs:
       with:
         path: |
           ${{env.CPM_SOURCE_CACHE}}
-          ${{github.workspace}}/build
         key: crystalexplorer-cache-${{ matrix.name }}
     
     - name: Install Qt

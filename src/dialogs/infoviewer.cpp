@@ -8,32 +8,10 @@ InfoViewer::InfoViewer(QWidget *parent) : QDialog(parent) {
   initConnections();
 }
 
-QTextDocument *InfoViewer::document(InfoType infoType) {
-  QTextDocument *doc = nullptr;
-  switch (infoType) {
-  default:
-    return nullptr;
-  case InfoType::InteractionEnergy:
-    doc = energiesTextEdit->document();
-    break;
-  }
-  return doc;
-}
-
-void InfoViewer::setDocument(QTextDocument *document, InfoType infoType) {
-  switch (infoType) {
-  default:
-    qWarning() << "Use setScene";
-    break;
-  case InfoType::InteractionEnergy:
-    energiesTextEdit->setDocument(document);
-    break;
-  }
-}
-
 void InfoViewer::setScene(Scene *scene) {
   crystalInfoDocument->updateScene(scene);
   atomInfoDocument->updateScene(scene);
+  interactionsInfoDocument->updateScene(scene);
 }
 
 void InfoViewer::init() {
