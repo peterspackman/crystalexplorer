@@ -3,6 +3,7 @@ Desktop*/
 Debug*/
 Release*/
 Makefile
+.cache/
 .DS_Store
 resources/basis_sets
 resources/tonto

@@ -151,6 +151,7 @@ void BillboardRenderer::clear() {
     m_indices.clear();
     m_vertices.clear();
     m_labels.clear();
+    m_textures.clear();
     m_numberOfIndices = 0;
     updateBuffers();
   }

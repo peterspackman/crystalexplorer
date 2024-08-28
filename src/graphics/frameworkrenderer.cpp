@@ -10,15 +10,12 @@ FrameworkRenderer::FrameworkRenderer(ChemicalStructure *structure,
   m_ellipsoidRenderer = new EllipsoidRenderer();
   m_cylinderRenderer = new CylinderRenderer();
   m_lineRenderer = new LineRenderer();
+  m_labelRenderer = new BillboardRenderer();
 
   m_interactionComponentColors = {
-    {"coulomb", QColor("#a40000")},
-    {"polarization", QColor("#b86092")},
-    {"exchange", QColor("#721b3e")},
-    {"repulsion", QColor("#ffcd12")},
-    {"dispersion", QColor("#007e2f")},
-    {"total", QColor("#16317d")}
-  };
+      {"coulomb", QColor("#a40000")},    {"polarization", QColor("#b86092")},
+      {"exchange", QColor("#721b3e")},   {"repulsion", QColor("#ffcd12")},
+      {"dispersion", QColor("#007e2f")}, {"total", QColor("#16317d")}};
   m_defaultInteractionComponentColor = QColor("#00b7a7");
 
   update(structure);
@@ -45,17 +42,20 @@ void FrameworkRenderer::updateRendererUniforms(
 }
 
 void FrameworkRenderer::updateInteractions() { m_needsUpdate = true; }
+void FrameworkRenderer::forceUpdates() { m_needsUpdate = true; }
 
 void FrameworkRenderer::beginUpdates() {
   m_lineRenderer->beginUpdates();
   m_ellipsoidRenderer->beginUpdates();
   m_cylinderRenderer->beginUpdates();
+  m_labelRenderer->beginUpdates();
 }
 
 void FrameworkRenderer::endUpdates() {
   m_lineRenderer->endUpdates();
   m_ellipsoidRenderer->endUpdates();
   m_cylinderRenderer->endUpdates();
+  m_labelRenderer->endUpdates();
 }
 
 void FrameworkRenderer::setModel(const QString &model) {
@@ -76,50 +76,59 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   m_ellipsoidRenderer->clear();
   m_lineRenderer->clear();
   m_cylinderRenderer->clear();
+  m_labelRenderer->clear();
 
   if (m_options.display == FrameworkOptions::Display::None)
     return;
 
   FragmentPairSettings pairSettings;
-  pairSettings.allowInversion = m_options.allowInversion & m_interactions->hasInversionSymmetry(m_options.model);
+  pairSettings.allowInversion =
+      m_options.allowInversion &
+      m_interactions->hasInversionSymmetry(m_options.model);
   auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
   qDebug() << "Number of unique pairs:" << fragmentPairs.uniquePairs.size();
   auto interactionMap = m_interactions->getInteractionsMatchingFragments(
       fragmentPairs.uniquePairs);
-
 
   auto uniqueInteractions = interactionMap.value(m_options.model, {});
   if (uniqueInteractions.size() < fragmentPairs.uniquePairs.size())
     return;
 
   QColor color = m_options.customColor;
-  if(m_options.coloring == FrameworkOptions::Coloring::Component) {
-    color = m_interactionComponentColors.value(m_options.component, m_defaultInteractionComponentColor);
+  if (m_options.coloring == FrameworkOptions::Coloring::Component) {
+    color = m_interactionComponentColors.value(
+        m_options.component, m_defaultInteractionComponentColor);
   }
-
-  ColorMapFunc cmap(ColorMapName::Turbo, 0.0, 100.0);
 
   std::vector<std::pair<QColor, double>> energies;
   energies.reserve(uniqueInteractions.size());
 
-  for(const auto &pair: fragmentPairs.uniquePairs) {
+  for (const auto &pair : fragmentPairs.uniquePairs) {
     qDebug() << pair.index;
   }
 
-  for(const auto *interaction: uniqueInteractions) {
+  double emin = std::numeric_limits<double>::max();
+  double emax = std::numeric_limits<double>::min();
+
+  for (const auto *interaction : uniqueInteractions) {
     QColor c = color;
     double energy = 0.0;
     if (interaction) {
       energy = interaction->getComponent(m_options.component);
-      qDebug() << "Interaction found: " << interaction->pairIndex();
-      if(m_options.coloring == FrameworkOptions::Coloring::Interaction) {
+      if (m_options.coloring == FrameworkOptions::Coloring::Interaction) {
         c = interaction->color();
       }
     }
-    if(m_options.coloring == FrameworkOptions::Coloring::Value) {
-      c = cmap(energy);
-    }
+    emin = qMin(energy, emin);
+    emax = qMax(energy, emax);
     energies.push_back({c, energy});
+  }
+
+  if (m_options.coloring == FrameworkOptions::Coloring::Value) {
+    ColorMapFunc cmap(ColorMapName::Turbo, emin, emax);
+    for (auto &[color, energy] : energies) {
+      color = cmap(energy);
+    }
   }
 
   const bool inv = pairSettings.allowInversion;
@@ -137,29 +146,30 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       QVector3D va(ca.x(), ca.y(), ca.z());
       auto cb = pair.b.centroid();
       QVector3D vb(cb.x(), cb.y(), cb.z());
+      QVector3D m = va + (vb - va) * 0.5;
 
-      if(inv) {
+      if (inv) {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
                                                      color, scale);
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
                                                      color, scale);
-          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, vb,
-                                                      color, color, scale);
+          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va,
+                                                      vb, color, color, scale);
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb, scale,
                                               color);
+          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m,
+                                                   QString::number(energy, 'd', 1));
         }
-      }
-      else {
-        vb = va + (vb - va) * 0.5;
+      } else {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
                                                      color, scale);
-          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, vb,
+          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, m,
                                                       color, color, scale);
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
-          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb, scale,
+          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, scale,
                                               color);
         }
       }
@@ -190,6 +200,11 @@ void FrameworkRenderer::draw(bool forPicking) {
   m_uniforms.apply(m_lineRenderer);
   m_lineRenderer->draw();
   m_lineRenderer->release();
+
+  m_labelRenderer->bind();
+  m_uniforms.apply(m_labelRenderer);
+  m_labelRenderer->draw();
+  m_labelRenderer->release();
 }
 
 } // namespace cx::graphics

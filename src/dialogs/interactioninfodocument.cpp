@@ -69,7 +69,9 @@ void InteractionInfoDocument::updateContent() {
     tabLayout->addWidget(textEdit);
 
     QTextCursor cursor(textEdit->document());
+    cursor.beginEditBlock();
     insertInteractionEnergiesForModel(interactions, cursor, model);
+    cursor.endEditBlock();
 
     m_tabWidget->addTab(tab, model);
   }
@@ -101,7 +103,7 @@ void InteractionInfoDocument::insertInteractionEnergiesForModel(
   }
 
   QList<QString> sortedComponents = getOrderedComponents(uniqueComponents);
-  QStringList tableHeader{"Color", "Distance", "Symmetry"};
+  QStringList tableHeader{"Color", "N", "Distance", "Symmetry"};
   tableHeader.append(sortedComponents);
 
   InfoTable infoTable(cursor, results->filterByModel(model).size() + 1,
@@ -114,6 +116,8 @@ void InteractionInfoDocument::insertInteractionEnergiesForModel(
     int column = 0;
 
     infoTable.insertColorBlock(row, column++, result->color());
+    infoTable.insertCellValue(row, column++, QString::number(result->count()),
+                              Qt::AlignRight);
     infoTable.insertCellValue(
         row, column++, QString::number(result->centroidDistance(), 'f', 2),
         Qt::AlignRight);
@@ -146,7 +150,7 @@ QList<QString> InteractionInfoDocument::getOrderedComponents(
     const QSet<QString> &uniqueComponents) {
   QList<QString> knownComponentsOrder;
   knownComponentsOrder << "coulomb" << "repulsion" << "exchange"
-                       << "dispersion";
+                       << "polarization" << "dispersion";
 
   QList<QString> sortedComponents;
 
@@ -189,6 +193,7 @@ void InteractionInfoDocument::updateTableColors() {
 
     QTextDocument *doc = textEdit->document();
     QTextCursor cursor(doc);
+    cursor.beginEditBlock();
 
     QTextTable *table = cursor.currentTable();
     if (!table)
@@ -202,7 +207,13 @@ void InteractionInfoDocument::updateTableColors() {
       QTextCharFormat format = cell.format();
       format.setBackground(result->color());
       cell.setFormat(format);
+      QTextTableCell countCell = table->cellAt(row, 1);
+      QTextCursor countCursor = countCell.firstCursorPosition();
+      countCursor.select(QTextCursor::BlockUnderCursor);
+      countCursor.removeSelectedText();
+      countCursor.insertText(QString::number(result->count()));
       ++row;
     }
+    cursor.endEditBlock();
   }
 }

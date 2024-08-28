@@ -186,6 +186,7 @@ void ChemicalStructureRenderer::forceUpdates() {
   m_atomsNeedsUpdate = true;
   m_bondsNeedsUpdate = true;
   m_meshesNeedsUpdate = true;
+  m_frameworkRenderer->forceUpdates();
 }
 
 void ChemicalStructureRenderer::updateLabels() {

@@ -1039,6 +1039,7 @@ void Scene::textSettingsChanged() {
       settings::readSetting(settings::keys::TEXT_SMOOTHING).toFloat();
   m_uniforms.u_textSDFOutline =
       settings::readSetting(settings::keys::TEXT_OUTLINE).toFloat();
+  setNeedsUpdate();
 }
 
 void Scene::lightSettingsChanged() {
@@ -1463,15 +1464,18 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
   auto selectedFragments = m_structure->selectedFragments();
   if (selectedFragments.size() == 1) {
     auto *interactions = m_structure->pairInteractions();
+    interactions->resetCounts();
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
     ColorMapFunc colorMap(ColorMapName::Austria, 0,
                           fragmentPairs.uniquePairs.size() - 1);
+    std::vector<int> counts(fragmentPairs.uniquePairs.size(), 0);
     for (const auto &[fragmentPair, idx] :
          fragmentPairs.pairs[selectedFragments[0]]) {
       qDebug() << "Setting fragment color" << fragmentPair.index.b
                << colorMap(idx);
       QColor c = colorMap(idx);
+      counts[idx]++;
       m_structure->setFragmentColor(fragmentPair.index.b, c);
     }
     auto interactionMap = interactions->getInteractionsMatchingFragments(
@@ -1480,6 +1484,7 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
       for (int i = 0; i < interactionList.size(); i++) {
         if (interactionList[i]) {
           interactionList[i]->setColor(colorMap(i));
+          interactionList[i]->setCount(counts[i]);
         }
       }
     }
@@ -1495,7 +1500,8 @@ void Scene::clearFragmentColors() {
 }
 
 void Scene::togglePairHighlighting(bool show) {
-  if(!m_structure) return;
+  if (!m_structure)
+    return;
 
   if (show) {
     _highlightMode = HighlightMode::Pair;

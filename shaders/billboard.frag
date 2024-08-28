@@ -1,29 +1,30 @@
 #version 330
 
-in vec2 v_mapping;
-in vec3 v_cameraPos;
-out vec4 outputColor;
+in vec2 v_texcoord;
+out vec4 fragColor;
 
-uniform float u_screenGamma;
-uniform mat4 u_projectionMat;
 uniform sampler2D u_texture;
-uniform float u_textSDFBuffer;
-uniform float u_textSDFSmoothing;
-uniform float u_textSDFOutline;
 uniform vec3 u_textColor;
 uniform vec3 u_textOutlineColor;
-
-vec3 gammaCorrection(vec3 color, float gamma) {
-    return pow(color, vec3(1.0/gamma));
-}
+uniform float u_textSDFSmoothing;
+uniform float u_textSDFBuffer;
+uniform float u_textSDFOutline;
 
 void main()
 {
-    highp vec2 tx = clamp(v_mapping, 0, 1);
-    float smoothing = u_textSDFSmoothing;
-    float buf = u_textSDFBuffer;
-    float distance = texture(u_texture, tx).r;
-    float border = smoothstep(buf + u_textSDFOutline - smoothing, buf + u_textSDFOutline + smoothing, distance);
-    float alpha = smoothstep(buf - smoothing, buf + smoothing, distance);
-    outputColor = vec4(mix(u_textOutlineColor, u_textColor, border), 1.) * alpha;
+    float distance = texture(u_texture, v_texcoord).r;
+    distance -= u_textSDFBuffer;
+    float smoothing = u_textSDFSmoothing * fwidth(distance);
+    float textAlpha = smoothstep(0.5 + smoothing, 0.5 - smoothing, distance);
+    float outlineAlpha = smoothstep(0.5 + u_textSDFOutline + smoothing,
+                                    0.5 + u_textSDFOutline - smoothing,
+                                    distance);
+    vec3 color = mix(u_textOutlineColor, u_textColor, textAlpha);
+    float alpha = max(textAlpha, outlineAlpha);
+    fragColor = vec4(color, alpha);
+
+    // Discard nearly transparent fragments
+    if (alpha < 0.01) {
+        discard;
+    }
 }

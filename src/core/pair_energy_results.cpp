@@ -72,17 +72,17 @@ QStringList PairInteractions::interactionComponents(const QString &model) {
 void PairInteractions::add(PairInteraction *result) {
   if (!result)
     return;
-  qDebug() << "Adding interaction" << result;
   QString model = result->interactionModel();
   m_pairInteractions[model].insert({result->pairIndex(), result});
-  double v = 0.0;
+  impl::ValueRange currentRange;
   {
-    const auto kv = m_maxNearestDistance.find(model);
-    if (kv != m_maxNearestDistance.end()) {
-      v = kv->second;
+    const auto kv = m_distanceRange.find(model);
+    if (kv != m_distanceRange.end()) {
+      currentRange = kv->second;
     }
   }
-  m_maxNearestDistance[model] = qMax(v, result->nearestAtomDistance());
+  double d = result->nearestAtomDistance();
+  m_distanceRange[model] = currentRange.update(d);
   emit interactionAdded();
 }
 
@@ -159,9 +159,9 @@ PairInteractions::getInteractionsMatchingFragments(
   QMap<QString, PairInteractions::PairInteractionList> result;
   for (const auto &model : models) {
     double maxDistance = 0.0;
-    const auto kv = m_maxNearestDistance.find(model);
-    if (kv != m_maxNearestDistance.end())
-      maxDistance = kv->second;
+    const auto kv = m_distanceRange.find(model);
+    if (kv != m_distanceRange.end())
+      maxDistance = kv->second.maxValue;
 
     QList<PairInteraction *> l;
     for (const auto &dimer : dimers) {
@@ -191,6 +191,14 @@ PairInteraction *PairInteractions::getInteraction(const QString &model,
   return result->second;
 }
 
+void PairInteractions::resetCounts() {
+  const auto models = interactionModels();
+  for (auto &[model, interactions]: m_pairInteractions) {
+    for(auto &[idx, interaction]: interactions) {
+      interaction->setCount(0);
+    }
+  }
+}
 
 bool PairInteractions::haveInteractions(const QString &model) const {
   return getCount(model) > 0;

@@ -1,6 +1,7 @@
 #pragma once
 #include "chemicalstructure.h"
 #include "colormap.h"
+#include "billboardrenderer.h"
 #include "cylinderrenderer.h"
 #include "ellipsoidrenderer.h"
 #include "frameworkoptions.h"
@@ -29,6 +30,8 @@ public:
   void beginUpdates();
   void endUpdates();
 
+  void forceUpdates();
+
   void setModel(const QString &);
   void setComponent(const QString &);
 
@@ -56,6 +59,7 @@ private:
   LineRenderer *m_lineRenderer{nullptr};
   EllipsoidRenderer *m_ellipsoidRenderer{nullptr};
   CylinderRenderer *m_cylinderRenderer{nullptr};
+  BillboardRenderer *m_labelRenderer{nullptr};
 
   ChemicalStructure *m_structure{nullptr};
 

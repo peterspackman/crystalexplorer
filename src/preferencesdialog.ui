@@ -166,15 +166,64 @@
          <layout class="QVBoxLayout" name="verticalLayout_13">
           <item>
            <layout class="QGridLayout" name="gridLayout_2">
-            <item row="3" column="2">
-             <widget class="QToolButton" name="textOutlineColorButton">
+            <item row="0" column="0">
+             <widget class="QToolButton" name="backgroundColorButton">
               <property name="text">
                <string/>
               </property>
              </widget>
             </item>
+            <item row="0" column="3">
+             <widget class="QLabel" name="selectionColorLabel">
+              <property name="text">
+               <string>Selection Color</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="backgroundColorLabel">
+              <property name="text">
+               <string>Background Color</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLabel" name="textColorLabel">
+              <property name="text">
+               <string>Text Label Color</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QToolButton" name="textColorButton">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="3">
+             <widget class="QLabel" name="textOutLineColorLabel">
+              <property name="text">
+               <string>Text Outline Color</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="3">
+             <widget class="QLabel" name="nonPropertyColorLabel">
+              <property name="text">
+               <string>'None' Surface Property Color</string>
+              </property>
+             </widget>
+            </item>
             <item row="2" column="0">
              <widget class="QToolButton" name="energyFrameworkPositiveColorButton">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="2">
+             <widget class="QToolButton" name="textOutlineColorButton">
               <property name="text">
                <string/>
               </property>
@@ -187,22 +236,8 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QLabel" name="faceHighlightColorLabel">
-              <property name="text">
-               <string>Surface Face Highlight Color</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLabel" name="backgroundColorLabel">
-              <property name="text">
-               <string>Background Color</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QToolButton" name="backgroundColorButton">
+            <item row="0" column="2">
+             <widget class="QToolButton" name="selectionColorButton">
               <property name="text">
                <string/>
               </property>
@@ -215,13 +250,6 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="3">
-             <widget class="QLabel" name="nonPropertyColorLabel">
-              <property name="text">
-               <string>'None' Surface Property Color</string>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="0">
              <widget class="QToolButton" name="faceHighlightColorButton">
               <property name="text">
@@ -229,38 +257,10 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
-             <widget class="QLabel" name="textColorLabel">
+            <item row="1" column="1">
+             <widget class="QLabel" name="faceHighlightColorLabel">
               <property name="text">
-               <string>Text Label Color</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="3">
-             <widget class="QLabel" name="textOutLineColorLabel">
-              <property name="text">
-               <string>Text Outline Color</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QToolButton" name="selectionColorButton">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QToolButton" name="textColorButton">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="3">
-             <widget class="QLabel" name="selectionColorLabel">
-              <property name="text">
-               <string>Selection Color</string>
+               <string>Surface Face Highlight Color</string>
               </property>
              </widget>
             </item>
@@ -511,18 +511,28 @@
           <item row="2" column="0">
            <widget class="QLabel" name="textBufferWidthLabel">
             <property name="text">
-             <string>Buffer</string>
+             <string>Buffer Width</string>
             </property>
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="textOutlineWidthLabel">
+           <widget class="QLabel" name="textFontSizeLabel">
             <property name="text">
-             <string>Outline Width</string>
+             <string>Text Size</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="2">
+          <item row="0" column="2">
+           <widget class="QFontComboBox" name="textFontComboBox">
+            <property name="currentFont">
+             <font>
+              <family>Arial</family>
+              <pointsize>128</pointsize>
+             </font>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2">
            <widget class="QSlider" name="textSmoothingWidthSlider">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -533,6 +543,39 @@
            </widget>
           </item>
           <item row="1" column="2">
+           <widget class="QSlider" name="textFontSizeSlider">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>256</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::TicksBelow</enum>
+            </property>
+            <property name="tickInterval">
+             <number>12</number>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="textSmoothingWidthLabel">
+            <property name="text">
+             <string>Smoothing</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="textOutlineWidthLabel">
+            <property name="text">
+             <string>Outline Width</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
            <widget class="QSlider" name="textOutlineWidthSlider">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -542,13 +585,6 @@
             </property>
             <property name="tickPosition">
              <enum>QSlider::TicksBelow</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="textSmoothingWidthLabel">
-            <property name="text">
-             <string>Smoothing</string>
             </property>
            </widget>
           </item>
@@ -566,16 +602,6 @@
             </property>
             <property name="tickPosition">
              <enum>QSlider::TicksBelow</enum>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QFontComboBox" name="textFontComboBox">
-            <property name="currentFont">
-             <font>
-              <family>Arial</family>
-              <pointsize>128</pointsize>
-             </font>
             </property>
            </widget>
           </item>

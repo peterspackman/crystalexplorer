@@ -222,9 +222,8 @@ void addTextToBillboardRenderer(BillboardRenderer &b, const QVector3D &position,
     int fontSize =
         settings::readSetting(settings::keys::TEXT_FONT_SIZE).toInt();
     QFont font(fontName, fontSize);
-    font.setWeight(QFont::Weight::Bold);
     QFontMetrics fm(font);
-    int padding = 5;
+    int padding = fontSize / 4;
     int pixelsWide = fm.horizontalAdvance(text);
     int pixelsHigh = fm.height();
     QImage img = QImage(QSize(pixelsWide + 2 * padding, pixelsHigh + padding),
@@ -240,9 +239,15 @@ void addTextToBillboardRenderer(BillboardRenderer &b, const QVector3D &position,
                      textOptions);
     painter.end();
 
-    QImage sdf = distance_transform_2d(img);
-    QOpenGLTexture *texture =
-        new QOpenGLTexture(sdf.mirrored(), QOpenGLTexture::DontGenerateMipMaps);
+    QImage sdf = signed_distance_transform_2d(img);
+    QOpenGLTexture *texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+    texture->setSize(sdf.width(), sdf.height());
+    texture->setFormat(QOpenGLTexture::R8_UNorm);
+    texture->allocateStorage();
+    texture->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, sdf.mirrored().constBits());
+    texture->setMinificationFilter(QOpenGLTexture::Linear);
+    texture->setMagnificationFilter(QOpenGLTexture::Linear);
+    texture->setWrapMode(QOpenGLTexture::ClampToEdge);
     b.addVertices(
         {BillboardVertex(
              position,

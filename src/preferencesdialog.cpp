@@ -227,9 +227,11 @@ void PreferencesDialog::initConnections() {
 
   connect(textOutlineWidthSlider, &QAbstractSlider::valueChanged, this,
           &PreferencesDialog::setTextSliders);
-  connect(textBufferWidthSlider, &QAbstractSlider::valueChanged, this,
-          &PreferencesDialog::setTextSliders);
+  connect(textFontSizeSlider, &QAbstractSlider::valueChanged, this,
+          &PreferencesDialog::onTextFontSizeChanged);
   connect(textSmoothingWidthSlider, &QAbstractSlider::valueChanged, this,
+          &PreferencesDialog::setTextSliders);
+  connect(textBufferWidthSlider, &QAbstractSlider::valueChanged, this,
           &PreferencesDialog::setTextSliders);
   connect(textFontComboBox, &QFontComboBox::currentFontChanged, this,
           &PreferencesDialog::onTextFontFamilyChanged);
@@ -535,11 +537,13 @@ void PreferencesDialog::updateDialogFromSettings() {
 
   textOutlineWidthSlider->setValue(static_cast<int>(
       settings::readSetting(settings::keys::TEXT_OUTLINE).toFloat() * 100.0f));
-  textBufferWidthSlider->setValue(static_cast<int>(
-      settings::readSetting(settings::keys::TEXT_BUFFER).toFloat() * 100.0f));
+  textFontSizeSlider->setValue(static_cast<int>(
+      settings::readSetting(settings::keys::TEXT_FONT_SIZE).toInt()));
   textSmoothingWidthSlider->setValue(static_cast<int>(
       settings::readSetting(settings::keys::TEXT_SMOOTHING).toFloat() *
       100.0f));
+  textBufferWidthSlider->setValue(static_cast<int>(
+      settings::readSetting(settings::keys::TEXT_BUFFER).toFloat() * 100.0f));
   glDepthTestEnabledCheckBox->setChecked(
       settings::readSetting(settings::keys::ENABLE_DEPTH_TEST).toBool());
 
@@ -761,7 +765,6 @@ void PreferencesDialog::setTextSliders(int value) {
   const auto val = m_textSliderKeys.constFind(senderName);
   if (val == m_textSliderKeys.constEnd())
     return;
-
   settings::writeSetting(val.value(), value / 100.0f);
   emit textSettingsChanged();
 }
@@ -868,5 +871,10 @@ void PreferencesDialog::populateExecutablesFromPath(bool override) {
 
 void PreferencesDialog::onTextFontFamilyChanged(const QFont &font) {
   settings::writeSetting(settings::keys::TEXT_FONT_FAMILY, font.family());
-  settings::writeSetting(settings::keys::TEXT_FONT_SIZE, font.pointSize());
+  emit textSettingsChanged();
+}
+
+void PreferencesDialog::onTextFontSizeChanged(int size) {
+  settings::writeSetting(settings::keys::TEXT_FONT_SIZE, size);
+  emit textSettingsChanged();
 }
