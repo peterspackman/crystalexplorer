@@ -44,6 +44,7 @@ void Scene::init() {
 
   screenGammaChanged();
   materialChanged();
+  textSettingsChanged();
   lightSettingsChanged();
 
   if (m_structure) {

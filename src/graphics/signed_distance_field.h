@@ -31,6 +31,7 @@ QImage eigenMatrixToQImage(const Eigen::MatrixXf& matrix) {
     int height = matrix.rows();
     int width = matrix.cols();
     QImage result(width, height, QImage::Format_Grayscale8);
+    result.fill(Qt::white);
 
     float minVal = matrix.minCoeff();
     float maxVal = matrix.maxCoeff();

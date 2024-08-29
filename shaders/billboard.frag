@@ -12,6 +12,8 @@ uniform float u_textSDFOutline;
 
 void main()
 {
+    vec2 clampedTexCoord = clamp(v_texcoord, 0.0, 1.0);
+
     float distance = texture(u_texture, v_texcoord).r;
     distance -= u_textSDFBuffer;
     float smoothing = u_textSDFSmoothing * fwidth(distance);
@@ -21,10 +23,17 @@ void main()
                                     distance);
     vec3 color = mix(u_textOutlineColor, u_textColor, textAlpha);
     float alpha = max(textAlpha, outlineAlpha);
+
+    // Additional alpha fade near texture edges
+    vec2 edgeDistance = min(clampedTexCoord, 1.0 - clampedTexCoord);
+    float edgeFade = smoothstep(0.0, 0.02, min(edgeDistance.x, edgeDistance.y));
+    alpha *= edgeFade;
+
     fragColor = vec4(color, alpha);
 
     // Discard nearly transparent fragments
     if (alpha < 0.01) {
         discard;
     }
+
 }
