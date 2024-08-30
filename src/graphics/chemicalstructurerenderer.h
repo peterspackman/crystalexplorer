@@ -14,6 +14,7 @@
 #include "pointcloudinstancerenderer.h"
 #include "rendereruniforms.h"
 #include "renderselection.h"
+#include "volumerenderer.h"
 
 namespace cx::graphics {
 
@@ -105,6 +106,7 @@ private:
   void handleCellsUpdate();
   void handleInteractionsUpdate();
   void handleMeshesUpdate();
+  void handleVolumesUpdate();
 
   void clearMeshRenderers();
   void addFaceHighlightsForMeshInstance(Mesh *, MeshInstance *);
@@ -117,6 +119,7 @@ private:
   bool m_meshesNeedsUpdate{true};
   bool m_labelsNeedsUpdate{true};
   bool m_cellsNeedsUpdate{true};
+  bool m_volumeNeedsUpdate{true};
 
   bool m_showHydrogens{true};
   bool m_showAtomLabels{false};
@@ -141,6 +144,7 @@ private:
   std::vector<PointCloudInstanceRenderer *> m_pointCloudRenderers;
   FrameworkRenderer *m_frameworkRenderer{nullptr};
   BillboardRenderer *m_labelRenderer{nullptr};
+  VolumeRenderer *m_volumeRenderer{nullptr};
 
   LineRenderer *m_cellLinesRenderer{nullptr};
 

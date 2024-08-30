@@ -91,6 +91,7 @@ jobs:
       with:
         path: binaries
         name: crystalexplorer-binaries-*
+        merge-multiple: true
 
     - name: Make GitHub Release
       uses: softprops/action-gh-release@v1

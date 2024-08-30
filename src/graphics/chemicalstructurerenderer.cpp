@@ -17,6 +17,7 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   m_cellLinesRenderer = new LineRenderer();
   m_highlightRenderer = new LineRenderer();
   m_frameworkRenderer = new FrameworkRenderer(m_structure);
+  m_volumeRenderer = new VolumeRenderer();
 
   connect(m_structure, &ChemicalStructure::childAdded, this,
           &ChemicalStructureRenderer::childAddedToStructure);
@@ -494,6 +495,7 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     handleAtomsUpdate();
     handleBondsUpdate();
     handleMeshesUpdate();
+    handleVolumesUpdate();
     handleCellsUpdate();
     endUpdates();
   }
@@ -536,6 +538,15 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     renderer->release();
   }
 
+  qDebug() << "Bind volume renderer";
+  m_volumeRenderer->bind();
+  qDebug() << "Apply uniforms";
+  m_uniforms.apply(m_volumeRenderer);
+  qDebug() << "Draw";
+  m_volumeRenderer->draw();
+  qDebug() << "Release";
+  m_volumeRenderer->release();
+
   m_frameworkRenderer->draw();
 
   if (!forPicking) {
@@ -559,7 +570,6 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_uniforms.u_renderMode = storedRenderMode;
     m_uniforms.u_selectionMode = false;
   }
-
 }
 
 void ChemicalStructureRenderer::updateRendererUniforms(
@@ -605,15 +615,60 @@ void addInstanceToInstanceRenderer(
   instanceRenderer->addInstance(v);
 }
 
-void ChemicalStructureRenderer::addFaceHighlightsForMeshInstance(Mesh *mesh, MeshInstance *meshInstance) {
-      // face highlights
-      QColor color = Qt::red;
-      for (const int v : mesh->vertexHighlights()) {
-        const auto vertex = meshInstance->vertexVector3D(v);
-        const auto normal = meshInstance->vertexNormalVector3D(v);
-        cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
-                                            vertex + normal, 1.0, color);
+void ChemicalStructureRenderer::addFaceHighlightsForMeshInstance(
+    Mesh *mesh, MeshInstance *meshInstance) {
+  // face highlights
+  QColor color = Qt::red;
+  for (const int v : mesh->vertexHighlights()) {
+    const auto vertex = meshInstance->vertexVector3D(v);
+    const auto normal = meshInstance->vertexNormalVector3D(v);
+    cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
+                                        vertex + normal, 1.0, color);
+  }
+}
+
+void ChemicalStructureRenderer::handleVolumesUpdate() {
+  if (!m_volumeNeedsUpdate)
+    return;
+
+  m_volumeRenderer->beginUpdates();
+  m_volumeRenderer->clear();
+
+  // Create sample volume data
+  const int width = 64, height = 64, depth = 64;
+  std::vector<float> volumeData(width * height * depth);
+  for (int z = 0; z < depth; ++z) {
+    for (int y = 0; y < height; ++y) {
+      for (int x = 0; x < width; ++x) {
+        float value =
+            std::sin(x * 0.1f) * std::cos(y * 0.1f) * std::sin(z * 0.1f);
+        volumeData[z * width * height + y * width + x] =
+            (value + 1.0f) * 0.5f; // Normalize to [0, 1]
       }
+    }
+  }
+
+  qDebug() << "setting volume data";
+  // Set the volume data
+  m_volumeRenderer->setVolumeData(volumeData, width, height, depth);
+
+  qDebug() << "setting grid vectors";
+  // Set grid vectors (using orthogonal grid for this example)
+  m_volumeRenderer->setGridVectors(QVector3D(10, 0, 0), QVector3D(0, 10, 0),
+                                   QVector3D(0, 0, 10));
+
+  // Create a simple transfer function
+  std::vector<QVector4D> transferFunction = {
+      QVector4D(0.0f, 0.0f, 0.0f, 0.0f), // Transparent for low values
+      QVector4D(1.0f, 0.0f, 0.0f, 0.5f), // Red for medium-low values
+      QVector4D(0.0f, 1.0f, 0.0f, 0.5f), // Green for medium-high values
+      QVector4D(0.0f, 0.0f, 1.0f, 1.0f)  // Blue for high values
+  };
+  qDebug() << "setting transfer function";
+  m_volumeRenderer->setTransferFunction(transferFunction);
+  m_volumeRenderer->endUpdates();
+  qDebug() << "volume update done";
+  m_volumeNeedsUpdate = false;
 }
 
 void ChemicalStructureRenderer::handleMeshesUpdate() {

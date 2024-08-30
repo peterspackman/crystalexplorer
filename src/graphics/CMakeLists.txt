@@ -11,8 +11,8 @@ add_library(cx_graphics
     "${CMAKE_CURRENT_SOURCE_DIR}/graphics.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/linerenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/measurement.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/meshrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/meshinstancerenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/meshrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/orbitcamera.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/orientation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pointcloudinstancerenderer.cpp"
@@ -21,6 +21,7 @@ add_library(cx_graphics
     "${CMAKE_CURRENT_SOURCE_DIR}/scene.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaderloader.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/sphereimpostorrenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/volumerenderer.cpp"
 )
 
 target_link_libraries(
