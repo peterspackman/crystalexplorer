@@ -6,8 +6,8 @@ set(MESH_FILES
 set(MESH_QRC "${CMAKE_CURRENT_SOURCE_DIR}/mesh.qrc" PARENT_SCOPE)
 
 # OCC version and archive setup
-set(OCC_VERSION "0.6.3")
-set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-${CPACK_SYSTEM_NAME}.tar.xz")
+set(OCC_ARCHIVE_STRING "occ-${OCC_VERSION}-${OCC_PLATFORM}.tar.xz" CACHE STRING "OCC archive string for download from github releases")
+message(STATUS "OCC archive string set to ${OCC_ARCHIVE_STRING}")
 
 # Set up OCC URL and download
 set(OCC_URL "https://github.com/peterspackman/occ/releases/download/v${OCC_VERSION}/${OCC_ARCHIVE_STRING}")
