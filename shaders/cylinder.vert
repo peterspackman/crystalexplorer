@@ -18,6 +18,7 @@ flat out vec4 v_selection_idA;
 flat out vec4 v_selection_idB;
 flat out int v_selectedA;
 flat out int v_selectedB;
+flat out int v_pattern;
 
 mat4 rotation_from_axis_angle(float angle, vec3 axis) {
     float ct = cos(angle);
@@ -56,14 +57,16 @@ void main()
         ax.y = 1.0;
     }
 
+    v_pattern = (radius > 0.0) ? 0 : 1;
+    float r = abs(radius);
 
     v_cylinderPosition = vertex;
     v_selectedA = (colorA.x < 0) ? 1 : 0;
     v_selectedB = (colorB.x < 0) ? 1 : 0;
-    mat4 scale = mat4(radius, 0,      0, 0,
-                      0,      radius, 0, 0,
-                      0,      0,      l, 0,
-                      0,      0,      0, 1);
+    mat4 scale = mat4(r, 0, 0, 0,
+                      0, r, 0, 0,
+                      0, 0, l, 0,
+                      0, 0, 0, 1);
     mat4 transform = transpose(rotation_from_axis_angle(angle, ax)) * scale;
     mat4 normalTransform = inverse(transpose(transform));
     vec4 posTransformed = transform * vec4(vertex, 1);

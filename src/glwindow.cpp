@@ -599,6 +599,8 @@ void GLWindow::handleLeftMousePressForPicking(QMouseEvent *event) {
 }
 
 void GLWindow::handleRightMousePress(QPoint pos) {
+  if (scene == nullptr)
+    return;
   if (mouseModeAllowsSelection[mouseMode]) {
     QColor color = pickObjectAt(pos);
     SelectionType type = scene->decodeSelectionType(color);
@@ -611,6 +613,8 @@ void GLWindow::handleRightMousePress(QPoint pos) {
 }
 
 void GLWindow::handleObjectInformationDisplay(QPoint pos) {
+  if (scene == nullptr)
+    return;
   if (mouseModeAllowsSelection[mouseMode]) {
     QColor color = pickObjectAt(pos);
     _hadHits = scene->processSelectionForInformation(color);
@@ -696,6 +700,8 @@ void GLWindow::setObjectInformationTextAndPosition(QString text, QPoint pos) {
 
 void GLWindow::handleMousePressForMeasurement(MeasurementType type,
                                               QMouseEvent *event) {
+  if (scene == nullptr)
+    return;
 
   QColor color = pickObjectAt(event->pos());
 
@@ -760,6 +766,8 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 }
 
 void GLWindow::mouseDoubleClickEvent(QMouseEvent *event) {
+  if (scene == nullptr)
+    return;
   if (event->button() == Qt::LeftButton) {
     savedMousePosition = event->pos();
 

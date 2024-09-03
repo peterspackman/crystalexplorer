@@ -10,40 +10,25 @@ flat in vec4 v_selection_idA;
 flat in vec4 v_selection_idB;
 flat in int v_selectedA;
 flat in int v_selectedB;
+flat in int v_pattern;
 out vec4 f_color;
 
 int v_selected;
-
-
-// Sphere occlusion
-float sphOcclusion( in vec3 pos, in vec3 nor, in vec4 sph )
-{
-    vec3  di = sph.xyz - pos;
-    float l  = length(di);
-    float nl = dot(nor,di/l);
-    float h  = l/sph.w;
-    float h2 = h*h;
-    float k2 = 1.0 - h2*nl*nl;
-
-    // above/below horizon
-    // EXACT: Quilez - https://iquilezles.org/articles/sphereao
-    float res = max(0.0,nl)/h2;
-
-    // intersecting horizon
-    if( k2 > 0.0 )
-    {
-        // APPROXIMATED : Quilez - https://iquilezles.org/articles/sphereao
-        res = (nl*h+1.0)/h2;
-        res = 0.33*res*res;
-    }
-    return res;
-}
-
 
 #define SELECTION_OUTLINE 1
 
 #include "pbr.glsl"
 #include "flat.glsl"
+
+vec3 applyPattern(vec3 baseColor, float z) {
+    if(v_pattern == 0) return baseColor;
+    z = abs(z);
+    float stripeWidth = 1.0 / 25.0;
+    float pattern = step(stripeWidth * 0.5, mod(z, stripeWidth));
+    return mix(baseColor, vec3(1.0), pattern);
+
+    return baseColor;
+}
 
 
 void main()
@@ -67,6 +52,7 @@ void main()
             v_selected = v_selectedB;
         }
         vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
+        colorLinear = applyPattern(colorLinear, v_cylinderPosition.z);
         colorLinear = flatWithNormalOutline(u_cameraPosVec, v_position, v_normal, colorLinear);
         f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
         f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
@@ -82,6 +68,7 @@ void main()
            v_selected = v_selectedB;
        }
        vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
+       colorLinear = applyPattern(colorLinear, v_cylinderPosition.z);
 
        PBRMaterial material;
        material.color = colorLinear;

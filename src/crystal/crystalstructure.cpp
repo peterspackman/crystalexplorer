@@ -1053,17 +1053,17 @@ CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   FragmentIndex unitCellIndex{idx.u, 0, 0, 0};
   // TODO add error checking
   Fragment result = m_unitCellFragments.at(unitCellIndex);
-  // TODO asymmetric transform
   for (auto &atomIndex : result.atomIndices) {
     atomIndex.x += idx.h;
     atomIndex.y += idx.k;
     atomIndex.z += idx.l;
   }
+
+  result.positions = atomicPositionsForIndices(result.atomIndices);
   result.index = idx;
   occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
   Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
   result.asymmetricFragmentTransform *= t;
-  qDebug() << "Made fragment from index" << idx;
   return result;
 }
 
@@ -1389,6 +1389,7 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
       DimerIndex canonicalIndex = dimerTable.canonical_dimer_index(dimerIndex);
       DimerIndex symmetryUniqueDimer =
           dimerTable.symmetry_unique_dimer(canonicalIndex);
+      qDebug() << "distance" << d.centroidDistance;
       qDebug() << "Dimer" << FragmentIndexPair::fromDimerIndex(dimerIndex);
       qDebug() << "Canonical"
                << FragmentIndexPair::fromDimerIndex(canonicalIndex);
@@ -1407,7 +1408,9 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
     auto a = makeFragmentFromFragmentIndex(ab.a);
     auto b = makeFragmentFromFragmentIndex(ab.b);
     FragmentDimer d(a, b);
-    qDebug() << "UNIQUE" << d.index << d.nearestAtomDistance;
+    qDebug() << "UNIQUE" << d.index << d.nearestAtomDistance << d.centroidDistance;
+    qDebug() << "a" << a;
+    qDebug() << "b" << b;
     result.uniquePairs.push_back(d);
   }
 

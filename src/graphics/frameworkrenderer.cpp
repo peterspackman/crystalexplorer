@@ -138,8 +138,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       auto [color, energy] = energies[uniqueIndex];
       if (std::abs(energy) <= m_options.cutoff)
         continue;
-      double scale = std::abs(energy * thickness());
-      if (scale < 1e-4)
+      double scale = -energy * thickness();
+      if (std::abs(scale) < 1e-4)
         continue;
 
       auto ca = pair.a.centroid();
