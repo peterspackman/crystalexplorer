@@ -252,9 +252,8 @@ private:
   QImage m_pickingImage;
   QImage m_textLayer;
 
-  QOpenGLFramebufferObject *m_framebuffer{nullptr};
-  QOpenGLFramebufferObject *m_resolvedFramebuffer{nullptr};
-  QOpenGLShaderProgram *m_postprocessShader{nullptr};
+  QOpenGLFramebufferObject * m_gBuffer{nullptr};
   QOpenGLVertexArrayObject m_quadVAO;
   QOpenGLBuffer m_quadVBO;
+  QOpenGLShaderProgram * m_deferredShader{nullptr};
 };

@@ -1,38 +1,40 @@
 <RCC>
     <qresource prefix="/shaders">
-        <file>simple.frag</file>
-        <file>simple.vert</file>
-        <file>sphere_impostor.frag</file>
-        <file>sphere_impostor.vert</file>
+        <file>billboard.frag</file>
+        <file>billboard.vert</file>
         <file>colormap.glsl</file>
+        <file>crystalplane.frag</file>
+        <file>crystalplane.vert</file>
+        <file>cylinder.frag</file>
+        <file>cylinder.vert</file>
         <file>cylinder_impostor.frag</file>
         <file>cylinder_impostor.vert</file>
-        <file>triangle.frag</file>
-        <file>triangle.vert</file>
+        <file>deferred.frag</file>
+        <file>deferred.vert</file>
+        <file>ellipse.frag</file>
+        <file>ellipse.vert</file>
+        <file>ellipsoid.frag</file>
+        <file>ellipsoid.vert</file>
+        <file>flat.glsl</file>
+        <file>line.frag</file>
+        <file>line.vert</file>
         <file>mesh.frag</file>
         <file>mesh.vert</file>
         <file>meshinstance.frag</file>
         <file>meshinstance.vert</file>
-        <file>line.frag</file>
-        <file>line.vert</file>
-        <file>ellipse.vert</file>
-        <file>ellipse.frag</file>
-        <file>billboard.frag</file>
-        <file>billboard.vert</file>
-        <file>ellipsoid.frag</file>
-        <file>ellipsoid.vert</file>
         <file>pbr.glsl</file>
-        <file>cylinder.frag</file>
-        <file>cylinder.vert</file>
-        <file>sphere_impostor_flat.frag</file>
         <file>point.frag</file>
         <file>point.vert</file>
         <file>pointcloudinstance.frag</file>
         <file>pointcloudinstance.vert</file>
         <file>selection.glsl</file>
-        <file>crystalplane.frag</file>
-        <file>crystalplane.vert</file>
+        <file>simple.frag</file>
+        <file>simple.vert</file>
+        <file>sphere_impostor.frag</file>
+        <file>sphere_impostor.vert</file>
+        <file>sphere_impostor_flat.frag</file>
+        <file>triangle.frag</file>
+        <file>triangle.vert</file>
         <file>uniforms.glsl</file>
-        <file>flat.glsl</file>
     </qresource>
 </RCC>

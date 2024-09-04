@@ -1,6 +1,6 @@
 #version 330
-#include "uniforms.glsl"
 
+// Input attributes
 in highp vec4 v_color;
 in highp vec3 v_normal;
 in highp vec3 v_position;
@@ -8,52 +8,42 @@ in highp vec3 v_spherePosition;
 flat in highp vec4 v_selection_id;
 flat in int v_selected;
 flat in int v_showLines;
-out highp vec4 f_color;
 
-#define SELECTION_OUTLINE 1
+// Output G-Buffer
+layout (location = 0) out highp vec4 g_albedo;
+layout (location = 1) out highp vec4 g_position;
+layout (location = 2) out highp vec4 g_normal;
+layout (location = 3) out highp vec4 g_material;
 
-#include "flat.glsl"
-#include "pbr.glsl"
+#include "uniforms.glsl"
 
 vec3 applyLines(vec3 color) {
     if(v_showLines == 1) {
         vec3 apos = abs(v_spherePosition);
         vec3 lineColor = vec3(0.05, 0.05, 0.05);
-        if(apos.x < u_ellipsoidLineWidth) color =  mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.x));
-        if(apos.y < u_ellipsoidLineWidth) color =  mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.y));
-        if(apos.z < u_ellipsoidLineWidth) color =  mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.z));
+        if(apos.x < u_ellipsoidLineWidth) color = mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.x));
+        if(apos.y < u_ellipsoidLineWidth) color = mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.y));
+        if(apos.z < u_ellipsoidLineWidth) color = mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.z));
     }
     return color;
 }
 
+vec3 linearizeColor(vec3 color, float gamma) {
+    return pow(color, vec3(gamma));
+}
 
 void main()
 {
-   if(u_renderMode == 0) {
-       f_color = v_selection_id;
-   }
-   else if(u_renderMode == 1) {
-       vec4 color = v_color;
-       vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
-       colorLinear = flatWithNormalOutline(u_cameraPosVec, v_position, v_normal, colorLinear);
-       colorLinear = applyLines(colorLinear);
-       f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
-       f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
-   }
-   else {
-       PBRMaterial material;
-       material.color = linearizeColor(v_color.xyz, u_screenGamma);
+    // Output position
+    g_position = vec4(v_position, 1.0);
+    // Output normal
+    g_normal = vec4(normalize(v_normal), 1.0);
 
-       material.metallic = u_materialMetallic;
-       material.roughness = u_materialRoughness;
-       Lights lights;
-       lights.positions = u_lightPos;
-       lights.ambient = u_lightGlobalAmbient.xyz;
-       lights.specular = u_lightSpecular;
-       // since we're passing things through in camera space, the camera is located at the origin
-       vec3 colorLinear = PBRLighting(u_cameraPosVec, v_position, v_normal, lights, material);
-       colorLinear = applyLines(colorLinear);
-       f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), v_color.w);
-       f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
-   }
+    // Output albedo and specular
+    vec3 albedo = linearizeColor(v_color.rgb, u_screenGamma);
+    g_albedo.rgb = applyLines(albedo);
+    g_albedo.a = v_color.a;
+    g_material.r = v_selection_id.r;
+    g_material.g = gl_FragCoord.z;
+    g_material.b = v_selected;
 }

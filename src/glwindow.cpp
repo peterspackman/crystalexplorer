@@ -14,7 +14,27 @@
 #include "mathconstants.h"
 #include "renderselection.h"
 #include "settings.h"
+#include "shaderloader.h"
 #include <fmt/core.h>
+
+inline void checkFramebufferStatus(const char *stage) {
+  GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (status != GL_FRAMEBUFFER_COMPLETE) {
+    qDebug() << "Framebuffer incomplete at" << stage << ". Status:" << status;
+    switch (status) {
+    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+      qDebug() << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+      break;
+    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+      qDebug() << "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+      break;
+    case GL_FRAMEBUFFER_UNSUPPORTED:
+      qDebug() << "GL_FRAMEBUFFER_UNSUPPORTED";
+      break;
+      // Add other cases as needed
+    }
+  }
+}
 
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) { init(); }
 
@@ -118,26 +138,33 @@ bool GLWindow::hasMeasurements() {
 }
 
 void GLWindow::makeFrameBufferObject() {
-
-  // Delete the old framebuffer
-  if (m_framebuffer) {
-    delete m_framebuffer;
-    m_framebuffer = nullptr;
-  }
-  if (m_resolvedFramebuffer) {
-    delete m_resolvedFramebuffer;
-    m_resolvedFramebuffer = nullptr;
+  if (m_gBuffer) {
+    delete m_gBuffer;
+    m_gBuffer = nullptr;
   }
 
-  // Create the FBO
-  QOpenGLFramebufferObjectFormat format;
-  format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-  format.setTextureTarget(GL_TEXTURE_2D);
-  format.setSamples(4);
   int w = std::max(1, static_cast<int>(width() * devicePixelRatio()));
   int h = std::max(1, static_cast<int>(height() * devicePixelRatio()));
-  m_framebuffer = new QOpenGLFramebufferObject(w, h, format);
-  m_resolvedFramebuffer = new QOpenGLFramebufferObject(w, h);
+
+  QOpenGLFramebufferObjectFormat gBufferFormat;
+  gBufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+  gBufferFormat.setSamples(0);  // Disable multisampling for G-Buffer
+  gBufferFormat.setTextureTarget(GL_TEXTURE_2D);
+
+  m_gBuffer = new QOpenGLFramebufferObject(w, h, gBufferFormat);
+
+  // Add color attachments
+  m_gBuffer->addColorAttachment(w, h, GL_RGBA32F); // albedo
+  m_gBuffer->addColorAttachment(w, h, GL_RGBA32F); // Position
+  m_gBuffer->addColorAttachment(w, h, GL_RGBA32F); // Normal
+  m_gBuffer->addColorAttachment(w, h, GL_RGBA32F); // depth, id, material pack, 
+  checkFramebufferStatus("G-Buffer setup");
+
+  if (m_gBuffer->isValid()) {
+      qDebug() << "G-Buffer is valid";
+  } else {
+      qDebug() << "G-Buffer is not valid";
+  }
 }
 
 /*!
@@ -156,37 +183,14 @@ void GLWindow::initializeGL() {
 
   makeFrameBufferObject();
 
-  // Create the shader program
-  m_postprocessShader = new QOpenGLShaderProgram();
-  m_postprocessShader->addShaderFromSourceCode(QOpenGLShader::Vertex, R"(
-      #version 330 core
-      layout (location = 0) in vec2 aPos;
-      layout (location = 1) in vec2 aTexCoords;
-
-      out vec2 TexCoords;
-
-      void main()
-      {
-          gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
-          TexCoords = aTexCoords;
-      }
-  )");
-  m_postprocessShader->addShaderFromSourceCode(QOpenGLShader::Fragment, R"(
-      #version 330 core
-      out vec4 FragColor;
-
-      in vec2 TexCoords;
-
-      uniform sampler2D screenTexture;
-
-      void main()
-      {
-          FragColor = texture(screenTexture, TexCoords);
-      }
-  )");
-  m_postprocessShader->bindAttributeLocation("aPos", 0);
-  m_postprocessShader->bindAttributeLocation("aTexCoords", 1);
-  m_postprocessShader->link();
+  m_deferredShader = new QOpenGLShaderProgram();
+  m_deferredShader->addShaderFromSourceCode(
+      QOpenGLShader::Vertex,
+      cx::shader::loadShaderFile(":/shaders/deferred.vert"));
+  m_deferredShader->addShaderFromSourceCode(
+      QOpenGLShader::Fragment,
+      cx::shader::loadShaderFile(":/shaders/deferred.frag"));
+  m_deferredShader->link();
 
   // Create the screen-filling quad
   m_quadVAO.create();
@@ -205,15 +209,15 @@ void GLWindow::initializeGL() {
   m_quadVBO.allocate(quadVertices, sizeof(quadVertices));
 
   // Setup the vertex attributes pointers
-  int positionLocation = m_postprocessShader->attributeLocation("aPos");
-  int texCoordLocation = m_postprocessShader->attributeLocation("aTexCoords");
+  int positionLocation = m_deferredShader->attributeLocation("aPos");
+  int texCoordLocation = m_deferredShader->attributeLocation("aTexCoords");
 
-  m_postprocessShader->enableAttributeArray(positionLocation);
-  m_postprocessShader->enableAttributeArray(texCoordLocation);
+  m_deferredShader->enableAttributeArray(positionLocation);
+  m_deferredShader->enableAttributeArray(texCoordLocation);
 
-  m_postprocessShader->setAttributeBuffer(positionLocation, GL_FLOAT, 0, 2,
-                                          4 * sizeof(GLfloat));
-  m_postprocessShader->setAttributeBuffer(
+  m_deferredShader->setAttributeBuffer(positionLocation, GL_FLOAT, 0, 2,
+                                       4 * sizeof(GLfloat));
+  m_deferredShader->setAttributeBuffer(
       texCoordLocation, GL_FLOAT, 2 * sizeof(GLfloat), 2, 4 * sizeof(GLfloat));
 
   glClearColor(_backgroundColor.redF(), _backgroundColor.greenF(),
@@ -317,37 +321,64 @@ void GLWindow::updateFrontClippingPlane(float clippingPlane) {
 }
 
 void GLWindow::paintGL() {
+  // First pass: Render to G-Buffer
+  m_gBuffer->bind();
+  checkFramebufferStatus("G-Buffer bind");
 
-  m_framebuffer->bind();
   if (enableDepthTest) {
     glEnable(GL_DEPTH_TEST);
   }
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearDepth(0);
+  glClearDepth(0.0f);
+
   setModelView();
   drawScene(false);
-  m_framebuffer->release();
+  m_gBuffer->release();
 
-  m_framebuffer->blitFramebuffer(
-      m_resolvedFramebuffer, QRect(QPoint(), m_resolvedFramebuffer->size()),
-      m_framebuffer, QRect(QPoint(), m_framebuffer->size()));
-  glDisable(GL_DEPTH_TEST);
-
+  // Second pass: Deferred shading
   QOpenGLFramebufferObject::bindDefault();
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, m_resolvedFramebuffer->texture());
+  checkFramebufferStatus("Default framebuffer bind");
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearDepth(0);
-  // Draw the screen-filling quad
-  m_postprocessShader->bind();
-  m_postprocessShader->setUniformValue(
-      "screenTexture", 0); // Assuming the texture is bound to texture unit 0
-  m_postprocessShader->setUniformValue("resolution", width(), height());
+  glClearDepth(1.0f);
+
+  m_deferredShader->bind();
+
+  // Bind G-Buffer textures
+  QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+
+  // Position
+  f->glActiveTexture(GL_TEXTURE0);
+  f->glBindTexture(GL_TEXTURE_2D, m_gBuffer->textures()[1]); // Position texture
+  m_deferredShader->setUniformValue("g_position", 0);
+
+  // Material
+  f->glActiveTexture(GL_TEXTURE1);
+  f->glBindTexture(GL_TEXTURE_2D, m_gBuffer->textures()[3]); // Material texture
+  m_deferredShader->setUniformValue("g_material", 1);
+
+  // Normal
+  f->glActiveTexture(GL_TEXTURE2);
+  f->glBindTexture(GL_TEXTURE_2D, m_gBuffer->textures()[2]); // Normal texture
+  m_deferredShader->setUniformValue("g_normal", 2);
+
+  // Albedo
+  f->glActiveTexture(GL_TEXTURE3);
+  f->glBindTexture(GL_TEXTURE_2D, m_gBuffer->textures()[0]); // Albedo texture
+  m_deferredShader->setUniformValue("g_albedo", 3);
+
+  // Optional: print uniform locations
+  qDebug() << "g_albedo location:" << m_deferredShader->uniformLocation("g_albedo");
+  qDebug() << "g_position location:" << m_deferredShader->uniformLocation("g_position");
+  qDebug() << "g_normal location:" << m_deferredShader->uniformLocation("g_normal");
+  qDebug() << "g_material location:" << m_deferredShader->uniformLocation("g_material");
+
   m_quadVAO.bind();
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  m_postprocessShader->release();
+  m_deferredShader->release();
+  m_quadVAO.release();
+
 }
 
 QImage GLWindow::exportToImage(int scaleFactor, const QColor &background) {
@@ -364,7 +395,8 @@ QImage GLWindow::exportToImage(int scaleFactor, const QColor &background) {
   if (enableDepthTest) {
     glEnable(GL_DEPTH_TEST);
   }
-  glClearColor(background.redF(), background.greenF(), background.blueF(), background.alphaF());
+  glClearColor(background.redF(), background.greenF(), background.blueF(),
+               background.alphaF());
   glClearDepth(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearDepth(0);
@@ -543,22 +575,22 @@ void GLWindow::mousePressEvent(QMouseEvent *event) {
     savedMousePosition = event->pos();
 
     switch (m_selectionMode) {
-      case SelectionMode::Pick:
+    case SelectionMode::Pick:
       handleLeftMousePressForPicking(event);
       break;
-      case SelectionMode::Distance:
+    case SelectionMode::Distance:
       handleMousePressForMeasurement(MeasurementType::Distance, event);
       break;
-      case SelectionMode::Angle:
+    case SelectionMode::Angle:
       handleMousePressForMeasurement(MeasurementType::Angle, event);
       break;
-      case SelectionMode::Dihedral:
+    case SelectionMode::Dihedral:
       handleMousePressForMeasurement(MeasurementType::Dihedral, event);
       break;
-      case SelectionMode::OutOfPlaneBend:
+    case SelectionMode::OutOfPlaneBend:
       handleMousePressForMeasurement(MeasurementType::OutOfPlaneBend, event);
       break;
-      case SelectionMode::InPlaneBend:
+    case SelectionMode::InPlaneBend:
       handleMousePressForMeasurement(MeasurementType::InPlaneBend, event);
       break;
     }
@@ -689,7 +721,6 @@ void GLWindow::showMessage(const QString &message) {
   QToolTip::showText(mapToGlobal(QPoint(50, height() - 100)), message);
 }
 
-
 void GLWindow::showMessageOnGraphicsView(QString message) {
   showMessage(message);
 }
@@ -705,8 +736,8 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 
   QColor color = pickObjectAt(event->pos());
 
-  auto selection =
-      scene->processMeasurementSingleClick(color, event->modifiers().testFlag(Qt::ShiftModifier));
+  auto selection = scene->processMeasurementSingleClick(
+      color, event->modifiers().testFlag(Qt::ShiftModifier));
 
   // is valid position?
   if (selection.index == -1) {
@@ -732,10 +763,11 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 
         // Pair of minimum positions for calculating distance and plotting
         // distance line.
-        auto d = scene->positionsForDistanceMeasurement(m_firstSelectionForMeasurement, selection);
+        auto d = scene->positionsForDistanceMeasurement(
+            m_firstSelectionForMeasurement, selection);
         qDebug() << "Valid measurement: " << d.valid;
 
-        if(d.valid) {
+        if (d.valid) {
           m_currentMeasurement.addPosition(d.a);
           m_currentMeasurement.addPosition(d.b);
           scene->addMeasurement(m_currentMeasurement);
@@ -810,14 +842,14 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
   case SelectionType::Surface: {
     const auto &selection = scene->selectedSurface();
     if (selection.surface) {
-      auto * mesh = selection.surface->mesh();
-      if(!mesh) break;
+      auto *mesh = selection.surface->mesh();
+      if (!mesh)
+        break;
 
       contextMenu->addAction(tr("Hide Surface"), this,
                              &GLWindow::contextualHideSurface);
       contextMenu->addAction(tr("Delete Surface"), this,
                              &GLWindow::contextualDeleteSurface);
-
 
       if (mesh->kind() == isosurface::Kind::Hirshfeld) {
         contextMenu->addAction(tr("Generate Internal Fragment"), this,
@@ -833,7 +865,6 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
                              &GLWindow::contextualSelectAtomsInsideSurface);
       contextMenu->addAction(tr("Select Atoms Outside Surface"), this,
                              &GLWindow::contextualSelectAtomsOutsideSurface);
-
     }
     break;
   }
@@ -1106,11 +1137,10 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
     if (scene->hasSelectedAtoms()) {
       contextMenu->addAction(tr("Remove Selected Atoms"), this,
                              &GLWindow::contextualRemoveSelectedAtoms);
-      contextMenu->addAction(tr("Set Color of Selected Atoms"), [this]() {
-          contextualColorSelection(false);
-      });      contextMenu->addAction(tr("Set Color of Selected Fragments"), [this]() {
-          contextualColorSelection(true);
-      });
+      contextMenu->addAction(tr("Set Color of Selected Atoms"),
+                             [this]() { contextualColorSelection(false); });
+      contextMenu->addAction(tr("Set Color of Selected Fragments"),
+                             [this]() { contextualColorSelection(true); });
     }
 
     if (scene->hasAtomsWithCustomColor()) {
@@ -1141,17 +1171,23 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
 }
 
 void GLWindow::addColorBySubmenu(QMenu *menu) {
-    QMenu* colorByMenu = menu->addMenu(tr("Color Atoms By..."));
-    colorByMenu->addAction(tr("Element"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Element); });
-    colorByMenu->addAction(tr("Fragment"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Fragment); });
+  QMenu *colorByMenu = menu->addMenu(tr("Color Atoms By..."));
+  colorByMenu->addAction(tr("Element"), [this]() {
+    updateAtomColoring(ChemicalStructure::AtomColoring::Element);
+  });
+  colorByMenu->addAction(tr("Fragment"), [this]() {
+    updateAtomColoring(ChemicalStructure::AtomColoring::Fragment);
+  });
 }
 
 void GLWindow::updateAtomColoring(ChemicalStructure::AtomColoring coloring) {
-    if(!scene) return;
-    auto * structure = scene->chemicalStructure();
-    if(!structure) return;
-    structure->setAtomColoring(coloring);
-    redraw();
+  if (!scene)
+    return;
+  auto *structure = scene->chemicalStructure();
+  if (!structure)
+    return;
+  structure->setAtomColoring(coloring);
+  redraw();
 }
 
 void GLWindow::getNewBackgroundColor() {

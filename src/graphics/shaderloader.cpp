@@ -10,6 +10,7 @@ QString readFileContents(const QString &filename) {
   QFile file(filename);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     // Handle the error
+    qWarning() << "Unable to open shader file:" << filename;
     return QString();
   }
 
