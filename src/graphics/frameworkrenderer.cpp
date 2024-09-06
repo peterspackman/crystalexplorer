@@ -1,4 +1,5 @@
 #include "frameworkrenderer.h"
+#include "drawingstyle.h"
 #include "graphics.h"
 #include <QElapsedTimer>
 
@@ -66,6 +67,25 @@ void FrameworkRenderer::setComponent(const QString &comp) {
   m_options.component = comp;
 }
 
+inline std::vector<FragmentDimer>
+filterFragmentDimers(const std::vector<FragmentDimer> &allPairs,
+                     const std::vector<FragmentIndex> &selectedFragments) {
+  if (selectedFragments.size() == 0) {
+    qDebug() << "No selection, just doing whole framework";
+    return allPairs;
+  }
+  ankerl::unordered_dense::set<FragmentIndex, FragmentIndexHash> selected(
+      selectedFragments.begin(), selectedFragments.end());
+  qDebug() << "Have" << selected.size() << "selected fragments";
+
+  std::vector<FragmentDimer> result;
+  for(const auto &pair: allPairs) {
+    if(selected.find(pair.index.a) != selected.end()) result.push_back(pair);
+    else if(selected.find(pair.index.b) != selected.end()) result.push_back(pair);
+  }
+  return result;
+}
+
 void FrameworkRenderer::handleInteractionsUpdate() {
   if (!m_needsUpdate)
     return;
@@ -82,16 +102,20 @@ void FrameworkRenderer::handleInteractionsUpdate() {
     return;
 
   FragmentPairSettings pairSettings;
+
   pairSettings.allowInversion =
       m_options.allowInversion &
       m_interactions->hasInversionSymmetry(m_options.model);
   auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
-  qDebug() << "Number of unique pairs:" << fragmentPairs.uniquePairs.size();
-  auto interactionMap = m_interactions->getInteractionsMatchingFragments(
-      fragmentPairs.uniquePairs);
+
+  std::vector<FragmentDimer> uniquePairs = fragmentPairs.uniquePairs;
+
+  qDebug() << "Number of unique pairs:" << uniquePairs.size();
+  auto interactionMap =
+      m_interactions->getInteractionsMatchingFragments(uniquePairs);
 
   auto uniqueInteractions = interactionMap.value(m_options.model, {});
-  if (uniqueInteractions.size() < fragmentPairs.uniquePairs.size())
+  if (uniqueInteractions.size() < uniquePairs.size())
     return;
 
   QColor color = m_options.customColor;
@@ -103,7 +127,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   std::vector<std::pair<QColor, double>> energies;
   energies.reserve(uniqueInteractions.size());
 
-  for (const auto &pair : fragmentPairs.uniquePairs) {
+  for (const auto &pair : uniquePairs) {
     qDebug() << pair.index;
   }
 
@@ -133,8 +157,15 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
   const bool inv = pairSettings.allowInversion;
 
+  const auto selectedFragments = m_structure->selectedFragments();
+  ankerl::unordered_dense::set<FragmentIndex, FragmentIndexHash> selected(
+      selectedFragments.begin(), selectedFragments.end());
+
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
     for (const auto &[pair, uniqueIndex] : molPairs) {
+      if(selected.size() != 0) {
+        if(selected.find(pair.index.a) == selected.end() && selected.find(pair.index.b) == selected.end()) continue;
+      }
       auto [color, energy] = energies[uniqueIndex];
       if (std::abs(energy) <= m_options.cutoff)
         continue;
@@ -148,6 +179,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       QVector3D vb(cb.x(), cb.y(), cb.z());
       QVector3D m = va + (vb - va) * 0.5;
 
+      const double lineWidth = DrawingStyleConstants::bondLineWidth;
       if (inv) {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
@@ -157,10 +189,10 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va,
                                                       vb, color, color, scale);
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
-          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb, scale,
-                                              color);
-          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m,
-                                                   QString::number(energy, 'd', 1));
+          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb,
+                                              lineWidth, color);
+          cx::graphics::addTextToBillboardRenderer(
+              *m_labelRenderer, m, QString::number(energy, 'd', 1));
         }
       } else {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
@@ -169,8 +201,11 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, m,
                                                       color, color, scale);
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
-          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, scale,
+          QVector3D m2 = va + (m - va) * 0.5;
+          cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, lineWidth,
                                               color);
+          cx::graphics::addTextToBillboardRenderer(
+              *m_labelRenderer, m2, QString::number(energy, 'd', 1));
         }
       }
     }

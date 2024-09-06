@@ -23,9 +23,9 @@ int v_selected;
 vec3 applyPattern(vec3 baseColor, float z) {
     if(v_pattern == 0) return baseColor;
     z = abs(z);
-    float stripeWidth = 1.0 / 25.0;
+    float stripeWidth = 1.0 / 5.0;
     float pattern = step(stripeWidth * 0.5, mod(z, stripeWidth));
-    return mix(baseColor, vec3(1.0), pattern);
+    return mix(baseColor, baseColor * 0.5, pattern);
 
     return baseColor;
 }
