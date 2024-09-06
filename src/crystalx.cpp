@@ -453,7 +453,7 @@ void Crystalx::initMenuConnections() {
   connect(generateSurfaceAction, &QAction::triggered, this,
           &Crystalx::getSurfaceParametersFromUser);
   connect(generateCellsAction, &QAction::triggered, this,
-          &Crystalx::generateCells);
+          &Crystalx::generateSlab);
   connect(cloneSurfaceAction, &QAction::triggered, this,
           &Crystalx::cloneSurface);
   connect(calculateEnergiesAction, &QAction::triggered, this,
@@ -613,17 +613,15 @@ void Crystalx::clearCurrent() { crystalController->clearCurrentCrystal(); }
 
 void Crystalx::clearAll() { crystalController->clearAllCrystals(); }
 
-void Crystalx::generateCells() {
+void Crystalx::generateSlab() {
   Q_ASSERT(project->currentScene());
 
-  bool ok;
-  auto cellLimits = CellLimitsDialog::getCellLimits(
-      0, "Generate Unit Cells", QString(), 1, 1, 1, 0, 5, 1, &ok);
+  bool ok{false};
+  auto slabOptions = CellLimitsDialog::getSlabGenerationOptions(0, "Generate slab", QString(), ok);
 
   if (ok) {
-    _savedCellLimits =
-        cellLimits; // save cell limits for use by cloneVoidSurface
-    project->generateCells(cellLimits);
+    m_savedSlabGenerationOptions = slabOptions; // save cell limits for use by cloneVoidSurface
+    project->generateSlab(slabOptions);
   }
 }
 

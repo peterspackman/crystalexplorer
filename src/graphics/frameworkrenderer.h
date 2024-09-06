@@ -50,6 +50,7 @@ signals:
 
 private:
   void handleInteractionsUpdate();
+  std::pair<QVector3D, QVector3D> getPairPositions(const FragmentDimer &) const;
 
   [[nodiscard]] bool shouldSkipAtom(int idx) const;
 

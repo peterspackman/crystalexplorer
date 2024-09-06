@@ -3,21 +3,18 @@
 #include <QDialog>
 
 #include "ui_celllimitsdialog.h"
+#include "slab_options.h"
 
 class CellLimitsDialog : public QDialog, public Ui::CellLimitsDialog {
   Q_OBJECT
 
 public:
   CellLimitsDialog(QWidget *, Qt::WindowFlags);
-  QPair<QVector3D, QVector3D> cellLimits();
+  SlabGenerationOptions currentSettings();
   void setLabelText(QString);
-  void setCellLimitRange(int, int);
-  void setCellLimitValues(int, int, int);
-  void setCellLimitStep(int);
 
-  static QPair<QVector3D, QVector3D>
-  getCellLimits(QWidget *, const QString &, const QString &, int, int, int, int,
-                int, int, bool *, Qt::WindowFlags windowFlags = Qt::Dialog);
+  static SlabGenerationOptions
+  getSlabGenerationOptions(QWidget *, const QString &, const QString &, bool &ok, Qt::WindowFlags windowFlags = Qt::Dialog);
 
 private:
   void shrink();

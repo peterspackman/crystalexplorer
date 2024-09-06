@@ -80,7 +80,8 @@ public:
   bool hasIncompleteFragments() const override;
   bool hasIncompleteSelectedFragments() const override;
   void completeAllFragments() override;
-  void packUnitCells(const QPair<QVector3D, QVector3D> &) override;
+
+  void buildSlab(SlabGenerationOptions) override;
 
   std::vector<FragmentIndex> completedFragments() const override;
   std::vector<FragmentIndex> selectedFragments() const override;

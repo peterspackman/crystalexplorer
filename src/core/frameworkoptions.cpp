@@ -1,12 +1,10 @@
 #include "frameworkoptions.h"
 #include <array>
 
-inline constexpr std::array<FrameworkOptions::Coloring, 4> availableColorings = {
-  FrameworkOptions::Coloring::Component,
-  FrameworkOptions::Coloring::Value,
-  FrameworkOptions::Coloring::Interaction,
-  FrameworkOptions::Coloring::Custom
-};
+inline constexpr std::array<FrameworkOptions::Coloring, 4> availableColorings =
+    {FrameworkOptions::Coloring::Component, FrameworkOptions::Coloring::Value,
+     FrameworkOptions::Coloring::Interaction,
+     FrameworkOptions::Coloring::Custom};
 
 QStringList availableFrameworkColoringOptions() {
   QStringList result;
@@ -37,4 +35,41 @@ FrameworkOptions::Coloring frameworkColoringFromString(const QString &s) {
     }
   }
   return FrameworkOptions::Coloring::Component;
+}
+
+inline constexpr std::array<FrameworkOptions::ConnectionMode, 3>
+    availableConnectionModes = {
+        FrameworkOptions::ConnectionMode::Centroids,
+        FrameworkOptions::ConnectionMode::CentersOfMass,
+        FrameworkOptions::ConnectionMode::NearestAtoms,
+};
+
+QStringList availableFrameworkConnectionModeOptions() {
+  QStringList result;
+  for (const auto &c : availableConnectionModes) {
+    result.append(frameworkConnectionModeToString(c));
+  }
+  return result;
+}
+
+QString frameworkConnectionModeToString(FrameworkOptions::ConnectionMode mode) {
+  switch (mode) {
+  case FrameworkOptions::ConnectionMode::Centroids:
+    return "Centroids";
+  case FrameworkOptions::ConnectionMode::CentersOfMass:
+    return "Centers of Mass";
+  case FrameworkOptions::ConnectionMode::NearestAtoms:
+    return "Nearest Atoms";
+  }
+  return "Centroids";
+}
+
+FrameworkOptions::ConnectionMode
+frameworkConnectionModeFromString(const QString &s) {
+  for (const auto &c : availableConnectionModes) {
+    if (s == frameworkConnectionModeToString(c)) {
+      return c;
+    }
+  }
+  return FrameworkOptions::ConnectionMode::Centroids;
 }

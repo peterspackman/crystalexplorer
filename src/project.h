@@ -65,7 +65,7 @@ public slots:
   void setCurrentCrystal(int);
   void setCurrentCrystal(int, bool);
   void updateCurrentCrystalContents();
-  void generateCells(QPair<QVector3D, QVector3D>);
+  void generateSlab(SlabGenerationOptions);
   void removeAllCrystals();
   void removeCurrentCrystal();
   void completeFragmentsForCurrentCrystal();

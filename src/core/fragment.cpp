@@ -129,7 +129,10 @@ Fragment::nearestAtomToPoint(const occ::Vec3 &point) const {
 
 FragmentDimer::FragmentDimer(const Fragment &fa, const Fragment &fb)
     : a(fa), b(fb) {
-  nearestAtomDistance = fa.nearestAtom(fb).distance;
+  auto nres = fa.nearestAtom(fb);
+  nearestAtomDistance = nres.distance;
+  nearestAtomIndexA = static_cast<int>(nres.idx_this);
+  nearestAtomIndexB = static_cast<int>(nres.idx_other);
   centerOfMassDistance = (fb.centerOfMass() - fa.centerOfMass()).norm();
   centroidDistance = (fa.centroid() - fb.centroid()).norm();
   index = FragmentIndexPair{fa.index, fb.index};

@@ -528,7 +528,14 @@ void CrystalStructure::removeVanDerWaalsContactAtoms() {
       indicesToRemove.push_back(i);
     }
   }
+
+  const auto selectedAtoms = atomsWithFlags(AtomFlag::Selected);
   deleteAtomsByOffset(indicesToRemove);
+
+  // ensure selection doesn't change
+  for (const auto &idx : selectedAtoms) {
+    setAtomFlag(idx, AtomFlag::Selected);
+  }
 }
 
 void CrystalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
@@ -795,16 +802,17 @@ void CrystalStructure::completeAllFragments() {
   }
 }
 
-void CrystalStructure::packUnitCells(
-    const QPair<QVector3D, QVector3D> &limits) {
+void CrystalStructure::buildSlab(SlabGenerationOptions options) {
   clearAtoms();
 
   std::vector<QString> elementSymbols;
   std::vector<occ::Vec3> positions;
   std::vector<QString> labels;
 
-  occ::Vec3 lowerFrac(limits.first[0], limits.first[1], limits.first[2]);
-  occ::Vec3 upperFrac(limits.second[0], limits.second[1], limits.second[2]);
+  const auto &l = options.lowerBound;
+  const auto &u = options.upperBound;
+  occ::Vec3 lowerFrac(l[0], l[1], l[2]);
+  occ::Vec3 upperFrac(u[0], u[1], u[2]);
 
   occ::crystal::HKL lower{static_cast<int>(std::floor(lowerFrac[0])),
                           static_cast<int>(std::floor(lowerFrac[1])),
@@ -813,23 +821,112 @@ void CrystalStructure::packUnitCells(
                           static_cast<int>(std::ceil(upperFrac[1]) - 1),
                           static_cast<int>(std::ceil(upperFrac[2]) - 1)};
 
-  auto slab = m_crystal.slab(lower, upper);
-
   m_unitCellOffsets.clear();
   m_atomMap.clear();
 
   std::vector<GenericAtomIndex> indices;
-  indices.reserve(slab.size());
+  auto runMoleculeFilter = [&](const occ::Mat3N &centers) {
+    // Calculate the minimum and maximum values for each dimension
+    occ::Vec3 minCenter = centers.rowwise().minCoeff();
+    occ::Vec3 maxCenter = centers.rowwise().maxCoeff();
 
-  for (int i = 0; i < slab.size(); i++) {
-    if ((slab.frac_pos.col(i).array() < lowerFrac.array()).any())
-      continue;
-    if ((slab.frac_pos.col(i).array() > upperFrac.array()).any())
-      continue;
-    indices.push_back(GenericAtomIndex{slab.uc_idx(i), slab.hkl(0, i),
-                                       slab.hkl(1, i), slab.hkl(2, i)});
+    // Adjust the iteration bounds
+    occ::crystal::HKL adjustedLower{
+        static_cast<int>(std::floor(lower.h - maxCenter[0])),
+        static_cast<int>(std::floor(lower.k - maxCenter[1])),
+        static_cast<int>(std::floor(lower.l - maxCenter[2]))};
+    occ::crystal::HKL adjustedUpper{
+        static_cast<int>(std::ceil(upper.h - minCenter[0])),
+        static_cast<int>(std::ceil(upper.k - minCenter[1])),
+        static_cast<int>(std::ceil(upper.l - minCenter[2]))};
+
+    for (int h = adjustedLower.h; h <= adjustedUpper.h; h++) {
+      for (int k = adjustedLower.k; k <= adjustedUpper.k; k++) {
+        for (int l = adjustedLower.l; l <= adjustedUpper.l; l++) {
+          for (int i = 0; i < centers.cols(); i++) {
+            occ::Vec3 center = centers.col(i) + occ::Vec3(h, k, l);
+
+            // Check if the center is within the original bounds
+            if (center[0] >= lower.h && center[0] < upper.h + 1 &&
+                center[1] >= lower.k && center[1] < upper.k + 1 &&
+                center[2] >= lower.l && center[2] < upper.l + 1) {
+
+              qDebug() << "Center in bounds:" << center[0] << center[1]
+                       << center[2];
+              FragmentIndex unitCellIndex{i, 0, 0, 0};
+              qDebug() << "FragmentIndex:" << unitCellIndex.u << unitCellIndex.h
+                       << unitCellIndex.k << unitCellIndex.l;
+
+              const auto &ucFrag = m_unitCellFragments.at(unitCellIndex);
+              for (auto &atomIndex : ucFrag.atomIndices) {
+                indices.push_back(
+                    GenericAtomIndex{atomIndex.unique, atomIndex.x + h,
+                                     atomIndex.y + k, atomIndex.z + l});
+              }
+            }
+          }
+        }
+      }
+    }
+
+    qDebug() << "Total indices added:" << indices.size();
+  };
+
+  const auto &uc_mols = m_crystal.unit_cell_molecules();
+  occ::Mat3N centers(3, uc_mols.size());
+  switch (options.mode) {
+  case SlabGenerationOptions::Mode::UnitCellMolecules: {
+    for (int i = 0; i < uc_mols.size(); i++) {
+      FragmentIndex unitCellIndex{i, 0, 0, 0};
+      const auto &ucFrag = m_unitCellFragments.at(unitCellIndex);
+      for (int h = lower.h; h <= upper.h; h++) {
+        for (int k = lower.k; k <= upper.k; k++) {
+          for (int l = lower.l; l <= upper.l; l++) {
+            for (auto &atomIndex : ucFrag.atomIndices) {
+              indices.push_back(
+                  GenericAtomIndex{atomIndex.unique, atomIndex.x + h,
+                                   atomIndex.y + k, atomIndex.z + l});
+            }
+          }
+        }
+      }
+    }
+    break;
+  }
+  case SlabGenerationOptions::Mode::MoleculesCentroid: {
+    for (int i = 0; i < uc_mols.size(); i++) {
+      centers.col(i) = m_crystal.to_fractional(uc_mols[i].centroid());
+    }
+    runMoleculeFilter(centers);
+    break;
+  }
+  case SlabGenerationOptions::Mode::MoleculesCenterOfMass: {
+    for (int i = 0; i < uc_mols.size(); i++) {
+      centers.col(i) = m_crystal.to_fractional(uc_mols[i].center_of_mass());
+    }
+    runMoleculeFilter(centers);
+    break;
+  }
+  default:
+    auto slab = m_crystal.slab(lower, upper);
+    indices.reserve(slab.size());
+
+    for (int i = 0; i < slab.size(); i++) {
+      if ((slab.frac_pos.col(i).array() < lowerFrac.array()).any())
+        continue;
+      if ((slab.frac_pos.col(i).array() > upperFrac.array()).any())
+        continue;
+      indices.push_back(GenericAtomIndex{slab.uc_idx(i), slab.hkl(0, i),
+                                         slab.hkl(1, i), slab.hkl(2, i)});
+    }
+    break;
   }
   addAtomsByCrystalIndex(indices);
+
+  if (options.mode == SlabGenerationOptions::Mode::MoleculesAnyAtom) {
+    completeAllFragments();
+  }
+
   updateBondGraph();
 }
 
@@ -1408,7 +1505,8 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
     auto a = makeFragmentFromFragmentIndex(ab.a);
     auto b = makeFragmentFromFragmentIndex(ab.b);
     FragmentDimer d(a, b);
-    qDebug() << "UNIQUE" << d.index << d.nearestAtomDistance << d.centroidDistance;
+    qDebug() << "UNIQUE" << d.index << d.nearestAtomDistance
+             << d.centroidDistance;
     qDebug() << "a" << a;
     qDebug() << "b" << b;
     result.uniquePairs.push_back(d);

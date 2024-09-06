@@ -661,8 +661,7 @@ void ChemicalStructure::completeAllFragments() {
   // TODO
 }
 
-void ChemicalStructure::packUnitCells(
-    const QPair<QVector3D, QVector3D> &limits) {
+void ChemicalStructure::buildSlab(SlabGenerationOptions options) {
   // TODO
 }
 

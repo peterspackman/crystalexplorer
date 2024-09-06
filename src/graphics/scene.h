@@ -261,8 +261,7 @@ public:
     return m_crystalPlanes;
   }
   void setCrystalPlanes(const std::vector<CrystalPlane> &);
-
-  void generateCells(QPair<QVector3D, QVector3D>);
+  void generateSlab(SlabGenerationOptions);
 
 signals:
   void clickedSurface(QModelIndex);

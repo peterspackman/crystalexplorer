@@ -10,6 +10,7 @@
 #include "molecular_wavefunction.h"
 #include "object_tree_model.h"
 #include "pair_energy_results.h"
+#include "slab_options.h"
 #include <Eigen/Dense>
 #include <QColor>
 #include <QStringList>
@@ -138,7 +139,7 @@ public:
   virtual void completeFragmentContaining(int);
   virtual void completeFragmentContaining(GenericAtomIndex);
   virtual void completeAllFragments();
-  virtual void packUnitCells(const QPair<QVector3D, QVector3D> &);
+  virtual void buildSlab(SlabGenerationOptions);
 
   virtual void expandAtomsWithinRadius(float radius, bool selected);
   virtual void resetAtomsAndBonds(bool toSelection = false);

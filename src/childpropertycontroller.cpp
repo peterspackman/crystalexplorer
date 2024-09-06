@@ -1,9 +1,9 @@
 #include "childpropertycontroller.h"
 
 #include <QCheckBox>
+#include <QColorDialog>
 #include <QDebug>
 #include <QLocale>
-#include <QColorDialog>
 
 #include "settings.h"
 
@@ -63,6 +63,11 @@ void ChildPropertyController::setup() {
   componentComboBox->setCurrentIndex(0);
   frameworkColorComboBox->blockSignals(false);
 
+  frameworkConnectionComboBox->blockSignals(true);
+  QStringList connectionValues = availableFrameworkConnectionModeOptions();
+  frameworkConnectionComboBox->insertItems(0, connectionValues);
+  frameworkConnectionComboBox->blockSignals(false);
+
   frameworkColorToolButton->hide();
   connect(frameworkColorToolButton, &QAbstractButton::clicked, [this]() {
     QColor color = QColorDialog::getColor(m_customFrameworkColor, this);
@@ -96,6 +101,9 @@ void ChildPropertyController::setup() {
 
   connect(frameworkColorComboBox, &QComboBox::currentIndexChanged, this,
           &ChildPropertyController::onFrameworkColoringChanged);
+
+  connect(frameworkConnectionComboBox, &QComboBox::currentIndexChanged,
+          [this]() { emitFrameworkOptions(); });
 
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
@@ -246,20 +254,14 @@ bool ChildPropertyController::toggleShowEnergyFramework() {
 }
 
 void ChildPropertyController::setShowEnergyFramework(bool show) {
-  if (!m_pairInteractions)
+  if (!m_pairInteractions || !m_pairInteractions->haveInteractions()) {
     return;
-  if (!m_pairInteractions->haveInteractions())
-    return;
+  }
 
-  if (show) {
-    if (m_frameworkDisplay == FrameworkOptions::Display::None) {
-      setFrameworkDisplay(FrameworkOptions::Display::Tubes);
-    } else {
-      if (m_frameworkDisplay != FrameworkOptions::Display::None) {
-        setFrameworkDisplay(FrameworkOptions::Display::Tubes);
-      }
-    }
-  } else {
+  if (show && m_frameworkDisplay == FrameworkOptions::Display::None) {
+    setFrameworkDisplay(m_previousNonNoneDisplay);
+  } else if (!show && m_frameworkDisplay != FrameworkOptions::Display::None) {
+    m_previousNonNoneDisplay = m_frameworkDisplay;
     setFrameworkDisplay(FrameworkOptions::Display::None);
   }
 }
@@ -276,8 +278,7 @@ void ChildPropertyController::onFrameworkColoringChanged() {
   if (coloring == FrameworkOptions::Coloring::Custom) {
     setButtonColor(frameworkColorToolButton, m_customFrameworkColor);
     frameworkColorToolButton->show();
-  }
-  else {
+  } else {
     frameworkColorToolButton->hide();
   }
   emitFrameworkOptions();
@@ -288,6 +289,8 @@ void ChildPropertyController::emitFrameworkOptions() {
   options.model = modelComboBox->currentText();
   options.coloring =
       frameworkColoringFromString(frameworkColorComboBox->currentText());
+  options.connectionMode = frameworkConnectionModeFromString(
+      frameworkConnectionComboBox->currentText());
   options.customColor = m_customFrameworkColor;
   options.component = componentComboBox->currentText();
   options.scale =
@@ -452,6 +455,11 @@ void ChildPropertyController::setFrameworkDisplay(
   showNoneButton->blockSignals(false);
   showTubesButton->blockSignals(false);
   showLinesButton->blockSignals(false);
+
+  // Update the previous non-None display if applicable
+  if (choice != FrameworkOptions::Display::None) {
+    m_previousNonNoneDisplay = choice;
+  }
   m_frameworkDisplay = choice;
   emitFrameworkOptions();
 }

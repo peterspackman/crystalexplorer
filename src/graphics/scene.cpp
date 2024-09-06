@@ -223,8 +223,8 @@ QVector<Label> Scene::surfaceLabels() {
   return labels;
 }
 
-void Scene::generateCells(QPair<QVector3D, QVector3D> cellLimits) {
-  m_structure->packUnitCells(cellLimits);
+void Scene::generateSlab(SlabGenerationOptions options) {
+  m_structure->buildSlab(options);
 }
 
 QVector<Label> Scene::measurementLabels() {

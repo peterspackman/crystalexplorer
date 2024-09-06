@@ -23,6 +23,7 @@ add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/pair_energy_results.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/serializable.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/settings.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/slab_options.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/volume.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefunction_parameters.cpp"
 )

@@ -16,8 +16,15 @@ struct FrameworkOptions{
     Custom,
   };
 
+  enum class ConnectionMode {
+    Centroids,
+    CentersOfMass,
+    NearestAtoms
+  };
+
   Display display{Display::None};
   Coloring coloring{Coloring::Component};
+  ConnectionMode connectionMode{ConnectionMode::Centroids};
   QString model{"CE-1P"};
   QString component{"total"};
   double scale{0.001}; // A per kJ/mol
@@ -29,3 +36,7 @@ struct FrameworkOptions{
 QString frameworkColoringToString(FrameworkOptions::Coloring);
 FrameworkOptions::Coloring frameworkColoringFromString(const QString &s);
 QStringList availableFrameworkColoringOptions();
+
+QString frameworkConnectionModeToString(FrameworkOptions::ConnectionMode);
+FrameworkOptions::ConnectionMode frameworkConnectionModeFromString(const QString &s);
+QStringList availableFrameworkConnectionModeOptions();

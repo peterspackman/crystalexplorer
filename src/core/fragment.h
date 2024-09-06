@@ -63,6 +63,8 @@ struct FragmentDimer {
   double centroidDistance{0.0};
   double nearestAtomDistance{0.0};
   double centerOfMassDistance{0.0};
+  int nearestAtomIndexA{-1};
+  int nearestAtomIndexB{-1};
   QString symmetry{"-"};
   FragmentIndexPair index;
 

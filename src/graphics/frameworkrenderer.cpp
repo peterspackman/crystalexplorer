@@ -67,23 +67,24 @@ void FrameworkRenderer::setComponent(const QString &comp) {
   m_options.component = comp;
 }
 
-inline std::vector<FragmentDimer>
-filterFragmentDimers(const std::vector<FragmentDimer> &allPairs,
-                     const std::vector<FragmentIndex> &selectedFragments) {
-  if (selectedFragments.size() == 0) {
-    qDebug() << "No selection, just doing whole framework";
-    return allPairs;
+std::pair<QVector3D, QVector3D>
+FrameworkRenderer::getPairPositions(const FragmentDimer &pair) const {
+  occ::Vec3 pa, pb;
+  switch (m_options.connectionMode) {
+  case FrameworkOptions::ConnectionMode::CentersOfMass:
+    pa = pair.a.centerOfMass();
+    pb = pair.b.centerOfMass();
+    break;
+  case FrameworkOptions::ConnectionMode::NearestAtoms:
+    pa = pair.a.positions.col(pair.nearestAtomIndexA);
+    pb = pair.b.positions.col(pair.nearestAtomIndexB);
+    break;
+  default:
+    pa = pair.a.centroid();
+    pb = pair.b.centroid();
+    break;
   }
-  ankerl::unordered_dense::set<FragmentIndex, FragmentIndexHash> selected(
-      selectedFragments.begin(), selectedFragments.end());
-  qDebug() << "Have" << selected.size() << "selected fragments";
-
-  std::vector<FragmentDimer> result;
-  for(const auto &pair: allPairs) {
-    if(selected.find(pair.index.a) != selected.end()) result.push_back(pair);
-    else if(selected.find(pair.index.b) != selected.end()) result.push_back(pair);
-  }
-  return result;
+  return {QVector3D(pa.x(), pa.y(), pa.z()), QVector3D(pb.x(), pb.y(), pb.z())};
 }
 
 void FrameworkRenderer::handleInteractionsUpdate() {
@@ -163,8 +164,10 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
     for (const auto &[pair, uniqueIndex] : molPairs) {
-      if(selected.size() != 0) {
-        if(selected.find(pair.index.a) == selected.end() && selected.find(pair.index.b) == selected.end()) continue;
+      if (selected.size() != 0) {
+        if (selected.find(pair.index.a) == selected.end() &&
+            selected.find(pair.index.b) == selected.end())
+          continue;
       }
       auto [color, energy] = energies[uniqueIndex];
       if (std::abs(energy) <= m_options.cutoff)
@@ -173,10 +176,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       if (std::abs(scale) < 1e-4)
         continue;
 
-      auto ca = pair.a.centroid();
-      QVector3D va(ca.x(), ca.y(), ca.z());
-      auto cb = pair.b.centroid();
-      QVector3D vb(cb.x(), cb.y(), cb.z());
+      auto [va, vb] = getPairPositions(pair);
       QVector3D m = va + (vb - va) * 0.5;
 
       const double lineWidth = DrawingStyleConstants::bondLineWidth;

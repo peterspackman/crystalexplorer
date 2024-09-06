@@ -198,10 +198,10 @@ void Project::updateAllCrystalsForChangeInElementData() {
   }
 }
 
-void Project::generateCells(QPair<QVector3D, QVector3D> cellLimits) {
+void Project::generateSlab(SlabGenerationOptions options) {
   Q_ASSERT(currentScene());
 
-  currentScene()->generateCells(cellLimits);
+  currentScene()->generateSlab(options);
   setUnsavedChangesExists();
   emit currentSceneChanged();
 }

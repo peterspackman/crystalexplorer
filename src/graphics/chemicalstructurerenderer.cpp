@@ -23,10 +23,7 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   connect(m_structure, &ChemicalStructure::childRemoved, this,
           &ChemicalStructureRenderer::childRemovedFromStructure);
   connect(m_structure, &ChemicalStructure::atomsChanged, [&]() {
-    m_labelsNeedsUpdate = true;
-    m_atomsNeedsUpdate = true;
-    m_bondsNeedsUpdate = true;
-    m_cellsNeedsUpdate = true;
+    forceUpdates();
   });
   initStructureChildren();
 

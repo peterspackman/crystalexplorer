@@ -110,7 +110,7 @@ private slots:
   QString suggestedProjectFilename();
   void showPreferencesDialog();
   void helpAboutActionDialog();
-  void generateCells();
+  void generateSlab();
   void clearCurrent();
   void clearAll();
   void setAnimateScene(bool);
@@ -242,7 +242,7 @@ private:
   QTextEdit *fileViewer{nullptr};
   QVBoxLayout *fileViewerLayout{nullptr};
 
-  QPair<QVector3D, QVector3D> _savedCellLimits;
+  SlabGenerationOptions m_savedSlabGenerationOptions;
   QMap<QString, DrawingStyle> m_drawingStyleLabelToDrawingStyle;
 
   TaskManager * m_taskManager{nullptr};

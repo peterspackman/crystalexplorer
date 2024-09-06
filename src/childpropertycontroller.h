@@ -80,6 +80,7 @@ private:
 
   DisplayState m_state{DisplayState::None};
   FrameworkOptions::Display m_frameworkDisplay{FrameworkOptions::Display::None};
+  FrameworkOptions::Display m_previousNonNoneDisplay{FrameworkOptions::Display::Tubes};
 
   MeshPropertyModel *m_meshPropertyModel{nullptr};
   PairInteractions *m_pairInteractions{nullptr};
