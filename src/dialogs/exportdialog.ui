@@ -57,10 +57,20 @@
       <string>Settings</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="3" column="1">
-       <widget class="QLabel" name="resolutionScaleLabel">
+      <item row="3" column="3">
+       <widget class="QLabel" name="resolutionLabel">
         <property name="text">
-         <string>Resolution Scale Factor</string>
+         <string>0x0</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Background Color</string>
+        </property>
+        <property name="buddy">
+         <cstring>backgroundColorToolButton</cstring>
         </property>
        </widget>
       </item>
@@ -81,17 +91,13 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QLabel" name="resolutionLabel">
+      <item row="3" column="1">
+       <widget class="QLabel" name="resolutionScaleLabel">
         <property name="text">
-         <string>0x0</string>
+         <string>Resolution Scale Factor</string>
         </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Background Color</string>
+        <property name="buddy">
+         <cstring>resolutionScaleComboBox</cstring>
         </property>
        </widget>
       </item>
@@ -105,6 +111,9 @@
        <widget class="QLabel" name="destinationLabel">
         <property name="text">
          <string>Destination</string>
+        </property>
+        <property name="buddy">
+         <cstring>destinationLineEdit</cstring>
         </property>
        </widget>
       </item>
@@ -139,6 +148,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>resolutionScaleComboBox</tabstop>
+  <tabstop>backgroundColorToolButton</tabstop>
+  <tabstop>destinationLineEdit</tabstop>
+  <tabstop>destinationBrowseButton</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

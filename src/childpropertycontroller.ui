@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>ChildPropertyController</class>
  <widget class="QWidget" name="ChildPropertyController">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>469</width>
+    <height>351</height>
+   </rect>
+  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
     <horstretch>0</horstretch>
@@ -768,6 +776,9 @@
             <property name="text">
              <string>Component</string>
             </property>
+            <property name="buddy">
+             <cstring>componentComboBox</cstring>
+            </property>
            </widget>
           </item>
           <item row="0" column="1">
@@ -777,6 +788,9 @@
            <widget class="QLabel" name="modelLabel">
             <property name="text">
              <string>Model</string>
+            </property>
+            <property name="buddy">
+             <cstring>modelComboBox</cstring>
             </property>
            </widget>
           </item>
@@ -817,6 +831,9 @@
             <property name="text">
              <string>Coloring</string>
             </property>
+            <property name="buddy">
+             <cstring>frameworkColorComboBox</cstring>
+            </property>
            </widget>
           </item>
           <item row="4" column="2">
@@ -830,6 +847,9 @@
            <widget class="QLabel" name="frameworkCutoffLabel">
             <property name="text">
              <string>Cutoff</string>
+            </property>
+            <property name="buddy">
+             <cstring>frameworkCutoffSpinBox</cstring>
             </property>
            </widget>
           </item>
@@ -853,6 +873,9 @@
            <widget class="QLabel" name="frameworkTubeSizeLabel">
             <property name="text">
              <string>Tube Size</string>
+            </property>
+            <property name="buddy">
+             <cstring>frameworkTubeSizeSpinBox</cstring>
             </property>
            </widget>
           </item>
@@ -883,6 +906,9 @@
            <widget class="QLabel" name="frameworkConnectionLabel">
             <property name="text">
              <string>Connect</string>
+            </property>
+            <property name="buddy">
+             <cstring>frameworkConnectionComboBox</cstring>
             </property>
            </widget>
           </item>

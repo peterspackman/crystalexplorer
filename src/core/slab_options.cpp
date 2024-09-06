@@ -1,4 +1,5 @@
 #include "slab_options.h"
+#include <array>
 
 inline constexpr std::array<SlabGenerationOptions::Mode, 5> availableModes = {
     SlabGenerationOptions::Mode::Atoms,

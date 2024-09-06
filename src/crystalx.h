@@ -150,6 +150,7 @@ private slots:
   void taskManagerTaskRemoved(TaskID);
 
   void handleStructureChange();
+  void handleSceneSelectionChange();
   void handleGenerateWavefunctionAction();
 
 private:

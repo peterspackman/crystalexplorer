@@ -295,6 +295,8 @@ void Crystalx::initConnections() {
   // Project connections - current crystal changed in some way
   connect(project, &Project::selectedSceneChanged, crystalController,
           &CrystalController::handleSceneSelectionChange);
+  connect(project, &Project::selectedSceneChanged, this,
+          &Crystalx::handleSceneSelectionChange);
   connect(project, &Project::selectedSceneChanged,
           [&](int) { glWindow->setCurrentCrystal(project); });
   connect(project, &Project::projectSaved, this, &Crystalx::updateWindowTitle);
@@ -1875,11 +1877,15 @@ void Crystalx::calculatePairEnergies(
   }
 }
 
+void Crystalx::handleSceneSelectionChange() {
+  handleStructureChange();
+}
+
 void Crystalx::handleStructureChange() {
   ChemicalStructure *structure = project->currentScene()->chemicalStructure();
   if (structure) {
     qDebug() << "Structure changed";
-
+    childPropertyController->setCurrentPairInteractions(structure->pairInteractions());
     for (auto *child : structure->children()) {
       auto *mesh = qobject_cast<Mesh *>(child);
       if (mesh) {
