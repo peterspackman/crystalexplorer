@@ -305,7 +305,7 @@ void Crystalx::initConnections() {
   connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::updateWindowTitle);
   connect(project, &Project::selectedSceneChanged, this,
-          &Crystalx::allowActionsThatRequireSelectedAtoms);
+          &Crystalx::handleAtomSelectionChanged);
   connect(project, &Project::selectedSceneChanged, this,
           &Crystalx::updateMenuOptionsForScene);
   connect(project, &Project::selectedSceneChanged, this,
@@ -322,9 +322,9 @@ void Crystalx::initConnections() {
   connect(project, &Project::currentCrystalReset, glWindow,
           &GLWindow::resetViewAndRedraw);
   connect(project, &Project::currentCrystalReset, this,
-          &Crystalx::allowActionsThatRequireSelectedAtoms);
+          &Crystalx::handleAtomSelectionChanged);
   connect(project, &Project::atomSelectionChanged, this,
-          &Crystalx::allowActionsThatRequireSelectedAtoms);
+          &Crystalx::handleAtomSelectionChanged);
   connect(project, &Project::contactAtomsTurnedOff, this,
           &Crystalx::uncheckContactAtomsAction);
 
@@ -1253,9 +1253,10 @@ void Crystalx::updateWindowTitle() {
 }
 
 // Called when the current crystal changes or when the atom selection changes
-void Crystalx::allowActionsThatRequireSelectedAtoms() {
+void Crystalx::handleAtomSelectionChanged() {
   enableGenerateSurfaceAction(true);
   enableCalculateEnergiesAction(true);
+  updateInfo(infoViewer->currentTab());
 }
 
 void Crystalx::enableGenerateSurfaceAction(bool enable) {
@@ -1905,8 +1906,8 @@ void Crystalx::handleStructureChange() {
 //
 ////////////////////////////////////////////////////////////////////////////////////
 void Crystalx::showInfoViewer() {
-  updateInfo(infoViewer->currentTab());
   infoViewer->show();
+  updateInfo(infoViewer->currentTab());
 }
 
 void Crystalx::showInfo(InfoType infoType) {
@@ -1918,8 +1919,11 @@ void Crystalx::updateInfo(InfoType infoType) {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  setInfoTabSpecificViewOptions(infoType);
-  infoViewer->setScene(scene);
+
+  if (infoViewer->isVisible()) {
+      setInfoTabSpecificViewOptions(infoType);
+      infoViewer->setScene(scene);
+  }
 }
 
 void Crystalx::setInfoTabSpecificViewOptions(InfoType infoType) {

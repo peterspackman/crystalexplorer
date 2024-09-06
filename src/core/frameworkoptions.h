@@ -31,6 +31,7 @@ struct FrameworkOptions{
   double cutoff{0.0};
   bool allowInversion{true};
   QColor customColor{Qt::black};
+  bool showOnlySelectedFragmentInteractions{false};
 };
 
 QString frameworkColoringToString(FrameworkOptions::Coloring);

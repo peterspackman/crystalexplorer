@@ -36,7 +36,7 @@ public:
 
 private:
   int m_count{0};
-  QColor m_color{Qt::blue};
+  QColor m_color{Qt::white};
   QString m_interactionModel;
   EnergyComponents m_components;
   pair_energy::Parameters m_parameters;
@@ -69,6 +69,7 @@ public:
   void remove(PairInteraction *result);
 
   void resetCounts();
+  void resetColors();
 
   QMap<QString, PairInteractionList> getInteractionsMatchingFragments(const std::vector<FragmentDimer> &frag);
 

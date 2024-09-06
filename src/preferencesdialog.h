@@ -91,4 +91,11 @@ private:
   QMap<QString, QString> m_textSliderKeys;
   QMap<QString, QStringList> m_externalProgramSettingsKeys;
   QStandardItemModel *m_externalProgramSettingsModel{nullptr};
+
+  QColor m_currentSelectionColor{Qt::yellow};
+  QColor m_currentBackgroundColor{Qt::white};
+  QColor m_currentNonePropertyColor{Qt::gray};
+  QColor m_currentFaceHighlightColor{Qt::red};
+  QColor m_currentTextLabelOutlineColor{Qt::white};
+  QColor m_currentTextLabelColor{Qt::black};
 };

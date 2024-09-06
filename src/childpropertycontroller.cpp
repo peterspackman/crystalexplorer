@@ -105,6 +105,9 @@ void ChildPropertyController::setup() {
   connect(frameworkConnectionComboBox, &QComboBox::currentIndexChanged,
           [this]() { emitFrameworkOptions(); });
 
+  connect(frameworkShowOnlySelectionCheckBox, &QCheckBox::checkStateChanged,
+          [this]() { emitFrameworkOptions(); });
+
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
   showFrameworkTabs(false);
@@ -297,6 +300,8 @@ void ChildPropertyController::emitFrameworkOptions() {
       0.001 * frameworkTubeSizeSpinBox->value(); // convert to A per kJ/mol
   options.cutoff = frameworkCutoffSpinBox->value();
   options.display = m_frameworkDisplay;
+  options.showOnlySelectedFragmentInteractions =
+      frameworkShowOnlySelectionCheckBox->isChecked();
   emit frameworkOptionsChanged(options);
 }
 

@@ -200,6 +200,15 @@ void PairInteractions::resetCounts() {
   }
 }
 
+void PairInteractions::resetColors() {
+  const auto models = interactionModels();
+  for (auto &[model, interactions]: m_pairInteractions) {
+    for(auto &[idx, interaction]: interactions) {
+      interaction->setColor(Qt::white);
+    }
+  }
+}
+
 bool PairInteractions::haveInteractions(const QString &model) const {
   return getCount(model) > 0;
 }

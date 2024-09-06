@@ -129,7 +129,7 @@ private slots:
 
   void cloneSurface();
 
-  void allowActionsThatRequireSelectedAtoms();
+  void handleAtomSelectionChanged();
   void allowCloneSurfaceAction();
   void allowCalculateEnergiesAction();
   void showEnergyCalculationDialog();

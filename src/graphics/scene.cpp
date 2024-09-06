@@ -108,6 +108,7 @@ void Scene::toggleShowAtomLabels() {
 
 void Scene::setSelectStatusForAllAtoms(bool set) {
   m_structure->setFlagForAllAtoms(AtomFlag::Selected, set);
+  emit atomSelectionChanged();
 }
 
 void Scene::addMeasurement(const Measurement &m) {
@@ -1463,9 +1464,11 @@ bool Scene::applyDisorderColoring() {
 
 void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
   auto selectedFragments = m_structure->selectedFragments();
+  auto *interactions = m_structure->pairInteractions();
+  interactions->resetCounts();
+  interactions->resetColors();
+
   if (selectedFragments.size() == 1) {
-    auto *interactions = m_structure->pairInteractions();
-    interactions->resetCounts();
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
     ColorMapFunc colorMap(ColorMapName::Austria, 0,

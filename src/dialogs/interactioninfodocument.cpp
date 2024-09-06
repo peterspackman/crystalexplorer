@@ -3,20 +3,33 @@
 #include "pair_energy_results.h"
 #include <QLabel>
 #include <QShowEvent>
+#include <QStackedLayout>
 #include <QTabWidget>
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QTextEdit>
 #include <QTextTable>
-#include <QVBoxLayout>
 
 InteractionInfoDocument::InteractionInfoDocument(QWidget *parent)
     : QWidget(parent), m_tabWidget(new QTabWidget(this)),
       m_noDataLabel(new QLabel("No interaction information found", this)) {
-  QVBoxLayout *layout = new QVBoxLayout(this);
-  layout->addWidget(m_tabWidget);
-  layout->addWidget(m_noDataLabel);
-  m_noDataLabel->hide();
+
+  QStackedLayout *stackedLayout = new QStackedLayout(this);
+
+  // Create a container widget for the "No data" label
+  QWidget *noDataContainer = new QWidget(this);
+  QVBoxLayout *noDataLayout = new QVBoxLayout(noDataContainer);
+  noDataLayout->addWidget(m_noDataLabel, 0, Qt::AlignCenter);
+
+  stackedLayout->addWidget(m_tabWidget);
+  stackedLayout->addWidget(noDataContainer);
+
+  setLayout(stackedLayout);
+
+  // Center the text in the label
+  m_noDataLabel->setAlignment(Qt::AlignCenter);
+
+  showNoDataMessage();
 
   connect(m_tabWidget, &QTabWidget::currentChanged, this,
           &InteractionInfoDocument::onTabChanged);
@@ -53,9 +66,7 @@ void InteractionInfoDocument::updateContent() {
     showNoDataMessage();
     return;
   }
-
-  m_noDataLabel->hide();
-  m_tabWidget->show();
+  static_cast<QStackedLayout*>(layout())->setCurrentIndex(0); // Index of m_tabWidget
 
   QList<QString> sortedModels = interactions->interactionModels();
   std::sort(sortedModels.begin(), sortedModels.end());
@@ -85,13 +96,16 @@ void InteractionInfoDocument::updateContent() {
 }
 
 void InteractionInfoDocument::showNoDataMessage() {
-  m_tabWidget->hide();
-  m_noDataLabel->show();
+    static_cast<QStackedLayout*>(layout())->setCurrentIndex(1); // Index of noDataContainer
+}
+
+void InteractionInfoDocument::updateSettings(InteractionInfoSettings settings) {
+  m_settings = settings;
+  updateContent();
 }
 
 void InteractionInfoDocument::insertInteractionEnergiesForModel(
     PairInteractions *results, QTextCursor &cursor, const QString &model) {
-  const int eprec = 3; // You might want to get this from settings
 
   cursor.insertHtml("<h1>Interaction Energies - " + model + "</h1>");
 
@@ -108,7 +122,6 @@ void InteractionInfoDocument::insertInteractionEnergiesForModel(
 
   InfoTable infoTable(cursor, results->filterByModel(model).size() + 1,
                       tableHeader.size());
-
   infoTable.insertTableHeader(tableHeader);
 
   int row = 1;
@@ -118,9 +131,10 @@ void InteractionInfoDocument::insertInteractionEnergiesForModel(
     infoTable.insertColorBlock(row, column++, result->color());
     infoTable.insertCellValue(row, column++, QString::number(result->count()),
                               Qt::AlignRight);
-    infoTable.insertCellValue(
-        row, column++, QString::number(result->centroidDistance(), 'f', 2),
-        Qt::AlignRight);
+    infoTable.insertCellValue(row, column++,
+                              QString::number(result->centroidDistance(), 'f',
+                                              m_settings.distancePrecision),
+                              Qt::AlignRight);
     infoTable.insertCellValue(row, column++, result->symmetry(),
                               Qt::AlignRight);
 
@@ -129,7 +143,9 @@ void InteractionInfoDocument::insertInteractionEnergiesForModel(
       for (const auto &pair : result->components()) {
         if (pair.first == component) {
           infoTable.insertCellValue(
-              row, column++, QString("%1").arg(pair.second, 6, 'f', eprec),
+              row, column++,
+              QString("%1").arg(pair.second, 6, 'f',
+                                m_settings.energyPrecision),
               Qt::AlignRight);
           found = true;
           break;

@@ -809,37 +809,13 @@
           <string>Framework Display</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="4" column="1">
-           <widget class="QComboBox" name="frameworkColorComboBox"/>
-          </item>
-          <item row="0" column="3">
-           <widget class="QRadioButton" name="showLinesButton">
-            <property name="text">
-             <string>Lines</string>
+          <item row="3" column="4">
+           <widget class="QDoubleSpinBox" name="frameworkCutoffSpinBox">
+            <property name="prefix">
+             <string/>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QRadioButton" name="showTubesButton">
-            <property name="text">
-             <string>Tubes</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="frameworkColorLabel">
-            <property name="text">
-             <string>Coloring</string>
-            </property>
-            <property name="buddy">
-             <cstring>frameworkColorComboBox</cstring>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="2">
-           <widget class="QToolButton" name="frameworkColorToolButton">
-            <property name="text">
-             <string>...</string>
+            <property name="suffix">
+             <string> kJ/mol</string>
             </property>
            </widget>
           </item>
@@ -879,16 +855,6 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="4">
-           <widget class="QDoubleSpinBox" name="frameworkCutoffSpinBox">
-            <property name="prefix">
-             <string/>
-            </property>
-            <property name="suffix">
-             <string> kJ/mol</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0">
            <widget class="QRadioButton" name="showNoneButton">
             <property name="text">
@@ -899,8 +865,29 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="4">
-           <widget class="QComboBox" name="frameworkConnectionComboBox"/>
+          <item row="4" column="2">
+           <widget class="QToolButton" name="frameworkColorToolButton">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="frameworkColorLabel">
+            <property name="text">
+             <string>Coloring</string>
+            </property>
+            <property name="buddy">
+             <cstring>frameworkColorComboBox</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QRadioButton" name="showTubesButton">
+            <property name="text">
+             <string>Tubes</string>
+            </property>
+           </widget>
           </item>
           <item row="4" column="3">
            <widget class="QLabel" name="frameworkConnectionLabel">
@@ -909,6 +896,26 @@
             </property>
             <property name="buddy">
              <cstring>frameworkConnectionComboBox</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QComboBox" name="frameworkConnectionComboBox"/>
+          </item>
+          <item row="4" column="1">
+           <widget class="QComboBox" name="frameworkColorComboBox"/>
+          </item>
+          <item row="0" column="3">
+           <widget class="QRadioButton" name="showLinesButton">
+            <property name="text">
+             <string>Lines</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QCheckBox" name="frameworkShowOnlySelectionCheckBox">
+            <property name="text">
+             <string>Only selection</string>
             </property>
            </widget>
           </item>

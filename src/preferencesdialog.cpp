@@ -513,27 +513,33 @@ void PreferencesDialog::updateDialogFromSettings() {
   loadExternalProgramSettings();
 
   // Display Preferences
-  setButtonColor(
-      backgroundColorButton,
+  m_currentBackgroundColor = QColor(
       settings::readSetting(settings::keys::BACKGROUND_COLOR).toString());
-  setButtonColor(textColorButton,
-                 settings::readSetting(settings::keys::TEXT_COLOR).toString());
-  setButtonColor(
-      textOutlineColorButton,
+  setButtonColor(backgroundColorButton, m_currentBackgroundColor);
+
+  m_currentTextLabelColor =
+      QColor(settings::readSetting(settings::keys::TEXT_COLOR).toString());
+  setButtonColor(textColorButton, m_currentTextLabelColor);
+
+  m_currentTextLabelOutlineColor = QColor(
       settings::readSetting(settings::keys::TEXT_OUTLINE_COLOR).toString());
-  setButtonColor(
-      faceHighlightColorButton,
+  setButtonColor(textOutlineColorButton, m_currentTextLabelOutlineColor);
+
+  m_currentFaceHighlightColor = QColor(
       settings::readSetting(settings::keys::FACE_HIGHLIGHT_COLOR).toString());
-  setButtonColor(
-      nonePropertyColorButton,
+  setButtonColor(faceHighlightColorButton, m_currentFaceHighlightColor);
+
+  m_currentNonePropertyColor = QColor(
       settings::readSetting(settings::keys::NONE_PROPERTY_COLOR).toString());
+  setButtonColor(nonePropertyColorButton, m_currentNonePropertyColor);
+
   setButtonColor(
       energyFrameworkPositiveColorButton,
       settings::readSetting(settings::keys::ENERGY_FRAMEWORK_POSITIVE_COLOR)
           .toString());
-  setButtonColor(
-      selectionColorButton,
-      settings::readSetting(settings::keys::SELECTION_COLOR).toString());
+  m_currentSelectionColor =
+      QColor(settings::readSetting(settings::keys::SELECTION_COLOR).toString());
+  setButtonColor(selectionColorButton, m_currentSelectionColor);
 
   textOutlineWidthSlider->setValue(static_cast<int>(
       settings::readSetting(settings::keys::TEXT_OUTLINE).toFloat() * 100.0f));
@@ -610,8 +616,7 @@ void PreferencesDialog::updateSettingsFromDialog() {
 }
 
 void PreferencesDialog::contextualGlwindowBackgroundColor() {
-  QColor color =
-      QColorDialog::getColor(getButtonColor(backgroundColorButton), this);
+  QColor color = QColorDialog::getColor(m_currentBackgroundColor, this);
   if (color.isValid()) {
     updateGlwindowBackgroundColor(color);
     emit glwindowBackgroundColorChanged(color);
@@ -619,14 +624,15 @@ void PreferencesDialog::contextualGlwindowBackgroundColor() {
 }
 
 void PreferencesDialog::updateGlwindowBackgroundColor(QColor color) {
+  m_currentBackgroundColor = color;
   setButtonColor(backgroundColorButton, color);
   settings::writeSetting(settings::keys::BACKGROUND_COLOR, color.name());
 }
 
 void PreferencesDialog::setFaceHighlightColor() {
-  QColor color =
-      QColorDialog::getColor(getButtonColor(faceHighlightColorButton), this);
+  QColor color = QColorDialog::getColor(m_currentFaceHighlightColor, this);
   if (color.isValid()) {
+    m_currentFaceHighlightColor = color;
     setButtonColor(faceHighlightColorButton, color);
     settings::writeSetting(settings::keys::FACE_HIGHLIGHT_COLOR, color.name());
     emit faceHighlightColorChanged();
@@ -634,8 +640,10 @@ void PreferencesDialog::setFaceHighlightColor() {
 }
 
 void PreferencesDialog::setTextLabelColor() {
-  QColor color = QColorDialog::getColor(getButtonColor(textColorButton), this);
+  QColor color =
+      QColorDialog::getColor(m_currentTextLabelColor, this, "Text label color");
   if (color.isValid()) {
+    m_currentTextLabelColor = color;
     setButtonColor(textColorButton, color);
     settings::writeSetting(settings::keys::TEXT_COLOR, color.name());
     emit textSettingsChanged();
@@ -643,9 +651,10 @@ void PreferencesDialog::setTextLabelColor() {
 }
 
 void PreferencesDialog::setTextLabelOutlineColor() {
-  QColor color =
-      QColorDialog::getColor(getButtonColor(textOutlineColorButton), this);
+  QColor color = QColorDialog::getColor(m_currentTextLabelOutlineColor, this,
+                                        "Text label outline color");
   if (color.isValid()) {
+    m_currentTextLabelOutlineColor = color;
     setButtonColor(textOutlineColorButton, color);
     settings::writeSetting(settings::keys::TEXT_OUTLINE_COLOR, color.name());
     emit textSettingsChanged();
@@ -653,9 +662,9 @@ void PreferencesDialog::setTextLabelOutlineColor() {
 }
 
 void PreferencesDialog::setNonePropertyColor() {
-  QColor color =
-      QColorDialog::getColor(getButtonColor(nonePropertyColorButton), this);
+  QColor color = QColorDialog::getColor(m_currentNonePropertyColor, this);
   if (color.isValid()) {
+    m_currentNonePropertyColor = color;
     setButtonColor(nonePropertyColorButton, color);
     settings::writeSetting(settings::keys::NONE_PROPERTY_COLOR, color.name());
     emit nonePropertyColorChanged();
@@ -663,9 +672,9 @@ void PreferencesDialog::setNonePropertyColor() {
 }
 
 void PreferencesDialog::setSelectionColor() {
-  QColor color =
-      QColorDialog::getColor(getButtonColor(selectionColorButton), this);
+  QColor color = QColorDialog::getColor(m_currentSelectionColor, this);
   if (color.isValid()) {
+    m_currentSelectionColor = color;
     setButtonColor(selectionColorButton, color);
     settings::writeSetting(settings::keys::SELECTION_COLOR, color.name());
     emit selectionColorChanged();

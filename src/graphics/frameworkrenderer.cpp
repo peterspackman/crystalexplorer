@@ -165,9 +165,15 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
     for (const auto &[pair, uniqueIndex] : molPairs) {
       if (selected.size() != 0) {
-        if (selected.find(pair.index.a) == selected.end() &&
-            selected.find(pair.index.b) == selected.end())
-          continue;
+        if (m_options.showOnlySelectedFragmentInteractions && selected.size() > 1) {
+          if (selected.find(pair.index.a) == selected.end() ||
+              selected.find(pair.index.b) == selected.end())
+            continue;
+        } else {
+          if (selected.find(pair.index.a) == selected.end() &&
+              selected.find(pair.index.b) == selected.end())
+            continue;
+        }
       }
       auto [color, energy] = energies[uniqueIndex];
       if (std::abs(energy) <= m_options.cutoff)
