@@ -1,6 +1,7 @@
 #pragma once
 #include "adp.h"
 #include "atomflags.h"
+#include "contact_settings.h"
 #include "cell_index.h"
 #include "close_contact_criteria.h"
 #include "fragment.h"
@@ -88,7 +89,7 @@ public:
   inline void setFilename(const QString &filename) { m_filename = filename; }
   inline const QString &filename() const { return m_filename; }
 
-  virtual void setShowVanDerWaalsContactAtoms(bool state = false);
+  virtual void setShowContacts(const ContactSettings &settings = {});
   virtual void updateBondGraph();
 
   occ::Vec3 atomPosition(GenericAtomIndex) const;

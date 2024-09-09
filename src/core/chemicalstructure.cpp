@@ -645,7 +645,7 @@ void ChemicalStructure::resetAtomsAndBonds(bool toSelection) {
   // TODO
 }
 
-void ChemicalStructure::setShowVanDerWaalsContactAtoms(bool state) {
+void ChemicalStructure::setShowContacts(const ContactSettings & state) {
   // TODO
 }
 

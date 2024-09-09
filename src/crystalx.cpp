@@ -654,7 +654,7 @@ void Crystalx::initMoleculeStyles() {
   // QActionGroup* moleculeStyleGroup = new QActionGroup(toolBar);
   const auto availableDrawingStyles = {
       DrawingStyle::Tube, DrawingStyle::BallAndStick, DrawingStyle::SpaceFill,
-      DrawingStyle::WireFrame, DrawingStyle::Ortep};
+      DrawingStyle::WireFrame, DrawingStyle::Ortep, DrawingStyle::Centroid, DrawingStyle::CenterOfMass};
   for (const auto &drawingStyle : availableDrawingStyles) {
     QString moleculeStyleString = drawingStyleLabel(drawingStyle);
     m_drawingStyleLabelToDrawingStyle[moleculeStyleString] = drawingStyle;

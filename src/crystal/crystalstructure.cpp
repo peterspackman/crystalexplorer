@@ -465,8 +465,33 @@ void CrystalStructure::addVanDerWaalsContactAtoms() {
       }
     }
   }
-
   std::vector<GenericAtomIndex> indices(atomsToShow.begin(), atomsToShow.end());
+
+  if(m_contactSettings.showMolecules) {
+    auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
+                       const EdgeDesc &e, const MillerIndex &hkl) {
+      GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
+      auto location = m_atomMap.find(atomIdx);
+      if (location != m_atomMap.end()) {
+        setAtomFlag(atomIdx, AtomFlag::Contact, false);
+        return;
+      }
+      atomsToShow.insert(atomIdx);
+    };
+
+    auto covalentPredicate = [&edges](const EdgeDesc &e) {
+      return edges.at(e).connectionType == Connection::CovalentBond;
+    };
+
+    for (const auto &offset: indices) {
+      VertexDesc uc_vertex = offset.unique;
+      filtered_connectivity_traversal_with_cell_offset(
+          g, uc_vertex, visitor, covalentPredicate,
+          {offset.x, offset.y, offset.z});
+    }
+    indices = std::vector<GenericAtomIndex>(atomsToShow.begin(), atomsToShow.end());
+  }
+
   addAtomsByCrystalIndex(indices, AtomFlag::Contact);
 }
 
@@ -550,8 +575,9 @@ void CrystalStructure::deleteFragmentContainingAtomIndex(int atomIndex) {
   updateBondGraph();
 }
 
-void CrystalStructure::setShowVanDerWaalsContactAtoms(bool state) {
-  if (state) {
+void CrystalStructure::setShowContacts(const ContactSettings &s) {
+  m_contactSettings = s;
+  if (s.show) {
     addVanDerWaalsContactAtoms();
     updateBondGraph();
   } else {

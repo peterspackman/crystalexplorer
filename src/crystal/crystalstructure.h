@@ -72,7 +72,7 @@ public:
 
   void resetAtomsAndBonds(bool toSelection = false) override;
 
-  void setShowVanDerWaalsContactAtoms(bool state) override;
+  void setShowContacts(const ContactSettings &) override;
 
   void completeFragmentContaining(int) override;
   void completeFragmentContaining(GenericAtomIndex) override;
@@ -169,4 +169,5 @@ private:
   occ::crystal::CrystalDimers m_unitCellDimers;
   occ::crystal::DimerMappingTable m_dimerMappingTable;
   occ::crystal::DimerMappingTable m_dimerMappingTableNoInv;
+  ContactSettings m_contactSettings;
 };

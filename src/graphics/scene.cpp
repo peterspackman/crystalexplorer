@@ -78,7 +78,9 @@ void Scene::setShowStatusesToDefaults() {
 }
 
 void Scene::setShowCloseContacts(bool set) {
-  m_structure->setShowVanDerWaalsContactAtoms(set);
+  ContactSettings settings;
+  settings.show = set;
+  m_structure->setShowContacts(settings);
 }
 
 void Scene::setFrameworkOptions(const FrameworkOptions &options) {
@@ -132,17 +134,18 @@ bool Scene::hasMeasurements() const { return !m_measurementList.isEmpty(); }
 void Scene::setSelectionColor(const QColor &color) { m_selectionColor = color; }
 
 AtomDrawingStyle Scene::atomStyle() const {
+  if(m_structureRenderer) return m_structureRenderer->atomStyle();
   return atomStyleForDrawingStyle(m_drawingStyle);
 }
 BondDrawingStyle Scene::bondStyle() const {
+  if(m_structureRenderer) return m_structureRenderer->bondStyle();
   return bondStyleForDrawingStyle(m_drawingStyle);
 }
 
 void Scene::setDrawingStyle(DrawingStyle style) {
   m_drawingStyle = style;
   if (m_structureRenderer) {
-    m_structureRenderer->setAtomStyle(atomStyle());
-    m_structureRenderer->setBondStyle(bondStyle());
+    m_structureRenderer->setDrawingStyle(style);
   }
 }
 
@@ -885,8 +888,7 @@ void Scene::draw() {
     m_structureRenderer =
         new cx::graphics::ChemicalStructureRenderer(m_structure, this);
     m_structureRenderer->setSelectionHandler(m_selectionHandler);
-    m_structureRenderer->setAtomStyle(atomStyle());
-    m_structureRenderer->setBondStyle(bondStyle());
+    m_structureRenderer->setDrawingStyle(drawingStyle());
     connect(m_structureRenderer,
             &cx::graphics::ChemicalStructureRenderer::meshesChanged, this,
             &Scene::sceneContentsChanged);

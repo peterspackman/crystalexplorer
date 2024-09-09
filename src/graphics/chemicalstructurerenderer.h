@@ -58,7 +58,9 @@ public:
 
   void setAtomStyle(AtomDrawingStyle);
   void setBondStyle(BondDrawingStyle);
+  void setDrawingStyle(DrawingStyle);
 
+  [[nodiscard]] DrawingStyle drawingStyle() const;
   [[nodiscard]] AtomDrawingStyle atomStyle() const;
   [[nodiscard]] BondDrawingStyle bondStyle() const;
 
@@ -106,6 +108,8 @@ private:
   void handleInteractionsUpdate();
   void handleMeshesUpdate();
 
+  void addAggregateRepresentations();
+
   void clearMeshRenderers();
   void addFaceHighlightsForMeshInstance(Mesh *, MeshInstance *);
   QList<TextLabel> getCurrentLabels();
@@ -129,6 +133,7 @@ private:
   // helper for keeping track of mesh selection
   std::vector<MeshInstance *> m_meshIndexToMesh;
 
+  DrawingStyle m_drawingStyle{DrawingStyle::BallAndStick};
   AtomDrawingStyle m_atomStyle{AtomDrawingStyle::CovalentRadiusSphere};
   BondDrawingStyle m_bondStyle{BondDrawingStyle::Stick};
 

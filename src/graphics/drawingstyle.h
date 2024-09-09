@@ -1,7 +1,7 @@
 #pragma once
 #include <QKeySequence>
 
-enum class DrawingStyle { Tube, BallAndStick, SpaceFill, WireFrame, Ortep };
+enum class DrawingStyle { Tube, BallAndStick, SpaceFill, WireFrame, Ortep, Centroid, CenterOfMass};
 
 enum class AtomDrawingStyle {
   None,
@@ -24,6 +24,10 @@ atomStyleForDrawingStyle(const DrawingStyle &drawingStyle) {
     return AtomDrawingStyle::None;
   case DrawingStyle::Ortep:
     return AtomDrawingStyle::Ellipsoid;
+  case DrawingStyle::Centroid:
+    return AtomDrawingStyle::None;
+  case DrawingStyle::CenterOfMass:
+    return AtomDrawingStyle::None;
   default:
     return AtomDrawingStyle::CovalentRadiusSphere; // Ball and Stick
   }
@@ -36,6 +40,10 @@ bondStyleForDrawingStyle(const DrawingStyle &drawingStyle) {
     return BondDrawingStyle::None;
   case DrawingStyle::WireFrame:
     return BondDrawingStyle::Line;
+  case DrawingStyle::Centroid:
+    return BondDrawingStyle::None;
+  case DrawingStyle::CenterOfMass:
+    return BondDrawingStyle::None;
   default:
     return BondDrawingStyle::Stick;
   }
@@ -52,6 +60,10 @@ drawingStyleLabel(const DrawingStyle &drawingStyle) {
     return "Wireframe";
   case DrawingStyle::Ortep:
     return "Thermal Ellipsoids";
+  case DrawingStyle::Centroid:
+    return "Fragment centroid";
+  case DrawingStyle::CenterOfMass:
+    return "Fragment center of mass";
   default:
     return "Ball and Stick"; // Ball and Stick
   }
@@ -68,6 +80,10 @@ drawingStyleKeySequence(const DrawingStyle &drawingStyle) {
     return QKeySequence(Qt::SHIFT | Qt::Key_4);
   case DrawingStyle::Ortep:
     return QKeySequence(Qt::SHIFT | Qt::Key_5);
+  case DrawingStyle::Centroid:
+    return QKeySequence(Qt::SHIFT | Qt::Key_6);
+  case DrawingStyle::CenterOfMass:
+    return QKeySequence(Qt::SHIFT | Qt::Key_7);
   default:
     return QKeySequence(Qt::SHIFT | Qt::Key_2); // Ball and Stick
   }

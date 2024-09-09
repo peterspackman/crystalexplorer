@@ -149,6 +149,14 @@ bool ChemicalStructureRenderer::shouldSkipAtom(int index) const {
   return false;
 }
 
+void ChemicalStructureRenderer::setDrawingStyle(DrawingStyle style) {
+  m_drawingStyle = style;
+  setAtomStyle(atomStyleForDrawingStyle(style));
+  setBondStyle(bondStyleForDrawingStyle(style));
+  m_atomsNeedsUpdate = true;
+  m_bondsNeedsUpdate = true;
+}
+
 void ChemicalStructureRenderer::setAtomStyle(AtomDrawingStyle style) {
   if (m_atomStyle == style)
     return;
@@ -332,6 +340,25 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
   m_cellsNeedsUpdate = false;
 }
 
+
+void ChemicalStructureRenderer::addAggregateRepresentations() {
+  if(!(m_drawingStyle == DrawingStyle::Centroid || m_drawingStyle == DrawingStyle::CenterOfMass)) return;
+
+  std::vector<FragmentIndex> fragments = m_structure->completedFragments();
+
+  const auto &fragmentMap = m_structure->getFragments();
+  for(const auto &frag: fragments) {
+    auto fragment = fragmentMap.at(frag);
+    QColor color = m_structure->getFragmentColor(frag);
+    occ::Vec3 p = (m_drawingStyle == DrawingStyle::Centroid) ? fragment.centroid() : fragment.centerOfMass();
+    QVector3D pos(p.x(), p.y(), p.z());
+    bool selected = false;
+    QVector3D selectionColor(0.0, 0.0, 0.0);
+    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color, 0.4, selectionColor, selected);
+  }
+
+}
+
 void ChemicalStructureRenderer::handleAtomsUpdate() {
   if (!m_structure)
     return;
@@ -345,6 +372,7 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
   m_ellipsoidRenderer->clear();
 
   if (atomStyle() == AtomDrawingStyle::None) {
+    addAggregateRepresentations();
     m_atomsNeedsUpdate = false;
     return;
   }
@@ -415,6 +443,11 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
 
   m_bondLineRenderer->clear();
   m_cylinderRenderer->clear();
+
+  if(bondStyle() == BondDrawingStyle::None) {
+    m_bondsNeedsUpdate = false;
+    return;
+  }
 
   float radius = bondThickness();
   const auto &atomPositions = m_structure->atomicPositions();
