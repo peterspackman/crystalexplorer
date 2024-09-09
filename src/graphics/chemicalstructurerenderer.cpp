@@ -343,6 +343,7 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
 
 void ChemicalStructureRenderer::addAggregateRepresentations() {
   if(!(m_drawingStyle == DrawingStyle::Centroid || m_drawingStyle == DrawingStyle::CenterOfMass)) return;
+  m_ellipsoidRenderer->clear();
 
   std::vector<FragmentIndex> fragments = m_structure->completedFragments();
 
