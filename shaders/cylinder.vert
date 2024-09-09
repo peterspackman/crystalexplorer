@@ -14,6 +14,8 @@ out vec4 v_colorB;
 out vec3 v_normal;
 out vec3 v_position;
 out vec3 v_cylinderPosition;
+flat out float v_length;
+flat out float v_radius;
 flat out vec4 v_selection_idA;
 flat out vec4 v_selection_idB;
 flat out int v_selectedA;
@@ -70,6 +72,8 @@ void main()
     mat4 transform = transpose(rotation_from_axis_angle(angle, ax)) * scale;
     mat4 normalTransform = inverse(transpose(transform));
     vec4 posTransformed = transform * vec4(vertex, 1);
+    v_length = l;
+    v_radius = r;
     v_normal = normalize(mat3(normalTransform) * vertex);
     v_position = posTransformed.xyz + T;
     v_colorA = vec4(abs(colorA), 1.0f);

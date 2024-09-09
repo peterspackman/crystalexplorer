@@ -914,6 +914,9 @@
           </item>
           <item row="5" column="4">
            <widget class="QCheckBox" name="frameworkShowOnlySelectionCheckBox">
+            <property name="toolTip">
+             <string>When checked, show only interactions between selected fragments. Otherwise any interaction between one of the selected fragments and any other fragment is shown.</string>
+            </property>
             <property name="text">
              <string>Only selection</string>
             </property>

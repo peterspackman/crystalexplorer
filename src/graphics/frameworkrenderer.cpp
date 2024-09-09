@@ -189,9 +189,9 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       if (inv) {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
-                                                     color, scale);
+                                                     color, std::abs(scale));
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
-                                                     color, scale);
+                                                     color, std::abs(scale));
           cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va,
                                                       vb, color, color, scale);
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
@@ -203,7 +203,9 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       } else {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
-                                                     color, scale);
+                                                     color, std::abs(scale));
+          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, m,
+                                                     color, std::abs(scale));
           cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, m,
                                                       color, color, scale);
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
