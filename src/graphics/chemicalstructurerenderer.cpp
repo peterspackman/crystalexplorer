@@ -345,17 +345,29 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
   if(!(m_drawingStyle == DrawingStyle::Centroid || m_drawingStyle == DrawingStyle::CenterOfMass)) return;
   m_ellipsoidRenderer->clear();
 
+  if (m_selectionHandler) {
+    m_selectionHandler->clear(SelectionType::Aggregate);
+  }
+
   std::vector<FragmentIndex> fragments = m_structure->completedFragments();
 
   const auto &fragmentMap = m_structure->getFragments();
+  int i = 0;
   for(const auto &frag: fragments) {
     auto fragment = fragmentMap.at(frag);
     QColor color = m_structure->getFragmentColor(frag);
     occ::Vec3 p = (m_drawingStyle == DrawingStyle::Centroid) ? fragment.centroid() : fragment.centerOfMass();
     QVector3D pos(p.x(), p.y(), p.z());
-    bool selected = false;
-    QVector3D selectionColor(0.0, 0.0, 0.0);
-    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color, 0.4, selectionColor, selected);
+    bool selected = m_structure->atomsHaveFlags(fragment.atomIndices, AtomFlag::Selected);
+    quint32 selectionId{0};
+    QVector3D selectionIdColor;
+    if (m_selectionHandler) {
+      selectionId = m_selectionHandler->add(SelectionType::Aggregate, i);
+      selectionIdColor = m_selectionHandler->getColorFromId(selectionId);
+    }
+
+    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color, 0.4, selectionIdColor, selected);
+    i++;
   }
 
 }
