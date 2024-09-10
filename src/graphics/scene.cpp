@@ -134,11 +134,13 @@ bool Scene::hasMeasurements() const { return !m_measurementList.isEmpty(); }
 void Scene::setSelectionColor(const QColor &color) { m_selectionColor = color; }
 
 AtomDrawingStyle Scene::atomStyle() const {
-  if(m_structureRenderer) return m_structureRenderer->atomStyle();
+  if (m_structureRenderer)
+    return m_structureRenderer->atomStyle();
   return atomStyleForDrawingStyle(m_drawingStyle);
 }
 BondDrawingStyle Scene::bondStyle() const {
-  if(m_structureRenderer) return m_structureRenderer->bondStyle();
+  if (m_structureRenderer)
+    return m_structureRenderer->bondStyle();
   return bondStyleForDrawingStyle(m_drawingStyle);
 }
 
@@ -426,6 +428,19 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     return true;
     break;
   }
+  case SelectionType::Aggregate: {
+    auto agg = m_structureRenderer->getAggregateIndex(m_selection.index);
+    const auto &fragments = m_structure->getFragments();
+    const auto kv = fragments.find(agg.fragment);
+    if(kv == fragments.end()) break;
+    const auto &frag = kv->second;
+    for(const auto &atom: frag.atomIndices) {
+        m_structure->toggleAtomFlag(atom, AtomFlag::Selected);
+    }
+    emit atomSelectionChanged();
+    return true;
+    break;
+  }
   default: {
     break;
   }
@@ -546,6 +561,21 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
     result.selectionType = SelectionType::Surface;
     result.index = surfaceIndex;
 
+    break;
+  }
+  case SelectionType::Aggregate: {
+    auto agg = m_structureRenderer->getAggregateIndex(m_selection.index);
+    const auto &fragments = m_structure->getFragments();
+    const auto kv = fragments.find(agg.fragment);
+    if(kv == fragments.end()) break;
+    const auto &frag = kv->second;
+    result.position = agg.position;
+    result.selectionType = SelectionType::Aggregate;
+    result.index = m_selection.index;
+    for(const auto &atom: frag.atomIndices) {
+        m_structure->toggleAtomFlag(atom, AtomFlag::Selected);
+    }
+    emit atomSelectionChanged();
     break;
   }
   default:

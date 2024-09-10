@@ -270,7 +270,6 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   m_unitCellAtomFragments.clear();
   for (const auto &mol : m_crystal.unit_cell_molecules()) {
     FragmentIndex idx{mol.unit_cell_molecule_idx(), 0, 0, 0};
-    qDebug() << "Unit cell mol: " << idx;
     auto frag = makeFragmentFromOccMolecule(mol);
 
     frag.asymmetricFragmentIndex =
@@ -281,16 +280,12 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     getTransformation(asymFrag.atomIndices, frag.atomIndices,
                       frag.asymmetricFragmentTransform);
     m_unitCellFragments.insert({idx, frag});
-    qDebug() << "Inserting unit cell fragment:" << frag.index;
     for (const auto &atomIndex : frag.atomIndices) {
-      qDebug() << "AtomIndex: " << atomIndex;
       FragmentIndex thisIndex = idx;
       thisIndex.h = -atomIndex.x;
       thisIndex.k = -atomIndex.y;
       thisIndex.l = -atomIndex.z;
       m_unitCellAtomFragments[atomIndex.unique] = thisIndex;
-      qDebug() << "Fragment for unit cell index" << atomIndex.unique
-               << thisIndex;
     }
   }
 
@@ -598,10 +593,6 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
 
   const Fragment frag = makeFragmentFromFragmentIndex(fragmentIndex);
 
-  for (const auto &idx : frag.atomIndices) {
-    qDebug() << idx;
-  }
-
   addAtomsByCrystalIndex(frag.atomIndices, AtomFlag::NoFlag);
 
   if (haveContactAtoms) {
@@ -877,11 +868,7 @@ void CrystalStructure::buildSlab(SlabGenerationOptions options) {
                 center[1] >= lower.k && center[1] < upper.k + 1 &&
                 center[2] >= lower.l && center[2] < upper.l + 1) {
 
-              qDebug() << "Center in bounds:" << center[0] << center[1]
-                       << center[2];
               FragmentIndex unitCellIndex{i, 0, 0, 0};
-              qDebug() << "FragmentIndex:" << unitCellIndex.u << unitCellIndex.h
-                       << unitCellIndex.k << unitCellIndex.l;
 
               const auto &ucFrag = m_unitCellFragments.at(unitCellIndex);
               for (auto &atomIndex : ucFrag.atomIndices) {
@@ -895,7 +882,6 @@ void CrystalStructure::buildSlab(SlabGenerationOptions options) {
       }
     }
 
-    qDebug() << "Total indices added:" << indices.size();
   };
 
   const auto &uc_mols = m_crystal.unit_cell_molecules();
@@ -1167,7 +1153,7 @@ CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
       return offset;
     }
   }
-  qDebug() << "No Matching unit cell fragment!";
+  qWarning() << "No Matching unit cell fragment!";
   return FragmentIndex{-1, 0, 0, 0};
 }
 
@@ -1260,7 +1246,7 @@ CrystalStructure::getAtomIndicesUnderTransformation(
 
     if (closestAtomIndex != -1) {
       if (minDistance > 1e-3)
-        qDebug() << "Match has large distance: " << closestAtomIndex
+        qWarning() << "Match has large distance: " << closestAtomIndex
                  << minDistance;
       result.emplace_back(GenericAtomIndex{static_cast<int>(closestAtomIndex),
                                            cellOffset(0), cellOffset(1),
@@ -1299,7 +1285,6 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
 
   std::vector<GenericAtomIndex> idxsToAdd(idxs.begin(), idxs.end());
 
-  qDebug() << "Adding" << idxsToAdd.size() << "atoms";
   addAtomsByCrystalIndex(idxsToAdd);
   updateBondGraph();
 
@@ -1328,17 +1313,11 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
       const Fragment uFragA = makeFragmentFromFragmentIndex(uniquePairIndex.a);
       const Fragment uFragB = makeFragmentFromFragmentIndex(uniquePairIndex.b);
       FragmentDimer ud(uFragA, uFragB);
-      qDebug() << "Fragment dimer" << d.index;
-      qDebug() << "Unique dimer" << ud.index << ud.nearestAtomDistance;
 
       if (added.find(unique) != added.end()) {
-        qDebug() << "Should only import unique dimers:"
+        qWarning() << "Should only import unique dimers:"
                  << FragmentIndexPair::fromDimerIndex(unique);
         continue;
-      }
-
-      for (const auto &related : dimerMap.symmetry_related_dimers(idx)) {
-        qDebug() << "Related:" << FragmentIndexPair::fromDimerIndex(related);
       }
 
       added.insert(unique);
@@ -1453,6 +1432,7 @@ CrystalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
 }
 
 void CrystalStructure::buildDimerMappingTable(double maxRadius) {
+  // TODO extend dimer calculationg on the fly when people have dimers with higher than current max radius
   m_unitCellDimers = m_crystal.unit_cell_dimers(maxRadius);
   qDebug() << "Building dimer mapping table";
   qDebug() << "Unit cell molecules" << m_unitCellFragments.size();
@@ -1512,12 +1492,6 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
       DimerIndex canonicalIndex = dimerTable.canonical_dimer_index(dimerIndex);
       DimerIndex symmetryUniqueDimer =
           dimerTable.symmetry_unique_dimer(canonicalIndex);
-      qDebug() << "distance" << d.centroidDistance;
-      qDebug() << "Dimer" << FragmentIndexPair::fromDimerIndex(dimerIndex);
-      qDebug() << "Canonical"
-               << FragmentIndexPair::fromDimerIndex(canonicalIndex);
-      qDebug() << "symmetryUnique"
-               << FragmentIndexPair::fromDimerIndex(symmetryUniqueDimer);
       symmetryUniqueMap.insert({dimerIndex, symmetryUniqueDimer});
       symmetryUniquePairs.insert(symmetryUniqueDimer);
 
@@ -1531,10 +1505,6 @@ CrystalStructure::findFragmentPairs(FragmentPairSettings settings) const {
     auto a = makeFragmentFromFragmentIndex(ab.a);
     auto b = makeFragmentFromFragmentIndex(ab.b);
     FragmentDimer d(a, b);
-    qDebug() << "UNIQUE" << d.index << d.nearestAtomDistance
-             << d.centroidDistance;
-    qDebug() << "a" << a;
-    qDebug() << "b" << b;
     result.uniquePairs.push_back(d);
   }
 

@@ -340,6 +340,10 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
   m_cellsNeedsUpdate = false;
 }
 
+AggregateIndex ChemicalStructureRenderer::getAggregateIndex(size_t index) const {
+  if(index < m_aggregateIndices.size()) return m_aggregateIndices[index];
+  return AggregateIndex{};
+}
 
 void ChemicalStructureRenderer::addAggregateRepresentations() {
   if(!(m_drawingStyle == DrawingStyle::Centroid || m_drawingStyle == DrawingStyle::CenterOfMass)) return;
@@ -349,7 +353,8 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
     m_selectionHandler->clear(SelectionType::Aggregate);
   }
 
-  std::vector<FragmentIndex> fragments = m_structure->completedFragments();
+  m_aggregateIndices.clear();
+  const auto &fragments = m_structure->completedFragments();
 
   const auto &fragmentMap = m_structure->getFragments();
   int i = 0;
@@ -366,6 +371,7 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
       selectionIdColor = m_selectionHandler->getColorFromId(selectionId);
     }
 
+    m_aggregateIndices.push_back(AggregateIndex{frag, pos});
     cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color, 0.4, selectionIdColor, selected);
     i++;
   }

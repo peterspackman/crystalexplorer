@@ -23,6 +23,11 @@ struct TextLabel {
   QVector3D position;
 };
 
+struct AggregateIndex {
+  FragmentIndex fragment;
+  QVector3D position;
+};
+
 class ChemicalStructureRenderer : public QObject {
   Q_OBJECT
 public:
@@ -63,6 +68,7 @@ public:
   [[nodiscard]] DrawingStyle drawingStyle() const;
   [[nodiscard]] AtomDrawingStyle atomStyle() const;
   [[nodiscard]] BondDrawingStyle bondStyle() const;
+  [[nodiscard]] AggregateIndex getAggregateIndex(size_t index) const;
 
   [[nodiscard]] float bondThickness() const;
 
@@ -155,6 +161,7 @@ private:
 
   RendererUniforms m_uniforms;
   FrameworkOptions m_frameworkOptions;
+  std::vector<AggregateIndex> m_aggregateIndices;
 };
 
 } // namespace cx::graphics

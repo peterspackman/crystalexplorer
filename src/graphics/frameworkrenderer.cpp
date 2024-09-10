@@ -176,7 +176,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
         }
       }
       auto [color, energy] = energies[uniqueIndex];
-      if (std::abs(energy) <= m_options.cutoff)
+      if ((m_options.cutoff != 0.0) && (std::abs(energy) <= m_options.cutoff))
         continue;
       double scale = -energy * thickness();
       if (std::abs(scale) < 1e-4)

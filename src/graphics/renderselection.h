@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QVector3D>
 #include <ankerl/unordered_dense.h>
+#include "fragment.h"
 #include <cstdint>
 
 namespace cx::graphics {
