@@ -167,6 +167,7 @@
     <addaction name="optionsMoleculeStylePopup"/>
     <addaction name="enableMultipleUnitCellBoxesAction"/>
     <addaction name="cycleDisorderHighlightingAction"/>
+    <addaction name="togglePairHighlightingAction"/>
     <addaction name="separator"/>
     <addaction name="selectMenu"/>
     <addaction name="removeMenu"/>
@@ -975,10 +976,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Toggle Pair Highlighting</string>
+    <string>Fragment pair colouring</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Y</string>
+    <string>Shift+P</string>
    </property>
   </action>
   <action name="calculateVoidDomainsAction">
@@ -1125,6 +1126,14 @@
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="removeUnselectedAtomsAction">
+   <property name="text">
+    <string>Remove unselected atoms</string>
+   </property>
+   <property name="toolTip">
+    <string>Show Only Selected Atoms</string>
    </property>
   </action>
  </widget>

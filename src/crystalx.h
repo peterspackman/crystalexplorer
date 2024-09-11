@@ -59,6 +59,7 @@ public:
   void loadExternalFileData(QString);
 
 public slots:
+  void togglePairInteractionHighlighting(bool);
   void handleBusyStateChange(bool);
   void generateSurface(isosurface::Parameters);
   void generateSurfaceRequiringWavefunction(isosurface::Parameters, wfn::Parameters);

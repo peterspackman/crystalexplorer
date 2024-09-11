@@ -6,12 +6,24 @@
 #include <QVector3D>
 #include <occ/core/linear_algebra.h>
 
+using Transform = Eigen::Isometry3d;
+
 struct DimerAtoms {
   std::vector<GenericAtomIndex> a;
   std::vector<GenericAtomIndex> b;
 };
 
-using Transform = Eigen::Isometry3d;
+struct FragmentColorSettings {
+  enum class Method {
+    UnitCellFragment,
+    SymmetryUniqueFragment,
+    Constant
+  };
+
+  Method method{Method::SymmetryUniqueFragment};
+  QColor color{Qt::gray};
+};
+
 struct Fragment {
 
   struct NearestAtomResult {

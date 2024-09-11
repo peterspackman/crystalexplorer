@@ -103,6 +103,8 @@ public:
 
   virtual occ::Mat3N convertCoordinates(const occ::Mat3N &pos, CoordinateConversion) const;
 
+  QString getFragmentLabel(const FragmentIndex &);
+
   // colors
   QColor atomColor(GenericAtomIndex atomIndex) const;
   void overrideAtomColor(GenericAtomIndex, const QColor &);
@@ -205,7 +207,7 @@ public:
 
   virtual QColor getFragmentColor(FragmentIndex) const;
   virtual void setFragmentColor(FragmentIndex, const QColor &);
-  virtual void setAllFragmentColors(const QColor &color);
+  virtual void setAllFragmentColors(const FragmentColorSettings &);
 
   // dynamics data
   inline bool hasFrameData() const { return frameCount() > 0; }
@@ -313,6 +315,7 @@ private:
 
   // all of these must be updated when the bondGraph is updated
   FragmentMap m_fragments;
+  ankerl::unordered_dense::map<FragmentIndex, QString, FragmentIndexHash> m_fragmentLabels;
   FragmentMap m_symmetryUniqueFragments;
 
   std::vector<FragmentIndex> m_fragmentForAtom;

@@ -84,7 +84,7 @@ public slots:
   void updateCloseContactsCriteria(int, CloseContactCriteria);
 
   void removeIncompleteFragmentsForCurrentCrystal();
-  void removeSelectedAtomsForCurrentCrystal();
+  void filterAtomsForCurrentScene(AtomFlag flag, bool state);
   void resetCurrentCrystal();
 
   void showAtomsWithinRadius(float, bool);

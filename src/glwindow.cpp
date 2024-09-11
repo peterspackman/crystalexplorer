@@ -364,7 +364,8 @@ QImage GLWindow::exportToImage(int scaleFactor, const QColor &background) {
   if (enableDepthTest) {
     glEnable(GL_DEPTH_TEST);
   }
-  glClearColor(background.redF(), background.greenF(), background.blueF(), background.alphaF());
+  glClearColor(background.redF(), background.greenF(), background.blueF(),
+               background.alphaF());
   glClearDepth(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearDepth(0);
@@ -543,22 +544,22 @@ void GLWindow::mousePressEvent(QMouseEvent *event) {
     savedMousePosition = event->pos();
 
     switch (m_selectionMode) {
-      case SelectionMode::Pick:
+    case SelectionMode::Pick:
       handleLeftMousePressForPicking(event);
       break;
-      case SelectionMode::Distance:
+    case SelectionMode::Distance:
       handleMousePressForMeasurement(MeasurementType::Distance, event);
       break;
-      case SelectionMode::Angle:
+    case SelectionMode::Angle:
       handleMousePressForMeasurement(MeasurementType::Angle, event);
       break;
-      case SelectionMode::Dihedral:
+    case SelectionMode::Dihedral:
       handleMousePressForMeasurement(MeasurementType::Dihedral, event);
       break;
-      case SelectionMode::OutOfPlaneBend:
+    case SelectionMode::OutOfPlaneBend:
       handleMousePressForMeasurement(MeasurementType::OutOfPlaneBend, event);
       break;
-      case SelectionMode::InPlaneBend:
+    case SelectionMode::InPlaneBend:
       handleMousePressForMeasurement(MeasurementType::InPlaneBend, event);
       break;
     }
@@ -620,60 +621,25 @@ void GLWindow::handleObjectInformationDisplay(QPoint pos) {
     _hadHits = scene->processSelectionForInformation(color);
     if (_hadHits) {
       SelectionType type = scene->decodeSelectionType(color);
-      QString info;
       switch (type) {
       case SelectionType::Atom: {
         const auto &atom = scene->selectedAtom();
-        auto *el = ElementData::elementFromAtomicNumber(atom.atomicNumber);
-        const auto &atomPosition = atom.position;
-        info = QString::fromStdString(fmt::format(
-            "<b>Atom label</b>:           {}<br/>"
-            "<b>Position</b>:             {:9.3f} {:9.3f} {:9.3f}<br/>"
-            "<b>Element</b>:              {}<br/>"
-            "<b>Covalent radius</b>:      {:9.3f}<br/>"
-            "<b>Van der Waals radius</b>: {:9.3f}",
-            atom.label.toStdString(), atomPosition.x(), atomPosition.y(),
-            atomPosition.z(), el->symbol().toStdString(), el->covRadius(),
-            el->vdwRadius()));
-        setObjectInformationTextAndPosition(info, pos);
+        setObjectInformationTextAndPosition(
+            getSelectionInformationLabelText(atom), pos);
         break;
       }
       case SelectionType::Bond: {
         const auto &bond = scene->selectedBond();
-        QVector3D vec = bond.a.position - bond.b.position;
-        float length = vec.length();
-        info = QString::fromStdString(fmt::format(
-            "<b>Bond distance</b>: {:9.3f}<br/>"
-            "<b>Atom label A</b>:  {}<br/>"
-            "<b>Atom label B</b>:  {}",
-            length, bond.a.label.toStdString(), bond.b.label.toStdString()));
-        setObjectInformationTextAndPosition(info, pos);
+        setObjectInformationTextAndPosition(
+            getSelectionInformationLabelText(bond), pos);
         break;
       }
       case SelectionType::Surface: {
         // TODO get surface info;
         auto selection = scene->selectedSurface();
         if (selection.surface) {
-          QVector3D centroid(0.0f, 0.0f, 0.0f);
-          auto *mesh = selection.surface->mesh();
-          QString surfaceName = mesh->objectName();
-          QString surfaceInstance = selection.surface->objectName();
-          QString property = selection.property;
-          double value = selection.propertyValue;
-          double area = mesh->surfaceArea();
-          double volume = mesh->volume();
-          info = QString::fromStdString(fmt::format(
-              "<b>Surface</b>: {}<br/>"
-              "<b>Instance</b>: {}<br/>"
-              "<b>Centroid</b>:     {:9.3f} {:9.3f} {:9.3f}<br/>"
-              "<b>Volume</b>:       {:9.3f}<br/>"
-              "<b>Surface area</b>: {:9.3f}<br/>"
-              "<b>Property</b>: {}<br/>"
-              "<b>Property Value</b>: {:9.3f}",
-              surfaceName.toStdString(), surfaceInstance.toStdString(),
-              centroid.x(), centroid.y(), centroid.z(), volume, area,
-              property.toStdString(), value));
-          setObjectInformationTextAndPosition(info, pos);
+          setObjectInformationTextAndPosition(
+              getSelectionInformationLabelText(selection), pos);
         }
         break;
       }
@@ -689,13 +655,32 @@ void GLWindow::showMessage(const QString &message) {
   QToolTip::showText(mapToGlobal(QPoint(50, height() - 100)), message);
 }
 
-
 void GLWindow::showMessageOnGraphicsView(QString message) {
   showMessage(message);
 }
 
 void GLWindow::setObjectInformationTextAndPosition(QString text, QPoint pos) {
-  QToolTip::showText(mapToGlobal(pos), text);
+  if (!m_infoLabel) {
+    m_infoLabel = new QLabel(this);
+    m_infoLabel->setFrameStyle(QFrame::Panel);
+    m_infoLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    m_infoLabel->setWindowFlags(Qt::ToolTip);
+    m_infoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+  }
+
+  m_infoLabel->setText(text);
+  m_infoLabel->adjustSize();
+  m_infoLabel->setFixedSize(m_infoLabel->size());
+
+  QPoint globalPos = mapToGlobal(pos);
+  m_infoLabel->move(globalPos + QPoint(10, 10));
+  m_infoLabel->show();
+}
+
+void GLWindow::hideObjectInformation() {
+  if (m_infoLabel) {
+    m_infoLabel->hide();
+  }
 }
 
 void GLWindow::handleMousePressForMeasurement(MeasurementType type,
@@ -705,8 +690,8 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 
   QColor color = pickObjectAt(event->pos());
 
-  auto selection =
-      scene->processMeasurementSingleClick(color, event->modifiers().testFlag(Qt::ShiftModifier));
+  auto selection = scene->processMeasurementSingleClick(
+      color, event->modifiers().testFlag(Qt::ShiftModifier));
 
   // is valid position?
   if (selection.index == -1) {
@@ -732,10 +717,11 @@ void GLWindow::handleMousePressForMeasurement(MeasurementType type,
 
         // Pair of minimum positions for calculating distance and plotting
         // distance line.
-        auto d = scene->positionsForDistanceMeasurement(m_firstSelectionForMeasurement, selection);
+        auto d = scene->positionsForDistanceMeasurement(
+            m_firstSelectionForMeasurement, selection);
         qDebug() << "Valid measurement: " << d.valid;
 
-        if(d.valid) {
+        if (d.valid) {
           m_currentMeasurement.addPosition(d.a);
           m_currentMeasurement.addPosition(d.b);
           scene->addMeasurement(m_currentMeasurement);
@@ -810,14 +796,14 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
   case SelectionType::Surface: {
     const auto &selection = scene->selectedSurface();
     if (selection.surface) {
-      auto * mesh = selection.surface->mesh();
-      if(!mesh) break;
+      auto *mesh = selection.surface->mesh();
+      if (!mesh)
+        break;
 
       contextMenu->addAction(tr("Hide Surface"), this,
                              &GLWindow::contextualHideSurface);
       contextMenu->addAction(tr("Delete Surface"), this,
                              &GLWindow::contextualDeleteSurface);
-
 
       if (mesh->kind() == isosurface::Kind::Hirshfeld) {
         contextMenu->addAction(tr("Generate Internal Fragment"), this,
@@ -833,7 +819,6 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
                              &GLWindow::contextualSelectAtomsInsideSurface);
       contextMenu->addAction(tr("Select Atoms Outside Surface"), this,
                              &GLWindow::contextualSelectAtomsOutsideSurface);
-
     }
     break;
   }
@@ -1104,13 +1089,16 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
       contextMenu->addSeparator();
     }
     if (scene->hasSelectedAtoms()) {
-      contextMenu->addAction(tr("Remove Selected Atoms"), this,
-                             &GLWindow::contextualRemoveSelectedAtoms);
-      contextMenu->addAction(tr("Set Color of Selected Atoms"), [this]() {
-          contextualColorSelection(false);
-      });      contextMenu->addAction(tr("Set Color of Selected Fragments"), [this]() {
-          contextualColorSelection(true);
+      contextMenu->addAction(tr("Remove Selected Atoms"), [this]() {
+        emitContextualAtomFilter(AtomFlag::Selected, true);
       });
+      contextMenu->addAction(tr("Show only selected Atoms"), [this]() {
+        emitContextualAtomFilter(AtomFlag::Selected, false);
+      });
+      contextMenu->addAction(tr("Set Color of Selected Atoms"),
+                             [this]() { contextualColorSelection(false); });
+      contextMenu->addAction(tr("Set Color of Selected Fragments"),
+                             [this]() { contextualColorSelection(true); });
     }
 
     if (scene->hasAtomsWithCustomColor()) {
@@ -1141,17 +1129,23 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
 }
 
 void GLWindow::addColorBySubmenu(QMenu *menu) {
-    QMenu* colorByMenu = menu->addMenu(tr("Color Atoms By..."));
-    colorByMenu->addAction(tr("Element"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Element); });
-    colorByMenu->addAction(tr("Fragment"), [this]() { updateAtomColoring(ChemicalStructure::AtomColoring::Fragment); });
+  QMenu *colorByMenu = menu->addMenu(tr("Color Atoms By..."));
+  colorByMenu->addAction(tr("Element"), [this]() {
+    updateAtomColoring(ChemicalStructure::AtomColoring::Element);
+  });
+  colorByMenu->addAction(tr("Fragment"), [this]() {
+    updateAtomColoring(ChemicalStructure::AtomColoring::Fragment);
+  });
 }
 
 void GLWindow::updateAtomColoring(ChemicalStructure::AtomColoring coloring) {
-    if(!scene) return;
-    auto * structure = scene->chemicalStructure();
-    if(!structure) return;
-    structure->setAtomColoring(coloring);
-    redraw();
+  if (!scene)
+    return;
+  auto *structure = scene->chemicalStructure();
+  if (!structure)
+    return;
+  structure->setAtomColoring(coloring);
+  redraw();
 }
 
 void GLWindow::getNewBackgroundColor() {
@@ -1362,15 +1356,6 @@ void GLWindow::contextualResetCustomAtomColors() {
   redraw();
 }
 
-// This is unfortunately a duplication of
-// Project::removeSelectedAtomsForCurrentCrsytal
-// We should have access to project here not just crystal
-void GLWindow::contextualRemoveSelectedAtoms() {
-  Q_ASSERT(scene);
-  scene->deleteSelectedAtoms();
-  redraw();
-}
-
 QColor GLWindow::pickObjectAt(QPoint pos) {
   if (!scene) {
     return QColor(1.0f, 1.0f, 1.0f,
@@ -1420,6 +1405,8 @@ void GLWindow::mouseMoveEvent(QMouseEvent *event) {
   if (_leftMouseButtonHeld && _hadHits) {
     return;
   }
+
+  hideObjectInformation();
 
   QPoint mousePosition = event->pos();
   float winWidth = width();
@@ -1816,4 +1803,8 @@ void GLWindow::messageLogged(const QOpenGLDebugMessage &msg) {
     qDebug() << "INVALID: " << error;
     break;
   }
+}
+
+void GLWindow::emitContextualAtomFilter(AtomFlag flag, bool state) {
+  emit contextualFilterAtoms(flag, state);
 }

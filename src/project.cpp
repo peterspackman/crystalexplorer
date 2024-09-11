@@ -534,9 +534,9 @@ void Project::removeIncompleteFragmentsForCurrentCrystal() {
   }
 }
 
-void Project::removeSelectedAtomsForCurrentCrystal() {
+void Project::filterAtomsForCurrentScene(AtomFlag flag, bool state) {
   if (currentScene()) {
-    currentScene()->deleteSelectedAtoms();
+    currentScene()->filterAtoms(flag, state);
     setUnsavedChangesExists();
     emit currentSceneChanged();
   }

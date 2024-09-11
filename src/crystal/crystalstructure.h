@@ -88,7 +88,7 @@ public:
 
   QColor getFragmentColor(FragmentIndex) const override;
   void setFragmentColor(FragmentIndex, const QColor &) override;
-  void setAllFragmentColors(const QColor &color) override;
+  void setAllFragmentColors(const FragmentColorSettings &) override;
 
   Fragment::State getSymmetryUniqueFragmentState(FragmentIndex) const override;
   void setSymmetryUniqueFragmentState(FragmentIndex, Fragment::State) override;

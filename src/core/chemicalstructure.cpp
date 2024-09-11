@@ -1,4 +1,5 @@
 #include "chemicalstructure.h"
+#include "colormap.h"
 #include "elementdata.h"
 #include "mesh.h"
 #include "object_tree_model.h"
@@ -22,7 +23,10 @@ occ::Vec3 ChemicalStructure::atomPosition(GenericAtomIndex idx) const {
   return m_atomicPositions.col(i);
 }
 
-void ChemicalStructure::updateBondGraph() { guessBondsBasedOnDistances(); }
+void ChemicalStructure::updateBondGraph() {
+  guessBondsBasedOnDistances();
+  setAllFragmentColors(FragmentColorSettings{});
+}
 
 void ChemicalStructure::guessBondsBasedOnDistances() {
 
@@ -645,7 +649,7 @@ void ChemicalStructure::resetAtomsAndBonds(bool toSelection) {
   // TODO
 }
 
-void ChemicalStructure::setShowContacts(const ContactSettings & state) {
+void ChemicalStructure::setShowContacts(const ContactSettings &state) {
   // TODO
 }
 
@@ -1081,9 +1085,19 @@ void ChemicalStructure::setFragmentColor(FragmentIndex fragment,
   }
 }
 
-void ChemicalStructure::setAllFragmentColors(const QColor &color) {
-  for (auto &[fragIndex, frag] : m_fragments) {
-    frag.color = color;
+void ChemicalStructure::setAllFragmentColors(
+    const FragmentColorSettings &settings) {
+  if (settings.method == FragmentColorSettings::Method::Constant) {
+    for (auto &[fragIndex, frag] : m_fragments) {
+      frag.color = settings.color;
+    }
+  } else if (settings.method ==
+             FragmentColorSettings::Method::SymmetryUniqueFragment) {
+    size_t nasym = m_symmetryUniqueFragments.size();
+    ColorMapFunc cmap(ColorMapName::Hokusai1, 0, nasym);
+    for (auto &[idx, frag] : m_fragments) {
+      frag.color = cmap(frag.asymmetricFragmentIndex.u);
+    }
   }
   emit atomsChanged();
 }
@@ -1106,6 +1120,44 @@ std::vector<AtomicDisplacementParameters>
 ChemicalStructure::atomicDisplacementParametersForAtoms(
     const std::vector<GenericAtomIndex> &idxs) const {
   return std::vector<AtomicDisplacementParameters>(idxs.size());
+}
+
+QString ChemicalStructure::getFragmentLabel(const FragmentIndex &index) {
+  const auto &fragments = symmetryUniqueFragments();
+  if (m_fragmentLabels.size() != fragments.size()) {
+    ankerl::unordered_dense::map<QString, std::pair<QString, int>>
+        formulaToIndex;
+    char currentLabel = 'A';
+    int labelCount = 0;
+
+    for (const auto &[fragmentIndex, fragment] : fragments) {
+      QString formula = formulaSumForAtoms(fragment.atomIndices, false);
+      auto it = formulaToIndex.find(formula);
+
+      if (it == formulaToIndex.end()) {
+        QString label = QString(1, currentLabel);
+        formulaToIndex[formula] = {label, 1};
+        m_fragmentLabels[fragmentIndex] = "1" + label;
+
+        labelCount++;
+        if (labelCount == 26) {
+          currentLabel = 'A';
+          labelCount = 0;
+        } else {
+          currentLabel++;
+        }
+      } else {
+        auto &[label, count] = it->second;
+        count++;
+        m_fragmentLabels[fragmentIndex] = QString::number(count) + label;
+      }
+    }
+  }
+
+  const auto kv = m_fragmentLabels.find(index);
+  if (kv != m_fragmentLabels.end())
+    return kv->second;
+  return "??";
 }
 
 AtomicDisplacementParameters

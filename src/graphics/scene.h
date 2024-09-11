@@ -27,6 +27,7 @@
 #include "frameworkoptions.h"
 #include "settings.h"
 #include "sphereimpostorrenderer.h"
+#include "selection_information.h"
 
 enum class HighlightMode { Normal, Pair };
 typedef QPair<QString, QVector3D> Label;
@@ -35,28 +36,6 @@ enum class ScenePeriodicity {
   OneDimension,
   TwoDimensions,
   ThreeDimensions
-};
-
-
-struct SelectedAtom {
-  int index{-1};
-  int atomicNumber{-1};
-  QVector3D position;
-  QString label;
-};
-
-struct SelectedBond {
-  int index{-1};
-  SelectedAtom a;
-  SelectedAtom b;
-};
-
-struct SelectedSurface {
-  int index{-1};
-  int faceIndex{-1};
-  MeshInstance *surface{nullptr};
-  float propertyValue{0.0};
-  QString property{"None"};
 };
 
 struct MeasurementObject {
@@ -231,6 +210,8 @@ public:
   void bondSelectedAtoms();
   void unbondSelectedAtoms();
 
+  void filterAtoms(AtomFlag flag, bool state);
+
   void reset();
 
   void suppressSelectedAtoms();
@@ -243,7 +224,6 @@ public:
   void expandAtomsWithinRadius(float radius, bool selection = true);
 
   void deleteIncompleteFragments();
-  void deleteSelectedAtoms();
   void completeAllFragments();
   void completeFragmentContainingAtom(int atomIndex);
 
@@ -400,6 +380,8 @@ private:
   cx::graphics::RenderSelection *m_selectionHandler{nullptr};
 
   cx::graphics::ChemicalStructureRenderer *m_structureRenderer{nullptr};
+
+  FragmentColorSettings m_fragmentColorSettings;
 
   SelectedAtom m_selectedAtom;
   SelectedBond m_selectedBond;

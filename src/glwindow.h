@@ -103,6 +103,7 @@ signals:
   void surfaceDeleteRequest(int);
   void resetCurrentCrystal();
   void mouseDrag(QPointF);
+  void contextualFilterAtoms(AtomFlag, bool);
 
 protected:
   void initializeGL() override;
@@ -158,13 +159,13 @@ private slots:
   void contextualUnbondSelectedAtoms();
   void contextualColorSelection(bool fragments);
   void contextualResetCustomAtomColors();
-  void contextualRemoveSelectedAtoms();
   void forcedRedraw();
 
 protected slots:
   void messageLogged(const QOpenGLDebugMessage &msg);
 
 private:
+  void emitContextualAtomFilter(AtomFlag, bool);
   void makeFrameBufferObject();
   void init();
   void initPointers();
@@ -191,6 +192,8 @@ private:
   void applyRotationAboutVectorToTMatrix(float theta, float n1, float n2,
                                          float n3);
   void setObjectInformationTextAndPosition(QString text, QPoint pos);
+  void hideObjectInformation();
+
   void showMeasurementContextMenu(const QPoint &);
   void setBackgroundColor(QColor);
   void showSurfaceCaps(bool);
@@ -251,6 +254,8 @@ private:
   bool m_picking{false};
   QImage m_pickingImage;
   QImage m_textLayer;
+
+  QLabel * m_infoLabel{nullptr};
 
   QOpenGLFramebufferObject *m_framebuffer{nullptr};
   QOpenGLFramebufferObject *m_resolvedFramebuffer{nullptr};

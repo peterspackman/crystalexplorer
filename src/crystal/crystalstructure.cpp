@@ -1,6 +1,7 @@
 #include "crystalstructure.h"
 #include <iostream>
 #include <occ/core/kabsch.h>
+#include "colormap.h"
 
 using VertexDesc =
     typename occ::core::graph::PeriodicBondGraph::VertexDescriptor;
@@ -154,6 +155,7 @@ void CrystalStructure::updateBondGraph() {
       m_fragmentForAtom[genericIndexToIndex(idx)] = frag.index;
     }
   }
+  setAllFragmentColors(FragmentColorSettings{});
 }
 
 void CrystalStructure::resetAtomsAndBonds(bool toSelection) {
@@ -326,9 +328,18 @@ void CrystalStructure::setFragmentColor(FragmentIndex fragment,
   }
 }
 
-void CrystalStructure::setAllFragmentColors(const QColor &color) {
-  for (auto &[fragIndex, frag] : m_fragments) {
-    frag.color = color;
+void CrystalStructure::setAllFragmentColors(const FragmentColorSettings &settings) {
+  if(settings.method == FragmentColorSettings::Method::Constant) {
+    for (auto &[fragIndex, frag] : m_fragments) {
+      frag.color = settings.color;
+    }
+  }
+  else if(settings.method == FragmentColorSettings::Method::SymmetryUniqueFragment) {
+    size_t nasym = m_symmetryUniqueFragments.size();
+    ColorMapFunc cmap(ColorMapName::Hokusai1, 0, nasym);
+    for(auto &[idx, frag] : m_fragments) {
+      frag.color = cmap(frag.asymmetricFragmentIndex.u);
+    }
   }
   emit atomsChanged();
 }

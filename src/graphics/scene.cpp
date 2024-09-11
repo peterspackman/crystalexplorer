@@ -604,6 +604,14 @@ void Scene::populateSelectedAtom() {
   m_selectedAtom.label = m_structure->labels()[m_selection.index];
   const auto pos = m_structure->atomicPositions().col(m_selection.index);
   m_selectedAtom.position = QVector3D(pos.x(), pos.y(), pos.z());
+  m_selectedAtom.fragmentLabel = "Not set";
+  const auto &fragments = m_structure->getFragments();
+  const auto fragIndex = m_structure->fragmentIndexForAtom(m_selection.index);
+  const auto &kv = fragments.find(fragIndex);
+  if(kv != fragments.end()) {
+    const auto &fragment = kv->second;
+    m_selectedAtom.fragmentLabel = m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex);
+  }
 }
 
 void Scene::populateSelectedBond() {
@@ -1501,6 +1509,7 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
   interactions->resetColors();
 
   if (selectedFragments.size() == 1) {
+    m_structure->setAllFragmentColors(FragmentColorSettings{FragmentColorSettings::Method::Constant, Qt::gray});
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
     ColorMapFunc colorMap(ColorMapName::Austria, 0,
@@ -1525,13 +1534,13 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
       }
     }
   } else {
-    m_structure->setAllFragmentColors(Qt::gray);
+    m_structure->setAllFragmentColors(m_fragmentColorSettings);
   }
   m_structure->setAtomColoring(ChemicalStructure::AtomColoring::Fragment);
 }
 
 void Scene::clearFragmentColors() {
-  m_structure->setAllFragmentColors(Qt::gray);
+  m_structure->setAllFragmentColors(m_fragmentColorSettings);
   m_structure->setAtomColoring(ChemicalStructure::AtomColoring::Element);
 }
 
@@ -1688,8 +1697,8 @@ void Scene::deleteIncompleteFragments() {
   m_structure->deleteIncompleteFragments();
 }
 
-void Scene::deleteSelectedAtoms() {
-  auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
+void Scene::filterAtoms(AtomFlag flag, bool state) {
+  auto idxs = m_structure->atomsWithFlags(flag, state);
   m_structure->deleteAtoms(idxs);
 }
 

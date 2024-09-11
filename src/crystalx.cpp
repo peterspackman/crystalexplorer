@@ -351,6 +351,8 @@ void Crystalx::initConnections() {
   */
   connect(glWindow, &GLWindow::resetCurrentCrystal, project,
           &Project::resetCurrentCrystal);
+  connect(glWindow, &GLWindow::contextualFilterAtoms,
+          project, &Project::filterAtomsForCurrentScene);
 
   connect(m_taskManager, &TaskManager::taskComplete, this,
           &Crystalx::taskManagerTaskComplete);
@@ -408,6 +410,9 @@ void Crystalx::initMenuConnections() {
   connect(energyFrameworksAction, &QAction::triggered, this,
           &Crystalx::showEnergyFrameworkDialog);
 
+  connect(togglePairHighlightingAction, &QAction::toggled, this,
+          &Crystalx::togglePairInteractionHighlighting);
+
   connect(selectAllAtomsAction, &QAction::triggered, project,
           &Project::selectAllAtoms);
   connect(selectsAtomsInsideCurrentSurfaceAction, &QAction::triggered, project,
@@ -420,8 +425,9 @@ void Crystalx::initMenuConnections() {
           &Project::selectSuppressedAtoms);
   connect(removeIncompleteFragmentsAction, &QAction::triggered, project,
           &Project::removeIncompleteFragmentsForCurrentCrystal);
-  connect(removeSelectedAtomsAction, &QAction::triggered, project,
-          &Project::removeSelectedAtomsForCurrentCrystal);
+  connect(removeSelectedAtomsAction, &QAction::triggered,[this]() {
+    project->filterAtomsForCurrentScene(AtomFlag::Selected, true);
+  });
   connect(suppressSelectedAtomsAction, &QAction::triggered, project,
           &Project::suppressSelectedAtoms);
   connect(unsuppressSelectedAtomsAction, &QAction::triggered, project,
@@ -1924,6 +1930,14 @@ void Crystalx::updateInfo(InfoType infoType) {
       setInfoTabSpecificViewOptions(infoType);
       infoViewer->setScene(scene);
   }
+}
+
+void Crystalx::togglePairInteractionHighlighting(bool state) {
+  qDebug() << "Toggle pair interaction highlighting";
+  Scene *scene = project->currentScene();
+  if(!scene) return;
+  scene->togglePairHighlighting(state);
+  glWindow->redraw();
 }
 
 void Crystalx::setInfoTabSpecificViewOptions(InfoType infoType) {
