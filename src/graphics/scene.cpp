@@ -89,16 +89,16 @@ void Scene::setFrameworkOptions(const FrameworkOptions &options) {
   }
 }
 
-bool Scene::showAtomLabels() const {
+AtomLabelOptions Scene::atomLabelOptions() const {
   if (m_structureRenderer) {
-    return m_structureRenderer->showAtomLabels();
+    return m_structureRenderer->atomLabelOptions();
   }
-  return false;
+  return {};
 }
 
-void Scene::setShowAtomLabels(bool show) {
+void Scene::setAtomLabelOptions(const AtomLabelOptions &options) {
   if (m_structureRenderer) {
-    m_structureRenderer->setShowAtomLabels(show);
+    m_structureRenderer->setAtomLabelOptions(options);
   }
 }
 
@@ -605,11 +605,9 @@ void Scene::populateSelectedAtom() {
   const auto pos = m_structure->atomicPositions().col(m_selection.index);
   m_selectedAtom.position = QVector3D(pos.x(), pos.y(), pos.z());
   m_selectedAtom.fragmentLabel = "Not set";
-  const auto &fragments = m_structure->getFragments();
-  const auto fragIndex = m_structure->fragmentIndexForAtom(m_selection.index);
-  const auto &kv = fragments.find(fragIndex);
-  if(kv != fragments.end()) {
-    const auto &fragment = kv->second;
+  auto maybeFragment = m_structure->getFragmentForAtom(m_selection.index);
+  if(maybeFragment) {
+    const auto& fragment = maybeFragment->get();
     m_selectedAtom.fragmentLabel = m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex);
   }
 }
@@ -617,6 +615,11 @@ void Scene::populateSelectedAtom() {
 void Scene::populateSelectedBond() {
   m_selectedBond.index = m_selection.index;
   const auto [idx_a, idx_b] = m_structure->atomsForBond(m_selection.index);
+  auto maybeFragment = m_structure->getFragmentForAtom(idx_a);
+  if(maybeFragment) {
+    const auto& fragment = maybeFragment->get();
+    m_selectedBond.fragmentLabel = m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex);
+  }
   {
     auto &atomInfo = m_selectedBond.a;
     atomInfo.index = idx_a;

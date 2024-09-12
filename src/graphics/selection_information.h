@@ -16,6 +16,7 @@ struct SelectedBond {
   int index{-1};
   SelectedAtom a;
   SelectedAtom b;
+  QString fragmentLabel;
 };
 
 struct SelectedSurface {

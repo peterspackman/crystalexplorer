@@ -135,10 +135,12 @@ public:
   [[nodiscard]] AtomicDisplacementParameters
       atomicDisplacementParameters(GenericAtomIndex) const override;
 
+  [[nodiscard]] QString getTransformationString(const Eigen::Isometry3d &result) const;
+
 private:
   Fragment makeFragmentFromFragmentIndex(FragmentIndex) const;
   FragmentIndex findUnitCellFragment(const Fragment &frag) const;
-  Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol) const;
+  Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol, FragmentIndex);
 
   void addAtomsByCrystalIndex(const std::vector<GenericAtomIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);

@@ -71,7 +71,6 @@ public slots:
   void completeFragmentsForCurrentCrystal();
   void toggleUnitCellAxes(bool);
   void toggleMultipleUnitCellBoxes(bool);
-  void toggleAtomicLabels(bool);
   void toggleHydrogenAtoms(bool);
   void toggleSuppressedAtoms(bool);
   void toggleCloseContacts(bool);
@@ -85,6 +84,7 @@ public slots:
 
   void removeIncompleteFragmentsForCurrentCrystal();
   void filterAtomsForCurrentScene(AtomFlag flag, bool state);
+  void atomLabelOptionsChanged(AtomLabelOptions);
   void resetCurrentCrystal();
 
   void showAtomsWithinRadius(float, bool);

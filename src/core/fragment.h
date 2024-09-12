@@ -50,6 +50,7 @@ struct Fragment {
 
   occ::IVec asymmetricUnitIndices;
   QColor color{Qt::gray};
+  QString name{"Fragment?"};
 
   NearestAtomResult nearestAtom(const Fragment &other) const;
   NearestAtomResult nearestAtomToPoint(const occ::Vec3 &point) const;
@@ -79,6 +80,7 @@ struct FragmentDimer {
   int nearestAtomIndexB{-1};
   QString symmetry{"-"};
   FragmentIndexPair index;
+  inline QString getName() const { return a.name + " -- " + b.name; }
 
   bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
   bool operator==(const FragmentDimer &) const;

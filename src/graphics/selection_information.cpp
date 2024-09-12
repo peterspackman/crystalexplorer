@@ -25,10 +25,11 @@ struct SelectionInfoVisitor {
     QVector3D vec = bond.a.position - bond.b.position;
     float length = vec.length();
     return QString::fromStdString(fmt::format(
-        "<b>Bond distance</b>: {:9.3f}<br/>"
-        "<b>Atom label A</b>:  {}<br/>"
-        "<b>Atom label B</b>:  {}",
-        length, bond.a.label.toStdString(), bond.b.label.toStdString()));
+        "<b>Bond distance</b>:   {:9.3f}<br/>"
+        "<b>Atom label A</b>:    {}<br/>"
+        "<b>Atom label B</b>:    {}<br/>"
+        "<b>Unique fragment</b>: {}<br/>",
+        length, bond.a.label.toStdString(), bond.b.label.toStdString(), bond.fragmentLabel.toStdString()));
   }
 
   QString operator()(const SelectedSurface &selection) const {

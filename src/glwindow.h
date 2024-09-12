@@ -3,6 +3,7 @@
 #include <QOpenGLWidget>
 #include <QVector3D>
 
+#include "atom_label_options.h"
 #include "elementeditor.h"
 #include "measurement.h"
 #include "project.h"
@@ -93,6 +94,7 @@ public slots:
   void materialChanged();
   void lightSettingsChanged();
   void textSettingsChanged();
+  void cycleAtomLabelOptions();
 
 signals:
   void scaleChanged(float);
@@ -104,6 +106,7 @@ signals:
   void resetCurrentCrystal();
   void mouseDrag(QPointF);
   void contextualFilterAtoms(AtomFlag, bool);
+  void atomLabelOptionsChanged(AtomLabelOptions);
 
 protected:
   void initializeGL() override;
@@ -120,6 +123,7 @@ protected:
 
 private slots:
   void updateAtomColoring(ChemicalStructure::AtomColoring);
+  void updateAtomLabelContextMenu(QMenu *contextMenu);
   void contextualSelectAtomsInsideSurface();
   void contextualSelectAtomsOutsideSurface();
   void contextualGenerateInternalFragment();

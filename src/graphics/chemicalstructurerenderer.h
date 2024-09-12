@@ -1,4 +1,5 @@
 #pragma once
+#include "atom_label_options.h"
 #include "billboardrenderer.h"
 #include "chemicalstructure.h"
 #include "colormap.h"
@@ -52,8 +53,8 @@ public:
   bool showMultipleCells() const;
   void toggleShowMultipleCells();
 
-  void setShowAtomLabels(bool show);
-  [[nodiscard]] bool showAtomLabels() const;
+  void setAtomLabelOptions(const AtomLabelOptions &);
+  [[nodiscard]] const AtomLabelOptions & atomLabelOptions() const;
   void toggleShowAtomLabels();
 
   void setShowHydrogenAtomEllipsoids(bool show);
@@ -129,12 +130,13 @@ private:
   bool m_cellsNeedsUpdate{true};
 
   bool m_showHydrogens{true};
-  bool m_showAtomLabels{false};
   bool m_showSuppressedAtoms{false};
   bool m_showHydrogenAtomEllipsoids{true};
 
   bool m_showCells{false};
   bool m_showMultipleCells{false};
+
+  AtomLabelOptions m_atomLabelOptions;
 
   // helper for keeping track of mesh selection
   std::vector<MeshInstance *> m_meshIndexToMesh;

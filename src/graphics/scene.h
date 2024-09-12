@@ -6,6 +6,7 @@
 
 #include "orientation.h"
 
+#include "atom_label_options.h"
 #include "billboardrenderer.h"
 #include "chemicalstructure.h"
 #include "chemicalstructurerenderer.h"
@@ -110,8 +111,9 @@ public:
   bool showMultipleCells();
   void setShowMultipleCells(bool);
 
-  bool showAtomLabels() const;
-  void setShowAtomLabels(bool show);
+  inline bool showAtomLabels() const { return atomLabelOptions().show; }
+  AtomLabelOptions atomLabelOptions() const;
+  void setAtomLabelOptions(const AtomLabelOptions&);
   void toggleShowAtomLabels();
 
   void setFrameworkOptions(const FrameworkOptions &options);

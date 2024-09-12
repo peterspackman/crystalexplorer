@@ -354,6 +354,9 @@ void Crystalx::initConnections() {
   connect(glWindow, &GLWindow::contextualFilterAtoms,
           project, &Project::filterAtomsForCurrentScene);
 
+  connect(glWindow, &GLWindow::atomLabelOptionsChanged,
+          project, &Project::atomLabelOptionsChanged);
+
   connect(m_taskManager, &TaskManager::taskComplete, this,
           &Crystalx::taskManagerTaskComplete);
   connect(m_taskManager, &TaskManager::taskError, this,
@@ -399,8 +402,8 @@ void Crystalx::initMenuConnections() {
           &Project::toggleUnitCellAxes);
   connect(enableMultipleUnitCellBoxesAction, &QAction::toggled, project,
           &Project::toggleMultipleUnitCellBoxes);
-  connect(showAtomicLabelsAction, &QAction::toggled, project,
-          &Project::toggleAtomicLabels);
+  connect(showAtomicLabelsAction, &QAction::triggered, glWindow,
+          &GLWindow::cycleAtomLabelOptions);
   connect(showHydrogenAtomsAction, &QAction::toggled, project,
           &Project::toggleHydrogenAtoms);
   connect(showSuppressedAtomsAction, &QAction::toggled, project,

@@ -9,6 +9,16 @@
 #include <occ/core/kabsch.h>
 #include <occ/core/kdtree.h>
 
+namespace impl {
+template <typename Index>
+MaybeFragment getFragmentForAtom(const ChemicalStructure &structure,
+                                 Index atomIndex) {
+  auto fragIndex = structure.fragmentIndexForAtom(atomIndex);
+  return structure.getFragment(fragIndex);
+}
+
+} // namespace impl
+
 ChemicalStructure::ChemicalStructure(QObject *parent)
     : QObject(parent), m_interactions(new PairInteractions(this)) {
   // PairInteractions are not set with parent as this, otherwise it will
@@ -153,6 +163,10 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     if (frag.asymmetricFragmentIndex.u == m_symmetryUniqueFragments.size()) {
       m_symmetryUniqueFragments.insert({frag.index, frag});
     }
+  }
+
+  for(auto &[idx, frag]: m_symmetryUniqueFragments) {
+    frag.name = getFragmentLabel(idx);
   }
 
   for (const auto &[edge_desc, edge] : m_bondGraph.edges()) {
@@ -540,6 +554,15 @@ void ChemicalStructure::setFlagForAtomsFiltered(const AtomFlag &flagToSet,
     }
   }
   emit atomsChanged();
+}
+
+MaybeFragment ChemicalStructure::getFragmentForAtom(int atomIndex) const {
+  return impl::getFragmentForAtom(*this, atomIndex);
+}
+
+MaybeFragment
+ChemicalStructure::getFragmentForAtom(GenericAtomIndex atomIndex) const {
+  return impl::getFragmentForAtom(*this, atomIndex);
 }
 
 FragmentIndex ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
@@ -1120,6 +1143,16 @@ std::vector<AtomicDisplacementParameters>
 ChemicalStructure::atomicDisplacementParametersForAtoms(
     const std::vector<GenericAtomIndex> &idxs) const {
   return std::vector<AtomicDisplacementParameters>(idxs.size());
+}
+
+MaybeFragment
+ChemicalStructure::getFragment(const FragmentIndex &fragIndex) const {
+  const auto &fragments = getFragments();
+  const auto it = fragments.find(fragIndex);
+  if (it != fragments.end()) {
+    return std::cref(it->second);
+  }
+  return std::nullopt;
 }
 
 QString ChemicalStructure::getFragmentLabel(const FragmentIndex &index) {

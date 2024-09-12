@@ -17,11 +17,15 @@
 #include <QStringList>
 #include <QVariant>
 #include <QVector3D>
+#include <optional>
+#include <functional>
 #include <memory>
 #include <occ/core/bondgraph.h>
 #include <occ/core/linear_algebra.h>
 
 using Transform = Eigen::Isometry3d;
+
+using MaybeFragment = std::optional<std::reference_wrapper<const Fragment>>;
 
 using FragmentMap =
     ankerl::unordered_dense::map<FragmentIndex, Fragment, FragmentIndexHash>;
@@ -175,6 +179,7 @@ public:
 
   virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &) const;
   virtual const FragmentMap &getFragments() const;
+  MaybeFragment getFragment(const FragmentIndex &) const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
@@ -182,6 +187,10 @@ public:
   virtual inline size_t numberOfFragments() const { return m_fragments.size(); }
   virtual FragmentIndex fragmentIndexForAtom(int) const;
   virtual FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const;
+
+  MaybeFragment getFragmentForAtom(int) const;
+  MaybeFragment getFragmentForAtom(GenericAtomIndex) const;
+
   virtual void deleteFragmentContainingAtomIndex(int atomIndex);
   virtual void deleteIncompleteFragments();
   virtual void deleteAtoms(const std::vector<GenericAtomIndex> &);

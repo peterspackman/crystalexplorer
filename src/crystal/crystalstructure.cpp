@@ -1,7 +1,7 @@
 #include "crystalstructure.h"
+#include "colormap.h"
 #include <iostream>
 #include <occ/core/kabsch.h>
-#include "colormap.h"
 
 using VertexDesc =
     typename occ::core::graph::PeriodicBondGraph::VertexDescriptor;
@@ -227,8 +227,9 @@ inline occ::Mat6N computeUnitCellAtomAdps(const OccCrystal &crystal) {
   return crystal.unit_cell().to_cartesian_adp(result);
 }
 
-Fragment CrystalStructure::makeFragmentFromOccMolecule(
-    const occ::core::Molecule &mol) const {
+Fragment
+CrystalStructure::makeFragmentFromOccMolecule(const occ::core::Molecule &mol,
+                                              FragmentIndex index) {
   std::vector<GenericAtomIndex> idxs;
   const auto &uc_idx = mol.unit_cell_idx();
   const auto &uc_shift = mol.unit_cell_atom_shift();
@@ -245,9 +246,27 @@ Fragment CrystalStructure::makeFragmentFromOccMolecule(
   result.atomicNumbers = atomicNumbersForIndices(idxs);
   result.positions = atomicPositionsForIndices(idxs);
   result.asymmetricUnitIndices = occ::IVec(idxs.size());
+  result.asymmetricFragmentIndex = index;
+  result.index = index;
   for (int i = 0; i < idxs.size(); i++) {
     result.asymmetricUnitIndices(i) = asym_idx(i);
   }
+  return result;
+}
+
+QString CrystalStructure::getTransformationString(
+    const Eigen::Isometry3d &t) const {
+  occ::Mat4 seitz;
+  Eigen::Matrix3d frac_rot = m_crystal.unit_cell().inverse() *
+                             t.rotation() * m_crystal.unit_cell().direct();
+  Eigen::Vector3d frac_trans = m_crystal.to_fractional(t.translation());
+
+  seitz.block(0, 0, 3, 3) = frac_rot;
+  seitz.block(3, 0, 1, 3) = frac_trans;
+
+  occ::crystal::SymmetryOperation symop(seitz);
+  QString result = QString::fromStdString(symop.to_string());
+  qDebug() << result;
   return result;
 }
 
@@ -262,18 +281,20 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   for (const auto &mol : m_crystal.symmetry_unique_molecules()) {
     FragmentIndex idx{mol.unit_cell_molecule_idx(), 0, 0, 0};
     asymmetricMoleculeIndices.push_back(idx);
-    auto frag = makeFragmentFromOccMolecule(mol);
-    frag.asymmetricFragmentIndex = idx;
-    frag.index = idx;
+    auto frag = makeFragmentFromOccMolecule(mol, idx);
     m_symmetryUniqueFragments.insert({idx, frag});
+  }
+
+  // this needs to be done after symmetry unique fragments is constructed...
+  for (auto &[idx, frag] : m_symmetryUniqueFragments) {
+    frag.name = getFragmentLabel(idx);
   }
 
   m_unitCellFragments.clear();
   m_unitCellAtomFragments.clear();
   for (const auto &mol : m_crystal.unit_cell_molecules()) {
     FragmentIndex idx{mol.unit_cell_molecule_idx(), 0, 0, 0};
-    auto frag = makeFragmentFromOccMolecule(mol);
-
+    auto frag = makeFragmentFromOccMolecule(mol, idx);
     frag.asymmetricFragmentIndex =
         asymmetricMoleculeIndices[mol.asymmetric_molecule_idx()];
     const auto &asymFrag =
@@ -281,6 +302,9 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     frag.index = idx;
     getTransformation(asymFrag.atomIndices, frag.atomIndices,
                       frag.asymmetricFragmentTransform);
+
+    frag.name = getFragmentLabel(frag.asymmetricFragmentIndex) + " " + getTransformationString(frag.asymmetricFragmentTransform);
+
     m_unitCellFragments.insert({idx, frag});
     for (const auto &atomIndex : frag.atomIndices) {
       FragmentIndex thisIndex = idx;
@@ -328,16 +352,17 @@ void CrystalStructure::setFragmentColor(FragmentIndex fragment,
   }
 }
 
-void CrystalStructure::setAllFragmentColors(const FragmentColorSettings &settings) {
-  if(settings.method == FragmentColorSettings::Method::Constant) {
+void CrystalStructure::setAllFragmentColors(
+    const FragmentColorSettings &settings) {
+  if (settings.method == FragmentColorSettings::Method::Constant) {
     for (auto &[fragIndex, frag] : m_fragments) {
       frag.color = settings.color;
     }
-  }
-  else if(settings.method == FragmentColorSettings::Method::SymmetryUniqueFragment) {
+  } else if (settings.method ==
+             FragmentColorSettings::Method::SymmetryUniqueFragment) {
     size_t nasym = m_symmetryUniqueFragments.size();
     ColorMapFunc cmap(ColorMapName::Hokusai1, 0, nasym);
-    for(auto &[idx, frag] : m_fragments) {
+    for (auto &[idx, frag] : m_fragments) {
       frag.color = cmap(frag.asymmetricFragmentIndex.u);
     }
   }
@@ -473,7 +498,7 @@ void CrystalStructure::addVanDerWaalsContactAtoms() {
   }
   std::vector<GenericAtomIndex> indices(atomsToShow.begin(), atomsToShow.end());
 
-  if(m_contactSettings.showMolecules) {
+  if (m_contactSettings.showMolecules) {
     auto visitor = [&](const VertexDesc &v, const VertexDesc &prev,
                        const EdgeDesc &e, const MillerIndex &hkl) {
       GenericAtomIndex atomIdx{static_cast<int>(v), hkl.h, hkl.k, hkl.l};
@@ -489,13 +514,14 @@ void CrystalStructure::addVanDerWaalsContactAtoms() {
       return edges.at(e).connectionType == Connection::CovalentBond;
     };
 
-    for (const auto &offset: indices) {
+    for (const auto &offset : indices) {
       VertexDesc uc_vertex = offset.unique;
       filtered_connectivity_traversal_with_cell_offset(
           g, uc_vertex, visitor, covalentPredicate,
           {offset.x, offset.y, offset.z});
     }
-    indices = std::vector<GenericAtomIndex>(atomsToShow.begin(), atomsToShow.end());
+    indices =
+        std::vector<GenericAtomIndex>(atomsToShow.begin(), atomsToShow.end());
   }
 
   addAtomsByCrystalIndex(indices, AtomFlag::Contact);
@@ -892,7 +918,6 @@ void CrystalStructure::buildSlab(SlabGenerationOptions options) {
         }
       }
     }
-
   };
 
   const auto &uc_mols = m_crystal.unit_cell_molecules();
@@ -1184,6 +1209,7 @@ CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
   Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
   result.asymmetricFragmentTransform *= t;
+  result.name += QString(" + [%1 %2 %3]").arg(idx.h).arg(idx.k).arg(idx.l);
   return result;
 }
 
@@ -1207,6 +1233,7 @@ Fragment CrystalStructure::makeFragment(
     occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
     Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
     result.asymmetricFragmentTransform *= t;
+    result.name = ucFrag.name +  QString(" + [%1 %2 %3]").arg(result.index.h).arg(result.index.k).arg(result.index.l);
   } else {
     const auto &uc_atoms = m_crystal.unit_cell_atoms();
     std::tie(result.asymmetricFragmentIndex,
@@ -1215,6 +1242,7 @@ Fragment CrystalStructure::makeFragment(
     for (int i = 0; i < idxs.size(); i++) {
       result.asymmetricUnitIndices(i) = uc_atoms.asym_idx(i);
     }
+    result.name = "temp_fragment";
   }
   return result;
 }
@@ -1258,7 +1286,7 @@ CrystalStructure::getAtomIndicesUnderTransformation(
     if (closestAtomIndex != -1) {
       if (minDistance > 1e-3)
         qWarning() << "Match has large distance: " << closestAtomIndex
-                 << minDistance;
+                   << minDistance;
       result.emplace_back(GenericAtomIndex{static_cast<int>(closestAtomIndex),
                                            cellOffset(0), cellOffset(1),
                                            cellOffset(2)});
@@ -1327,7 +1355,7 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
 
       if (added.find(unique) != added.end()) {
         qWarning() << "Should only import unique dimers:"
-                 << FragmentIndexPair::fromDimerIndex(unique);
+                   << FragmentIndexPair::fromDimerIndex(unique);
         continue;
       }
 
@@ -1443,7 +1471,8 @@ CrystalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
 }
 
 void CrystalStructure::buildDimerMappingTable(double maxRadius) {
-  // TODO extend dimer calculationg on the fly when people have dimers with higher than current max radius
+  // TODO extend dimer calculationg on the fly when people have dimers with
+  // higher than current max radius
   m_unitCellDimers = m_crystal.unit_cell_dimers(maxRadius);
   qDebug() << "Building dimer mapping table";
   qDebug() << "Unit cell molecules" << m_unitCellFragments.size();

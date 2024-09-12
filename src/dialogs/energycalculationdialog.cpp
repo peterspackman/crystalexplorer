@@ -89,6 +89,7 @@ void EnergyCalculationDialog::handleModelChange() {
 }
 
 bool EnergyCalculationDialog::handleStructureChange() {
+  qDebug() << "Handle structure change";
   // TODO check if energy model is symmetric i.e allowInversions should be set
   m_wavefunctions.clear();
   m_requiredWavefunctions.clear();
@@ -115,9 +116,9 @@ bool EnergyCalculationDialog::handleStructureChange() {
   wavefunctionsNeeded.insert(asymIndex);
 
   qDebug() << "Unique pairs: " << m_fragmentPairs.uniquePairs.size();
+
   auto match = [](const Fragment &a, const Fragment &b) {
-    return (a.asymmetricFragmentIndex == b.asymmetricFragmentIndex) &&
-           (a.atomIndices == b.atomIndices);
+    return (a.asymmetricFragmentIndex == b.asymmetricFragmentIndex);
   };
   if (selectedFragments.size() == 2) {
     // TODO improve efficiency here
@@ -138,7 +139,10 @@ bool EnergyCalculationDialog::handleStructureChange() {
     }
   } else {
     for (const auto &pair : m_fragmentPairs.uniquePairs) {
+      qDebug() << "Unique pair" << pair.index;
+      qDebug() << "Unique pair (asym)" << pair.a.asymmetricFragmentIndex << pair.b.asymmetricFragmentIndex;
       if (match(pair.a, keyFragment) || match(pair.b, keyFragment)) {
+        qDebug() << "Will be calculatedpair" << pair.index;
         m_fragmentPairsToCalculate.push_back(pair);
         wavefunctionsNeeded.insert(pair.a.asymmetricFragmentIndex);
         wavefunctionsNeeded.insert(pair.b.asymmetricFragmentIndex);

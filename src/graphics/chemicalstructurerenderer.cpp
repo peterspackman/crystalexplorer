@@ -22,9 +22,8 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
           &ChemicalStructureRenderer::childAddedToStructure);
   connect(m_structure, &ChemicalStructure::childRemoved, this,
           &ChemicalStructureRenderer::childRemovedFromStructure);
-  connect(m_structure, &ChemicalStructure::atomsChanged, [&]() {
-    forceUpdates();
-  });
+  connect(m_structure, &ChemicalStructure::atomsChanged,
+          [&]() { forceUpdates(); });
   initStructureChildren();
 
   m_propertyColorMaps = {
@@ -105,19 +104,22 @@ void ChemicalStructureRenderer::toggleShowMultipleCells() {
   setShowCells(!m_showMultipleCells);
 }
 
-void ChemicalStructureRenderer::setShowAtomLabels(bool show) {
-  if (show != m_showAtomLabels) {
-    m_showAtomLabels = show;
+void ChemicalStructureRenderer::setAtomLabelOptions(
+    const AtomLabelOptions &options) {
+  if (options != m_atomLabelOptions) {
+    m_atomLabelOptions = options;
     m_labelsNeedsUpdate = true;
   }
 }
 
-bool ChemicalStructureRenderer::showAtomLabels() const {
-  return m_showAtomLabels;
+const AtomLabelOptions &ChemicalStructureRenderer::atomLabelOptions() const {
+  return m_atomLabelOptions;
 }
 
 void ChemicalStructureRenderer::toggleShowAtomLabels() {
-  setShowAtomLabels(!m_showAtomLabels);
+  auto options = m_atomLabelOptions;
+  options.show = !options.show;
+  setAtomLabelOptions(options);
 }
 
 void ChemicalStructureRenderer::setShowSuppressedAtoms(bool show) {
@@ -221,17 +223,26 @@ void ChemicalStructureRenderer::updateCells() {
 
 QList<TextLabel> ChemicalStructureRenderer::getCurrentLabels() {
   QList<TextLabel> result;
-  if (m_showAtomLabels) {
-    const auto &atomLabels = m_structure->labels();
-    const auto &positions = m_structure->atomicPositions();
-    for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
-      if (shouldSkipAtom(i))
-        continue;
-      auto idx = m_structure->indexToGenericIndex(i);
-      if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
-        continue;
-      QVector3D pos(positions(0, i), positions(1, i), positions(2, i));
-      result.append(TextLabel{atomLabels[i], pos});
+  if (m_atomLabelOptions.show) {
+    if (m_atomLabelOptions.fragmentLabel) {
+      const auto &fragments = m_structure->getFragments();
+      for(const auto &[fragmentIndex, fragment]: fragments) {
+        auto centroid = fragment.centroid();
+        QVector3D pos(centroid.x(), centroid.y(), centroid.z());
+        result.append(TextLabel{m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex), pos});
+      }
+    } else {
+      const auto &atomLabels = m_structure->labels();
+      const auto &positions = m_structure->atomicPositions();
+      for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
+        if (shouldSkipAtom(i))
+          continue;
+        auto idx = m_structure->indexToGenericIndex(i);
+        if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
+          continue;
+        QVector3D pos(positions(0, i), positions(1, i), positions(2, i));
+        result.append(TextLabel{atomLabels[i], pos});
+      }
     }
   }
   return result;
@@ -340,13 +351,17 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
   m_cellsNeedsUpdate = false;
 }
 
-AggregateIndex ChemicalStructureRenderer::getAggregateIndex(size_t index) const {
-  if(index < m_aggregateIndices.size()) return m_aggregateIndices[index];
+AggregateIndex
+ChemicalStructureRenderer::getAggregateIndex(size_t index) const {
+  if (index < m_aggregateIndices.size())
+    return m_aggregateIndices[index];
   return AggregateIndex{};
 }
 
 void ChemicalStructureRenderer::addAggregateRepresentations() {
-  if(!(m_drawingStyle == DrawingStyle::Centroid || m_drawingStyle == DrawingStyle::CenterOfMass)) return;
+  if (!(m_drawingStyle == DrawingStyle::Centroid ||
+        m_drawingStyle == DrawingStyle::CenterOfMass))
+    return;
   m_ellipsoidRenderer->clear();
 
   if (m_selectionHandler) {
@@ -358,12 +373,15 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
 
   const auto &fragmentMap = m_structure->getFragments();
   int i = 0;
-  for(const auto &frag: fragments) {
+  for (const auto &frag : fragments) {
     auto fragment = fragmentMap.at(frag);
     QColor color = m_structure->getFragmentColor(frag);
-    occ::Vec3 p = (m_drawingStyle == DrawingStyle::Centroid) ? fragment.centroid() : fragment.centerOfMass();
+    occ::Vec3 p = (m_drawingStyle == DrawingStyle::Centroid)
+                      ? fragment.centroid()
+                      : fragment.centerOfMass();
     QVector3D pos(p.x(), p.y(), p.z());
-    bool selected = m_structure->atomsHaveFlags(fragment.atomIndices, AtomFlag::Selected);
+    bool selected =
+        m_structure->atomsHaveFlags(fragment.atomIndices, AtomFlag::Selected);
     quint32 selectionId{0};
     QVector3D selectionIdColor;
     if (m_selectionHandler) {
@@ -372,10 +390,10 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
     }
 
     m_aggregateIndices.push_back(AggregateIndex{frag, pos});
-    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color, 0.4, selectionIdColor, selected);
+    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color,
+                                               0.4, selectionIdColor, selected);
     i++;
   }
-
 }
 
 void ChemicalStructureRenderer::handleAtomsUpdate() {
@@ -463,7 +481,7 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
   m_bondLineRenderer->clear();
   m_cylinderRenderer->clear();
 
-  if(bondStyle() == BondDrawingStyle::None) {
+  if (bondStyle() == BondDrawingStyle::None) {
     m_bondsNeedsUpdate = false;
     return;
   }
@@ -608,7 +626,6 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     m_uniforms.u_renderMode = storedRenderMode;
     m_uniforms.u_selectionMode = false;
   }
-
 }
 
 void ChemicalStructureRenderer::updateRendererUniforms(
@@ -654,15 +671,16 @@ void addInstanceToInstanceRenderer(
   instanceRenderer->addInstance(v);
 }
 
-void ChemicalStructureRenderer::addFaceHighlightsForMeshInstance(Mesh *mesh, MeshInstance *meshInstance) {
-      // face highlights
-      QColor color = Qt::red;
-      for (const int v : mesh->vertexHighlights()) {
-        const auto vertex = meshInstance->vertexVector3D(v);
-        const auto normal = meshInstance->vertexNormalVector3D(v);
-        cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
-                                            vertex + normal, 1.0, color);
-      }
+void ChemicalStructureRenderer::addFaceHighlightsForMeshInstance(
+    Mesh *mesh, MeshInstance *meshInstance) {
+  // face highlights
+  QColor color = Qt::red;
+  for (const int v : mesh->vertexHighlights()) {
+    const auto vertex = meshInstance->vertexVector3D(v);
+    const auto normal = meshInstance->vertexNormalVector3D(v);
+    cx::graphics::addLineToLineRenderer(*m_highlightRenderer, vertex,
+                                        vertex + normal, 1.0, color);
+  }
 }
 
 void ChemicalStructureRenderer::handleMeshesUpdate() {

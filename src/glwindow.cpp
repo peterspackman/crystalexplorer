@@ -665,7 +665,8 @@ void GLWindow::setObjectInformationTextAndPosition(QString text, QPoint pos) {
     m_infoLabel->setFrameStyle(QFrame::Panel);
     m_infoLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     m_infoLabel->setWindowFlags(Qt::ToolTip);
-    m_infoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+    m_infoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse |
+                                         Qt::TextSelectableByKeyboard);
   }
 
   m_infoLabel->setText(text);
@@ -984,6 +985,26 @@ void GLWindow::showGeneralContextMenu(const QPoint &pos) {
   }
 }
 
+void GLWindow::cycleAtomLabelOptions() {
+  auto options = scene->atomLabelOptions();
+  emit atomLabelOptionsChanged(options.cycle());
+}
+
+void GLWindow::updateAtomLabelContextMenu(QMenu *contextMenu) {
+  auto atomLabelOptions = scene->atomLabelOptions();
+  QString actionText;
+
+  if (!atomLabelOptions.show) {
+    actionText = tr("Show Atom Labels");
+  } else if (!atomLabelOptions.fragmentLabel) {
+    actionText = tr("Show Fragment Labels");
+  } else {
+    actionText = tr("Hide Labels");
+  }
+
+  contextMenu->addAction(actionText, this, &GLWindow::cycleAtomLabelOptions);
+}
+
 void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
   if (scene) { // create crystal dependent context menu options
 
@@ -1019,13 +1040,7 @@ void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {
                              &GLWindow::contextualShowUnitCellBox);
     }
 
-    if (scene->showAtomLabels()) {
-      contextMenu->addAction(tr("Hide Atom Labels"), this,
-                             &GLWindow::contextualToggleAtomicLabels);
-    } else {
-      contextMenu->addAction(tr("Show Atom Labels"), this,
-                             &GLWindow::contextualToggleAtomicLabels);
-    }
+    updateAtomLabelContextMenu(contextMenu);
 
     if (scene->hasHydrogens()) {
       if (scene->showHydrogenAtoms()) {

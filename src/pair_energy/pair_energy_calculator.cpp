@@ -142,6 +142,9 @@ void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params, xtb::Re
         bool success = io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
         auto pair = new PairInteraction(xtb::methodToString(params.method));
         qDebug() << success << "wfn->totalEnergy" << wfn->totalEnergy() << "ref" << params.reference_energy;
+        if(!success) {
+            qWarning() << "Invalid result from xtb task!";
+        }
         double e = wfn->totalEnergy() - params.reference_energy;
         pair->addComponent("total", e * 2625.5);
         pair->setParameters(m_parameters[result.name]);

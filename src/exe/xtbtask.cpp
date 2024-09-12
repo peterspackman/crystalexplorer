@@ -28,6 +28,10 @@ QString XtbTask::moldenFilename() const {
   return QString("%1.molden.input").arg(baseName());
 }
 
+QString XtbTask::propertiesFilename() const {
+  return QString("%1_properties.txt").arg(baseName());
+}
+
 void XtbTask::start() {
   QString coord = xtbCoordString(m_parameters);
   emit progressText("Generated coord input");
@@ -44,7 +48,11 @@ void XtbTask::start() {
 
 
   QStringList arguments{inputName};
-  FileDependencyList outputs{FileDependency("xtbout.json", outputName)};
+  FileDependencyList outputs{
+    FileDependency("xtbout.json", outputName),
+    FileDependency(propertiesFilename())
+  };
+
   if(m_parameters.write_molden) {
     arguments.append("--molden");
     outputs.append(FileDependency("molden.input", moldenFilename()));
