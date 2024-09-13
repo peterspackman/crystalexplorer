@@ -7,27 +7,7 @@
 #include <QtConcurrent>
 #include <ankerl/unordered_dense.h>
 #include <QProcessEnvironment>
-
-namespace exe {
-
-struct ExternalProgramResult {
-    int exitCode{1};
-    QString errorMessage{};
-    QString stdoutContents;
-    QString stderrContents;
-    inline bool success() const { return exitCode == 0; }
-};
-
-struct ExternalProgramParameters {
-    QString executable;
-    QString workingDirectory{"."};
-    QStringList arguments;
-    QStringList requirements;
-    QStringList outputs;
-    QProcessEnvironment environment;
-};
-
-}
+#include <QPromise>
 
 class ExternalProgramTask : public Task {
     Q_OBJECT
@@ -53,8 +33,8 @@ public:
     void setOutputs(const FileDependencyList&);
     inline const auto &outputs() const { return m_outputs; }
 
-    void setDeleteWorkingFiles(bool shouldDelete) { m_deleteRequirements = shouldDelete; }
-    inline bool deleteWorkingFiles() const { return m_deleteRequirements; }
+    void setDeleteWorkingFiles(bool shouldDelete) { m_deleteWorkingFiles = shouldDelete; }
+    inline bool deleteWorkingFiles() const { return m_deleteWorkingFiles; }
 
     inline const auto exitCode() const { return m_exitCode; }
 
@@ -65,6 +45,14 @@ public:
 
     void setOverwrite(bool overwrite=true);
     bool overwrite() const;
+
+    static QString getInputFilePropertyName(QString filename);
+    static QString getOutputFilePropertyName(QString filename);
+
+protected:
+    virtual void preProcess();
+    virtual void postProcess();
+    bool runExternalProgram(QPromise<void>& promise);
 
 signals:
     void stopProcess();
@@ -80,7 +68,7 @@ private:
     int m_exitCode{-1};
     int m_timeout{0};
     int m_timeIncrement{100};
-    bool m_deleteRequirements{false};
+    bool m_deleteWorkingFiles{false};
     QProcessEnvironment m_environment;
 
     FileDependencyList m_requirements;

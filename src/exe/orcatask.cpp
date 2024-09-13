@@ -41,7 +41,7 @@ void OrcaSCFTask::start() {
   QString inputName = name + inputSuffix();
   QString outputName = jsonFilename();
 
-  if (!exe::writeTextFile(inputName, input)) {
+  if (!io::writeTextFile(inputName, input)) {
     emit errorOccurred("Could not write input file");
     return;
   }
@@ -66,7 +66,7 @@ OrcaConvertTask::OrcaConvertTask(QObject *parent)
 }
 
 QString OrcaConvertTask::moldenFilename() const {
-  return exe::changeSuffix(gbwFilename(), ".molden");
+  return io::changeSuffix(gbwFilename(), ".molden");
 }
 
 void OrcaConvertTask::start() {

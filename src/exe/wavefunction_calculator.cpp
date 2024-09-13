@@ -247,7 +247,7 @@ void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
   }
 
   if (m_deleteWorkingFiles) {
-    exe::deleteFile(filename);
+    io::deleteFile(filename);
   }
 }
 

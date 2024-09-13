@@ -256,15 +256,17 @@ CrystalStructure::makeFragmentFromOccMolecule(const occ::core::Molecule &mol,
 
 QString CrystalStructure::getTransformationString(
     const Eigen::Isometry3d &t) const {
-  occ::Mat4 seitz;
+  occ::Mat4 seitz = occ::Mat4::Zero();
   Eigen::Matrix3d frac_rot = m_crystal.unit_cell().inverse() *
                              t.rotation() * m_crystal.unit_cell().direct();
   Eigen::Vector3d frac_trans = m_crystal.to_fractional(t.translation());
 
   seitz.block(0, 0, 3, 3) = frac_rot;
   seitz.block(3, 0, 1, 3) = frac_trans;
+  seitz(3, 3) = 1;
 
   occ::crystal::SymmetryOperation symop(seitz);
+  std::cout << seitz << std::endl;
   QString result = QString::fromStdString(symop.to_string());
   qDebug() << result;
   return result;
@@ -303,7 +305,9 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     getTransformation(asymFrag.atomIndices, frag.atomIndices,
                       frag.asymmetricFragmentTransform);
 
-    frag.name = getFragmentLabel(frag.asymmetricFragmentIndex) + " " + getTransformationString(frag.asymmetricFragmentTransform);
+    frag.name = getFragmentLabel(frag.asymmetricFragmentIndex);
+    QString ts = getTransformationString(frag.asymmetricFragmentTransform);
+    if(ts != "x,y,z") frag.name += " " + ts;
 
     m_unitCellFragments.insert({idx, frag});
     for (const auto &atomIndex : frag.atomIndices) {
@@ -1209,7 +1213,9 @@ CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
   Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
   result.asymmetricFragmentTransform *= t;
-  result.name += QString(" + [%1 %2 %3]").arg(idx.h).arg(idx.k).arg(idx.l);
+    if(result.index != unitCellIndex) {
+      result.name += QString(" + [%1 %2 %3]").arg(idx.h).arg(idx.k).arg(idx.l);
+    }
   return result;
 }
 
@@ -1233,7 +1239,10 @@ Fragment CrystalStructure::makeFragment(
     occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
     Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
     result.asymmetricFragmentTransform *= t;
-    result.name = ucFrag.name +  QString(" + [%1 %2 %3]").arg(result.index.h).arg(result.index.k).arg(result.index.l);
+    result.name = ucFrag.name;
+    if(result.index != ucIndex) {
+      result.name += QString(" + [%1 %2 %3]").arg(result.index.h).arg(result.index.k).arg(result.index.l);
+    }
   } else {
     const auto &uc_atoms = m_crystal.unit_cell_atoms();
     std::tie(result.asymmetricFragmentIndex,

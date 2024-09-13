@@ -1,6 +1,7 @@
 #include "xtb.h"
 #include "chemicalstructure.h"
 #include "occ/core/element.h"
+#include "io_utilities.h"
 #include <QByteArray>
 #include <QFile>
 #include <QTextStream>
@@ -38,35 +39,9 @@ QString xtbCoordString(const xtb::Parameters &params) {
   ts << "$spin"
      << " " << params.multiplicity - 1 << Qt::endl;
   ts << "$write" << Qt::endl;
-  ts <<  QString("output file=%1_properties.txt").arg(params.name) << Qt::endl;
+  ts <<  QString("output file=properties.txt").arg(params.name) << Qt::endl;
   ts << "json=true" << Qt::endl;
   ts << "$end" << Qt::endl;
 
   return QString(destination);
-}
-
-xtb::Result loadXtbResult(const xtb::Parameters &params,
-                          const QString &jsonFilename,
-                          const QString &moldenFilename) {
-  xtb::Result result;
-
-  {
-    QFile file(jsonFilename);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-      return result;
-
-    result.jsonContents = file.readAll();
-    file.close();
-  }
-
-  if (params.write_molden) {
-    QFile file(moldenFilename);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-      return result;
-
-    result.moldenContents = file.readAll();
-    file.close();
-  }
-
-  return result;
 }

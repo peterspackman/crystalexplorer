@@ -80,7 +80,7 @@ struct FragmentDimer {
   int nearestAtomIndexB{-1};
   QString symmetry{"-"};
   FragmentIndexPair index;
-  inline QString getName() const { return a.name + " -- " + b.name; }
+  inline QString getName() const { return a.name + " : " + b.name; }
 
   bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
   bool operator==(const FragmentDimer &) const;

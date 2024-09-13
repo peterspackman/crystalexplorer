@@ -1,5 +1,11 @@
 #pragma once
 #include "xtb_parameters.h"
 
+struct XtbOutputs {
+  QString stdoutContents;
+  QString jsonPath;
+  QString propertiesPath;
+  QString moldenPath;
+};
+
 QString xtbCoordString(const xtb::Parameters &params);
-xtb::Result loadXtbResult(const xtb::Parameters &params, const QString &jsonFilename, const QString &moldenFilename);

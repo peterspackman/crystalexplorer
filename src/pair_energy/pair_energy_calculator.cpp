@@ -136,10 +136,12 @@ void PairEnergyCalculator::pairEnergyComplete(pair_energy::Parameters params, Oc
 }
 
 void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params, xtb::Result result) {
+    qDebug() << "Xtb task complete" << result.name;
     if(params.structure) {
         auto * interactions = params.structure->pairInteractions();
         auto * wfn = new MolecularWavefunction();
         bool success = io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
+        success = success & io::populateWavefunctionFromXtbStdoutContents(wfn, result.stdoutContents);
         auto pair = new PairInteraction(xtb::methodToString(params.method));
         qDebug() << success << "wfn->totalEnergy" << wfn->totalEnergy() << "ref" << params.reference_energy;
         if(!success) {

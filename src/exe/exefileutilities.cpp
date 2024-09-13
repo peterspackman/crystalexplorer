@@ -6,73 +6,33 @@
 
 namespace exe {
 
-bool isTextFile(const QString &filePath) {
-  QFile file(filePath);
-  if (!file.open(QIODevice::ReadOnly))
-    return false;
-
-  QByteArray data = file.read(1024);
-  file.close();
-
-  for (unsigned char byte : data) {
-    if (byte == '\0' ||
-        (byte < 0x20 && byte != '\n' && byte != '\r' && byte != '\t')) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 QString readFileContents(const QString &filePath,
                          const QString &binaryPlaceholder) {
   QFile file(filePath);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    return QString(
-        "Can't open file"); // Return empty string if file can't be opened
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return QString("Error opening file: %1 - %2")
+        .arg(filePath)
+        .arg(file.errorString());
+  }
 
-  if (!isTextFile(filePath))
+  if (!io::isTextFile(filePath)) {
+    file.close();
     return binaryPlaceholder;
+  }
 
   QTextStream stream(&file);
   QString contents = stream.readAll();
 
+  if (stream.status() != QTextStream::Ok) {
+    return QString("Error reading file: %1 - %2")
+        .arg(filePath)
+        .arg(stream.status() == QTextStream::ReadPastEnd
+                 ? "Unexpected end of file"
+                 : "Unknown error");
+  }
+
   file.close();
   return contents;
-}
-
-bool deleteFile(const QString &filePath) {
-  // return true if the file does not exist at the end of this function
-  if (QFileInfo(filePath).exists()) {
-    if (!QFile::remove(filePath)) {
-      qDebug() << "Could not delete file..." << filePath;
-      return false;
-    }
-    qDebug() << "File deleted: " << !QFileInfo(filePath).exists();
-  }
-  return true;
-}
-
-bool copyFile(const QString &sourcePath, const QString &targetPath,
-              bool overwrite) {
-  // if they're the same file just do nothing.
-  if (sourcePath == targetPath)
-    return true;
-
-  // check if it exists
-  if (QFileInfo(targetPath).exists()) {
-    qDebug() << "File exists, should overwrite: " << overwrite;
-    if (!overwrite)
-      return false;
-    if (!QFile::remove(targetPath)) {
-      qDebug() << "Could not delete file...";
-      return false;
-    }
-    qDebug() << "File deleted: " << !QFileInfo(targetPath).exists();
-  }
-
-  // just use QFile::copy
-  return QFile::copy(sourcePath, targetPath);
 }
 
 QString findProgramInPath(const QString &program) {
@@ -91,22 +51,6 @@ QString findProgramInPath(const QString &program) {
     }
   }
   return QString();
-}
-
-bool writeTextFile(const QString &filename, const QString &text) {
-  QFile file(filename);
-  if (!file.open(QIODevice::ReadWrite | QIODevice::Text))
-    return false;
-  file.write(text.toUtf8());
-  file.close();
-  return true;
-}
-
-
-
-QString changeSuffix(const QString &filePath, const QString &suffix) {
-  QFileInfo fileInfo(filePath);
-  return fileInfo.completeBaseName() + suffix;
 }
 
 } // namespace exe

@@ -124,7 +124,7 @@ void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
   Mesh *mesh = io::loadMesh(m_filename);
   if(m_deleteWorkingFiles) {
-    exe::deleteFile(m_filename);
+    io::deleteFile(m_filename);
   }
   mesh->setObjectName(m_name);
   mesh->setParameters(m_parameters);

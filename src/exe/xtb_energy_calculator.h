@@ -2,6 +2,7 @@
 #include "chemicalstructure.h"
 #include "taskmanager.h"
 #include "xtb_parameters.h"
+#include "xtb.h"
 #include <QObject>
 
 class XtbEnergyCalculator : public QObject {
@@ -16,7 +17,7 @@ signals:
   void calculationComplete(xtb::Parameters, xtb::Result);
 
 private slots:
-  void handleFinishedTask(xtb::Parameters, QString name, QString jsonFilename, QString moldenFilename);
+  void handleFinishedTask(xtb::Parameters, xtb::Result);
 
 private:
   TaskManager *m_taskManager{nullptr};

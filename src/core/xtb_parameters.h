@@ -48,7 +48,9 @@ struct Parameters {
 struct Result {
   QString name;
   QString filename;
+  QByteArray stdoutContents;
   QByteArray jsonContents;
+  QByteArray propertiesContents;
   QByteArray moldenContents;
   ankerl::unordered_dense::map<QString, double> energy;
   bool success{false};

@@ -117,7 +117,7 @@ void InteractionInfoDocument::insertInteractionEnergiesForModel(
   }
 
   QList<QString> sortedComponents = getOrderedComponents(uniqueComponents);
-  QStringList tableHeader{"Color", "N", "Distance", "Symmetry"};
+  QStringList tableHeader{"Color", "N", "Distance", "Description"};
   tableHeader.append(sortedComponents);
 
   InfoTable infoTable(cursor, results->filterByModel(model).size() + 1,
@@ -135,7 +135,7 @@ void InteractionInfoDocument::insertInteractionEnergiesForModel(
                               QString::number(result->centroidDistance(), 'f',
                                               m_settings.distancePrecision),
                               Qt::AlignRight);
-    infoTable.insertCellValue(row, column++, result->symmetry(),
+    infoTable.insertCellValue(row, column++, result->dimerDescription(),
                               Qt::AlignRight);
 
     for (const QString &component : sortedComponents) {

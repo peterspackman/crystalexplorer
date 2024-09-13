@@ -33,6 +33,7 @@ public:
   void setParameters(const pair_energy::Parameters &);
   const pair_energy::Parameters &parameters() const;
   inline const auto &pairIndex() const { return m_parameters.fragmentDimer.index; }
+  inline QString dimerDescription() const { return m_parameters.fragmentDimer.getName(); }
 
 private:
   int m_count{0};

@@ -643,7 +643,7 @@ void GLWindow::handleObjectInformationDisplay(QPoint pos) {
         }
         break;
       }
-      case SelectionType::None:
+      default:
         break;
       }
     }
@@ -823,7 +823,7 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
     }
     break;
   }
-  case SelectionType::None: // do nothing
+  default:
     break;
   }
 
