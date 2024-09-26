@@ -73,6 +73,9 @@ void PairInteractions::add(PairInteraction *result) {
   if (!result)
     return;
   QString model = result->interactionModel();
+  if(result->label() == "Not set") {
+    result->setLabel(QString("%1").arg(m_pairInteractions[model].size() + 1));
+  }
   m_pairInteractions[model].insert({result->pairIndex(), result});
   impl::ValueRange currentRange;
   {

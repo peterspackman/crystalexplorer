@@ -1,6 +1,8 @@
 #include <QMatrix4x4>
 #include <QPainter>
 #include <QQuaternion>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QVector2D>
 #include <QtDebug>
 #include <cmath>
@@ -8,8 +10,8 @@
 #include "colormap.h"
 #include "graphics.h"
 #include "mathconstants.h"
-#include "signed_distance_field.h"
 #include "settings.h"
+#include "signed_distance_field.h"
 
 namespace cx::graphics {
 
@@ -222,21 +224,40 @@ void addTextToBillboardRenderer(BillboardRenderer &b, const QVector3D &position,
     int fontSize =
         settings::readSetting(settings::keys::TEXT_FONT_SIZE).toInt();
     QFont font(fontName, fontSize);
-    QFontMetrics fm(font);
-    int padding = fontSize / 4;
-    int pixelsWide = fm.horizontalAdvance(text);
-    int pixelsHigh = fm.height();
-    QImage img = QImage(QSize(pixelsWide + 2 * padding, pixelsHigh + padding),
-                        QImage::Format_Grayscale8);
-    img.fill(Qt::white);
-    QPainter painter(&img);
-    QTextOption textOptions;
-    textOptions.setFlags(QTextOption::IncludeTrailingSpaces);
 
-    painter.setBrush(Qt::black);
-    painter.setFont(font);
-    painter.drawText(QRectF(padding, padding / 2, pixelsWide, pixelsHigh), text,
-                     textOptions);
+    // Create a QTextDocument for rich text rendering
+    QTextDocument doc;
+    doc.setDefaultFont(font);
+    doc.setHtml(text);
+
+    // Set text color to black
+    QTextCursor cursor(&doc);
+    cursor.select(QTextCursor::Document);
+    QTextCharFormat format;
+    format.setForeground(Qt::black);
+    cursor.mergeCharFormat(format);
+
+    // Calculate the size of the text
+    doc.setTextWidth(-1); // Set to -1 to get the size without wrapping
+    QSizeF docSize = doc.size();
+
+    // Calculate padding based on font size
+    int padding = qRound(fontSize * 0.25); // 25% of font size for padding
+
+    // Create an image with appropriate size
+    int pixelsWide = qCeil(docSize.width()) + 2 * padding;
+    int pixelsHigh = qCeil(docSize.height()) + 2 * padding;
+    QImage img(QSize(pixelsWide, pixelsHigh), QImage::Format_Grayscale8);
+    img.fill(Qt::white);
+
+    // Set up the painter
+    QPainter painter(&img);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+
+    // Draw the text
+    painter.translate(padding, padding);
+    doc.drawContents(&painter);
     painter.end();
 
     QImage sdf = signed_distance_transform_2d(img);
@@ -244,24 +265,16 @@ void addTextToBillboardRenderer(BillboardRenderer &b, const QVector3D &position,
     texture->setSize(sdf.width(), sdf.height());
     texture->setFormat(QOpenGLTexture::R8_UNorm);
     texture->allocateStorage();
-    texture->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8, sdf.mirrored().constBits());
+    texture->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8,
+                     sdf.mirrored().constBits());
     texture->setMinificationFilter(QOpenGLTexture::Linear);
     texture->setMagnificationFilter(QOpenGLTexture::Linear);
     texture->setWrapMode(QOpenGLTexture::ClampToEdge);
     b.addVertices(
-        {BillboardVertex(
-             position,
-             QVector2D(pixelsWide + 2 * padding, pixelsHigh + padding), {0, 1}),
-         BillboardVertex(
-             position,
-             QVector2D(pixelsWide + 2 * padding, pixelsHigh + padding), {0, 0}),
-         BillboardVertex(
-             position,
-             QVector2D(pixelsWide + 2 * padding, pixelsHigh + padding), {1, 1}),
-         BillboardVertex(
-             position,
-             QVector2D(pixelsWide + 2 * padding, pixelsHigh + padding),
-             {1, 0})},
+        {BillboardVertex(position, QVector2D(pixelsWide, pixelsHigh), {0, 1}),
+         BillboardVertex(position, QVector2D(pixelsWide, pixelsHigh), {0, 0}),
+         BillboardVertex(position, QVector2D(pixelsWide, pixelsHigh), {1, 1}),
+         BillboardVertex(position, QVector2D(pixelsWide, pixelsHigh), {1, 0})},
         text, texture);
   } else {
     b.addVertices({BillboardVertex(position, QVector2D(1, 1), {0, 1}),

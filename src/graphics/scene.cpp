@@ -1084,6 +1084,7 @@ void Scene::textSettingsChanged() {
       settings::readSetting(settings::keys::TEXT_SMOOTHING).toFloat();
   m_uniforms.u_textSDFOutline =
       settings::readSetting(settings::keys::TEXT_OUTLINE).toFloat();
+  m_uniforms.u_textSize = settings::readSetting(settings::keys::TEXT_FONT_SIZE).toFloat() * 0.25;
   setNeedsUpdate();
 }
 

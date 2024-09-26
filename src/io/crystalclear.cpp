@@ -87,6 +87,7 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
       auto *pair = new PairInteraction("cg");
       QJsonObject dimerObj = siteEnergies[j].toObject();
       QJsonObject energiesObj = dimerObj["energies"].toObject();
+      pair->setLabel(QString("%1").arg(j + 1));
       for (auto it = energiesObj.constBegin(); it != energiesObj.constEnd();
            ++it) {
         pair->addComponent(it.key(), it.value().toDouble());

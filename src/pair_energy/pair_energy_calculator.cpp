@@ -19,7 +19,7 @@ inline xtb::Parameters pair2xtb(const pair_energy::Parameters &params) {
   }
   result.atoms = params.atomsA;
   result.atoms.insert(result.atoms.end(), params.atomsB.begin(), params.atomsB.end());
-  result.name = params.deriveName();
+  result.name = params.deriveName().replace("/", "o");
   return result;
 }
 

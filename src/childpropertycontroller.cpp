@@ -63,6 +63,12 @@ void ChildPropertyController::setup() {
   componentComboBox->setCurrentIndex(0);
   frameworkColorComboBox->blockSignals(false);
 
+  frameworkLabelDisplayComboBox->blockSignals(true);
+  QStringList labelDisplayValues = availableFrameworkLabelDisplayOptions();
+  frameworkLabelDisplayComboBox->insertItems(0, labelDisplayValues);
+  componentComboBox->setCurrentIndex(0);
+  frameworkLabelDisplayComboBox->blockSignals(false);
+
   frameworkConnectionComboBox->blockSignals(true);
   QStringList connectionValues = availableFrameworkConnectionModeOptions();
   frameworkConnectionComboBox->insertItems(0, connectionValues);
@@ -103,6 +109,9 @@ void ChildPropertyController::setup() {
           &ChildPropertyController::onFrameworkColoringChanged);
 
   connect(frameworkConnectionComboBox, &QComboBox::currentIndexChanged,
+          [this]() { emitFrameworkOptions(); });
+
+  connect(frameworkLabelDisplayComboBox, &QComboBox::currentIndexChanged,
           [this]() { emitFrameworkOptions(); });
 
   connect(frameworkShowOnlySelectionCheckBox, &QCheckBox::checkStateChanged,
@@ -292,6 +301,8 @@ void ChildPropertyController::emitFrameworkOptions() {
   options.model = modelComboBox->currentText();
   options.coloring =
       frameworkColoringFromString(frameworkColorComboBox->currentText());
+  options.labels = frameworkLabelDisplayFromString(
+      frameworkLabelDisplayComboBox->currentText());
   options.connectionMode = frameworkConnectionModeFromString(
       frameworkConnectionComboBox->currentText());
   options.customColor = m_customFrameworkColor;

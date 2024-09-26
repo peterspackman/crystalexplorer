@@ -41,6 +41,7 @@ struct RendererUniforms {
     float u_textSDFSmoothing{0.15f};
     QVector3D u_textColor{0.0f, 0.0f, 0.0f};
     QVector3D u_textOutlineColor{0.5f, 0.5f, 0.5f};
+    float u_textSize{24.0f};
     float u_depthFogDensity{10.0f};
     float u_depthFogOffset{0.1f};
     QVector3D u_depthFogColor;
@@ -88,6 +89,7 @@ struct RendererUniforms {
 	SET_UNIFORM(u_textSDFSmoothing);
 	SET_UNIFORM(u_textColor);
 	SET_UNIFORM(u_textOutlineColor);
+	SET_UNIFORM(u_textSize);
 	SET_UNIFORM(u_depthFogDensity);
 	SET_UNIFORM(u_depthFogColor);
 	SET_UNIFORM(u_depthFogOffset);

@@ -73,3 +73,43 @@ frameworkConnectionModeFromString(const QString &s) {
   }
   return FrameworkOptions::ConnectionMode::Centroids;
 }
+
+inline constexpr std::array<FrameworkOptions::LabelDisplay, 4>
+    availableLabelDisplays = {
+        FrameworkOptions::LabelDisplay::None,
+        FrameworkOptions::LabelDisplay::Value,
+        FrameworkOptions::LabelDisplay::Interaction,
+        FrameworkOptions::LabelDisplay::Fragments,
+};
+
+QStringList availableFrameworkLabelDisplayOptions() {
+  QStringList result;
+  for (const auto &c : availableLabelDisplays) {
+    result.append(frameworkLabelDisplayToString(c));
+  }
+  return result;
+}
+
+QString frameworkLabelDisplayToString(FrameworkOptions::LabelDisplay mode) {
+  switch (mode) {
+  case FrameworkOptions::LabelDisplay::None:
+    return "No label";
+  case FrameworkOptions::LabelDisplay::Value:
+    return "Value";
+  case FrameworkOptions::LabelDisplay::Interaction:
+    return "Interaction";
+  case FrameworkOptions::LabelDisplay::Fragments:
+    return "Fragment labels";
+  }
+  return "No label";
+}
+
+FrameworkOptions::LabelDisplay
+frameworkLabelDisplayFromString(const QString &s) {
+  for (const auto &c : availableLabelDisplays) {
+    if (s == frameworkLabelDisplayToString(c)) {
+      return c;
+    }
+  }
+  return FrameworkOptions::LabelDisplay::None;
+}

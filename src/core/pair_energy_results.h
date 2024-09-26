@@ -25,6 +25,9 @@ public:
     return m_parameters.centroidDistance;
   }
 
+  inline const auto &label() const { return m_label; }
+  inline void setLabel(const QString &label) { m_label = label; }
+
   inline const auto &color() const { return m_color; }
   inline void setColor(QColor color) { m_color = color; }
   inline int count() const { return m_count; }
@@ -38,6 +41,7 @@ public:
 private:
   int m_count{0};
   QColor m_color{Qt::white};
+  QString m_label{"Not set"};
   QString m_interactionModel;
   EnergyComponents m_components;
   pair_energy::Parameters m_parameters;

@@ -45,8 +45,6 @@ QString XtbTask::propertiesContents() const {
   return property(getOutputFilePropertyName("properties.txt")).toString();
 }
 
-
-
 QString XtbTask::coordFilename() const { return baseName() + inputSuffix(); }
 
 void XtbTask::preProcess() {

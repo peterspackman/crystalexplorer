@@ -257,18 +257,16 @@ CrystalStructure::makeFragmentFromOccMolecule(const occ::core::Molecule &mol,
 QString CrystalStructure::getTransformationString(
     const Eigen::Isometry3d &t) const {
   occ::Mat4 seitz = occ::Mat4::Zero();
-  Eigen::Matrix3d frac_rot = m_crystal.unit_cell().inverse() *
+  occ::Mat3 frac_rot = m_crystal.unit_cell().inverse() *
                              t.rotation() * m_crystal.unit_cell().direct();
-  Eigen::Vector3d frac_trans = m_crystal.to_fractional(t.translation());
+  occ::Vec3 frac_trans = m_crystal.to_fractional(t.translation());
 
-  seitz.block(0, 0, 3, 3) = frac_rot;
-  seitz.block(3, 0, 1, 3) = frac_trans;
+  seitz.block<3, 3>(0, 0) = frac_rot;
+  seitz.block<3, 1>(0, 3) = frac_trans.transpose();
   seitz(3, 3) = 1;
 
   occ::crystal::SymmetryOperation symop(seitz);
-  std::cout << seitz << std::endl;
   QString result = QString::fromStdString(symop.to_string());
-  qDebug() << result;
   return result;
 }
 

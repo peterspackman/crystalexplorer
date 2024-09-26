@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>24</height>
+     <height>43</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -50,6 +50,7 @@
     <addaction name="separator"/>
     <addaction name="preferencesAction"/>
     <addaction name="actionExport_As"/>
+    <addaction name="quickExportAction"/>
    </widget>
    <widget class="QMenu" name="sceneMenu">
     <property name="title">
@@ -1134,6 +1135,17 @@
    </property>
    <property name="toolTip">
     <string>Show Only Selected Atoms</string>
+   </property>
+  </action>
+  <action name="quickExportAction">
+   <property name="text">
+    <string>Quick export current scene</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+E</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
  </widget>

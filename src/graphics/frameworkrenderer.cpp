@@ -125,7 +125,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
         m_options.component, m_defaultInteractionComponentColor);
   }
 
-  std::vector<std::pair<QColor, double>> energies;
+  std::vector<std::tuple<QColor, double, QString>> energies;
   energies.reserve(uniqueInteractions.size());
 
   for (const auto &pair : uniquePairs) {
@@ -138,20 +138,38 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   for (const auto *interaction : uniqueInteractions) {
     QColor c = color;
     double energy = 0.0;
+    QString label = "";
     if (interaction) {
       energy = interaction->getComponent(m_options.component);
       if (m_options.coloring == FrameworkOptions::Coloring::Interaction) {
         c = interaction->color();
       }
+      switch (m_options.labels) {
+      case FrameworkOptions::LabelDisplay::Value:
+        label = QString::number(energy, 'd', 1);
+        break;
+      case FrameworkOptions::LabelDisplay::Interaction: {
+        const auto &params = interaction->parameters();
+        label = interaction->label() + QString("<sub>%1</sub>").arg(m_structure->getFragmentLabel(params.fragmentDimer.a.asymmetricFragmentIndex));
+        break;
+      }
+      case FrameworkOptions::LabelDisplay::Fragments: {
+        const auto &params = interaction->parameters();
+        label = m_structure->getFragmentLabel(params.fragmentDimer.a.asymmetricFragmentIndex) + ":" + m_structure->getFragmentLabel(params.fragmentDimer.b.asymmetricFragmentIndex);
+        break;
+      }
+      default:
+        break;
+      }
     }
     emin = qMin(energy, emin);
     emax = qMax(energy, emax);
-    energies.push_back({c, energy});
+    energies.push_back({c, energy, label});
   }
 
   if (m_options.coloring == FrameworkOptions::Coloring::Value) {
     ColorMapFunc cmap(ColorMapName::Turbo, emin, emax);
-    for (auto &[color, energy] : energies) {
+    for (auto &[color, energy, label] : energies) {
       color = cmap(energy);
     }
   }
@@ -165,7 +183,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
     for (const auto &[pair, uniqueIndex] : molPairs) {
       if (selected.size() != 0) {
-        if (m_options.showOnlySelectedFragmentInteractions && selected.size() > 1) {
+        if (m_options.showOnlySelectedFragmentInteractions &&
+            selected.size() > 1) {
           if (selected.find(pair.index.a) == selected.end() ||
               selected.find(pair.index.b) == selected.end())
             continue;
@@ -175,7 +194,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
             continue;
         }
       }
-      auto [color, energy] = energies[uniqueIndex];
+      auto [color, energy, label] = energies[uniqueIndex];
       if ((m_options.cutoff != 0.0) && (std::abs(energy) <= m_options.cutoff))
         continue;
       double scale = -energy * thickness();
@@ -186,6 +205,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       QVector3D m = va + (vb - va) * 0.5;
 
       const double lineWidth = DrawingStyleConstants::bondLineWidth;
+
       if (inv) {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
@@ -197,8 +217,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb,
                                               lineWidth, color);
-          cx::graphics::addTextToBillboardRenderer(
-              *m_labelRenderer, m, QString::number(energy, 'd', 1));
+          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m, label);
         }
       } else {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
@@ -212,8 +231,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           QVector3D m2 = va + (m - va) * 0.5;
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, lineWidth,
                                               color);
-          cx::graphics::addTextToBillboardRenderer(
-              *m_labelRenderer, m2, QString::number(energy, 'd', 1));
+          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m2, label);
         }
       }
     }

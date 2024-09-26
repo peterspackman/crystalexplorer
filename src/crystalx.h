@@ -16,6 +16,7 @@
 
 #include "animationsettingsdialog.h"
 #include "celllimitsdialog.h"
+#include "exportdialog.h"
 #include "fragmentstatedialog.h"
 #include "closecontactsdialog.h"
 #include "depthfadingandclippingdialog.h"
@@ -108,6 +109,7 @@ private slots:
   void saveProject();
   void saveProjectAs();
   void exportAs();
+  void quickExportCurrentGraphics();
   QString suggestedProjectFilename();
   void showPreferencesDialog();
   void helpAboutActionDialog();
@@ -209,6 +211,7 @@ private:
 
   bool getFragmentStatesIfMultipleFragments(ChemicalStructure *);
   bool getFragmentStatesFromUser(ChemicalStructure *);
+  void exportCurrentGraphics(const QString &);
 
   Project *project{nullptr};
   GLWindow *glWindow{nullptr};
@@ -246,6 +249,8 @@ private:
 
   SlabGenerationOptions m_savedSlabGenerationOptions;
   QMap<QString, DrawingStyle> m_drawingStyleLabelToDrawingStyle;
+  ExportDialog * m_exportDialog{nullptr};
+  int m_exportCounter{0};
 
   TaskManager * m_taskManager{nullptr};
   TaskManagerWidget * m_taskManagerWidget{nullptr};

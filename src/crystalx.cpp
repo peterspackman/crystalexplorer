@@ -16,7 +16,6 @@
 #include "crystalx.h"
 #include "dialoghtml.h"
 #include "elementdata.h"
-#include "exportdialog.h"
 #include "isosurface_calculator.h"
 #include "mathconstants.h"
 #include "pair_energy_calculator.h"
@@ -54,6 +53,7 @@ void Crystalx::init() {
   enableExperimentalFeatures(ENABLE_EXPERIMENTAL_FEATURES);
 
   updateWorkingDirectories(".");
+  m_exportDialog = new ExportDialog(this);
 }
 
 void Crystalx::initStatusBar() {
@@ -351,11 +351,11 @@ void Crystalx::initConnections() {
   */
   connect(glWindow, &GLWindow::resetCurrentCrystal, project,
           &Project::resetCurrentCrystal);
-  connect(glWindow, &GLWindow::contextualFilterAtoms,
-          project, &Project::filterAtomsForCurrentScene);
+  connect(glWindow, &GLWindow::contextualFilterAtoms, project,
+          &Project::filterAtomsForCurrentScene);
 
-  connect(glWindow, &GLWindow::atomLabelOptionsChanged,
-          project, &Project::atomLabelOptionsChanged);
+  connect(glWindow, &GLWindow::atomLabelOptionsChanged, project,
+          &Project::atomLabelOptionsChanged);
 
   connect(m_taskManager, &TaskManager::taskComplete, this,
           &Crystalx::taskManagerTaskComplete);
@@ -386,6 +386,7 @@ void Crystalx::initMenuConnections() {
           &Crystalx::showPreferencesDialog);
 
   connect(actionExport_As, &QAction::triggered, this, &Crystalx::exportAs);
+  connect(quickExportAction, &QAction::triggered, this, &Crystalx::quickExportCurrentGraphics);
 
   // Scene menu
   connect(animateAction, &QAction::toggled, this, &Crystalx::setAnimateScene);
@@ -428,7 +429,7 @@ void Crystalx::initMenuConnections() {
           &Project::selectSuppressedAtoms);
   connect(removeIncompleteFragmentsAction, &QAction::triggered, project,
           &Project::removeIncompleteFragmentsForCurrentCrystal);
-  connect(removeSelectedAtomsAction, &QAction::triggered,[this]() {
+  connect(removeSelectedAtomsAction, &QAction::triggered, [this]() {
     project->filterAtomsForCurrentScene(AtomFlag::Selected, true);
   });
   connect(suppressSelectedAtomsAction, &QAction::triggered, project,
@@ -628,10 +629,12 @@ void Crystalx::generateSlab() {
   Q_ASSERT(project->currentScene());
 
   bool ok{false};
-  auto slabOptions = CellLimitsDialog::getSlabGenerationOptions(0, "Generate slab", QString(), ok);
+  auto slabOptions = CellLimitsDialog::getSlabGenerationOptions(
+      0, "Generate slab", QString(), ok);
 
   if (ok) {
-    m_savedSlabGenerationOptions = slabOptions; // save cell limits for use by cloneVoidSurface
+    m_savedSlabGenerationOptions =
+        slabOptions; // save cell limits for use by cloneVoidSurface
     project->generateSlab(slabOptions);
   }
 }
@@ -662,8 +665,10 @@ void Crystalx::helpAboutActionDialog() {
 void Crystalx::initMoleculeStyles() {
   // QActionGroup* moleculeStyleGroup = new QActionGroup(toolBar);
   const auto availableDrawingStyles = {
-      DrawingStyle::Tube, DrawingStyle::BallAndStick, DrawingStyle::SpaceFill,
-      DrawingStyle::WireFrame, DrawingStyle::Ortep, DrawingStyle::Centroid, DrawingStyle::CenterOfMass};
+      DrawingStyle::Tube,        DrawingStyle::BallAndStick,
+      DrawingStyle::SpaceFill,   DrawingStyle::WireFrame,
+      DrawingStyle::Ortep,       DrawingStyle::Centroid,
+      DrawingStyle::CenterOfMass};
   for (const auto &drawingStyle : availableDrawingStyles) {
     QString moleculeStyleString = drawingStyleLabel(drawingStyle);
     m_drawingStyleLabelToDrawingStyle[moleculeStyleString] = drawingStyle;
@@ -1450,37 +1455,69 @@ void Crystalx::exportAs() {
   QFileInfo fi(project->currentScene()->title());
   QString suggestedFilename = fi.baseName() + ".png";
 
-  ExportDialog dialog(this);
   QImage previewImage = glWindow->renderToImage(1);
-  dialog.updateImage(previewImage);
-  dialog.updateFilePath(suggestedFilename);
-  dialog.updateBackgroundColor(glWindow->backgroundColor());
+  m_exportDialog->updateImage(previewImage);
 
-  QString filename{""};
+  // TODO fix this
+  if (m_exportDialog->currentFilePath().isEmpty()) {
+    m_exportDialog->updateFilePath(suggestedFilename);
+  }
+
+  // Only update the background color if it hasn't been set before
+  if (!m_exportDialog->currentBackgroundColor().isValid()) {
+    m_exportDialog->updateBackgroundColor(glWindow->backgroundColor());
+  }
+
+  if (m_exportDialog->exec() == QDialog::Accepted) {
+    exportCurrentGraphics(m_exportDialog->currentFilePath());
+  }
+}
+
+void Crystalx::quickExportCurrentGraphics() {
+  if (m_exportDialog->currentFilePath().isEmpty()) {
+    // If no previous export, call the full export dialog
+    exportAs();
+    return;
+  }
+
+  QFileInfo fi(m_exportDialog->currentFilePath());
+  QString baseFilename = "frame";
+
+  // Increment the export counter and create a new filename
+  m_exportCounter++;
+  QString newFilename =
+      QString("%1_%2.png").arg(baseFilename).arg(m_exportCounter);
+  QString fullPath = fi.dir().filePath(newFilename);
+
+  exportCurrentGraphics(fullPath);
+}
+
+void Crystalx::exportCurrentGraphics(const QString &filename) {
   bool success = false;
-  if (dialog.exec() == QDialog::Accepted) {
-    // The user clicked OK
-    filename = dialog.currentFilePath();
-    int scaleFactor = dialog.currentResolutionScale();
-    QColor backgroundColor = dialog.currentBackgroundColor();
 
-    if (filename.toLower().endsWith(".png")) {
-      QImage img = glWindow->exportToImage(scaleFactor, backgroundColor);
-      qDebug() << "Exporting image with scale factor" << scaleFactor
-               << "resolution" << img.size();
-      success = img.save(filename);
-    } else {
-      QFile outputFile(filename);
-      outputFile.open(QIODevice::WriteOnly);
-      if (outputFile.isOpen()) {
-        QTextStream outStream(&outputFile);
-        success = glWindow->renderToPovRay(outStream);
-      }
+  if (filename.toLower().endsWith(".png")) {
+    QImage img =
+        glWindow->exportToImage(m_exportDialog->currentResolutionScale(),
+                                m_exportDialog->currentBackgroundColor());
+    qDebug() << "Exporting image with scale factor"
+             << m_exportDialog->currentResolutionScale() << "resolution"
+             << img.size();
+    success = img.save(filename);
+  } else {
+    QFile outputFile(filename);
+    outputFile.open(QIODevice::WriteOnly);
+    if (outputFile.isOpen()) {
+      QTextStream outStream(&outputFile);
+      success = glWindow->renderToPovRay(outStream);
     }
   }
 
-  if (!filename.isEmpty()) {
+  if (success) {
     showStatusMessage("Saved current graphics state to " + filename);
+    // Update the dialog's file path for future exports
+    m_exportDialog->updateFilePath(filename);
+  } else {
+    showStatusMessage("Failed to export current graphics state to " + filename);
   }
 }
 
@@ -1887,15 +1924,14 @@ void Crystalx::calculatePairEnergies(
   }
 }
 
-void Crystalx::handleSceneSelectionChange() {
-  handleStructureChange();
-}
+void Crystalx::handleSceneSelectionChange() { handleStructureChange(); }
 
 void Crystalx::handleStructureChange() {
   ChemicalStructure *structure = project->currentScene()->chemicalStructure();
   if (structure) {
     qDebug() << "Structure changed";
-    childPropertyController->setCurrentPairInteractions(structure->pairInteractions());
+    childPropertyController->setCurrentPairInteractions(
+        structure->pairInteractions());
     for (auto *child : structure->children()) {
       auto *mesh = qobject_cast<Mesh *>(child);
       if (mesh) {
@@ -1930,15 +1966,16 @@ void Crystalx::updateInfo(InfoType infoType) {
     return;
 
   if (infoViewer->isVisible()) {
-      setInfoTabSpecificViewOptions(infoType);
-      infoViewer->setScene(scene);
+    setInfoTabSpecificViewOptions(infoType);
+    infoViewer->setScene(scene);
   }
 }
 
 void Crystalx::togglePairInteractionHighlighting(bool state) {
   qDebug() << "Toggle pair interaction highlighting";
   Scene *scene = project->currentScene();
-  if(!scene) return;
+  if (!scene)
+    return;
   scene->togglePairHighlighting(state);
   glWindow->redraw();
 }
