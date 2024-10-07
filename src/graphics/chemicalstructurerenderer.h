@@ -92,6 +92,7 @@ public:
 
   void forceUpdates();
   void draw(bool forPicking = false);
+  [[nodiscard]] inline double getThermalEllipsoidProbability() const { return m_thermalEllipsoidProbability; }
 
   [[nodiscard]] MeshInstance *getMeshInstance(size_t index) const;
 
@@ -103,6 +104,7 @@ public slots:
   void childRemovedFromStructure(QObject *);
   void childVisibilityChanged();
   void childPropertyChanged();
+  void updateThermalEllipsoidProbability(double);
 
 private:
   bool needsUpdate();
@@ -144,6 +146,7 @@ private:
   DrawingStyle m_drawingStyle{DrawingStyle::BallAndStick};
   AtomDrawingStyle m_atomStyle{AtomDrawingStyle::CovalentRadiusSphere};
   BondDrawingStyle m_bondStyle{BondDrawingStyle::Stick};
+  double m_thermalEllipsoidProbability{0.50};
 
   RenderSelection *m_selectionHandler{nullptr};
   LineRenderer *m_bondLineRenderer{nullptr};

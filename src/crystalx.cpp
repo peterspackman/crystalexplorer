@@ -673,7 +673,7 @@ void Crystalx::initMoleculeStyles() {
     QString moleculeStyleString = drawingStyleLabel(drawingStyle);
     m_drawingStyleLabelToDrawingStyle[moleculeStyleString] = drawingStyle;
     if (drawingStyle == DrawingStyle::Ortep) {
-      const QStringList probs{"0.5", "0.9", "0.99"};
+      const QStringList probs{"0.50", "0.90", "0.99"};
       m_thermalEllipsoidMenu = new QMenu(moleculeStyleString);
       for (int i = 0; i < probs.size(); i++) {
         QAction *action = new QAction(this);
@@ -973,7 +973,7 @@ void Crystalx::setBusyIcon(bool busy) {
   if (busy) {
     setWindowIcon(QPixmap(":images/CrystalExplorerBusy.png"));
   } else {
-    setWindowIcon(QPixmap(":images/crystalexplorer.png"));
+    setWindowIcon(QPixmap(":images/CrystalExplorer.png"));
   }
 }
 
@@ -1385,7 +1385,7 @@ void Crystalx::setEllipsoidStyleWithProbabilityForCurrent() {
     QAction *action = qobject_cast<QAction *>(sender());
     DrawingStyle drawingStyle = DrawingStyle::Ortep;
     scene->setDrawingStyle(drawingStyle);
-    scene->setThermalEllipsoidProbabilityString(action->text());
+    scene->updateThermalEllipsoidProbability(action->text().toDouble());
     glWindow->redraw();
   }
   updateMenuOptionsForScene();
@@ -1406,7 +1406,7 @@ void Crystalx::updateMenuOptionsForScene() {
     m_thermalEllipsoidMenu->setEnabled(true);
     QString moleculeStyleString = drawingStyleLabel(scene->drawingStyle());
     if (scene->drawingStyle() == DrawingStyle::Ortep) {
-      moleculeStyleString = scene->thermalEllipsoidProbabilityString();
+      moleculeStyleString = QString::number(scene->getThermalEllipsoidProbability(), 'f', 2);
     }
     foreach (QAction *action, moleculeStyleActions) {
       action->setChecked(action->text() == moleculeStyleString);

@@ -13,6 +13,10 @@ struct Lights {
     mat4 specular;
 };
 
+float perceivedBrightness(vec3 color) {
+    return (0.299 * color.r + 0.587 * color.g + 0.114 * color.b);
+}
+
 vec3 linearizeColor(vec3 color, float gamma) {
     return pow(color, vec3(gamma));
 }

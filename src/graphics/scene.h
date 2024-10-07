@@ -185,11 +185,6 @@ public:
     _backgroundColor = color;
   }
 
-  inline void setThermalEllipsoidProbabilityString(const QString &s) { _ellipsoidProbabilityString = s; }
-  QString thermalEllipsoidProbabilityString() {
-    return _ellipsoidProbabilityString;
-  }
-
   void toggleDrawHydrogenEllipsoids(bool hEllipsoids);
   bool drawHydrogenEllipsoids() { return _drawHydrogenEllipsoids; }
 
@@ -244,6 +239,8 @@ public:
   }
   void setCrystalPlanes(const std::vector<CrystalPlane> &);
   void generateSlab(SlabGenerationOptions);
+  
+  double getThermalEllipsoidProbability() const;
 
 signals:
   void clickedSurface(QModelIndex);
@@ -264,6 +261,7 @@ public slots:
   void depthFogSettingsChanged();
   void addCrystalPlane(CrystalPlane);
 
+  void updateThermalEllipsoidProbability(double);
   void updateHydrogenBondCriteria(HBondCriteria);
   void updateCloseContactsCriteria(int, CloseContactCriteria);
   void handleSurfacesNeedUpdate();

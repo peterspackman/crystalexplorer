@@ -18,12 +18,20 @@ out highp vec4 f_color;
 vec3 applyLines(vec3 color) {
     if(v_showLines == 1) {
         vec3 apos = abs(v_spherePosition);
-        vec3 lineColor = vec3(0.05, 0.05, 0.05);
-        if(apos.x < u_ellipsoidLineWidth) color =  mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.x));
-        if(apos.y < u_ellipsoidLineWidth) color =  mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.y));
-        if(apos.z < u_ellipsoidLineWidth) color =  mix(lineColor, color, smoothstep(0, u_ellipsoidLineWidth, apos.z));
+        float brightness = perceivedBrightness(color);
+        vec3 lineColor = brightness > 0.1 ? vec3(0.01) : vec3(0.95);
+
+        float adjustedLineWidth = 0.5 * u_ellipsoidLineWidth / u_scale;
+        float featherWidth = adjustedLineWidth * 0.9; // Adjust this factor to control the smoothness
+        
+        if(apos.x < adjustedLineWidth) 
+            color = mix(lineColor, color, smoothstep(adjustedLineWidth - featherWidth, adjustedLineWidth + featherWidth, apos.x));
+        if(apos.y < adjustedLineWidth) 
+            color = mix(lineColor, color, smoothstep(adjustedLineWidth - featherWidth, adjustedLineWidth + featherWidth, apos.y));
+        if(apos.z < adjustedLineWidth) 
+            color = mix(lineColor, color, smoothstep(adjustedLineWidth - featherWidth, adjustedLineWidth + featherWidth, apos.z));
     }
-    return color;
+    return clamp(color, 0.0, 1.0);
 }
 
 
@@ -43,6 +51,7 @@ void main()
    else {
        PBRMaterial material;
        material.color = linearizeColor(v_color.xyz, u_screenGamma);
+       material.color = applyLines(material.color);
 
        material.metallic = u_materialMetallic;
        material.roughness = u_materialRoughness;
@@ -52,7 +61,6 @@ void main()
        lights.specular = u_lightSpecular;
        // since we're passing things through in camera space, the camera is located at the origin
        vec3 colorLinear = PBRLighting(u_cameraPosVec, v_position, v_normal, lights, material);
-       colorLinear = applyLines(colorLinear);
        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), v_color.w);
        f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
    }

@@ -455,7 +455,7 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
     if (drawAsEllipsoid(i)) {
       auto adp = m_structure->atomicDisplacementParameters(idx);
       if (!adp.isZero()) {
-        QMatrix3x3 scales = adp.thermalEllipsoidMatrix(3.3682);
+        QMatrix3x3 scales = adp.thermalEllipsoidMatrixForProbability(m_thermalEllipsoidProbability);
         cx::graphics::addEllipsoidToEllipsoidRenderer(
             m_ellipsoidRenderer, position, scales, color, selectionIdColor,
             selected);
@@ -775,6 +775,13 @@ void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
                &ChemicalStructureRenderer::childVisibilityChanged);
     m_meshesNeedsUpdate = true;
   }
+}
+
+void ChemicalStructureRenderer::updateThermalEllipsoidProbability(double p) {
+  if (m_thermalEllipsoidProbability == p)
+    return;
+  m_thermalEllipsoidProbability = p;
+  m_atomsNeedsUpdate = true;
 }
 
 void ChemicalStructureRenderer::setFrameworkOptions(

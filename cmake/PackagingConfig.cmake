@@ -1,6 +1,6 @@
 set(ICONS_FOLDER ${CMAKE_SOURCE_DIR}/icons)
 set(QRC_FOLDER ${ICONS_FOLDER})
-set(ICON_NAME crystalexplorer)
+set(ICON_NAME CrystalExplorer)
 
 set(LICENSE_FILE "${PROJECT_SOURCE_DIR}/COPYING.LESSER")
 

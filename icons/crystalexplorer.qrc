@@ -20,6 +20,8 @@
         <file>x.png</file>
         <file>info.png</file>
         <file>fingerprint.png</file>
+        <file>CrystalExplorer.png</file>
+        <file>CrystalExplorerBusy.png</file>
         <file>WelcometoCrystalExplorer.png</file>
         <file>rotation-horizontal.png</file>
         <file>rotation-vertical.png</file>

@@ -1,7 +1,7 @@
 set(CPACK_GENERATOR NSIS
     CACHE STRING "Generator for packaging")
 set(RUNTIME_DESTINATION "/")
-set(WINDOWS_ICON_FILE "${PROJECT_SOURCE_DIR}/icons/crystalexplorer.ico")
+set(WINDOWS_ICON_FILE "${PROJECT_SOURCE_DIR}/icons/CrystalExplorer.ico")
 set(OS_BUNDLE WIN32)
 # Windows NSIS installer stuff
 set(RESOURCES_DESTINATION "/")

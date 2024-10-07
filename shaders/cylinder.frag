@@ -19,11 +19,6 @@ int v_selected;
 #include "flat.glsl"
 
 
-// Function to calculate perceived brightness of a color
-float perceivedBrightness(vec3 color) {
-    return (0.299 * color.r + 0.587 * color.g + 0.114 * color.b);
-}
-
 vec2 generateUV(vec3 vertex) {
     const float PI = 3.14159265359;
     const float TWOPI = 2.0 * PI;

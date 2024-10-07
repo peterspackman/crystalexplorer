@@ -923,6 +923,13 @@ void Scene::drawForPicking() {
   m_uniforms.u_selectionMode = false;
 }
 
+
+void Scene::updateThermalEllipsoidProbability(double p) {
+  if(!m_structureRenderer) return;
+  qDebug() << "Setting probability to " << p;
+  m_structureRenderer->updateThermalEllipsoidProbability(p);
+}
+
 void Scene::draw() {
   // needs to be done with a current opengl context
   if (m_structure && !m_structureRenderer) {
@@ -1177,6 +1184,14 @@ void Scene::drawLines() {
     lineRenderer->draw();
     lineRenderer->release();
   }
+}
+
+
+double Scene::getThermalEllipsoidProbability() const {
+  if(!m_structureRenderer) return 0.0;
+  double result = m_structureRenderer->getThermalEllipsoidProbability();
+  qDebug() << "Current probability = " << result;
+  return result;
 }
 
 float Scene::contactLineThickness() {

@@ -23,6 +23,7 @@ struct AtomicDisplacementParameters {
   double toUeq() const;
   bool isZero() const;
   QMatrix3x3 thermalEllipsoidMatrix(double scaleFactor) const; 
+  QMatrix3x3 thermalEllipsoidMatrixForProbability(double p) const; 
 
 private:
   void initialize();

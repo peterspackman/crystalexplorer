@@ -198,7 +198,7 @@ void addEllipsoidToEllipsoidRenderer(EllipsoidRenderer *r,
                                      const QColor &color, const QVector3D &id,
                                      bool selected) {
   QVector3D col(selected ? -color.redF() - 0.0001f : color.redF(),
-                -color.greenF(), color.blueF());
+                -color.greenF() - 0.0001f, color.blueF());
   r->addInstance(EllipsoidInstance(
       position, QVector3D(transform(0, 0), transform(1, 0), transform(2, 0)),
       QVector3D(transform(0, 1), transform(1, 1), transform(2, 1)),
