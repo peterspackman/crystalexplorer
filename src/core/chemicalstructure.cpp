@@ -566,12 +566,13 @@ ChemicalStructure::getFragmentForAtom(GenericAtomIndex atomIndex) const {
 }
 
 FragmentIndex ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
+  if(atomIndex < 0) return FragmentIndex{-1};
   return m_fragmentForAtom[atomIndex];
 }
 
 FragmentIndex
 ChemicalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
-  return m_fragmentForAtom[idx.unique];
+  return fragmentIndexForAtom(genericIndexToIndex(idx));
 }
 
 std::vector<HBondTriple>
@@ -1210,4 +1211,8 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomIndices() const {
 occ::Mat3N ChemicalStructure::convertCoordinates(
     const occ::Mat3N &pos, ChemicalStructure::CoordinateConversion) const {
   return pos;
+}
+
+QJsonObject ChemicalStructure::toJson() const {
+  return {};
 }

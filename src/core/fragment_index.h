@@ -1,5 +1,6 @@
 #pragma once
 #include <QDebug>
+#include <nlohmann/json.hpp>
 #include <ankerl/unordered_dense.h>
 #include <occ/crystal/dimer_mapping_table.h>
 
@@ -139,3 +140,6 @@ using FragmentIndexSet =
 
 QDebug operator<<(QDebug debug, const FragmentIndex &);
 QDebug operator<<(QDebug debug, const FragmentIndexPair &);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FragmentIndex, u, h, k, l)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FragmentIndexPair, a, b);

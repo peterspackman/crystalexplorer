@@ -43,27 +43,13 @@ public:
   inline const auto &spaceGroup() const { return m_crystal.space_group(); }
   occ::Mat3N convertCoordinates(const occ::Mat3N &pos, ChemicalStructure::CoordinateConversion) const override;
 
-  FragmentIndex fragmentIndexForAtom(int) const override;
-  FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const override;
   void deleteFragmentContainingAtomIndex(int atomIndex) override;
 
-  const FragmentMap &getFragments() const override;
   void deleteIncompleteFragments() override;
   void deleteAtoms(const std::vector<GenericAtomIndex> &) override;
 
-  std::vector<GenericAtomIndex>
-      atomIndicesForFragment(FragmentIndex) const override;
-
   FragmentPairs
   findFragmentPairs(FragmentPairSettings settings = {}) const override;
-
-
-  const std::pair<int, int> &atomsForBond(int) const override;
-  std::vector<HBondTriple>
-  hydrogenBonds(const HBondCriteria & = {}) const override;
-  const std::vector<std::pair<int, int>> &covalentBonds() const override;
-  std::vector<CloseContactPair>
-  closeContacts(const CloseContactCriteria & = {}) const override;
 
   int genericIndexToIndex(const GenericAtomIndex &) const override;
   GenericAtomIndex indexToGenericIndex(int) const override;
@@ -159,14 +145,7 @@ private:
       m_unitCellAdps;
   ankerl::unordered_dense::map<int, FragmentIndex> m_unitCellAtomFragments;
 
-  FragmentMap m_fragments;
-  std::vector<FragmentIndex> m_fragmentForAtom;
-  FragmentMap m_symmetryUniqueFragments;
   FragmentMap m_unitCellFragments;
-
-  std::vector<std::pair<int, int>> m_covalentBonds;
-  std::vector<std::pair<int, int>> m_vdwContacts;
-  std::vector<std::pair<int, int>> m_hydrogenBonds;
 
   occ::crystal::CrystalDimers m_unitCellDimers;
   occ::crystal::DimerMappingTable m_dimerMappingTable;

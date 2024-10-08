@@ -333,10 +333,6 @@ QString CrystalStructure::chemicalFormula(bool richText) const {
   return QString::fromStdString(formula);
 }
 
-FragmentIndex CrystalStructure::fragmentIndexForAtom(int atomIndex) const {
-  return m_fragmentForAtom[atomIndex];
-}
-
 QColor CrystalStructure::getFragmentColor(FragmentIndex fragmentIndex) const {
   const auto kv = m_fragments.find(fragmentIndex);
   if (kv != m_fragments.end()) {
@@ -369,44 +365,6 @@ void CrystalStructure::setAllFragmentColors(
     }
   }
   emit atomsChanged();
-}
-
-FragmentIndex
-CrystalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
-  const auto loc = m_atomMap.find(idx);
-  if (loc != m_atomMap.end()) {
-    return m_fragmentForAtom[loc->second];
-  }
-  return FragmentIndex{-1};
-}
-
-std::vector<HBondTriple>
-CrystalStructure::hydrogenBonds(const HBondCriteria &criteria) const {
-  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds,
-                         m_hydrogenBonds);
-}
-
-std::vector<CloseContactPair>
-CrystalStructure::closeContacts(const CloseContactCriteria &criteria) const {
-  return criteria.filter(atomicPositions(), atomicNumbers(), m_covalentBonds,
-                         m_vdwContacts);
-}
-
-const std::vector<std::pair<int, int>> &
-CrystalStructure::covalentBonds() const {
-  return m_covalentBonds;
-}
-
-const std::pair<int, int> &CrystalStructure::atomsForBond(int bondIndex) const {
-  return m_covalentBonds.at(bondIndex);
-}
-
-std::vector<GenericAtomIndex>
-CrystalStructure::atomIndicesForFragment(FragmentIndex fragmentIndex) const {
-  const auto kv = m_fragments.find(fragmentIndex);
-  if (kv != m_fragments.end())
-    return kv->second.atomIndices;
-  return {};
 }
 
 void CrystalStructure::addAtomsByCrystalIndex(
@@ -1252,10 +1210,6 @@ Fragment CrystalStructure::makeFragment(
     result.name = "temp_fragment";
   }
   return result;
-}
-
-const FragmentMap &CrystalStructure::getFragments() const {
-  return m_fragments;
 }
 
 std::vector<GenericAtomIndex>

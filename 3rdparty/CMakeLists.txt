@@ -33,3 +33,9 @@ CPMAddPackage(
     OPTIONS "BUILD_SHARED_LIBS OFF" "BUILD_GEMMI_PROGRAM OFF"
     EXCLUDE_FROM_ALL YES
 )
+
+CPMAddPackage(
+    NAME "nlohmann_json"
+    GITHUB_REPOSITORY "nlohmann/json"
+    VERSION "3.11.3"
+)

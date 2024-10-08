@@ -35,6 +35,7 @@ target_link_libraries(
     Eigen3::Eigen fmt::fmt
     occ_core
     occ_crystal
+    nlohmann_json::nlohmann_json
 )
 
 target_compile_features(cx_core PUBLIC cxx_std_20)

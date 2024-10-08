@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <QVector3D>
 #include <occ/core/linear_algebra.h>
+#include "json.h"
+#include "eigen_json.h"
 
 using Transform = Eigen::Isometry3d;
 
@@ -88,3 +90,13 @@ struct FragmentDimer {
 
 QDebug operator<<(QDebug debug, const Fragment &fragment);
 QDebug operator<<(QDebug debug, const FragmentDimer &dimer);
+void to_json(nlohmann::json& j, const FragmentColorSettings::Method& method);
+void from_json(const nlohmann::json& j, FragmentColorSettings::Method& method);
+
+void to_json(nlohmann::json& j, const Fragment&);
+void from_json(const nlohmann::json& j, Fragment&);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DimerAtoms, a, b)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FragmentColorSettings, method, color)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Fragment::State, charge, multiplicity)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Fragment::NearestAtomResult, idx_this, idx_other, distance)

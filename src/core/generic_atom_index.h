@@ -1,4 +1,5 @@
 #pragma once
+#include "json.h"
 #include <QDebug>
 #include <ankerl/unordered_dense.h>
 
@@ -8,17 +9,17 @@ struct GenericAtomIndex {
   int y{0};
   int z{0};
 
-  inline bool operator==(const GenericAtomIndex &rhs) const {
+  [[nodiscard]] inline bool operator==(const GenericAtomIndex &rhs) const {
     return std::tie(unique, x, y, z) ==
            std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
   }
 
-  inline bool operator<(const GenericAtomIndex &rhs) const {
+  [[nodiscard]] inline bool operator<(const GenericAtomIndex &rhs) const {
     return std::tie(unique, x, y, z) <
            std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
   }
 
-  inline bool operator>(const GenericAtomIndex &rhs) const {
+  [[nodiscard]] inline bool operator>(const GenericAtomIndex &rhs) const {
     return std::tie(unique, x, z, z) >
            std::tie(rhs.unique, rhs.x, rhs.y, rhs.z);
   }
@@ -34,3 +35,4 @@ struct GenericAtomIndexHash {
 };
 
 QDebug operator<<(QDebug debug, const GenericAtomIndex &);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GenericAtomIndex, unique, x, y, z)

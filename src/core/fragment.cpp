@@ -1,7 +1,90 @@
 #include "fragment.h"
+#include "json.h"
 #include <cmath>
 #include <occ/core/element.h>
 #include <occ/core/util.h>
+
+using nlohmann::json;
+
+void to_json(json &j, const FragmentColorSettings::Method &method) {
+  switch (method) {
+  case FragmentColorSettings::Method::UnitCellFragment:
+    j = "UnitCellFragment";
+    break;
+  case FragmentColorSettings::Method::SymmetryUniqueFragment:
+    j = "SymmetryUniqueFragment";
+    break;
+  case FragmentColorSettings::Method::Constant:
+    j = "Constant";
+    break;
+  }
+}
+
+void from_json(const json &j, FragmentColorSettings::Method &method) {
+  std::string s = j.get<std::string>();
+  if (s == "UnitCellFragment")
+    method = FragmentColorSettings::Method::UnitCellFragment;
+  else if (s == "SymmetryUniqueFragment")
+    method = FragmentColorSettings::Method::SymmetryUniqueFragment;
+  else if (s == "Constant")
+    method = FragmentColorSettings::Method::Constant;
+  else
+    throw std::runtime_error("Invalid FragmentColorSettings::Method");
+}
+
+void to_json(nlohmann::json &j, const Fragment &f) {
+  j = {{"index", f.index},
+       {"name", f.name},
+       {"atomIndices", f.atomIndices},
+       {"atomicNumbers", f.atomicNumbers},
+       {"positions", f.positions},
+       {"asymmetricFragmentIndex", f.asymmetricFragmentIndex},
+       {"asymmetricFragmentTransform", f.asymmetricFragmentTransform.matrix()},
+       {"state", f.state},
+       {"color", f.color},
+       {"asymmetricUnitIndices", f.asymmetricUnitIndices}};
+}
+
+void from_json(const nlohmann::json &j, Fragment &f) {
+  j.at("index").get_to(f.index);
+
+  if (j.contains("name")) {
+    j.at("name").get_to(f.name);
+  }
+
+  if (j.contains("atomIndices")) {
+    j.at("atomIndices").get_to(f.atomIndices);
+  }
+  if (j.contains("atomicNumbers")) {
+    f.atomicNumbers = j.at("atomicNumbers").get<Eigen::VectorXi>();
+  }
+
+  if (j.contains("positions")) {
+    f.positions = j.at("positions").get<Eigen::Matrix3Xd>();
+  }
+
+  if (j.contains("asymmetricFragmentIndex")) {
+    j.at("asymmetricFragmentIndex").get_to(f.asymmetricFragmentIndex);
+  }
+
+  if (j.contains("asymmetricFragmentTransform")) {
+    f.asymmetricFragmentTransform = Eigen::Isometry3d(
+        j.at("asymmetricFragmentTransform").get<Eigen::Matrix<double, 4, 4>>());
+  }
+
+  if (j.contains("state")) {
+    j.at("state").get_to(f.state);
+  }
+
+  if (j.contains("color")) {
+    f.color = j.at("color").get<QColor>();
+  }
+
+  if (j.contains("asymmetricUnitIndices")) {
+    f.asymmetricUnitIndices =
+        j.at("asymmetricUnitIndices").get<Eigen::VectorXi>();
+  }
+}
 
 occ::Vec Fragment::interatomicDistances() const {
   // upper triangle of distance matrix

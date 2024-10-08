@@ -17,6 +17,7 @@
 #include <QStringList>
 #include <QVariant>
 #include <QVector3D>
+#include <QJsonObject>
 #include <optional>
 #include <functional>
 #include <memory>
@@ -178,15 +179,15 @@ public:
   virtual const FragmentMap &symmetryUniqueFragments() const;
 
   virtual Fragment makeFragment(const std::vector<GenericAtomIndex> &) const;
-  virtual const FragmentMap &getFragments() const;
+  const FragmentMap &getFragments() const;
   MaybeFragment getFragment(const FragmentIndex &) const;
 
   occ::Vec covalentRadii() const;
   occ::Vec vdwRadii() const;
 
-  virtual inline size_t numberOfFragments() const { return m_fragments.size(); }
-  virtual FragmentIndex fragmentIndexForAtom(int) const;
-  virtual FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const;
+  inline size_t numberOfFragments() const { return m_fragments.size(); }
+  FragmentIndex fragmentIndexForAtom(int) const;
+  FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const;
 
   MaybeFragment getFragmentForAtom(int) const;
   MaybeFragment getFragmentForAtom(GenericAtomIndex) const;
@@ -196,16 +197,17 @@ public:
   virtual void deleteAtoms(const std::vector<GenericAtomIndex> &);
   virtual bool hasIncompleteFragments() const;
   virtual bool hasIncompleteSelectedFragments() const;
-  virtual std::vector<GenericAtomIndex>
+
+  std::vector<GenericAtomIndex>
       atomIndicesForFragment(FragmentIndex) const;
-  virtual const std::pair<int, int> &atomsForBond(int) const;
-  virtual std::pair<GenericAtomIndex, GenericAtomIndex>
+  const std::pair<int, int> &atomsForBond(int) const;
+  std::pair<GenericAtomIndex, GenericAtomIndex>
   atomIndicesForBond(int) const;
-  virtual std::vector<HBondTriple>
+  std::vector<HBondTriple>
   hydrogenBonds(const HBondCriteria & = {}) const;
-  virtual std::vector<CloseContactPair>
+  std::vector<CloseContactPair>
   closeContacts(const CloseContactCriteria & = {}) const;
-  virtual const std::vector<std::pair<int, int>> &covalentBonds() const;
+  const std::vector<std::pair<int, int>> &covalentBonds() const;
 
   virtual CellIndexSet occupiedCells() const;
 
@@ -282,6 +284,7 @@ public:
       atomicDisplacementParameters(GenericAtomIndex) const;
 
   std::vector<GenericAtomIndex> atomIndices() const;
+  [[nodiscard]] virtual QJsonObject toJson() const;
 
 signals:
   void atomsChanged();
@@ -292,6 +295,22 @@ protected:
   void connectChildSignals(QObject *child);
   bool eventFilter(QObject *obj, QEvent *event) override;
 
+  occ::Mat3N m_atomicPositions;
+  Eigen::VectorXi m_atomicNumbers;
+  std::vector<QString> m_labels;
+
+  FragmentMap m_fragments;
+  ankerl::unordered_dense::map<FragmentIndex, QString, FragmentIndexHash> m_fragmentLabels;
+  std::vector<FragmentIndex> m_fragmentForAtom;
+  FragmentMap m_symmetryUniqueFragments;
+
+  std::vector<std::pair<int, int>> m_covalentBonds;
+  std::vector<std::pair<int, int>> m_vdwContacts;
+  std::vector<std::pair<int, int>> m_hydrogenBonds;
+
+  ankerl::unordered_dense::map<GenericAtomIndex, AtomFlags, GenericAtomIndexHash> m_flags;
+  Eigen::Vector3d m_origin{0.0, 0.0, 0.0};
+
 private:
   void deleteAtomsByOffset(const std::vector<int> &atomIndices);
   void deleteAtom(int atomIndex);
@@ -301,17 +320,10 @@ private:
   void depth_first_traversal(int atomId, Function &func) {
     m_bondGraph.depth_first_traversal(m_bondGraphVertices[atomId], func);
   }
-  Eigen::Vector3d m_origin{0.0, 0.0, 0.0};
 
   AtomColoring m_atomColoring{AtomColoring::Element};
   ankerl::unordered_dense::map<GenericAtomIndex, QColor, GenericAtomIndexHash>
       m_atomColorOverrides;
-  std::vector<QString> m_labels;
-  occ::Mat3N m_atomicPositions;
-  Eigen::VectorXi m_atomicNumbers;
-  ankerl::unordered_dense::map<GenericAtomIndex, AtomFlags,
-                               GenericAtomIndexHash>
-      m_flags;
   std::vector<QColor> m_atomColors;
   QString m_name{"structure"};
 
@@ -322,15 +334,6 @@ private:
       m_bondGraphVertices;
   std::vector<occ::core::graph::BondGraph::EdgeDescriptor> m_bondGraphEdges;
 
-  // all of these must be updated when the bondGraph is updated
-  FragmentMap m_fragments;
-  ankerl::unordered_dense::map<FragmentIndex, QString, FragmentIndexHash> m_fragmentLabels;
-  FragmentMap m_symmetryUniqueFragments;
-
-  std::vector<FragmentIndex> m_fragmentForAtom;
-  std::vector<std::pair<int, int>> m_covalentBonds;
-  std::vector<std::pair<int, int>> m_vdwContacts;
-  std::vector<std::pair<int, int>> m_hydrogenBonds;
   bool m_bondsNeedUpdate{true};
 
   QString m_filename;
