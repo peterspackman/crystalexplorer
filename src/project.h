@@ -7,6 +7,7 @@
 
 #include "packingdialog.h" // access to enum UnitCellPackingCriteria
 #include "scene.h"
+#include "json.h"
 #include "frameworkoptions.h"
 
 /*!
@@ -58,6 +59,9 @@ public:
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
   QModelIndex parent(const QModelIndex &index) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+
+  [[nodiscard]] nlohmann::json toJson() const;
+  bool fromJson(const nlohmann::json &);
 
 public slots:
   void frameworkOptionsChanged(FrameworkOptions);

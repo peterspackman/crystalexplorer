@@ -1,4 +1,5 @@
 #pragma once
+#include "json.h"
 #include <QMatrix4x4>
 
 class Orientation {
@@ -45,3 +46,6 @@ private:
 
 QDataStream &operator<<(QDataStream &, const Orientation &);
 QDataStream &operator>>(QDataStream &, Orientation &);
+
+void to_json(nlohmann::json &, const Orientation &);
+void from_json(const nlohmann::json &, Orientation &);

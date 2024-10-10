@@ -45,7 +45,7 @@ const QString CIFDATA_EXTENSION = "cxc";
 const QString ATOMDATA_EXTENSION = "cxd";
 const QString SURFACEDATA_EXTENSION = "cxs";
 const QString ENERGYDATA_EXTENSION = "cxe";
-const QString PROJECT_EXTENSION = "cxp";
+const QString PROJECT_EXTENSION = "cxp.json";
 const QString XYZ_FILE_EXTENSION = "xyz";
 
 const int STATUSBAR_MSG_DELAY =

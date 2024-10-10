@@ -1,5 +1,6 @@
 #pragma once
 #include <QFlags>
+#include "json.h"
 
 enum class AtomFlag : int {
   NoFlag = 0x0,
@@ -12,3 +13,6 @@ enum class AtomFlag : int {
 
 Q_DECLARE_FLAGS(AtomFlags, AtomFlag);
 Q_DECLARE_OPERATORS_FOR_FLAGS(AtomFlags);
+
+void to_json(nlohmann::json& j, const AtomFlags& flags);
+void from_json(const nlohmann::json& j, AtomFlags& flags);

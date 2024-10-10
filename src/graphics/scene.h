@@ -29,6 +29,7 @@
 #include "settings.h"
 #include "sphereimpostorrenderer.h"
 #include "selection_information.h"
+#include "json.h"
 
 enum class HighlightMode { Normal, Pair };
 typedef QPair<QString, QVector3D> Label;
@@ -62,7 +63,11 @@ public:
   Scene();
   Scene(ChemicalStructure *);
 
+  [[nodiscard]] nlohmann::json toJson() const;
+  bool fromJson(const nlohmann::json &);
+
   inline ChemicalStructure *chemicalStructure() { return m_structure; }
+  inline const ChemicalStructure *chemicalStructure() const { return m_structure; }
 
   void resetViewAndSelections();
   bool hasOnScreenCloseContacts();
@@ -351,7 +356,6 @@ private:
   QMap<int, CloseContactCriteria> m_closeContactCriteria;
 
   cx::graphics::SelectionResult m_selection;
-  QColor m_selectionColor;
 
   DrawingStyle m_drawingStyle{DrawingStyle::BallAndStick};
 
@@ -373,8 +377,6 @@ private:
   std::vector<CrystalPlane> m_crystalPlanes;
 
   HighlightMode _highlightMode;
-
-  QMap<QString, Mesh> m_meshes;
 
   ChemicalStructure *m_structure{nullptr};
   cx::graphics::RenderSelection *m_selectionHandler{nullptr};

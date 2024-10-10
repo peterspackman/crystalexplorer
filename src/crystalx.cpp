@@ -386,7 +386,8 @@ void Crystalx::initMenuConnections() {
           &Crystalx::showPreferencesDialog);
 
   connect(actionExport_As, &QAction::triggered, this, &Crystalx::exportAs);
-  connect(quickExportAction, &QAction::triggered, this, &Crystalx::quickExportCurrentGraphics);
+  connect(quickExportAction, &QAction::triggered, this,
+          &Crystalx::quickExportCurrentGraphics);
 
   // Scene menu
   connect(animateAction, &QAction::toggled, this, &Crystalx::setAnimateScene);
@@ -881,6 +882,7 @@ void Crystalx::updateWorkingDirectories(const QString &filename) {
 
 void Crystalx::loadExternalFileData(QString filename) {
   updateWorkingDirectories(filename);
+  qDebug() << "Load external data from" << filename;
 
   QFileInfo fileInfo(filename);
   QString extension = fileInfo.suffix().toLower();
@@ -896,7 +898,7 @@ void Crystalx::loadExternalFileData(QString filename) {
     processCif(filename);
   } else if (extension == "pdb") {
     processPdb(filename);
-  } else if (extension == PROJECT_EXTENSION) {
+  } else if (filename.endsWith(PROJECT_EXTENSION)) {
     loadProject(filename);
   } else if (extension == XYZ_FILE_EXTENSION) {
     loadXyzFile(filename);
@@ -1406,7 +1408,8 @@ void Crystalx::updateMenuOptionsForScene() {
     m_thermalEllipsoidMenu->setEnabled(true);
     QString moleculeStyleString = drawingStyleLabel(scene->drawingStyle());
     if (scene->drawingStyle() == DrawingStyle::Ortep) {
-      moleculeStyleString = QString::number(scene->getThermalEllipsoidProbability(), 'f', 2);
+      moleculeStyleString =
+          QString::number(scene->getThermalEllipsoidProbability(), 'f', 2);
     }
     foreach (QAction *action, moleculeStyleActions) {
       action->setChecked(action->text() == moleculeStyleString);
@@ -1927,22 +1930,31 @@ void Crystalx::calculatePairEnergies(
 void Crystalx::handleSceneSelectionChange() { handleStructureChange(); }
 
 void Crystalx::handleStructureChange() {
-  ChemicalStructure *structure = project->currentScene()->chemicalStructure();
-  if (structure) {
-    qDebug() << "Structure changed";
-    childPropertyController->setCurrentPairInteractions(
-        structure->pairInteractions());
-    for (auto *child : structure->children()) {
-      auto *mesh = qobject_cast<Mesh *>(child);
-      if (mesh) {
-        childPropertyController->setCurrentMesh(mesh);
-        break;
-      }
-    }
-    glWindow->redraw();
-    // update surface controller
-    // update list of surfaces
+  auto *scene = project->currentScene();
+  if (!scene) {
+    childPropertyController->reset();
+    clearAll();
+    return;
   }
+  auto *structure = scene->chemicalStructure();
+  if (!structure) {
+    childPropertyController->reset();
+    clearAll();
+    return;
+  }
+  qDebug() << "Structure changed";
+  childPropertyController->setCurrentPairInteractions(
+      structure->pairInteractions());
+  for (auto *child : structure->children()) {
+    auto *mesh = qobject_cast<Mesh *>(child);
+    if (mesh) {
+      childPropertyController->setCurrentMesh(mesh);
+      break;
+    }
+  }
+  glWindow->redraw();
+  // update surface controller
+  // update list of surfaces
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

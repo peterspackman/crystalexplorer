@@ -99,3 +99,17 @@ QDataStream &operator>>(QDataStream &ds, Orientation &orient) {
   orient.setTransformationMatrix(dest);
   return ds;
 }
+
+void to_json(nlohmann::json &j, const Orientation &o) {
+  j["scale"] = o.scale();
+  const auto angles = o.eulerAngles();
+  j["angles"] = {angles.x, angles.y, angles.z};
+}
+
+void from_json(const nlohmann::json &j, Orientation &o) {
+  std::array<float, 3> angles;
+  float scale;
+  j.at("scale").get_to(scale);
+  j.at("angles").get_to(angles);
+  o = Orientation(scale, angles[0], angles[1], angles[2]);
+}

@@ -1,5 +1,6 @@
 add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/adp.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/atomflags.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/chemicalstructure.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/close_contact_criteria.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/colormap.cpp"

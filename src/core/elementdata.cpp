@@ -1,8 +1,6 @@
 #include <QColor>
 #include <QDataStream>
 #include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
 #include <QList>
 #include <QListIterator>
 #include <QString>
@@ -12,15 +10,13 @@
 #include "elementdata.h"
 
 QVector<Element *> ElementData::g_elementData = {};
-QJsonObject ElementData::m_elementJson = {};
+nlohmann::json ElementData::m_elementJson = {};
 QVector<QColor> ElementData::m_jmolColors = {};
-QJsonObject ElementData::m_jmolColorJson = {};
+nlohmann::json ElementData::m_jmolColorJson = {};
 
 bool ElementData::getData(const QString &filename, bool useJmolColors) {
   Q_ASSERT(g_elementData.size() == 0);
-
   readData(filename, useJmolColors);
-
   return (g_elementData.size() > 0);
 }
 
@@ -28,62 +24,71 @@ void ElementData::readData(QString filename, bool useJmolColors) {
   m_elementJson = {};
   readJmolColors();
   QFile file(filename);
-  if (file.open(QIODevice::ReadOnly)) {
-    QTextStream ts(&file);
-    QString contents = file.readAll();
-    file.close();
-    QJsonDocument doc = QJsonDocument::fromJson(contents.toUtf8());
-    m_elementJson = doc.object();
-    QJsonArray elements = m_elementJson["elements"].toArray();
-    int elementIdx = 0;
-    for (const auto &obj : elements) {
-      g_elementData.append(elementFromJson(obj.toObject()));
+  if (!file.open(QIODevice::ReadOnly)) {
+    qWarning() << "Couldn't open element data file:" << filename;
+    return;
+  }
+  QByteArray data = file.readAll();
+
+  nlohmann::json doc;
+  try {
+    m_elementJson = nlohmann::json::parse(data.constData());
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error:" << e.what();
+    return;
+  }
+
+  const auto elements = m_elementJson.at("elements");
+  int elementIdx = 0;
+  for (const auto &obj : elements) {
+      g_elementData.append(elementFromJson(obj));
       if (useJmolColors)
         g_elementData[elementIdx]->setColor(m_jmolColors[elementIdx]);
       elementIdx++;
-    }
   }
 }
 
 void ElementData::readJmolColors() {
   m_jmolColorJson = {};
   m_jmolColors.clear();
+
   QFile file(":/resources/jmol_colours.json");
-  if (file.open(QIODevice::ReadOnly)) {
-    QTextStream ts(&file);
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-    m_jmolColorJson = doc.object();
-    for (const auto &obj : m_jmolColorJson["jmol_colours"].toArray()) {
-      QJsonObject j = obj.toObject();
-      QJsonArray rgb = j["rgb"].toArray();
-      int r = rgb[0].toInt();
-      int g = rgb[1].toInt();
-      int b = rgb[2].toInt();
-      m_jmolColors.push_back(QColor(r, g, b));
-    }
+  if (!file.open(QIODevice::ReadOnly)) {
+    qWarning() << "Couldn't open jmol colour data file";
+    return;
+  }
+  QByteArray data = file.readAll();
+  try {
+    m_jmolColorJson = nlohmann::json::parse(data.constData());
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error:" << e.what();
+    return;
+  }
+  for (const auto &obj : m_jmolColorJson.at("jmol_colours")) {
+    std::array<int, 3> rgb;
+    obj.at("rgb").get_to(rgb);
+    m_jmolColors.push_back(QColor(rgb[0], rgb[1], rgb[2]));
   }
 }
 
-Element *ElementData::elementFromJson(const QJsonObject &j) {
+Element *ElementData::elementFromJson(const nlohmann::json &j) {
 
-  int r = j["rgb"][0].toInt();
-  int g = j["rgb"][1].toInt();
-  int b = j["rgb"][2].toInt();
-  QColor color = QColor(r, g, b);
-  return new Element(j["name"].toString(), j["symbol"].toString(),
-                     j["number"].toInt(), j["covalent_radius"].toDouble(),
-                     j["vdw_radius"].toDouble(), j["mass"].toDouble(), color);
+  std::array<int, 3> rgb;
+  j.at("rgb").get_to(rgb);
+  QColor color = QColor(rgb[0], rgb[1], rgb[2]);
+  return new Element(
+      j.at("name").get<QString>(), j.at("symbol").get<QString>(),
+      j.at("number").get<int>(), j.at("covalent_radius").get<double>(),
+      j.at("vdw_radius").get<double>(), j.at("mass").get<double>(), color);
 }
 
 bool ElementData::resetAll(bool useJmolColors) {
 
   int elementIndex = 0;
-  QJsonArray elements = m_elementJson["elements"].toArray();
-  for (const auto &obj : elements) {
+  for (const auto &obj : m_elementJson.at("elements")) {
     Q_ASSERT(elementIndex < g_elementData.size());
 
-    Element *element = elementFromJson(obj.toObject());
+    Element *element = elementFromJson(obj);
     QColor color =
         useJmolColors ? m_jmolColors[elementIndex] : element->color();
     g_elementData[elementIndex]->update(
@@ -123,10 +128,10 @@ bool ElementData::resetElement(const QString &symbol) {
   int elementIndex = 0;
   bool found = false;
 
-  for (const auto &obj : m_elementJson["elements"].toArray()) {
+  for (const auto &obj : m_elementJson.at("elements")) {
     Q_ASSERT(elementIndex < g_elementData.size());
 
-    Element *element = elementFromJson(obj.toObject());
+    Element *element = elementFromJson(obj);
     if (element->symbol().toUpper() == symbol.toUpper()) {
       g_elementData[elementIndex]->update(
           element->name(), element->symbol(), element->number(),
@@ -145,12 +150,12 @@ bool ElementData::resetElement(const QString &symbol) {
 void ElementData::writeToStream(QDataStream &datastream) {
   datastream << g_elementData.size();
   qDebug() << "Writing " << g_elementData.size() << "elements";
-  for (const auto * element : g_elementData) {
+  for (const auto *element : g_elementData) {
     datastream << *element;
   }
 
   if (datastream.status() != QDataStream::Ok) {
-      qDebug() << "Error writing to datastream";
+    qDebug() << "Error writing to datastream";
   }
 }
 

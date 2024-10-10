@@ -1,5 +1,6 @@
 #pragma once
 #include "element.h"
+#include "json.h"
 #include <QJsonObject>
 #include <QString>
 
@@ -19,9 +20,9 @@ private:
   static void clear();
   static void readData(QString, bool useJmolColors = false);
   static void readJmolColors();
-  static Element *elementFromJson(const QJsonObject &);
+  static Element *elementFromJson(const nlohmann::json &);
   static QVector<Element *> g_elementData;
   static QVector<QColor> m_jmolColors;
-  static QJsonObject m_elementJson;
-  static QJsonObject m_jmolColorJson;
+  static nlohmann::json m_elementJson;
+  static nlohmann::json m_jmolColorJson;
 };

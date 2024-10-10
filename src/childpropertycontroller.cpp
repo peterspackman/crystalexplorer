@@ -18,6 +18,13 @@ ChildPropertyController::ChildPropertyController(QWidget *parent)
   setup();
 }
 
+void ChildPropertyController::reset() {
+  setCurrentMesh(nullptr);
+  setCurrentMeshInstance(nullptr);
+  setCurrentWavefunction(nullptr);
+  setCurrentPairInteractions(nullptr);
+}
+
 void ChildPropertyController::setup() {
 
   surfacePropertyComboBox->setModel(m_meshPropertyModel);

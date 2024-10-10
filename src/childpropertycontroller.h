@@ -25,6 +25,7 @@ public:
   bool showEnergyFramework() const;
   void setShowEnergyFramework(bool);
   bool toggleShowEnergyFramework();
+  void reset();
 
 public slots:
   void setCurrentMesh(Mesh *);

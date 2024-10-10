@@ -131,8 +131,6 @@ void Scene::removeAllMeasurements() { m_measurementList.clear(); }
 
 bool Scene::hasMeasurements() const { return !m_measurementList.isEmpty(); }
 
-void Scene::setSelectionColor(const QColor &color) { m_selectionColor = color; }
-
 AtomDrawingStyle Scene::atomStyle() const {
   if (m_structureRenderer)
     return m_structureRenderer->atomStyle();
@@ -1769,6 +1767,29 @@ const SelectedAtom &Scene::selectedAtom() const { return m_selectedAtom; }
 void Scene::completeFragmentContainingAtom(int atomIndex) {
   m_structure->completeFragmentContaining(atomIndex);
   emit atomSelectionChanged();
+}
+
+nlohmann::json Scene::toJson() const {
+  return {
+    {"title", m_name},
+    {"structure", m_structure->toJson()},
+    {"orientation", m_orientation},
+  };
+}
+
+bool Scene::fromJson(const nlohmann::json &j) {
+  if(!j.contains("structure")) return false;
+  if(!j.contains("title")) return false;
+  if(!j.contains("orientation")) return false;
+
+  // TODO handle crystal structure
+  auto structure = new ChemicalStructure();
+  if(!structure->fromJson(j.at("structure"))) return false;
+  m_structure = structure;
+  j.at("orientation").get_to(m_orientation);
+  j.at("title").get_to(m_name);
+  setNeedsUpdate();
+  return true;
 }
 
 QDataStream &operator<<(QDataStream &ds, const Scene &scene) {

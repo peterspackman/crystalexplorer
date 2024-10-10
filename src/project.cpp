@@ -1,17 +1,17 @@
 #include <QMessageBox>
 #include <QtDebug>
 
-#include "dynamicstructure.h"
 #include "ciffile.h"
 #include "confirmationbox.h"
+#include "crystalclear.h"
 #include "dialoghtml.h"
+#include "dynamicstructure.h"
 #include "elementdata.h"
+#include "globals.h"
 #include "pdbfile.h"
 #include "project.h"
 #include "version.h"
 #include "xyzfile.h"
-#include "globals.h"
-#include "crystalclear.h"
 
 namespace SceneNotification {
 void subscribe(Project *project) {
@@ -230,19 +230,31 @@ void Project::deleteCurrentCrystal() {
 }
 
 bool Project::saveToFile(QString filename) {
-  bool success = false;
+  try {
+    // Convert to JSON
+    nlohmann::json j = toJson();
 
-  QFile outFile(filename);
-  if (outFile.open(QIODevice::WriteOnly)) {
-    QDataStream ds(&outFile);
-    ds << *this;
-    outFile.close();
+    // Open file for writing
+    std::ofstream file(filename.toStdString());
+    if (!file.is_open()) {
+      qWarning() << "Failed to open file for writing:" << filename;
+      return false;
+    }
+
+    // Write JSON to file
+    file << j.dump(2); // '2' for pretty-print with indent of 2 spaces
+    file.close();
+
+    // Update project state
     _saveFilename = filename;
     m_haveUnsavedChanges = false;
-    success = true;
     emit projectSaved();
+
+    return true;
+  } catch (const std::exception &e) {
+    qWarning() << "Error saving project to file:" << e.what();
+    return false;
   }
-  return success;
 }
 
 bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
@@ -256,12 +268,14 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
 
   const auto &frames = trajReader.frames();
   qDebug() << "Read" << trajReader.frames().size() << "frames" << success;
-  if(frames.size() == 0) return false;
-  if(frames.size() == 1) {
+  if (frames.size() == 0)
+    return false;
+  if (frames.size() == 1) {
     const auto &xyzReader = frames[0];
-    auto * structure = new ChemicalStructure();
+    auto *structure = new ChemicalStructure();
     structure->setObjectName(xyzReader.getComment());
-    structure->setAtoms(xyzReader.getAtomSymbols(), xyzReader.getAtomPositions());
+    structure->setAtoms(xyzReader.getAtomSymbols(),
+                        xyzReader.getAtomPositions());
     structure->updateBondGraph();
     Scene *scene = new Scene(structure);
     scene->setTitle(QFileInfo(filename).baseName());
@@ -271,12 +285,11 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
     endInsertRows();
     setUnsavedChangesExists();
     setCurrentCrystal(position);
-  }
-  else {
-    auto * structure = new DynamicStructure();
+  } else {
+    auto *structure = new DynamicStructure();
     int frameNumber = 1;
-    for(const auto &frame: frames) {
-      auto * s = new ChemicalStructure();
+    for (const auto &frame : frames) {
+      auto *s = new ChemicalStructure();
       s->setObjectName(frame.getComment());
       s->setAtoms(frame.getAtomSymbols(), frame.getAtomPositions());
       s->setProperty("frame", frameNumber++);
@@ -327,10 +340,12 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
 }
 
 bool Project::loadCrystalClearSurfaceJson(const QString &filename) {
-  auto * structure = currentStructure();
-  if(!structure) return false;
-  auto *crystal = qobject_cast<CrystalStructure*>(structure);
-  if(!crystal) return false;
+  auto *structure = currentStructure();
+  if (!structure)
+    return false;
+  auto *crystal = qobject_cast<CrystalStructure *>(structure);
+  if (!crystal)
+    return false;
   io::loadCrystalClearSurfaceJson(filename, crystal);
   return true;
 }
@@ -385,39 +400,32 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
 
 bool Project::loadFromFile(QString filename) {
   bool success = false;
+  qDebug() << "Load project from" << filename;
 
-  QFile inFile(filename);
-  if (inFile.open(QIODevice::ReadOnly)) {
-    QDataStream ds(&inFile);
-    reset();
-    ds >> *this;
-    inFile.close();
-    if (m_currentSceneIndex > -1) {
-      _saveFilename = filename;
-
-      // We read in a .cxp file which sets _previousCrystal and _currentCrystal
-      // to
-      // how it was when the project was saved but...
-      // we need to pretend the current crystal has changed
-      // (i) from the projects points of view so it sets up all the connections
-      // for the current crystal etc.
-      // (ii) from the point of the view of the rest of the program (glwindow,
-      // crystal controller) so they
-      //      show the correct data for the current crystal.
-      // In order to achieve (i) we have to lie about the index of the current
-      // crystal and pass
-      // the index of crystal we want to be current to setCurrentCrystal()
-      // In order to achieve (ii) is simply a matter of emitting the
-      // currentCrystalChanged signal
-      setCurrentCrystal(m_currentSceneIndex, true);
-      emit selectedSceneChanged(m_currentSceneIndex);
-      m_haveUnsavedChanges = false;
-      emit projectChanged(this);
-
-      success = true;
-    }
+  QFile file(filename);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qWarning("Couldn't open project file.");
+    return false;
   }
-  return success;
+  QByteArray data = file.readAll();
+
+  nlohmann::json doc;
+  try {
+    doc = nlohmann::json::parse(data.constData());
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error:" << e.what();
+    return false;
+  }
+
+  qDebug() << "Try loading from json";
+  if (!fromJson(doc)) {
+    return false;
+  }
+  setCurrentCrystal(m_currentSceneIndex, true);
+  emit selectedSceneChanged(m_currentSceneIndex);
+  m_haveUnsavedChanges = false;
+  emit projectChanged(this);
+  return true;
 }
 
 void Project::completeFragmentsForCurrentCrystal() {
@@ -449,7 +457,7 @@ void Project::toggleMultipleUnitCellBoxes(bool state) {
 }
 
 void Project::atomLabelOptionsChanged(AtomLabelOptions options) {
-  auto * scene = currentScene();
+  auto *scene = currentScene();
   if (scene) {
     scene->setAtomLabelOptions(options);
     setUnsavedChangesExists();
@@ -501,25 +509,25 @@ QString Project::saveFilename() { return _saveFilename; }
 
 void Project::updateHydrogenBondCriteria(HBondCriteria criteria) {
   qDebug() << "updateHydrogenBondsCriteria";
-  auto * scene = currentScene();
+  auto *scene = currentScene();
   if (scene) {
     scene->updateHydrogenBondCriteria(criteria);
     emit currentSceneChanged();
   }
 }
 
-void Project::updateCloseContactsCriteria(int contactIndex, CloseContactCriteria criteria) {
+void Project::updateCloseContactsCriteria(int contactIndex,
+                                          CloseContactCriteria criteria) {
   qDebug() << "updateCloseContactsForCurrent";
-  auto * scene = currentScene();
+  auto *scene = currentScene();
   if (scene) {
     scene->updateCloseContactsCriteria(contactIndex, criteria);
     emit currentSceneChanged();
   }
 }
 
-
 void Project::frameworkOptionsChanged(FrameworkOptions options) {
-  auto * scene = currentScene();
+  auto *scene = currentScene();
   qDebug() << "Project::frameworkOptionsChanged";
   if (scene) {
     scene->setFrameworkOptions(options);
@@ -643,12 +651,51 @@ void Project::removeAllMeasurements() {
   }
 }
 
+nlohmann::json Project::toJson() const {
+  nlohmann::json j;
+  // TODO store element data
+  j["ceProjectVersion"] = projectFileVersion();
+  j["scenes"] = {};
+  for (const auto scene : m_scenes) {
+    j["scenes"].push_back(scene->toJson());
+  }
+  j["currentSceneIndex"] = m_currentSceneIndex;
+  j["previousSceneIndex"] = m_previousSceneIndex;
+  return j;
+}
+
+bool Project::fromJson(const nlohmann::json &j) {
+  // TODO check version compatibility
+  if (!j.contains("ceProjectVersion"))
+    return false;
+  if (!j.contains("scenes"))
+    return false;
+  if (!j.contains("currentSceneIndex"))
+    return false;
+  if (!j.contains("previousSceneIndex"))
+    return false;
+  m_scenes.clear();
+  qDebug() << "Trying to load scenes";
+  for (const auto &scene : j.at("scenes")) {
+    Scene *s = new Scene();
+    if (!s->fromJson(scene)) {
+      qWarning() << "Unable to read scene";
+      return false;
+    }
+    m_scenes.push_back(s);
+  }
+  j.at("currentSceneIndex").get_to(m_currentSceneIndex);
+  j.at("previousSceneIndex").get_to(m_previousSceneIndex);
+  return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Stream Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 QDataStream &operator<<(QDataStream &datastream, const Project &project) {
-  qDebug() << "Load project";
+  qDebug() << "save project";
+  datastream << "Not implemented";
   /*
   qDebug() << "pos before" << datastream.device()->pos();
   datastream << project.projectFileVersion();
@@ -784,27 +831,33 @@ void Project::onSelectionChanged(const QItemSelection &selected,
 }
 
 bool Project::hasFrames() {
-  auto * structure = currentStructure();
-  if(!structure) return false;
+  auto *structure = currentStructure();
+  if (!structure)
+    return false;
 
-  auto *dynamicStructure = qobject_cast<DynamicStructure*>(structure);
-  if(!dynamicStructure) return false;
+  auto *dynamicStructure = qobject_cast<DynamicStructure *>(structure);
+  if (!dynamicStructure)
+    return false;
   return true;
 }
 
 int Project::nextFrame(bool forward) {
-  auto * structure = currentStructure();
-  if(!structure) return 0;
+  auto *structure = currentStructure();
+  if (!structure)
+    return 0;
 
   int current = structure->getCurrentFrameIndex();
-  if(forward) current++;
-  else current--;
+  if (forward)
+    current++;
+  else
+    current--;
   return setCurrentFrame(current);
 }
 
 int Project::setCurrentFrame(int current) {
-  auto * structure = currentStructure();
-  if(!structure) return 0;
+  auto *structure = currentStructure();
+  if (!structure)
+    return 0;
 
   int count = structure->frameCount();
   current = std::clamp(current, 0, count - 1);
@@ -813,4 +866,3 @@ int Project::setCurrentFrame(int current) {
   emit showMessage(QString("Show frame %1").arg(current));
   return current;
 }
-

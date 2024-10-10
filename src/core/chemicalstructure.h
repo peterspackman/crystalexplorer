@@ -17,12 +17,12 @@
 #include <QStringList>
 #include <QVariant>
 #include <QVector3D>
-#include <QJsonObject>
 #include <optional>
 #include <functional>
 #include <memory>
 #include <occ/core/bondgraph.h>
 #include <occ/core/linear_algebra.h>
+#include "json.h"
 
 using Transform = Eigen::Isometry3d;
 
@@ -284,7 +284,8 @@ public:
       atomicDisplacementParameters(GenericAtomIndex) const;
 
   std::vector<GenericAtomIndex> atomIndices() const;
-  [[nodiscard]] virtual QJsonObject toJson() const;
+  [[nodiscard]] virtual nlohmann::json toJson() const;
+  virtual bool fromJson(const nlohmann::json &);
 
 signals:
   void atomsChanged();

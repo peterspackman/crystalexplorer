@@ -1213,6 +1213,43 @@ occ::Mat3N ChemicalStructure::convertCoordinates(
   return pos;
 }
 
-QJsonObject ChemicalStructure::toJson() const {
-  return {};
+nlohmann::json ChemicalStructure::toJson() const {
+  return {
+    {"structureType", "cluster"},
+    {"atomicPositions", m_atomicPositions},
+    {"atomicNumbers", m_atomicNumbers},
+    {"labels", m_labels},
+    {"flags", m_flags}
+  };
+}
+
+bool ChemicalStructure::fromJson(const nlohmann::json &j) {
+  if(j.contains("structureType") && j.at("structureType") != "cluster") return false;
+
+  if(!j.contains("atomicPositions")) return false;
+  if(!j.contains("atomicNumbers")) return false;
+  if(!j.contains("labels")) return false;
+  if(!j.contains("flags")) return false;
+
+  clearAtoms();
+
+  j.at("atomicPositions").get_to(m_atomicPositions);
+  j.at("atomicNumbers").get_to(m_atomicNumbers);
+  j.at("labels").get_to(m_labels);
+
+  std::vector<std::pair<GenericAtomIndex, AtomFlags>> flags;
+  j.at("flags").get_to(flags);
+  for(const auto &kv: flags) {
+    qDebug() << kv.first << "flags" << kv.second;
+    m_flags.insert(kv);
+  }
+  qDebug() << "Atom positions: " << m_atomicPositions.cols();
+  qDebug() << "Atomic numbers: " << m_atomicNumbers.rows();
+  qDebug() << "Have" << m_flags.size() << "flags";
+  m_origin = m_atomicPositions.rowwise().mean();
+  m_fragmentForAtom.resize(m_atomicNumbers.rows(), FragmentIndex{-1});
+  m_bondsNeedUpdate = true;
+  updateBondGraph();
+  emit atomsChanged();
+  return true;
 }
