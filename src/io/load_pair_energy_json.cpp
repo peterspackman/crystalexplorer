@@ -1,37 +1,34 @@
 #include "load_pair_energy_json.h"
+#include "json.h"
 #include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
 
+PairInteraction *load_pair_energy_json(const QString &filename) {
+  constexpr double hartree_to_kj_per_mol{2625.5};
+  PairInteraction *result{nullptr};
 
-PairInteraction * load_pair_energy_json(const QString& filename) {
-    constexpr double hartree_to_kj_per_mol{2625.5};
-    PairInteraction *result{nullptr};
+  QFile file(filename);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qWarning() << "Couldn't open pair energy json file:" << filename;
+    return result;
+  }
+  QByteArray data = file.readAll();
 
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return result;
-
-    QByteArray jsonData = file.readAll();
-    file.close();
-
-    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
-    if (!jsonDoc.isObject())
-        return result;
-
-    QJsonObject jsonObj = jsonDoc.object();
-
+  nlohmann::json doc;
+  try {
+    doc = nlohmann::json::parse(data.constData());
     // Extract interaction model
-    QJsonObject interactionModelObj = jsonObj["interaction_model"].toObject();
-    QString interactionModel = interactionModelObj["name"].toString();
-
+    QString interactionModel =
+        doc.at("interaction_model").at("name").get<QString>();
 
     result = new PairInteraction(interactionModel);
-    QJsonObject interactionEnergyObj = jsonObj["interaction_energy"].toObject();
-    for (const QString& component : interactionEnergyObj.keys()) {
-        double value = interactionEnergyObj[component].toDouble() * hartree_to_kj_per_mol;
-        result->addComponent(component, value);
+    for (const auto &item : doc["interaction_energy"].items()) {
+      double value = item.value().get<double>() * hartree_to_kj_per_mol;
+      result->addComponent(QString::fromStdString(item.key()), value);
     }
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error:" << e.what();
     return result;
+  }
+
+  return result;
 }

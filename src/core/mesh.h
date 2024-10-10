@@ -2,7 +2,7 @@
 #include "generic_atom_index.h"
 #include "isosurface_parameters.h"
 #include <Eigen/Dense>
-#include <QJsonObject>
+#include "json.h"
 #include <QMap>
 #include <QObject>
 #include <ankerl/unordered_dense.h>
@@ -97,7 +97,7 @@ public:
   [[nodiscard]] inline const auto &parameters() const { return m_params; }
   inline void setParameters(isosurface::Parameters params) { m_params = params; }
 
-  static Mesh *newFromJson(const QJsonObject &, QObject *parent = nullptr);
+  static Mesh *newFromJson(const nlohmann::json&, QObject *parent = nullptr);
   static Mesh *newFromJsonFile(const QString &, QObject *parent = nullptr);
 
   [[nodiscard]] bool isVisible() const;

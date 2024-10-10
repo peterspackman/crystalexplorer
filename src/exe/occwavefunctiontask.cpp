@@ -1,24 +1,23 @@
 #include "occwavefunctiontask.h"
 #include "exefileutilities.h"
 #include "filedependency.h"
-#include <QJsonDocument>
+#include "json.h"
 #include <fmt/core.h>
 #include <occ/core/element.h>
 
 QString toJson(const wfn::Parameters &params) {
-  QJsonObject root;
-  QJsonObject topology;
+  nlohmann::json root;
+  nlohmann::json topology;
 
   auto nums = params.structure->atomicNumbersForIndices(params.atoms);
   auto pos = params.structure->atomicPositionsForIndices(params.atoms);
 
-  QJsonArray positions;
-  QJsonArray symbols;
+  std::vector<std::string> symbols;
+  std::vector<double> positions;
 
   // should be in angstroms
   for (int i = 0; i < nums.rows(); i++) {
-    symbols.push_back(
-        QString::fromStdString(occ::core::Element(nums(i)).symbol()));
+    symbols.push_back(occ::core::Element(nums(i)).symbol());
     positions.push_back(pos(0, i));
     positions.push_back(pos(1, i));
     positions.push_back(pos(2, i));
@@ -27,17 +26,14 @@ QString toJson(const wfn::Parameters &params) {
   root["scema_version"] = 1;
   root["return_output"] = true;
 
-  topology["geometry"] = positions;
-  topology["symbols"] = symbols;
-  root["molecule"] = topology;
+  root["molecule"]["geometry"] = positions;
+  root["molecule"]["symbols"] = symbols;
   root["driver"] = "energy";
 
-  QJsonObject model;
-  model["method"] = params.method;
-  model["basis"] = params.basis;
-  root["model"] = model;
+  root["model"]["method"] = params.method;
+  root["model"]["basis"] = params.basis;
 
-  return QJsonDocument(root).toJson();
+  return QString::fromStdString(root.dump(2));
 }
 
 OccWavefunctionTask::OccWavefunctionTask(QObject *parent)

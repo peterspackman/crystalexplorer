@@ -2,7 +2,6 @@
 #include "exefileutilities.h"
 #include "filedependency.h"
 #include "xtb.h"
-#include <QJsonDocument>
 #include <fmt/core.h>
 #include <occ/core/element.h>
 

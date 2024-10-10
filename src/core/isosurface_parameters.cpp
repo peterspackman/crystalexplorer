@@ -2,9 +2,79 @@
 #include "globalconfiguration.h"
 #include <QDebug>
 #include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include <nlohmann/json.hpp>
+
+void to_json(nlohmann::json &j,
+             const isosurface::SurfacePropertyDescription &f) {
+  j = {{"cmap", f.cmap},
+       {"occName", f.occName},
+       {"displayName", f.displayName},
+       {"units", f.needsWavefunction},
+       {"needsIsovalue", f.needsIsovalue},
+       {"needsOrbital", f.needsOrbital},
+       {"description", f.description}};
+}
+
+void from_json(const nlohmann::json &j,
+               isosurface::SurfacePropertyDescription &f) {
+  j.at("cmap").get_to(f.cmap);
+  j.at("occName").get_to(f.occName);
+  j.at("displayName").get_to(f.displayName);
+  j.at("description").get_to(f.description);
+
+  if(j.contains("units")) {
+    j.at("units").get_to(f.units);
+  }
+  if(j.contains("needsIsovalue")) {
+    j.at("needsIsovalue").get_to(f.needsIsovalue);
+  }
+  if(j.contains("needsOrbital")) {
+    j.at("needsOrbital").get_to(f.needsOrbital);
+  }
+}
+
+void to_json(nlohmann::json &j, const isosurface::SurfaceDescription &f) {
+  j = {{"displayName", f.displayName},
+       {"occName", f.occName},
+       {"defaultIsovalue", f.defaultIsovalue},
+       {"needsIsovalue", f.needsIsovalue},
+       {"needsWavefunction", f.needsWavefunction},
+       {"needsOrbital", f.needsOrbital},
+       {"needsCluster", f.needsCluster},
+       {"periodic", f.periodic},
+       {"units", f.units},
+       {"requestableProperties", f.requestableProperties}};
+}
+
+void from_json(const nlohmann::json &j, isosurface::SurfaceDescription &s) {
+  j.at("displayName").get_to(s.displayName);
+  j.at("occName").get_to(s.occName);
+  j.at("description").get_to(s.description);
+  if(j.contains("needsIsovalue")) {
+    j.at("needsIsovalue").get_to(s.needsIsovalue);
+  }
+  if(j.contains("defaultIsovalue")) {
+    j.at("defaultIsovalue").get_to(s.defaultIsovalue);
+  }
+  if(j.contains("needsWavefunction")) {
+    j.at("needsWavefunction").get_to(s.needsWavefunction);
+  }
+  if(j.contains("needsOrbital")) {
+    j.at("needsOrbital").get_to(s.needsOrbital);
+  }
+  if(j.contains("needsCluster")) {
+    j.at("needsCluster").get_to(s.needsCluster);
+  }
+  if(j.contains("periodic")) {
+    j.at("periodic").get_to(s.periodic);
+  }
+  if(j.contains("units")) {
+    j.at("units").get_to(s.units);
+  }
+  if(j.contains("requestableProperties")) {
+    j.at("requestableProperties").get_to(s.requestableProperties);
+  }
+}
 
 namespace isosurface {
 
@@ -68,76 +138,95 @@ Kind stringToKind(const QString &s) {
 }
 
 QMap<QString, SurfacePropertyDescription>
-loadPropertyDescriptions(const QJsonObject &json) {
+loadPropertyDescriptions(const nlohmann::json &json) {
   QMap<QString, SurfacePropertyDescription> properties;
-  const QJsonObject &items = json["properties"].toObject();
-  for (const QString &key : items.keys()) {
-    QJsonObject obj = items[key].toObject();
-    SurfacePropertyDescription property;
-    property.cmap = obj["cmap"].toString();
-    property.occName = obj["occName"].toString();
-    property.displayName = obj["displayName"].toString();
-    property.units = obj["units"].toString();
-    property.needsWavefunction = obj["needsWavefunction"].toBool();
-    property.needsIsovalue = obj["needsIsovalue"].toBool();
-    property.needsOrbital = obj["needsOrbitalSelection"].toBool();
-    property.description = obj["description"].toString();
-    properties.insert(key, property);
+  auto s = [](const std::string &str) { return QString::fromStdString(str); };
+  qDebug() << "Load property descriptions";
+
+  if (!json.contains("properties") || !json["properties"].is_object()) {
+    qWarning() << "JSON does not contain a 'properties' object";
+    return properties;
+  }
+
+  for (const auto &item : json["properties"].items()) {
+    try {
+      SurfacePropertyDescription spd;
+      from_json(item.value(), spd);
+      properties.insert(s(item.key()), spd);
+    } catch (nlohmann::json::exception &e) {
+      qWarning() << "Failed to parse property" << s(item.key()) << ":"
+                 << e.what();
+    }
   }
   return properties;
 }
 
 QMap<QString, SurfaceDescription>
-loadSurfaceDescriptions(const QJsonObject &json) {
+loadSurfaceDescriptions(const nlohmann::json &json) {
   QMap<QString, SurfaceDescription> surfaces;
-  const QJsonObject &items = json["surfaces"].toObject();
-  for (const QString &key : items.keys()) {
-    QJsonObject obj = items[key].toObject();
-    SurfaceDescription surface;
-    surface.displayName = obj["displayName"].toString();
-    surface.occName = obj["occName"].toString();
-    surface.defaultIsovalue = obj["defaultIsovalue"].toDouble();
-    surface.needsIsovalue = obj["needsIsovalue"].toBool();
-    surface.needsWavefunction = obj["needsWavefunction"].toBool();
-    surface.needsOrbital = obj.contains("needsOrbital");
-    surface.needsCluster = obj.contains("needsCluster");
-    surface.periodic = obj.contains("periodic");
-    surface.units = obj["units"].toString();
-    surface.description = obj["description"].toString();
-    QJsonArray reqProps = obj["requestableProperties"].toArray();
-    for (const QJsonValue &val : reqProps) {
-      surface.requestableProperties.append(val.toString());
+
+  if (!json.contains("surfaces") || !json["surfaces"].is_object()) {
+    qWarning() << "JSON does not contain a 'surfaces' object";
+    return surfaces;
+  }
+  qDebug() << "Load surface descriptions";
+  auto s = [](const std::string &str) { return QString::fromStdString(str); };
+
+  for (const auto &item : json["surfaces"].items()) {
+    try {
+      SurfaceDescription sd;
+      from_json(item.value(), sd);
+      surfaces.insert(s(item.key()), sd);
+    } catch (nlohmann::json::exception& e) {
+      qWarning() << "Failed to parse surface" << s(item.key()) << ":" << e.what();
     }
-    surfaces.insert(key, surface);
   }
   return surfaces;
 }
 
-QMap<QString, double> loadResolutionLevels(const QJsonObject &json) {
-  QMap<QString, double> levels;
-  const QJsonObject &items = json["resolutionLevels"].toObject();
-  for (const QString &key : items.keys()) {
-    levels.insert(key, items[key].toDouble());
+QMap<QString, double> loadResolutionLevels(const nlohmann::json &json) {
+  QMap<QString, double> resolutions;
+  auto s = [](const std::string &str) { return QString::fromStdString(str); };
+
+  if (!json.contains("resolutionLevels") || !json["resolutionLevels"].is_object()) {
+    qWarning() << "JSON does not contain a 'resolutions' object";
+    return resolutions;
   }
-  return levels;
+
+  for (const auto &item : json["resolutionLevels"].items()) {
+    try {
+      double value = item.value().get<double>();
+      resolutions.insert(s(item.key()), value);
+    } catch (nlohmann::json::exception& e) {
+      qWarning() << "Failed to parse resolution" << s(item.key()) << ":" << e.what();
+    }
+  }
+  return resolutions;
 }
 
 bool loadSurfaceDescriptionConfiguration(
     QMap<QString, SurfacePropertyDescription> &propertyDescriptions,
     QMap<QString, SurfaceDescription> &descriptions,
     QMap<QString, double> &resolutions) {
-
   QFile file(":/resources/surface_description.json");
   if (!file.open(QIODevice::ReadOnly)) {
     qWarning("Couldn't open config file.");
     return false;
   }
   QByteArray data = file.readAll();
-  QJsonDocument doc(QJsonDocument::fromJson(data));
 
-  propertyDescriptions = loadPropertyDescriptions(doc.object());
-  descriptions = loadSurfaceDescriptions(doc.object());
-  resolutions = loadResolutionLevels(doc.object());
+  nlohmann::json doc;
+  try {
+    doc = nlohmann::json::parse(data.constData());
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error:" << e.what();
+    return false;
+  }
+
+  propertyDescriptions = loadPropertyDescriptions(doc);
+  descriptions = loadSurfaceDescriptions(doc);
+  resolutions = loadResolutionLevels(doc);
+
   return true;
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "chemicalstructure.h"
+#include "json.h"
 #include "molecular_wavefunction.h"
 #include <QString>
 
@@ -115,3 +116,10 @@ bool loadSurfaceDescriptionConfiguration(
     QMap<QString, SurfaceDescription> &, QMap<QString, double> &);
 
 } // namespace isosurface
+
+void to_json(nlohmann::json& j, const isosurface::SurfacePropertyDescription&);
+void from_json(const nlohmann::json& j, isosurface::SurfacePropertyDescription&);
+void to_json(nlohmann::json& j, const isosurface::SurfaceDescription&);
+void from_json(const nlohmann::json& j, isosurface::SurfaceDescription&);
+
+

@@ -1,8 +1,8 @@
 #include "mesh.h"
 #include "meshinstance.h"
+#include "json.h"
+#include "eigen_json.h"
 #include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
 #include <QSignalBlocker>
 #include <fmt/os.h>
 
@@ -320,40 +320,31 @@ Mesh *Mesh::newFromJsonFile(const QString &filename, QObject *parent) {
     return nullptr;
   }
 
-  QJsonDocument document = QJsonDocument::fromJson(file.readAll());
-  file.close();
-
-  if (document.isNull() || !document.isObject()) {
-    qWarning("Invalid JSON format.");
+  nlohmann::json doc;
+  try {
+    doc = nlohmann::json::parse(file.readAll().constData());
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error:" << e.what();
     return nullptr;
   }
+  file.close();
 
-  QJsonObject object = document.object();
-  return Mesh::newFromJson(object, parent);
+  return Mesh::newFromJson(doc, parent);
 }
 
-Mesh *Mesh::newFromJson(const QJsonObject &object, QObject *parent) {
+Mesh *Mesh::newFromJson(const nlohmann::json &object, QObject *parent) {
   Mesh *pointCloud = new Mesh(parent);
   // Parse points
-  QJsonArray pointsArray = object["points"].toArray();
-  pointCloud->m_vertices.resize(3, pointsArray.size());
-  for (int i = 0; i < pointsArray.size(); ++i) {
-    QJsonArray pointArray = pointsArray[i].toArray();
-    pointCloud->m_vertices(0, i) = pointArray[0].toDouble();
-    pointCloud->m_vertices(1, i) = pointArray[1].toDouble();
-    pointCloud->m_vertices(2, i) = pointArray[2].toDouble();
-  }
+  const auto pointsArray = object.at("points");
+  pointsArray.get_to(pointCloud->m_vertices);
 
   // Parse properties
-  QJsonObject propertiesObj = object["properties"].toObject();
-  QStringList propertyKeys = propertiesObj.keys();
-  for (const QString &key : propertyKeys) {
-    QJsonArray propertyValuesArray = propertiesObj[key].toArray();
+  const auto propertiesObj = object["properties"];
+  for (const auto &item: propertiesObj.items()) {
+    const auto propertyValuesArray = item.value();
     ScalarPropertyValues propertyValues(propertyValuesArray.size());
-    for (int i = 0; i < propertyValuesArray.size(); ++i) {
-      propertyValues(i) = propertyValuesArray[i].toDouble();
-    }
-    pointCloud->setVertexProperty(key, propertyValues);
+    propertyValuesArray.get_to(propertyValues);
+    pointCloud->setVertexProperty(QString::fromStdString(item.key()), propertyValues);
   }
 
   return pointCloud;

@@ -1,8 +1,7 @@
 #include "load_wavefunction.h"
+#include "json.h"
 #include <QByteArray>
 #include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QRegularExpression>
 #include <QTextStream>
 
@@ -17,58 +16,54 @@ QByteArray readFileContents(const QString &filePath) {
   return result;
 }
 
-inline bool detectXTB(const QJsonDocument &doc) {
-  QJsonObject obj = doc.object();
-  QJsonValue versionValue = obj.value("xtb version");
-  return !versionValue.isUndefined();
+inline bool detectXTB(const nlohmann::json &doc) {
+  return doc.contains("xtb version");
 }
 
 void setXTBJsonProperties(MolecularWavefunction *wfn,
-                          const QJsonDocument &doc) {
-  QJsonObject obj = doc.object();
+                          const nlohmann::json &doc) {
   const std::vector<const char *> keys{
       "electronic energy",
       "HOMO-LUMO gap / eV",
   };
 
-  wfn->setTotalEnergy(obj.value("total energy").toDouble());
+  if (doc.contains("total energy")) {
+    wfn->setTotalEnergy(doc.at("total energy").get<double>());
+  }
 
-  wfn->setProperty("method", obj.value("method").toString("Unknown"));
+  QString method{"Unknown"};
+  if (doc.contains("method")) {
+    doc.at("method").get_to(method);
+  }
+  wfn->setProperty("method", method);
 
   for (const auto &k : keys) {
-    wfn->setProperty(k, obj.value(k).toDouble());
+    if (doc.contains(k)) {
+      double value = doc.at(k).get<double>();
+      wfn->setProperty(k, value);
+    }
   }
 }
 
-void setJsonProperties(MolecularWavefunction *wfn, const QJsonDocument &doc) {
-  QJsonObject obj = doc.object();
-
+void setJsonProperties(MolecularWavefunction *wfn, const nlohmann::json &doc) {
   if (detectXTB(doc)) {
     setXTBJsonProperties(wfn, doc);
     return;
   }
 
-  QJsonValue basisValue = obj.value("basis functions");
-  if (basisValue.isUndefined() || !basisValue.isDouble()) {
-    qWarning() << "Expected a numeric 'basis functions' value";
+  if (doc.contains("basis functions")) {
+    wfn->setNumberOfBasisFunctions(doc.at("basis functions").get<int>());
   } else {
-    wfn->setNumberOfBasisFunctions(basisValue.toInt());
+    qWarning() << "Expected a numeric 'basis functions' value";
   }
 
-  // Check for the existence of energies
-  QJsonValue energyValue = obj.value("energy");
-
-  if (energyValue.isUndefined() || !energyValue.isObject()) {
-    qWarning() << "Expected an 'energy' object";
-  } else {
-    QJsonObject energyObj = energyValue.toObject();
-    QJsonValue totalEnergyValue = energyObj.value("total");
-    if (totalEnergyValue.isUndefined() || !totalEnergyValue.isDouble()) {
-      qWarning() << "Expected a numeric 'total' energy value";
-    } else {
-      double totalEnergy = totalEnergyValue.toDouble();
-      qDebug() << "Total Energy:" << totalEnergy;
-      wfn->setTotalEnergy(totalEnergy);
+  if (doc.contains("energy")) {
+    for (const auto &item : doc.at("energy").items()) {
+      if (item.key() == "total") {
+        double totalEnergy = item.value().get<double>();
+        qDebug() << "Total Energy:" << totalEnergy;
+        wfn->setTotalEnergy(totalEnergy);
+      }
     }
   }
 }
@@ -92,12 +87,16 @@ MolecularWavefunction *loadWavefunction(const QString &filename) {
 
 bool populateWavefunctionFromJsonContents(MolecularWavefunction *wfn,
                                           const QByteArray &contents) {
-  QJsonDocument doc = QJsonDocument::fromJson(contents);
-  if (doc.isNull())
+  try {
+    nlohmann::json doc = nlohmann::json::parse(contents.constData());
+    qDebug() << "Found JSON format, setting additional data";
+    setJsonProperties(wfn, doc);
+    return true;
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error:" << e.what();
     return false;
-  qDebug() << "Found JSON format, setting additional data";
-  setJsonProperties(wfn, doc);
-  return true;
+  }
+  return false;
 }
 
 bool populateWavefunctionFromXtbStdoutContents(MolecularWavefunction *wfn,
