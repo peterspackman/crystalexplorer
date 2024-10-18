@@ -8,6 +8,7 @@
 #include "ellipsoidrenderer.h"
 #include "frameworkrenderer.h"
 #include "linerenderer.h"
+#include "crystalplanerenderer.h"
 #include "mesh.h"
 #include "meshinstance.h"
 #include "meshinstancerenderer.h"

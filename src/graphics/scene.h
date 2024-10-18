@@ -19,7 +19,7 @@
 #include "drawingstyle.h"
 #include "ellipsoidrenderer.h"
 #include "linerenderer.h"
-#include "measurement.h"
+#include "measurementrenderer.h"
 #include "mesh.h"
 #include "meshrenderer.h"
 #include "orbitcamera.h"
@@ -158,11 +158,6 @@ public:
       const QVector3D &) const;
 
 
-  QVector<Label> labels();
-  QVector<Label> measurementLabels();
-  QVector<Label> fragmentLabels();
-  QVector<Label> surfaceLabels();
-  QVector<Label> energyLabels();
   void setSelectionColor(const QColor &);
   void setDrawingStyle(DrawingStyle);
   DrawingStyle drawingStyle();
@@ -191,7 +186,7 @@ public:
   }
 
   void toggleDrawHydrogenEllipsoids(bool hEllipsoids);
-  bool drawHydrogenEllipsoids() { return _drawHydrogenEllipsoids; }
+  inline bool drawHydrogenEllipsoids() const { return _drawHydrogenEllipsoids; }
 
   void setModelViewProjection(const QMatrix4x4 &, const QMatrix4x4 &,
                               const QMatrix4x4 &);
@@ -275,6 +270,9 @@ private slots:
   void handleLabelsNeedUpdate();
 
 private:
+  void drawChemicalStructure();
+  void drawExtras();
+  void ensureRenderersInitialized();
   // Cloning
   void rebuildSurfaceParentCloneRelationship();
 
@@ -288,8 +286,6 @@ private:
   int numberOfBonds() const;
   int numberOfAtoms() const;
 
-  void updateLabelsForDrawing();
-
   void updateCrystalPlanes();
 
   void drawLights();
@@ -297,6 +293,7 @@ private:
   void drawLabels();
   void drawUnitCellBox();
   void drawMeasurements();
+  void drawPlanes();
 
   void setLightPositionsBasedOnCamera();
 
@@ -313,7 +310,6 @@ private:
   void setRendererUniforms(Renderer *, bool selection_mode = false);
 
   QString m_name;
-  QList<Measurement> m_measurementList;
 
   OrbitCamera m_camera;
   QMap<QString, Renderer *> m_renderers;
@@ -325,14 +321,10 @@ private:
   LineRenderer *m_wireFrameBonds{nullptr};
   LineRenderer *m_faceHighlights{nullptr};
 
-  // TODO merge line renderers
-  LineRenderer *m_measurementLines{nullptr};
-  CircleRenderer *m_measurementCircles{nullptr};
-  BillboardRenderer *m_measurementLabels{nullptr};
-
   LineRenderer *m_hydrogenBondLines{nullptr};
   LineRenderer *m_closeContactLines{nullptr};
   LineRenderer *m_unitCellLines{nullptr};
+  cx::graphics::MeasurementRenderer *m_measurementRenderer{nullptr};
 
   CircleRenderer *m_circles{nullptr};
   EllipsoidRenderer *m_lightPositionRenderer{nullptr};
@@ -346,7 +338,7 @@ private:
   Orientation m_orientation;
 
   bool _showSuppressedAtoms;
-  bool _showUnitCellBox;
+  bool m_showUnitCellBox;
   bool _showFragmentLabels;
   bool _showSurfaceLabels;
 

@@ -70,7 +70,7 @@ void Scene::setViewAngleAndScaleToDefaults() { m_orientation = Orientation(); }
 
 void Scene::setShowStatusesToDefaults() {
   _showSuppressedAtoms = true;
-  _showUnitCellBox = false;
+  m_showUnitCellBox = false;
   _showFragmentLabels = false;
   _showSurfaceLabels = false;
   m_showHydrogenBonds = false;
@@ -114,22 +114,25 @@ void Scene::setSelectStatusForAllAtoms(bool set) {
 }
 
 void Scene::addMeasurement(const Measurement &m) {
-  auto idx = m_measurementList.size();
-  m_measurementList.append(m);
-  auto func = ColorMapFunc(ColorMapName::Turbo);
-  func.lower = 0.0;
-  func.upper = qMax(m_measurementList.size(), 10);
-  m_measurementList.back().setColor(func(idx));
+  if (m_measurementRenderer)
+    m_measurementRenderer->add(m);
 }
 
 void Scene::removeLastMeasurement() {
-  if (m_measurementList.size() > 0)
-    m_measurementList.removeLast();
+  if (m_measurementRenderer)
+    m_measurementRenderer->removeLastMeasurement();
 }
 
-void Scene::removeAllMeasurements() { m_measurementList.clear(); }
+void Scene::removeAllMeasurements() {
+  if (m_measurementRenderer)
+    m_measurementRenderer->clear();
+}
 
-bool Scene::hasMeasurements() const { return !m_measurementList.isEmpty(); }
+bool Scene::hasMeasurements() const {
+  if (!m_measurementRenderer)
+    return false;
+  return m_measurementRenderer->hasMeasurements();
+}
 
 AtomDrawingStyle Scene::atomStyle() const {
   if (m_structureRenderer)
@@ -180,74 +183,8 @@ bool Scene::anyAtomHasAdp() const {
   return false;
 }
 
-/// \brief Returns all the labels (i.e. textual annotations)
-/// That need to be rendered by glWindow on top of the scene
-QVector<Label> Scene::labels() {
-  QVector<Label> labels;
-  if (_showFragmentLabels) {
-    // TODO fragment labels
-  }
-  if (_showSurfaceLabels) {
-    // TODO surface labels
-  }
-  if (hasMeasurements()) {
-    labels.append(measurementLabels());
-  }
-
-  return labels;
-}
-
-QVector<Label> Scene::fragmentLabels() {
-  QVector<Label> labels;
-
-  /*
-  QVector<QVector3D> centroids = crystal()->centroidsOfFragments();
-  for (int i = 0; i < centroids.size(); ++i) {
-    // labels.append(qMakePair(QString("Fragment %1").arg(i), centroids[i]));
-    labels.append(qMakePair(QString("%1").arg(i), centroids[i]));
-  }
-  */
-  return labels;
-}
-
-QVector<Label> Scene::surfaceLabels() {
-  QVector<Label> labels;
-
-  /*
-  QStringList titles = listOfSurfaceTitles();
-  if (titles.size() > 0) {
-    auto centroids = listOfSurfaceCentroids();
-
-    Q_ASSERT(titles.size() == centroids.size());
-    for (int i = 0; i < titles.size(); ++i) {
-      labels.append(qMakePair(titles[i], centroids[i]));
-    }
-  }
-  */
-  return labels;
-}
-
 void Scene::generateSlab(SlabGenerationOptions options) {
   m_structure->buildSlab(options);
-}
-
-QVector<Label> Scene::measurementLabels() {
-  QVector<Label> labels;
-  for (const auto &measurement : m_measurementList) {
-    labels.append({measurement.label(), measurement.labelPosition()});
-  }
-  return labels;
-}
-
-QVector<Label> Scene::energyLabels() {
-  QVector<Label> labels;
-  /*
-  for (const auto &fragPairInfo : std::as_const(crystal()->energyInfos())) {
-    labels.append(
-        qMakePair(fragPairInfo.label(), fragPairInfo.labelPosition()));
-  }
-  */
-  return labels;
 }
 
 void Scene::updateNoneProperties() {
@@ -430,10 +367,11 @@ bool Scene::processSelectionSingleClick(const QColor &color) {
     auto agg = m_structureRenderer->getAggregateIndex(m_selection.index);
     const auto &fragments = m_structure->getFragments();
     const auto kv = fragments.find(agg.fragment);
-    if(kv == fragments.end()) break;
+    if (kv == fragments.end())
+      break;
     const auto &frag = kv->second;
-    for(const auto &atom: frag.atomIndices) {
-        m_structure->toggleAtomFlag(atom, AtomFlag::Selected);
+    for (const auto &atom : frag.atomIndices) {
+      m_structure->toggleAtomFlag(atom, AtomFlag::Selected);
     }
     emit atomSelectionChanged();
     return true;
@@ -565,13 +503,14 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
     auto agg = m_structureRenderer->getAggregateIndex(m_selection.index);
     const auto &fragments = m_structure->getFragments();
     const auto kv = fragments.find(agg.fragment);
-    if(kv == fragments.end()) break;
+    if (kv == fragments.end())
+      break;
     const auto &frag = kv->second;
     result.position = agg.position;
     result.selectionType = SelectionType::Aggregate;
     result.index = m_selection.index;
-    for(const auto &atom: frag.atomIndices) {
-        m_structure->toggleAtomFlag(atom, AtomFlag::Selected);
+    for (const auto &atom : frag.atomIndices) {
+      m_structure->toggleAtomFlag(atom, AtomFlag::Selected);
     }
     emit atomSelectionChanged();
     break;
@@ -604,9 +543,10 @@ void Scene::populateSelectedAtom() {
   m_selectedAtom.position = QVector3D(pos.x(), pos.y(), pos.z());
   m_selectedAtom.fragmentLabel = "Not set";
   auto maybeFragment = m_structure->getFragmentForAtom(m_selection.index);
-  if(maybeFragment) {
-    const auto& fragment = maybeFragment->get();
-    m_selectedAtom.fragmentLabel = m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex);
+  if (maybeFragment) {
+    const auto &fragment = maybeFragment->get();
+    m_selectedAtom.fragmentLabel =
+        m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex);
   }
 }
 
@@ -614,9 +554,10 @@ void Scene::populateSelectedBond() {
   m_selectedBond.index = m_selection.index;
   const auto [idx_a, idx_b] = m_structure->atomsForBond(m_selection.index);
   auto maybeFragment = m_structure->getFragmentForAtom(idx_a);
-  if(maybeFragment) {
-    const auto& fragment = maybeFragment->get();
-    m_selectedBond.fragmentLabel = m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex);
+  if (maybeFragment) {
+    const auto &fragment = maybeFragment->get();
+    m_selectedBond.fragmentLabel =
+        m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex);
   }
   {
     auto &atomInfo = m_selectedBond.a;
@@ -899,6 +840,10 @@ void Scene::updateRendererUniforms() {
   if (m_structureRenderer) {
     m_structureRenderer->updateRendererUniforms(m_uniforms);
   }
+
+  if (m_measurementRenderer) {
+    m_measurementRenderer->updateRendererUniforms(m_uniforms);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -921,15 +866,14 @@ void Scene::drawForPicking() {
   m_uniforms.u_selectionMode = false;
 }
 
-
 void Scene::updateThermalEllipsoidProbability(double p) {
-  if(!m_structureRenderer) return;
+  if (!m_structureRenderer)
+    return;
   qDebug() << "Setting probability to " << p;
   m_structureRenderer->updateThermalEllipsoidProbability(p);
 }
 
-void Scene::draw() {
-  // needs to be done with a current opengl context
+void Scene::ensureRenderersInitialized() {
   if (m_structure && !m_structureRenderer) {
     m_structureRenderer =
         new cx::graphics::ChemicalStructureRenderer(m_structure, this);
@@ -939,34 +883,64 @@ void Scene::draw() {
             &cx::graphics::ChemicalStructureRenderer::meshesChanged, this,
             &Scene::sceneContentsChanged);
   }
-  updateRendererUniforms();
 
-  if (_showUnitCellBox) {
-    drawUnitCellBox();
+  if (!m_measurementRenderer) {
+    m_measurementRenderer = new cx::graphics::MeasurementRenderer(this);
   }
 
+  if (!m_hydrogenBondLines) {
+    m_hydrogenBondLines = new LineRenderer();
+  }
+
+  if (!m_closeContactLines) {
+    m_closeContactLines = new LineRenderer();
+  }
+
+  if (!m_lightPositionRenderer) {
+    m_lightPositionRenderer = new EllipsoidRenderer();
+  }
+  if (!m_crystalPlaneRenderer) {
+    m_crystalPlaneRenderer = new CrystalPlaneRenderer();
+  }
+}
+
+void Scene::drawChemicalStructure() {
   if (m_structureRenderer) {
     m_structureRenderer->draw();
   }
+}
+
+void Scene::drawExtras() {
+  if (m_showUnitCellBox) {
+    drawUnitCellBox();
+  }
 
   if (hasVisibleAtoms()) {
-
-    if (m_showHydrogenBonds) {
-      drawHydrogenBonds();
-    }
+    drawHydrogenBonds();
     drawCloseContacts();
     drawMeasurements();
   }
 
-  if (m_drawLights) {
-    drawLights();
-  }
+  drawLights();
+  drawPlanes();
+}
 
+void Scene::drawPlanes() {
   updateCrystalPlanes();
-  m_crystalPlaneRenderer->bind();
-  setRendererUniforms(m_crystalPlaneRenderer, false);
-  m_crystalPlaneRenderer->draw();
-  m_crystalPlaneRenderer->release();
+
+  if (m_crystalPlaneRenderer->size() > 0) {
+    m_crystalPlaneRenderer->bind();
+    setRendererUniforms(m_crystalPlaneRenderer, false);
+    m_crystalPlaneRenderer->draw();
+    m_crystalPlaneRenderer->release();
+  }
+}
+
+void Scene::draw() {
+  ensureRenderersInitialized();
+  updateRendererUniforms();
+  drawChemicalStructure();
+  drawExtras();
 }
 
 void Scene::setModelViewProjection(const QMatrix4x4 &model,
@@ -1089,7 +1063,8 @@ void Scene::textSettingsChanged() {
       settings::readSetting(settings::keys::TEXT_SMOOTHING).toFloat();
   m_uniforms.u_textSDFOutline =
       settings::readSetting(settings::keys::TEXT_OUTLINE).toFloat();
-  m_uniforms.u_textSize = settings::readSetting(settings::keys::TEXT_FONT_SIZE).toFloat() * 0.25;
+  m_uniforms.u_textSize =
+      settings::readSetting(settings::keys::TEXT_FONT_SIZE).toFloat() * 0.25;
   setNeedsUpdate();
 }
 
@@ -1158,9 +1133,9 @@ void Scene::lightSettingsChanged() {
 }
 
 void Scene::drawLights() {
-  if (!m_lightPositionRenderer) {
-    m_lightPositionRenderer = new EllipsoidRenderer();
-  }
+  if (!m_drawLights)
+    return;
+
   m_lightPositionRenderer->beginUpdates();
   m_lightPositionRenderer->clear();
   for (int i = 0; i < m_uniforms.u_numLights; i++) {
@@ -1184,9 +1159,9 @@ void Scene::drawLines() {
   }
 }
 
-
 double Scene::getThermalEllipsoidProbability() const {
-  if(!m_structureRenderer) return 0.0;
+  if (!m_structureRenderer)
+    return 0.0;
   double result = m_structureRenderer->getThermalEllipsoidProbability();
   qDebug() << "Current probability = " << result;
   return result;
@@ -1212,16 +1187,11 @@ void Scene::updateHydrogenBondCriteria(HBondCriteria criteria) {
 }
 
 void Scene::drawHydrogenBonds() {
-  if (m_hydrogenBondLines == nullptr) {
-    m_hydrogenBondLines = new LineRenderer();
-  } else {
-    if (m_hydrogenBondsNeedUpdate) {
-      m_hydrogenBondLines->clear();
-    }
-  }
-  // TODO check if needs update
+  if (!m_showHydrogenBonds)
+    return;
 
   if (m_hydrogenBondsNeedUpdate) {
+    m_hydrogenBondLines->clear();
     double radius = contactLineThickness();
     m_hydrogenBondLines->beginUpdates();
 
@@ -1255,14 +1225,8 @@ void Scene::updateCloseContactsCriteria(int index,
 }
 
 void Scene::drawCloseContacts() {
-  if (m_closeContactLines == nullptr) {
-    m_closeContactLines = new LineRenderer();
-  } else {
-    if (m_closeContactsNeedUpdate) {
-      m_closeContactLines->clear();
-    }
-  }
   if (m_closeContactsNeedUpdate) {
+    m_closeContactLines->clear();
     double radius = contactLineThickness();
     m_closeContactLines->beginUpdates();
 
@@ -1317,10 +1281,7 @@ void Scene::reset() {
 void Scene::updateCrystalPlanes() {
   if (!m_crystalPlanesNeedUpdate)
     return;
-  if (m_crystalPlaneRenderer == nullptr)
-    m_crystalPlaneRenderer = new CrystalPlaneRenderer();
-  else
-    m_crystalPlaneRenderer->clear();
+  m_crystalPlaneRenderer->clear();
   m_crystalPlaneRenderer->beginUpdates();
   for (const auto &plane : std::as_const(m_crystalPlanes)) {
     if (plane.hkl.h == 0 && plane.hkl.k == 0 && plane.hkl.l == 0)
@@ -1332,38 +1293,12 @@ void Scene::updateCrystalPlanes() {
     QVector3D qorigin(origin(0), origin(1), origin(2));
     QVector3D qa(aVector(0), aVector(1), aVector(2));
     QVector3D qb(bVector(0), bVector(1), bVector(2));
+    qDebug() << "Adding plane to CrystalPlaneRenderer";
     cx::graphics::addPlaneToCrystalPlaneRenderer(*m_crystalPlaneRenderer,
                                                  qorigin, qa, qb, plane.color);
   }
   m_crystalPlaneRenderer->endUpdates();
   m_crystalPlanesNeedUpdate = false;
-}
-
-void Scene::updateLabelsForDrawing() {
-  if (!m_labelsNeedUpdate)
-    return;
-  if (m_billboardTextLabels == nullptr) {
-    m_billboardTextLabels = new BillboardRenderer();
-  } else {
-    m_billboardTextLabels->clear();
-  }
-  const auto label_list = labels();
-  if (label_list.empty())
-    return;
-  m_billboardTextLabels->beginUpdates();
-  for (const auto &label : label_list) {
-    cx::graphics::addTextToBillboardRenderer(*m_billboardTextLabels,
-                                             label.second, label.first);
-  }
-  m_billboardTextLabels->endUpdates();
-  m_labelsNeedUpdate = false;
-}
-
-void Scene::drawLabels() {
-  m_billboardTextLabels->bind();
-  setRendererUniforms(m_billboardTextLabels);
-  m_billboardTextLabels->draw();
-  m_billboardTextLabels->release();
 }
 
 bool Scene::showCells() {
@@ -1465,43 +1400,9 @@ void Scene::drawUnitCellBox() {
 }
 
 void Scene::drawMeasurements() {
-
-  //  setSurfaceSpecularityAndShininess();
-  if (m_measurementLines == nullptr) {
-    m_measurementLines = new LineRenderer();
-    m_measurementCircles = new CircleRenderer();
-    m_measurementLabels = new BillboardRenderer();
-  } else {
-    m_measurementLines->clear();
-    m_measurementCircles->clear();
-    m_measurementLabels->clear();
-  }
-  m_measurementLines->beginUpdates();
-  m_measurementCircles->beginUpdates();
-  m_measurementLabels->beginUpdates();
-  for (const auto &measurement : std::as_const(m_measurementList)) {
-    cx::graphics::addTextToBillboardRenderer(
-        *m_measurementLabels, measurement.labelPosition(), measurement.label());
-    measurement.draw(m_measurementLines, m_measurementCircles);
-  }
-  m_measurementCircles->endUpdates();
-  m_measurementLines->endUpdates();
-  m_measurementLabels->endUpdates();
-
-  m_measurementLines->bind();
-  setRendererUniforms(m_measurementLines);
-  m_measurementLines->draw();
-  m_measurementLines->release();
-
-  m_measurementCircles->bind();
-  setRendererUniforms(m_measurementCircles);
-  m_measurementCircles->draw();
-  m_measurementCircles->release();
-
-  m_measurementLabels->bind();
-  setRendererUniforms(m_measurementLabels);
-  m_measurementLabels->draw();
-  m_measurementLabels->release();
+  if (!hasMeasurements())
+    return;
+  m_measurementRenderer->draw();
 }
 
 void Scene::cycleDisorderHighlighting() {
@@ -1526,7 +1427,8 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
   interactions->resetColors();
 
   if (selectedFragments.size() == 1) {
-    m_structure->setAllFragmentColors(FragmentColorSettings{FragmentColorSettings::Method::Constant, Qt::gray});
+    m_structure->setAllFragmentColors(FragmentColorSettings{
+        FragmentColorSettings::Method::Constant, Qt::gray});
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
     ColorMapFunc colorMap(ColorMapName::Austria, 0,
@@ -1771,20 +1673,24 @@ void Scene::completeFragmentContainingAtom(int atomIndex) {
 
 nlohmann::json Scene::toJson() const {
   return {
-    {"title", m_name},
-    {"structure", m_structure->toJson()},
-    {"orientation", m_orientation},
+      {"title", m_name},
+      {"structure", m_structure->toJson()},
+      {"orientation", m_orientation},
   };
 }
 
 bool Scene::fromJson(const nlohmann::json &j) {
-  if(!j.contains("structure")) return false;
-  if(!j.contains("title")) return false;
-  if(!j.contains("orientation")) return false;
+  if (!j.contains("structure"))
+    return false;
+  if (!j.contains("title"))
+    return false;
+  if (!j.contains("orientation"))
+    return false;
 
   // TODO handle crystal structure
   auto structure = new ChemicalStructure();
-  if(!structure->fromJson(j.at("structure"))) return false;
+  if (!structure->fromJson(j.at("structure")))
+    return false;
   m_structure = structure;
   j.at("orientation").get_to(m_orientation);
   j.at("title").get_to(m_name);

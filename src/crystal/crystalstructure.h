@@ -123,6 +123,9 @@ public:
 
   [[nodiscard]] QString getTransformationString(const Eigen::Isometry3d &result) const;
 
+  [[nodiscard]] nlohmann::json toJson() const override;
+  bool fromJson(const nlohmann::json&) override;
+
 private:
   Fragment makeFragmentFromFragmentIndex(FragmentIndex) const;
   FragmentIndex findUnitCellFragment(const Fragment &frag) const;

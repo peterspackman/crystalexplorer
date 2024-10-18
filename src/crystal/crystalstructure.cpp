@@ -1,5 +1,6 @@
 #include "crystalstructure.h"
 #include "colormap.h"
+#include "crystal_json.h"
 #include <iostream>
 #include <occ/core/kabsch.h>
 
@@ -254,11 +255,11 @@ CrystalStructure::makeFragmentFromOccMolecule(const occ::core::Molecule &mol,
   return result;
 }
 
-QString CrystalStructure::getTransformationString(
-    const Eigen::Isometry3d &t) const {
+QString
+CrystalStructure::getTransformationString(const Eigen::Isometry3d &t) const {
   occ::Mat4 seitz = occ::Mat4::Zero();
-  occ::Mat3 frac_rot = m_crystal.unit_cell().inverse() *
-                             t.rotation() * m_crystal.unit_cell().direct();
+  occ::Mat3 frac_rot = m_crystal.unit_cell().inverse() * t.rotation() *
+                       m_crystal.unit_cell().direct();
   occ::Vec3 frac_trans = m_crystal.to_fractional(t.translation());
 
   seitz.block<3, 3>(0, 0) = frac_rot;
@@ -305,7 +306,8 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
 
     frag.name = getFragmentLabel(frag.asymmetricFragmentIndex);
     QString ts = getTransformationString(frag.asymmetricFragmentTransform);
-    if(ts != "x,y,z") frag.name += " " + ts;
+    if (ts != "x,y,z")
+      frag.name += " " + ts;
 
     m_unitCellFragments.insert({idx, frag});
     for (const auto &atomIndex : frag.atomIndices) {
@@ -1169,9 +1171,9 @@ CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   occ::Vec3 translation_frac(result.index.h, result.index.k, result.index.l);
   Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
   result.asymmetricFragmentTransform *= t;
-    if(result.index != unitCellIndex) {
-      result.name += QString(" + [%1 %2 %3]").arg(idx.h).arg(idx.k).arg(idx.l);
-    }
+  if (result.index != unitCellIndex) {
+    result.name += QString(" + [%1 %2 %3]").arg(idx.h).arg(idx.k).arg(idx.l);
+  }
   return result;
 }
 
@@ -1196,8 +1198,11 @@ Fragment CrystalStructure::makeFragment(
     Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
     result.asymmetricFragmentTransform *= t;
     result.name = ucFrag.name;
-    if(result.index != ucIndex) {
-      result.name += QString(" + [%1 %2 %3]").arg(result.index.h).arg(result.index.k).arg(result.index.l);
+    if (result.index != ucIndex) {
+      result.name += QString(" + [%1 %2 %3]")
+                         .arg(result.index.h)
+                         .arg(result.index.k)
+                         .arg(result.index.l);
     }
   } else {
     const auto &uc_atoms = m_crystal.unit_cell_atoms();
@@ -1543,4 +1548,21 @@ occ::Mat3N CrystalStructure::convertCoordinates(
     return m_crystal.to_cartesian(pos);
   }
   return m_crystal.to_fractional(pos);
+}
+
+nlohmann::json CrystalStructure::toJson() const {
+  return {
+    {"structureType", "crystal"},
+    {"atomicPositions", m_atomicPositions},
+    {"atomicNumbers", m_atomicNumbers},
+    {"labels", m_labels},
+    {"flags", m_flags},
+    {"unitCell", m_crystal.unit_cell()},
+    {"spaceGroup", m_crystal.space_group()},
+  };
+}
+
+bool CrystalStructure::fromJson(const nlohmann::json &j) {
+  // TODO
+  return ChemicalStructure::fromJson(j);
 }

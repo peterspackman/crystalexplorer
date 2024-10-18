@@ -287,7 +287,7 @@ void Crystalx::initConnections() {
           &CrystalController::update);
 
   connect(project, &Project::structureChanged, this,
-          &Crystalx::handleStructureChange, Qt::QueuedConnection);
+          &Crystalx::handleStructureChange);
 
   connect(m_taskManager, &TaskManager::busyStateChanged, this,
           &Crystalx::handleBusyStateChange);
@@ -624,7 +624,10 @@ void Crystalx::toggleAnimation(bool animate) {
 
 void Crystalx::clearCurrent() { crystalController->clearCurrentCrystal(); }
 
-void Crystalx::clearAll() { crystalController->clearAllCrystals(); }
+void Crystalx::clearAll() { 
+  crystalController->clearAllCrystals(); 
+  if(childPropertyController) childPropertyController->reset();
+}
 
 void Crystalx::generateSlab() {
   Q_ASSERT(project->currentScene());
@@ -1424,6 +1427,7 @@ void Crystalx::updateMenuOptionsForScene() {
 void Crystalx::newProject() {
   if (closeProjectConfirmed()) {
     project->reset();
+    clearAll();
   }
 }
 
@@ -1932,13 +1936,11 @@ void Crystalx::handleSceneSelectionChange() { handleStructureChange(); }
 void Crystalx::handleStructureChange() {
   auto *scene = project->currentScene();
   if (!scene) {
-    childPropertyController->reset();
     clearAll();
     return;
   }
   auto *structure = scene->chemicalStructure();
   if (!structure) {
-    childPropertyController->reset();
     clearAll();
     return;
   }
