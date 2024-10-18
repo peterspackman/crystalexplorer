@@ -69,10 +69,7 @@ void Scene::setSurfaceLightingToDefaults() {
 void Scene::setViewAngleAndScaleToDefaults() { m_orientation = Orientation(); }
 
 void Scene::setShowStatusesToDefaults() {
-  _showSuppressedAtoms = true;
-  m_showUnitCellBox = false;
-  _showFragmentLabels = false;
-  _showSurfaceLabels = false;
+  m_showSuppressedAtoms = true;
   m_showHydrogenBonds = false;
   m_closeContactCriteria.clear();
 }
@@ -911,10 +908,6 @@ void Scene::drawChemicalStructure() {
 }
 
 void Scene::drawExtras() {
-  if (m_showUnitCellBox) {
-    drawUnitCellBox();
-  }
-
   if (hasVisibleAtoms()) {
     drawHydrogenBonds();
     drawCloseContacts();
@@ -1141,22 +1134,13 @@ void Scene::drawLights() {
   for (int i = 0; i < m_uniforms.u_numLights; i++) {
     cx::graphics::addSphereToEllipsoidRenderer(
         m_lightPositionRenderer, m_uniforms.u_lightPos.column(i).toVector3D(),
-        Qt::yellow, 2.5);
+        Qt::yellow, 1.0);
   }
   m_lightPositionRenderer->endUpdates();
   m_lightPositionRenderer->bind();
   setRendererUniforms(m_lightPositionRenderer, false);
   m_lightPositionRenderer->draw();
   m_lightPositionRenderer->release();
-}
-
-void Scene::drawLines() {
-  for (LineRenderer *lineRenderer : m_lineRenderers) {
-    lineRenderer->bind();
-    setRendererUniforms(lineRenderer);
-    lineRenderer->draw();
-    lineRenderer->release();
-  }
 }
 
 double Scene::getThermalEllipsoidProbability() const {
@@ -1260,7 +1244,8 @@ void Scene::setShowSuppressedAtoms(bool show) {
   if (!show) {
     setSelectStatusForSuppressedAtoms(false);
   }
-  _showSuppressedAtoms = show;
+  // TODO propagate to chemical structure renderer
+  m_showSuppressedAtoms = show;
 }
 
 void Scene::expandAtomsWithinRadius(float radius, bool selection) {
@@ -1325,78 +1310,6 @@ void Scene::setShowMultipleCells(bool show) {
   if (m_structureRenderer) {
     return m_structureRenderer->setShowMultipleCells(show);
   }
-}
-
-void Scene::drawUnitCellBox() {
-  // setup unit cell lines
-
-  if (m_unitCellLines == nullptr) {
-
-    m_unitCellLines = new LineRenderer();
-    m_unitCellLines->beginUpdates();
-    QVector3D a(1, 0, 0);
-    QVector3D b(0, 1, 0);
-    QVector3D c(0, 0, 1);
-
-    const auto &unitCell = m_structure->cellVectors();
-    a = QVector3D(unitCell(0, 0), unitCell(1, 0), unitCell(2, 0));
-    b = QVector3D(unitCell(0, 1), unitCell(1, 1), unitCell(2, 1));
-    c = QVector3D(unitCell(0, 2), unitCell(1, 2), unitCell(2, 2));
-    int hmin = 0, hmax = 1;
-    int kmin = 0, kmax = 1;
-    int lmin = 0, lmax = 1;
-    if (_drawMultipleCellBoxes) {
-      hmin = -1;
-      hmax = 2;
-      kmin = -1, kmax = 2;
-      lmin = -1;
-      lmax = 2;
-    }
-
-    const QColor A_AXISCOLOR =
-        settings::readSetting(settings::keys::CE_RED_COLOR).toString();
-    const QColor B_AXISCOLOR =
-        settings::readSetting(settings::keys::CE_GREEN_COLOR).toString();
-    const QColor C_AXISCOLOR =
-        settings::readSetting(settings::keys::CE_BLUE_COLOR).toString();
-    const QColor UNITCELLCOLOR = QColor("#646464");
-
-    for (int h = hmin; h <= hmax; h++) {
-      QVector3D pa = h * a;
-      for (int k = kmin; k <= kmax; k++) {
-        QVector3D pb = k * b;
-        for (int l = lmin; l <= lmax; l++) {
-          QColor aColor =
-              (h == 0 && k == 0 && l == 0) ? A_AXISCOLOR : UNITCELLCOLOR;
-          QColor bColor =
-              (h == 0 && k == 0 && l == 0) ? B_AXISCOLOR : UNITCELLCOLOR;
-          QColor cColor =
-              (h == 0 && k == 0 && l == 0) ? C_AXISCOLOR : UNITCELLCOLOR;
-          QVector3D pc = l * c;
-          QVector3D pabc = pa + pb + pc;
-          if (h < hmax)
-            cx::graphics::addLineToLineRenderer(
-                *m_unitCellLines, pabc, pabc + a,
-                DrawingStyleConstants::unitCellLineWidth, aColor);
-          if (k < kmax)
-            cx::graphics::addLineToLineRenderer(
-                *m_unitCellLines, pabc, pabc + b,
-                DrawingStyleConstants::unitCellLineWidth, bColor);
-          if (l < lmax)
-            cx::graphics::addLineToLineRenderer(
-                *m_unitCellLines, pabc, pabc + c,
-                DrawingStyleConstants::unitCellLineWidth, cColor);
-        }
-      }
-    }
-    m_unitCellLines->endUpdates();
-  }
-
-  // draw
-  m_unitCellLines->bind();
-  setRendererUniforms(m_unitCellLines);
-  m_unitCellLines->draw();
-  m_unitCellLines->release();
 }
 
 void Scene::drawMeasurements() {
@@ -1696,86 +1609,4 @@ bool Scene::fromJson(const nlohmann::json &j) {
   j.at("title").get_to(m_name);
   setNeedsUpdate();
   return true;
-}
-
-QDataStream &operator<<(QDataStream &ds, const Scene &scene) {
-  /*
-  ds << scene.m_orientation;
-  ds << scene._showHydrogens;
-  ds << scene._showSuppressedAtoms;
-  ds << scene._showUnitCellBox;
-  ds << scene._showAtomicLabels;
-  ds << scene._showFragmentLabels;
-  ds << scene._showSurfaceLabels;
-
-  ds << static_cast<int>(scene.m_drawingStyle);
-
-  ds << scene._backgroundColor;
-
-  ds << scene._disorderCycleIndex;
-  ds << scene._energyCycleIndex;
-  ds << scene._showEnergyFramework;
-
-  ds << scene._ellipsoidProbabilityString;
-  ds << scene._ellipsoidProbabilityScaleFactor;
-  ds << scene._drawHydrogenEllipsoids;
-  ds << scene._drawMultipleCellBoxes;
-
-  ds << scene._savedOrientations;
-
-
-  if(scene.m_deprecatedCrystal != nullptr) {
-    ds << true;
-    const DeprecatedCrystal &c = *scene.m_deprecatedCrystal;
-    ds << c;
-  }
-  else {
-    ds << false;
-  }
-
-  */
-  return ds;
-}
-
-QDataStream &operator>>(QDataStream &ds, Scene &scene) {
-  // When the drawable crystal is created, init() is called which
-  // initializes all the private members. The settings::keys:: are over
-  // written for all the ones read in to return the DrawableCrystal
-  // to the (almost) the state it was in when it was saved.
-
-  /*
-  ds >> scene.m_orientation;
-  ds >> scene._showHydrogens;
-  ds >> scene._showSuppressedAtoms;
-  ds >> scene._showUnitCellBox;
-  ds >> scene._showAtomicLabels;
-  ds >> scene._showFragmentLabels;
-  ds >> scene._showSurfaceLabels;
-
-  int drawingStyle;
-  ds >> drawingStyle;
-  scene.m_drawingStyle = static_cast<DrawingStyle>(drawingStyle);
-
-  ds >> scene._backgroundColor;
-
-  ds >> scene._disorderCycleIndex;
-  ds >> scene._energyCycleIndex;
-  ds >> scene._showEnergyFramework;
-
-  ds >> scene._ellipsoidProbabilityString;
-  ds >> scene._ellipsoidProbabilityScaleFactor;
-  ds >> scene._drawHydrogenEllipsoids;
-  ds >> scene._drawMultipleCellBoxes;
-
-  ds >> scene._savedOrientations;
-
-  bool haveDeprecatedCrystal{false};
-  ds >> haveDeprecatedCrystal;
-  if(haveDeprecatedCrystal) {
-      scene.m_deprecatedCrystal = new DeprecatedCrystal();
-      DeprecatedCrystal &c = *scene.m_deprecatedCrystal;
-      ds >> c;
-  }
-  */
-  return ds;
 }

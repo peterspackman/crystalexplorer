@@ -65,15 +65,17 @@ void CloseContactDialog::initConnections() {
   connect(hbondColorButton, &QAbstractButton::clicked, this,
           &CloseContactDialog::reportHBondColorChange);
 
-  connect(addContactPushButton, &QPushButton::clicked, closeContactsWidget, &CloseContactCriteriaWidget::addRow);
-  connect(closeContactsWidget, &CloseContactCriteriaWidget::closeContactsSettingsChanged,
-          this, &CloseContactDialog::closeContactsSettingsChanged);
+  connect(addContactPushButton, &QPushButton::clicked, closeContactsWidget,
+          &CloseContactCriteriaWidget::addRow);
+  connect(closeContactsWidget,
+          &CloseContactCriteriaWidget::closeContactsSettingsChanged, this,
+          &CloseContactDialog::closeContactsSettingsChanged);
 }
 
 void CloseContactDialog::updateDonorsAndAcceptors(QStringList elements,
                                                   QStringList hydrogenDonors) {
-  elements.prepend(ANY_ITEM);
-  hydrogenDonors.prepend(ANY_ITEM);
+  elements.prepend(cx::globals::anyItemLabel);
+  hydrogenDonors.prepend(cx::globals::anyItemLabel);
 
   QStringList hydrogenAcceptors = elements;
   hydrogenAcceptors.removeAll("H");
@@ -143,14 +145,14 @@ HBondCriteria CloseContactDialog::currentHBondCriteria() {
 
   QString donor = hbondDonorComboBox->currentText();
   QString acceptor = hbondAcceptorComboBox->currentText();
-  if (donor != ANY_ITEM) {
+  if (donor != cx::globals::anyItemLabel) {
     auto *element = ElementData::elementFromSymbol(donor);
     if (element) {
       criteria.donors.insert(element->number());
     }
   }
 
-  if (acceptor != ANY_ITEM) {
+  if (acceptor != cx::globals::anyItemLabel) {
     auto *element = ElementData::elementFromSymbol(acceptor);
     if (element) {
       criteria.acceptors.insert(element->number());

@@ -1,5 +1,5 @@
 #include "surfacegenerationdialog.h"
-#include "globals.h" // only NEW_WAVEFUNCTION_ITEM
+#include "globals.h"
 #include "settings.h"
 #include "globalconfiguration.h"
 
@@ -256,7 +256,7 @@ void SurfaceGenerationDialog::updateWavefunctionComboBox(bool selectLast) {
     if (needWavefunction()) {
         ui->wavefunctionCombobox->clear();
 
-        ui->wavefunctionCombobox->addItem(NEW_WAVEFUNCTION_ITEM);
+        ui->wavefunctionCombobox->addItem(tr("New wavefunction"));
 
         for(const auto &[wavefunction, transform] : m_availableWavefunctions) {
             if(wavefunction) {

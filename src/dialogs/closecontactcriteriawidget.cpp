@@ -20,13 +20,13 @@ void CloseContactCriteriaWidget::updateContactDistanceCriteria(
   float donorVDWRadius;
   float acceptorVDWRadius;
 
-  if (donor == ANY_ITEM) {
+  if (donor == cx::globals::anyItemLabel) {
     donorVDWRadius = largestVdwRadiusForAllElements();
   } else {
     donorVDWRadius = ElementData::elementFromSymbol(donor)->vdwRadius();
   }
 
-  if (acceptor == ANY_ITEM) {
+  if (acceptor == cx::globals::anyItemLabel) {
     acceptorVDWRadius = largestVdwRadiusForAllElements();
   } else {
     acceptorVDWRadius = ElementData::elementFromSymbol(acceptor)->vdwRadius();
@@ -45,7 +45,7 @@ double CloseContactCriteriaWidget::largestVdwRadiusForAllElements() const {
 
   for (int i = 0; i < m_elements.size(); ++i) {
     QString elementSymbol = m_elements[i];
-    if (elementSymbol != ANY_ITEM) {
+    if (elementSymbol != cx::globals::anyItemLabel) {
       vdwRadius = std::max(
           vdwRadius,
           static_cast<double>(
@@ -96,7 +96,7 @@ void CloseContactCriteriaWidget::updateElements(
   m_elements = elements;
   m_vdwMax = largestVdwRadiusForAllElements();
   // CLEAR COMBOBOXES,
-  // ADD ELEMENT ITEMS (POSSIBLE PREPEND ANY_ITEM)
+  // ADD ELEMENT ITEMS (POSSIBLE PREPEND cx::globals::anyItemLabel)
 }
 
 CloseContactCriteria CloseContactCriteriaWidget::getCriteria(int row) {
@@ -112,7 +112,7 @@ CloseContactCriteria CloseContactCriteriaWidget::getCriteria(int row) {
   if (donorItem && donorItem->widget()) {
     QComboBox *donorBox = qobject_cast<QComboBox *>(donorItem->widget());
     QString donor = donorBox ? donorBox->currentText() : QString();
-    if (donor != ANY_ITEM) {
+    if (donor != cx::globals::anyItemLabel) {
       auto *element = ElementData::elementFromSymbol(donor);
       if (element) {
         criteria.donors.insert(element->number());
@@ -123,7 +123,7 @@ CloseContactCriteria CloseContactCriteriaWidget::getCriteria(int row) {
   if (acceptorItem && acceptorItem->widget()) {
     QComboBox *acceptorBox = qobject_cast<QComboBox *>(acceptorItem->widget());
     QString acceptor = acceptorBox ? acceptorBox->currentText() : QString();
-    if (acceptor != ANY_ITEM) {
+    if (acceptor != cx::globals::anyItemLabel) {
       auto *element = ElementData::elementFromSymbol(acceptor);
       if (element) {
         criteria.acceptors.insert(element->number());

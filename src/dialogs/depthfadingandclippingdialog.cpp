@@ -43,7 +43,7 @@ void DepthFadingAndClippingDialog::initConnections() {
 void DepthFadingAndClippingDialog::initClippingSlider() {
   frontClippingSlider->setSingleStep(CLIPPING_STEP);
   frontClippingSlider->setTickInterval(CLIPPING_INTERVAL);
-  frontClippingSlider->setMinimum(CLIPPING_SCALE * GLOBAL_FRONT_CLIPPING_PLANE);
+  frontClippingSlider->setMinimum(CLIPPING_SCALE * cx::globals::frontClippingPlane);
   frontClippingSlider->setMaximum(CLIPPING_SCALE * CLIPPING_MAXIMUM);
 }
 

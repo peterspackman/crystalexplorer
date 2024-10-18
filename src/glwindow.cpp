@@ -8,7 +8,6 @@
 #include <cmath>
 
 #include "elementdata.h"
-#include "globals.h"
 #include "glwindow.h"
 #include "graphics.h"
 #include "mathconstants.h"
@@ -21,11 +20,8 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) { init(); }
 void GLWindow::init() {
 
   initPointers();
-  glCameraDistance = CAMERA_DISTANCE;
-  perspectiveNearValue = PERSPECTIVE_NEAR_VALUE;
-  usePerspectiveProjection =
+  m_usePerspectiveProjection =
       settings::readSetting(settings::keys::USE_PERSPECTIVE_FLAG).toBool();
-  frontClippingPlane = GLOBAL_FRONT_CLIPPING_PLANE;
   _backgroundColor = QColor(
       settings::readSetting(settings::keys::BACKGROUND_COLOR).toString());
   enableDepthTest =
@@ -276,8 +272,8 @@ void GLWindow::setAnimationSettings(double minorX, double minorY, double minorZ,
 }
 
 void GLWindow::setPerspective(bool usePerspective, float perspectiveValue) {
-  usePerspectiveProjection = usePerspective;
-  perspectiveNearValue = perspectiveValue;
+  m_usePerspectiveProjection = usePerspective;
+  m_perspectiveNearValue = perspectiveValue;
 
   GLint viewport[4];
   makeCurrent();
@@ -297,19 +293,19 @@ void GLWindow::setProjection(GLfloat width, GLfloat height) {
   GLfloat bottom = -height / VIEWING_VOLUME_FAR;
   GLfloat top = height / VIEWING_VOLUME_FAR;
   m_projection.setToIdentity();
-  if (usePerspectiveProjection) {
+  if (m_usePerspectiveProjection) {
     m_projection.frustum(left, right, bottom, top, VIEWING_VOLUME_FAR,
-                         perspectiveNearValue);
+                         m_perspectiveNearValue);
 
   } else {
     m_projection.ortho(left, right, bottom, top, VIEWING_VOLUME_FAR,
-                       frontClippingPlane);
+                       m_frontClippingPlane);
   }
 }
 
 void GLWindow::updateFrontClippingPlane(float clippingPlane) {
-  if (frontClippingPlane != clippingPlane) {
-    frontClippingPlane = clippingPlane;
+  if (m_frontClippingPlane != clippingPlane) {
+    m_frontClippingPlane = clippingPlane;
     setPerspective(
         false, 0.0); // Turn off perspective (currently no perspective version)
     redraw();
@@ -429,7 +425,7 @@ void GLWindow::setModelView() {
 
   m_model.setToIdentity();
   m_view.setToIdentity();
-  m_view.translate(0.0, 0.0, -glCameraDistance);
+  m_view.translate(0.0, 0.0, -m_cameraDistance);
 
   if (scene) {
     if (animateScene) {

@@ -18,6 +18,8 @@
 #include "cylinderrenderer.h"
 #include "drawingstyle.h"
 #include "ellipsoidrenderer.h"
+#include "frameworkoptions.h"
+#include "json.h"
 #include "linerenderer.h"
 #include "measurementrenderer.h"
 #include "mesh.h"
@@ -25,11 +27,9 @@
 #include "orbitcamera.h"
 #include "rendereruniforms.h"
 #include "renderselection.h"
-#include "frameworkoptions.h"
+#include "selection_information.h"
 #include "settings.h"
 #include "sphereimpostorrenderer.h"
-#include "selection_information.h"
-#include "json.h"
 
 enum class HighlightMode { Normal, Pair };
 typedef QPair<QString, QVector3D> Label;
@@ -47,7 +47,7 @@ struct MeasurementObject {
   bool wholeObject{false};
 };
 
-struct DistanceMeasurementPoints{
+struct DistanceMeasurementPoints {
   bool valid{false};
   QVector3D a;
   QVector3D b;
@@ -55,9 +55,6 @@ struct DistanceMeasurementPoints{
 
 class Scene : public QObject {
   Q_OBJECT
-
-  friend QDataStream &operator<<(QDataStream &, const Scene &);
-  friend QDataStream &operator>>(QDataStream &, Scene &);
 
 public:
   Scene();
@@ -67,7 +64,9 @@ public:
   bool fromJson(const nlohmann::json &);
 
   inline ChemicalStructure *chemicalStructure() { return m_structure; }
-  inline const ChemicalStructure *chemicalStructure() const { return m_structure; }
+  inline const ChemicalStructure *chemicalStructure() const {
+    return m_structure;
+  }
 
   void resetViewAndSelections();
   bool hasOnScreenCloseContacts();
@@ -76,14 +75,17 @@ public:
   bool processSelectionSingleClick(const QColor &);
   bool processHitsForSingleClickSelectionWithAltKey(const QColor &color);
   bool processSelectionForInformation(const QColor &);
-  MeasurementObject processMeasurementSingleClick(const QColor &, bool wholeObject = false);
+  MeasurementObject processMeasurementSingleClick(const QColor &,
+                                                  bool wholeObject = false);
   cx::graphics::SelectionType decodeSelectionType(const QColor &);
 
   void selectAtomsSeparatedBySurface(bool inside);
 
   void setTransformationMatrix(const QMatrix4x4 &tMatrix);
 
-  inline ScenePeriodicity periodicity() const { return ScenePeriodicity::ThreeDimensions; }
+  inline ScenePeriodicity periodicity() const {
+    return ScenePeriodicity::ThreeDimensions;
+  }
 
   const Orientation &orientation() const { return m_orientation; }
   Orientation &orientation() { return m_orientation; }
@@ -95,7 +97,7 @@ public:
   inline occ::Mat3 directCellMatrix() const {
     return m_structure->cellVectors();
   }
-  inline occ::Mat3  inverseCellMatrix() const {
+  inline occ::Mat3 inverseCellMatrix() const {
     return m_structure->cellVectors().inverse();
   }
 
@@ -118,7 +120,7 @@ public:
 
   inline bool showAtomLabels() const { return atomLabelOptions().show; }
   AtomLabelOptions atomLabelOptions() const;
-  void setAtomLabelOptions(const AtomLabelOptions&);
+  void setAtomLabelOptions(const AtomLabelOptions &);
   void toggleShowAtomLabels();
 
   void setFrameworkOptions(const FrameworkOptions &options);
@@ -128,12 +130,10 @@ public:
   void toggleShowHydrogenAtoms();
 
   void setShowSuppressedAtoms(bool);
-  inline bool suppressedAtomsAreVisible() { return _showSuppressedAtoms; }
-
+  inline bool suppressedAtomsAreVisible() { return m_showSuppressedAtoms; }
   inline void setHydrogenBondsVisible(bool show) { m_showHydrogenBonds = show; }
 
   void selectAtomsOutsideRadiusOfSelectedAtoms(float);
-
   void setSelectStatusForAllAtoms(bool set);
 
   // Measurements
@@ -143,20 +143,17 @@ public:
   bool hasMeasurements() const;
 
   inline auto origin() const { return m_structure->origin(); }
-
   bool hasVisibleAtoms() const;
-
   const QString &title() const { return m_name; }
   inline void setTitle(const QString &name) { m_name = name; }
 
-  DistanceMeasurementPoints positionsForDistanceMeasurement(
-      const MeasurementObject &,
-      const MeasurementObject &) const;
+  DistanceMeasurementPoints
+  positionsForDistanceMeasurement(const MeasurementObject &,
+                                  const MeasurementObject &) const;
 
-  DistanceMeasurementPoints positionsForDistanceMeasurement(
-      const MeasurementObject &,
-      const QVector3D &) const;
-
+  DistanceMeasurementPoints
+  positionsForDistanceMeasurement(const MeasurementObject &,
+                                  const QVector3D &) const;
 
   void setSelectionColor(const QColor &);
   void setDrawingStyle(DrawingStyle);
@@ -224,7 +221,7 @@ public:
   void completeAllFragments();
   void completeFragmentContainingAtom(int atomIndex);
 
-  void colorSelectedAtoms(const QColor &, bool fragments=false);
+  void colorSelectedAtoms(const QColor &, bool fragments = false);
 
   bool hasHydrogens() const;
   bool hasSelectedAtoms() const;
@@ -239,7 +236,7 @@ public:
   }
   void setCrystalPlanes(const std::vector<CrystalPlane> &);
   void generateSlab(SlabGenerationOptions);
-  
+
   double getThermalEllipsoidProbability() const;
 
 signals:
@@ -289,9 +286,6 @@ private:
   void updateCrystalPlanes();
 
   void drawLights();
-  void drawLines();
-  void drawLabels();
-  void drawUnitCellBox();
   void drawMeasurements();
   void drawPlanes();
 
@@ -310,25 +304,13 @@ private:
   void setRendererUniforms(Renderer *, bool selection_mode = false);
 
   QString m_name;
-
   OrbitCamera m_camera;
-  QMap<QString, Renderer *> m_renderers;
-  CylinderImpostorRenderer *m_cylinderImpostorRenderer{nullptr};
-  CylinderRenderer *m_meshCylinderRenderer{nullptr};
-  EllipsoidRenderer *m_ellipsoidRenderer{nullptr};
-  QVector<MeshRenderer *> m_meshRenderers;
-  QVector<LineRenderer *> m_lineRenderers;
-  LineRenderer *m_wireFrameBonds{nullptr};
-  LineRenderer *m_faceHighlights{nullptr};
 
   LineRenderer *m_hydrogenBondLines{nullptr};
   LineRenderer *m_closeContactLines{nullptr};
-  LineRenderer *m_unitCellLines{nullptr};
   cx::graphics::MeasurementRenderer *m_measurementRenderer{nullptr};
 
-  CircleRenderer *m_circles{nullptr};
   EllipsoidRenderer *m_lightPositionRenderer{nullptr};
-  BillboardRenderer *m_billboardTextLabels{nullptr};
   CrystalPlaneRenderer *m_crystalPlaneRenderer{nullptr};
   QMap<QString, Orientation> _savedOrientations;
 
@@ -337,11 +319,7 @@ private:
 
   Orientation m_orientation;
 
-  bool _showSuppressedAtoms;
-  bool m_showUnitCellBox;
-  bool _showFragmentLabels;
-  bool _showSurfaceLabels;
-
+  bool m_showSuppressedAtoms{false};
   bool m_showHydrogenBonds{false};
   HBondCriteria m_hbondCriteria;
 
@@ -386,10 +364,3 @@ private:
 
   cx::graphics::RendererUniforms m_uniforms;
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Stream Functions
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-QDataStream &operator<<(QDataStream &, const Scene &);
-QDataStream &operator>>(QDataStream &, Scene &);

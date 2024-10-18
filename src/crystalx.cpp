@@ -547,10 +547,10 @@ void Crystalx::enableExperimentalFeatures(bool enable) {
 }
 
 void Crystalx::gotoCrystalExplorerWebsite() {
-  QDesktopServices::openUrl(QUrl(CE_URL));
+  QDesktopServices::openUrl(QUrl(cx::globals::url));
 }
 void Crystalx::gotoHowToCiteCrystalExplorer() {
-  QDesktopServices::openUrl(QUrl(CE_CITATION_URL));
+  QDesktopServices::openUrl(QUrl(cx::globals::citationUrl));
 }
 
 void Crystalx::setShowAtomsWithinRadius() {
@@ -560,9 +560,9 @@ void Crystalx::setShowAtomsWithinRadius() {
     QString title = "Show atoms within a radius...";
 
     QString label;
-    QString msgStart =
-        QString("Show atoms within a ") +
-        DialogHtml::bold(QString("radius (") + ANGSTROM_SYMBOL + ")");
+    QString msgStart = QString("Show atoms within a ") +
+                       DialogHtml::bold(QString("radius (") +
+                                        cx::globals::angstromSymbol + ")");
     if (generateClusterForSelection) {
       label = DialogHtml::paragraph(msgStart + " of the selected atoms");
     } else {
@@ -592,7 +592,8 @@ void Crystalx::selectAtomsOutsideRadius() {
     bool ok;
     QString title = "Select Atoms";
     QString label = QString("Select atoms outside a <b>radius (") +
-                    ANGSTROM_SYMBOL + ")</b> of the currently selected atoms:";
+                    cx::globals::angstromSymbol +
+                    ")</b> of the currently selected atoms:";
     double radius = QInputDialog::getDouble(this, title, label, 5.0, 0.0, 25.0,
                                             2, &ok, Qt::Tool);
     if (ok) {
@@ -624,9 +625,10 @@ void Crystalx::toggleAnimation(bool animate) {
 
 void Crystalx::clearCurrent() { crystalController->clearCurrentCrystal(); }
 
-void Crystalx::clearAll() { 
-  crystalController->clearAllCrystals(); 
-  if(childPropertyController) childPropertyController->reset();
+void Crystalx::clearAll() {
+  crystalController->clearAllCrystals();
+  if (childPropertyController)
+    childPropertyController->reset();
 }
 
 void Crystalx::generateSlab() {
@@ -644,19 +646,20 @@ void Crystalx::generateSlab() {
 }
 
 void Crystalx::helpAboutActionDialog() {
+  using namespace cx::globals;
   QString message = "";
-  message += DialogHtml::paragraph(CE_AUTHORS);
+  message += DialogHtml::paragraph(authors);
   message += DialogHtml::paragraph(
-      "Website: " + DialogHtml::website(CE_URL, CE_URL) +
-      DialogHtml::linebreak() + "Email: " +
-      DialogHtml::email(CE_EMAIL, CE_EMAIL, "CrystalExplorer",
+      "Website: " + DialogHtml::website(url, url) + DialogHtml::linebreak() +
+      "Email: " +
+      DialogHtml::email(email, email, "CrystalExplorer",
                         QString("Re: Build= %1").arg(CX_BUILD_DATE)) +
       DialogHtml::linebreak() + "Citation: " +
-      DialogHtml::website(CE_CITATION_URL, "How to Cite CrystalExplorer"));
+      DialogHtml::website(citationUrl, "How to Cite CrystalExplorer"));
   message += DialogHtml::paragraph(
-      QString(COPYRIGHT_NOTICE).arg(QDate::currentDate().year()));
-  message += DialogHtml::paragraph(QString(CE_NAME) + " uses " +
-                                   DialogHtml::website(OCC_URL, "OCC") +
+      QString(copyrightNoticeTemplate).arg(QDate::currentDate().year()));
+  message += DialogHtml::paragraph(QString(name) + " uses " +
+                                   DialogHtml::website(occUrl, "OCC") +
                                    "<br/>by P.R. Spackman");
   message += DialogHtml::line();
   message += DialogHtml::paragraph(QString("Version:  %1").arg(CX_VERSION) +
@@ -1252,19 +1255,18 @@ void Crystalx::colorHighlightHtml(QString &lineOfText, QString regExp,
 }
 
 void Crystalx::updateWindowTitle() {
-  QString title;
+  QString title{cx::globals::mainWindowTitle};
   if (project->previouslySaved()) {
     QFileInfo fi(project->saveFilename());
-    title = QString(GLOBAL_MAINWINDOW_TITLE) + " - " + fi.fileName();
+    title += " - " + fi.fileName();
     if (project->hasUnsavedChanges()) {
       title += "*";
     }
   } else {
     if (project->currentScene()) {
-      title = QString(GLOBAL_MAINWINDOW_TITLE) + " - " +
-              project->currentScene()->title();
+      title += " - " + project->currentScene()->title();
     } else {
-      title = QString(GLOBAL_MAINWINDOW_TITLE) + " - Untitled";
+      title += " - Untitled";
     }
   }
 
@@ -1740,7 +1742,7 @@ void Crystalx::showEnergyCalculationDialog() {
                                "calculate interaction energies for a %1%2 "
                                "cluster around the selected fragment?")
                            .arg(CLUSTER_RADIUS, 0, 'f', 1)
-                           .arg(ANGSTROM_SYMBOL);
+                           .arg(cx::globals::angstromSymbol);
     QMessageBox msgBox(this);
     msgBox.setWindowTitle("Interaction Energy Calculation");
     msgBox.setText(question);

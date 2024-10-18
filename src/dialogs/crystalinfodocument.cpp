@@ -5,6 +5,9 @@
 #include <QTextCursor>
 #include <fmt/format.h>
 
+using cx::globals::angstromSymbol;
+using cx::globals::degreeSymbol;
+
 inline const char *INFO_HORIZONTAL_RULE =
     "--------------------------------------------------------------------------"
     "------------\n";
@@ -65,25 +68,26 @@ void CrystalInfoDocument::insertGeneralInformation(QTextCursor &cursor,
   occ::Vec3 lengths = crystal->cellLengths();
   occ::Vec3 angles = crystal->cellAngles() * 180.0 / M_PI;
 
-  cursor.insertText(QString::fromStdString(
-      fmt::format("{:<12s} {:>12s}\n", "Crystal", crystal->name().toStdString())));
-  cursor.insertText(QString::fromStdString(
-      fmt::format("{:<12s} {:>12s}\n", "CIF", fileInfo.fileName().toStdString())));
   cursor.insertText(QString::fromStdString(fmt::format(
-      "{:<12s} {:>12s}\n", "Formula", crystal->chemicalFormula().toStdString())));
+      "{:<12s} {:>12s}\n", "Crystal", crystal->name().toStdString())));
+  cursor.insertText(QString::fromStdString(fmt::format(
+      "{:<12s} {:>12s}\n", "CIF", fileInfo.fileName().toStdString())));
+  cursor.insertText(QString::fromStdString(
+      fmt::format("{:<12s} {:>12s}\n", "Formula",
+                  crystal->chemicalFormula().toStdString())));
   cursor.insertText(QString::fromStdString(fmt::format(
       "{:<12s} {:>12s}\n", "Space Group", crystal->spaceGroup().symbol())));
   cursor.insertText(QString::fromStdString(fmt::format(
-      "{:<12s} {: 12.6f} {}\n", "Length A", lengths(0), ANGSTROM_SYMBOL)));
+      "{:<12s} {: 12.6f} {}\n", "Length A", lengths(0), angstromSymbol)));
   cursor.insertText(QString::fromStdString(fmt::format(
-      "{:<12s} {: 12.6f} {}\n", "Length B", lengths(1), ANGSTROM_SYMBOL)));
+      "{:<12s} {: 12.6f} {}\n", "Length B", lengths(1), angstromSymbol)));
   cursor.insertText(QString::fromStdString(fmt::format(
-      "{:<12s} {: 12.6f} {}\n", "Length C", lengths(2), ANGSTROM_SYMBOL)));
+      "{:<12s} {: 12.6f} {}\n", "Length C", lengths(2), angstromSymbol)));
 
   cursor.insertText(QString::fromStdString(fmt::format(
-      "{:<12s} {: 12.6f} {}\n", "Angle Alpha", angles(0), DEGREE_SYMBOL)));
+      "{:<12s} {: 12.6f} {}\n", "Angle Alpha", angles(0), degreeSymbol)));
   cursor.insertText(QString::fromStdString(fmt::format(
-      "{:<12s} {: 12.6f} {}\n", "Angle Beta", angles(1), DEGREE_SYMBOL)));
+      "{:<12s} {: 12.6f} {}\n", "Angle Beta", angles(1), degreeSymbol)));
   cursor.insertText(QString::fromStdString(fmt::format(
-      "{:<12s} {: 12.6f} {}\n", "Angle Gamma", angles(2), DEGREE_SYMBOL)));
+      "{:<12s} {: 12.6f} {}\n", "Angle Gamma", angles(2), degreeSymbol)));
 }

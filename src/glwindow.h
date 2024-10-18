@@ -12,15 +12,13 @@
 using cx::graphics::SelectionType;
 // Uncomment the line below to enable (i) atom suppression
 // (accessed via the context menu)
-//#define ENABLE_ATOM_SUPPRESSION
+// #define ENABLE_ATOM_SUPPRESSION
 
 const float ROT_MIN_VALUE = 0.0;
 const float ROT_MAX_VALUE = 360.0;
 const float ROT_RANGE = ROT_MAX_VALUE - ROT_MIN_VALUE;
 
 const double VIEWING_VOLUME_FAR = 200.0;
-const GLfloat PERSPECTIVE_NEAR_VALUE = 30.0;
-const double CAMERA_DISTANCE = 60.0;
 
 const float RADIUS_THRESHOLD = 0.000001f;
 const float DEFAULT_SCALE = 0.25f;
@@ -42,7 +40,6 @@ enum class SelectionMode {
   InPlaneBend
 };
 
-
 const int ANIMATION_REDRAW_WAIT_TIME = 16; // Aim for 60 fps
 
 class GLWindow : public QOpenGLWidget, protected QOpenGLExtraFunctions {
@@ -55,7 +52,8 @@ public:
   Scene *currentScene() const { return scene; }
 
   QImage renderToImage(int scaleFactor, bool for_picking = false);
-  QImage exportToImage(int scaleFactor = 1, const QColor & background = Qt::white);
+  QImage exportToImage(int scaleFactor = 1,
+                       const QColor &background = Qt::white);
   bool renderToPovRay(QTextStream &);
 
 public slots:
@@ -191,7 +189,7 @@ private:
   void applyRotationToTMatrix(GLfloat, GLfloat, GLfloat);
   void applyTranslationToTMatrix(GLfloat, GLfloat);
   void setRotationValues(GLfloat, GLfloat, GLfloat, bool doEmit = true);
-  void viewDownVector(const occ::Vec3&);
+  void viewDownVector(const occ::Vec3 &);
   void applyAnimationRotation();
   void applyRotationAboutVectorToTMatrix(float theta, float n1, float n2,
                                          float n3);
@@ -210,10 +208,10 @@ private:
 
   GLuint *selectionBuffer;
 
-  GLfloat glCameraDistance;
-  GLfloat frontClippingPlane;
-  GLfloat perspectiveNearValue;
-  bool usePerspectiveProjection;
+  GLfloat m_cameraDistance{60.0};
+  GLfloat m_frontClippingPlane{10.0};
+  GLfloat m_perspectiveNearValue{30.0};
+  bool m_usePerspectiveProjection{false};
   bool enableDepthTest{true};
 
   MouseMode mouseMode;
@@ -259,7 +257,7 @@ private:
   QImage m_pickingImage;
   QImage m_textLayer;
 
-  QLabel * m_infoLabel{nullptr};
+  QLabel *m_infoLabel{nullptr};
 
   QOpenGLFramebufferObject *m_framebuffer{nullptr};
   QOpenGLFramebufferObject *m_resolvedFramebuffer{nullptr};
