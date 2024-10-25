@@ -9,6 +9,7 @@ class XYZFile {
 public:
   XYZFile() = default;
   XYZFile(const std::vector<QString> &atomSymbols, Eigen::Ref<const occ::Mat3N> atomPositions);
+  XYZFile(Eigen::Ref<const occ::IVec> atomNumbers, Eigen::Ref<const occ::Mat3N> atomPositions);
 
   bool readFromFile(const QString &fileName);
   bool readFromString(const QString &content);

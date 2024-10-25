@@ -83,6 +83,8 @@ public slots:
   void updateStatusMessage(QString);
   void updateProgressBar(int, int);
   void clearStatusMessage();
+  void handleExportCurrentGeometry();
+  void handleAtomLabelActions();
 
 protected slots:
   void closeEvent(QCloseEvent *);

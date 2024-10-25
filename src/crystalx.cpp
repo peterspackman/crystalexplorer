@@ -388,6 +388,7 @@ void Crystalx::initMenuConnections() {
   connect(actionExport_As, &QAction::triggered, this, &Crystalx::exportAs);
   connect(quickExportAction, &QAction::triggered, this,
           &Crystalx::quickExportCurrentGraphics);
+  connect(exportGeometryAction, &QAction::triggered, this, &Crystalx::handleExportCurrentGeometry);
 
   // Scene menu
   connect(animateAction, &QAction::toggled, this, &Crystalx::setAnimateScene);
@@ -404,8 +405,10 @@ void Crystalx::initMenuConnections() {
           &Project::toggleUnitCellAxes);
   connect(enableMultipleUnitCellBoxesAction, &QAction::toggled, project,
           &Project::toggleMultipleUnitCellBoxes);
-  connect(showAtomicLabelsAction, &QAction::triggered, glWindow,
-          &GLWindow::cycleAtomLabelOptions);
+
+  connect(showAtomicLabelsAction, &QAction::triggered, this, &Crystalx::handleAtomLabelActions);
+  connect(showFragmentLabelsAction, &QAction::triggered, this, &Crystalx::handleAtomLabelActions);
+
   connect(showHydrogenAtomsAction, &QAction::toggled, project,
           &Project::toggleHydrogenAtoms);
   connect(showSuppressedAtomsAction, &QAction::toggled, project,
@@ -1421,10 +1424,20 @@ void Crystalx::updateMenuOptionsForScene() {
     }
     m_drawHEllipsoidsAction->setChecked(scene->drawHydrogenEllipsoids());
     showUnitCellAxesAction->setChecked(scene->showCells());
-    showAtomicLabelsAction->setChecked(scene->showAtomLabels());
+    auto labelOpts = scene->atomLabelOptions();
+    showAtomicLabelsAction->setChecked(labelOpts.showAtoms);
+    showFragmentLabelsAction->setChecked(labelOpts.showFragment);
     showHydrogenAtomsAction->setChecked(scene->showHydrogenAtoms());
   }
 }
+
+void Crystalx::handleAtomLabelActions() {
+  AtomLabelOptions opts;
+  opts.showAtoms = showAtomicLabelsAction->isChecked();
+  opts.showFragment = showFragmentLabelsAction->isChecked();
+  glWindow->handleAtomLabelOptionsChanged(opts);
+}
+
 
 void Crystalx::newProject() {
   if (closeProjectConfirmed()) {
@@ -1527,6 +1540,26 @@ void Crystalx::exportCurrentGraphics(const QString &filename) {
     m_exportDialog->updateFilePath(filename);
   } else {
     showStatusMessage("Failed to export current graphics state to " + filename);
+  }
+}
+
+void Crystalx::handleExportCurrentGeometry() {
+  if (!project->currentScene())
+    return;
+
+  QFileInfo fi(project->currentScene()->title());
+  QString suggestedFilename = fi.baseName() + "_current.xyz";
+
+  QString filter = "XYZ Files (*.xyz)";
+  QString filename = QFileDialog::getSaveFileName(
+      0, tr("Export current geometry"), suggestedFilename, filter);
+
+  if (!filename.isEmpty()) {
+    bool success = project->exportCurrentGeometryToFile(filename);
+    if (success) {
+      addFileToHistory(filename);
+      showStatusMessage("Export geometry to" + filename);
+    }
   }
 }
 

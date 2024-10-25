@@ -118,7 +118,7 @@ const AtomLabelOptions &ChemicalStructureRenderer::atomLabelOptions() const {
 
 void ChemicalStructureRenderer::toggleShowAtomLabels() {
   auto options = m_atomLabelOptions;
-  options.show = !options.show;
+  options.showAtoms = !options.showAtoms;
   setAtomLabelOptions(options);
 }
 
@@ -223,28 +223,30 @@ void ChemicalStructureRenderer::updateCells() {
 
 QList<TextLabel> ChemicalStructureRenderer::getCurrentLabels() {
   QList<TextLabel> result;
-  if (m_atomLabelOptions.show) {
-    if (m_atomLabelOptions.fragmentLabel) {
-      const auto &fragments = m_structure->getFragments();
-      for(const auto &[fragmentIndex, fragment]: fragments) {
-        auto centroid = fragment.centroid();
-        QVector3D pos(centroid.x(), centroid.y(), centroid.z());
-        result.append(TextLabel{m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex), pos});
-      }
-    } else {
-      const auto &atomLabels = m_structure->labels();
-      const auto &positions = m_structure->atomicPositions();
-      for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
-        if (shouldSkipAtom(i))
-          continue;
-        auto idx = m_structure->indexToGenericIndex(i);
-        if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
-          continue;
-        QVector3D pos(positions(0, i), positions(1, i), positions(2, i));
-        result.append(TextLabel{atomLabels[i], pos});
-      }
+  if (m_atomLabelOptions.showAtoms) {
+    const auto &atomLabels = m_structure->labels();
+    const auto &positions = m_structure->atomicPositions();
+    for (int i = 0; i < m_structure->numberOfAtoms(); i++) {
+      if (shouldSkipAtom(i))
+        continue;
+      auto idx = m_structure->indexToGenericIndex(i);
+      if (m_structure->testAtomFlag(idx, AtomFlag::Contact))
+        continue;
+      QVector3D pos(positions(0, i), positions(1, i), positions(2, i));
+      result.append(TextLabel{atomLabels[i], pos});
     }
   }
+  if (m_atomLabelOptions.showFragment) {
+    const auto &fragments = m_structure->getFragments();
+    for (const auto &[fragmentIndex, fragment] : fragments) {
+      auto centroid = fragment.centroid();
+      QVector3D pos(centroid.x(), centroid.y(), centroid.z());
+      result.append(TextLabel{
+          m_structure->getFragmentLabel(fragment.asymmetricFragmentIndex),
+          pos});
+    }
+  }
+
   return result;
 }
 
@@ -455,7 +457,8 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
     if (drawAsEllipsoid(i)) {
       auto adp = m_structure->atomicDisplacementParameters(idx);
       if (!adp.isZero()) {
-        QMatrix3x3 scales = adp.thermalEllipsoidMatrixForProbability(m_thermalEllipsoidProbability);
+        QMatrix3x3 scales = adp.thermalEllipsoidMatrixForProbability(
+            m_thermalEllipsoidProbability);
         cx::graphics::addEllipsoidToEllipsoidRenderer(
             m_ellipsoidRenderer, position, scales, color, selectionIdColor,
             selected);

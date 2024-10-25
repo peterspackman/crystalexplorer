@@ -92,7 +92,7 @@ public slots:
   void materialChanged();
   void lightSettingsChanged();
   void textSettingsChanged();
-  void cycleAtomLabelOptions();
+  void handleAtomLabelOptionsChanged(AtomLabelOptions);
 
 signals:
   void scaleChanged(float);

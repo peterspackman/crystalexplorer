@@ -1,4 +1,5 @@
 #include "xyzfile.h"
+#include <occ/core/element.h>
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
@@ -8,6 +9,16 @@
 XYZFile::XYZFile(const std::vector<QString> &atomSymbols,
                  Eigen::Ref<const occ::Mat3N> atomPositions) {
   setAtomSymbols(atomSymbols);
+  setAtomPositions(atomPositions);
+}
+
+XYZFile::XYZFile(Eigen::Ref<const occ::IVec> atomNumbers,
+                 Eigen::Ref<const occ::Mat3N> atomPositions) {
+  std::vector<QString> symbols;
+  for(int i = 0; i < atomNumbers.rows(); i++) {
+    symbols.push_back(QString::fromStdString(occ::core::Element(atomNumbers(i)).symbol()));
+  }
+  setAtomSymbols(symbols);
   setAtomPositions(atomPositions);
 }
 

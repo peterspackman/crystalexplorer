@@ -866,3 +866,16 @@ int Project::setCurrentFrame(int current) {
   emit showMessage(QString("Show frame %1").arg(current));
   return current;
 }
+
+bool Project::exportCurrentGeometryToFile(const QString &filename) {
+  auto *structure = currentStructure();
+  if (!structure)
+    return false;
+
+  auto nums = structure->atomicNumbers();
+  auto pos = structure->atomicPositions();
+  if(nums.rows() < 1) return false;
+  if(pos.cols() < 1) return false;
+  XYZFile xyz(nums, pos);
+  return xyz.writeToFile(filename);
+}

@@ -103,6 +103,7 @@ public slots:
   void invertSelection();
 
   void removeAllMeasurements();
+  bool exportCurrentGeometryToFile(const QString &);
 
 signals:
   void showMessage(QString);

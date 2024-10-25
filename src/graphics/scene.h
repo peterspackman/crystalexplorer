@@ -118,7 +118,9 @@ public:
   bool showMultipleCells();
   void setShowMultipleCells(bool);
 
-  inline bool showAtomLabels() const { return atomLabelOptions().show; }
+  inline bool showAtomLabels() const { return atomLabelOptions().showAtoms; }
+  inline bool showFragmentLabels() const { return atomLabelOptions().showFragment; }
+
   AtomLabelOptions atomLabelOptions() const;
   void setAtomLabelOptions(const AtomLabelOptions &);
   void toggleShowAtomLabels();

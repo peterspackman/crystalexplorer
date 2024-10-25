@@ -981,24 +981,47 @@ void GLWindow::showGeneralContextMenu(const QPoint &pos) {
   }
 }
 
-void GLWindow::cycleAtomLabelOptions() {
-  auto options = scene->atomLabelOptions();
-  emit atomLabelOptionsChanged(options.cycle());
+void GLWindow::handleAtomLabelOptionsChanged(AtomLabelOptions options) {
+  if(!scene) return;
+  auto currentOptions = scene->atomLabelOptions();
+  if(options != currentOptions) {
+    emit atomLabelOptionsChanged(options);
+  }
 }
 
 void GLWindow::updateAtomLabelContextMenu(QMenu *contextMenu) {
-  auto atomLabelOptions = scene->atomLabelOptions();
-  QString actionText;
+  if(!scene) return;
+  auto current = scene->atomLabelOptions();
 
-  if (!atomLabelOptions.show) {
-    actionText = tr("Show Atom Labels");
-  } else if (!atomLabelOptions.fragmentLabel) {
-    actionText = tr("Show Fragment Labels");
-  } else {
-    actionText = tr("Hide Labels");
+  if (current.showAtoms) {
+    contextMenu->addAction("Hide Atom Labels", this, [current, this]() {
+      auto opts = current;
+      opts.showAtoms = false;
+      handleAtomLabelOptionsChanged(opts);
+    });
+  }
+  else {
+    contextMenu->addAction("Show Atom Labels", this, [current, this]() {
+      auto opts = current;
+      opts.showAtoms = true;
+      handleAtomLabelOptionsChanged(opts);
+    });
   }
 
-  contextMenu->addAction(actionText, this, &GLWindow::cycleAtomLabelOptions);
+  if (current.showFragment) {
+    contextMenu->addAction("Hide Fragment Labels", this, [current, this]() {
+      auto opts = current;
+      opts.showFragment = false;
+      handleAtomLabelOptionsChanged(opts);
+    });
+  }
+  else {
+    contextMenu->addAction("Show Fragment Labels", this, [current, this]() {
+      auto opts = current;
+      opts.showFragment = true;
+      handleAtomLabelOptionsChanged(opts);
+    });
+  }
 }
 
 void GLWindow::addGeneralActionsToContextMenu(QMenu *contextMenu) {

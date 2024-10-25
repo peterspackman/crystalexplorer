@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1920</width>
-     <height>43</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -74,6 +74,7 @@
     <addaction name="menuOrientation"/>
     <addaction name="backgroundColorAction"/>
     <addaction name="actionImport"/>
+    <addaction name="exportGeometryAction"/>
    </widget>
    <widget class="QMenu" name="actionsMenu">
     <property name="title">
@@ -160,6 +161,7 @@
     </widget>
     <addaction name="showUnitCellAxesAction"/>
     <addaction name="showAtomicLabelsAction"/>
+    <addaction name="showFragmentLabelsAction"/>
     <addaction name="showHydrogenAtomsAction"/>
     <addaction name="showSuppressedAtomsAction"/>
     <addaction name="showSurfaceCapsAction"/>
@@ -250,6 +252,9 @@
    </property>
   </action>
   <action name="fileSaveGraphicsAction">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::ImageMissing"/>
+   </property>
    <property name="text">
     <string>Save Screenshot...</string>
    </property>
@@ -261,6 +266,9 @@
    </property>
   </action>
   <action name="fileSaveAnimationAction">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MultimediaPlayer"/>
+   </property>
    <property name="text">
     <string>Save Animation...</string>
    </property>
@@ -268,6 +276,9 @@
   <action name="preferencesAction">
    <property name="enabled">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentPageSetup"/>
    </property>
    <property name="text">
     <string>Preferences...</string>
@@ -277,6 +288,9 @@
    </property>
   </action>
   <action name="editCopyAction">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditCopy"/>
+   </property>
    <property name="text">
     <string>Copy Selected Atoms to Clipboard</string>
    </property>
@@ -631,6 +645,9 @@
    </property>
   </action>
   <action name="crystalExplorerWebsiteAction">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::GoHome"/>
+   </property>
    <property name="text">
     <string>CrystalExplorer Website...</string>
    </property>
@@ -1039,6 +1056,9 @@
    </property>
   </action>
   <action name="actionExport_As">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
    <property name="text">
     <string>Export As...</string>
    </property>
@@ -1080,7 +1100,7 @@
     <string>Ctrl+T</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::ApplicationSpecificRole</enum>
+    <enum>QAction::MenuRole::ApplicationSpecificRole</enum>
    </property>
   </action>
   <action name="generateWavefunctionAction">
@@ -1098,7 +1118,7 @@
     <string>Ctrl+Shift+G</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="nextFrameAction">
@@ -1112,7 +1132,7 @@
     <string>N</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="previousFrameAction">
@@ -1126,7 +1146,7 @@
     <string>P</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="removeUnselectedAtomsAction">
@@ -1138,6 +1158,9 @@
    </property>
   </action>
   <action name="quickExportAction">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
    <property name="text">
     <string>Quick export current scene</string>
    </property>
@@ -1145,7 +1168,26 @@
     <string>Alt+E</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="exportGeometryAction">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::MediaPlaylistShuffle"/>
+   </property>
+   <property name="text">
+    <string>Export Current Geometry</string>
+   </property>
+  </action>
+  <action name="showFragmentLabelsAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Fragment Labels</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
    </property>
   </action>
  </widget>
