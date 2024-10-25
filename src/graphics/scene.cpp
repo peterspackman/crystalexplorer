@@ -1273,12 +1273,12 @@ void Scene::updateCrystalPlanes() {
       continue;
     CrystalPlaneGenerator generator(m_structure, plane.hkl);
     const auto &aVector = generator.aVector();
-    const auto &bVector = generator.aVector();
+    const auto &bVector = generator.bVector();
     const auto &origin = generator.origin();
     QVector3D qorigin(origin(0), origin(1), origin(2));
     QVector3D qa(aVector(0), aVector(1), aVector(2));
     QVector3D qb(bVector(0), bVector(1), bVector(2));
-    qDebug() << "Adding plane to CrystalPlaneRenderer";
+
     cx::graphics::addPlaneToCrystalPlaneRenderer(*m_crystalPlaneRenderer,
                                                  qorigin, qa, qb, plane.color);
   }

@@ -27,6 +27,7 @@ CrystalPlaneGenerator::CrystalPlaneGenerator(ChemicalStructure * structure,
                                              const MillerIndex &hkl)
     : m_hkl(hkl) {
   m_uc = occ::crystal::UnitCell(structure->cellVectors());
+  qDebug() << hkl.h << hkl.k << hkl.l;
   calculateVectors();
 }
 

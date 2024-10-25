@@ -217,9 +217,10 @@ void FrameworkRenderer::handleInteractionsUpdate() {
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb,
                                               lineWidth, color);
-          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m, label);
         }
+        cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m, label);
       } else {
+        QVector3D m2 = va + (m - va) * 0.5;
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
                                                      color, std::abs(scale));
@@ -228,11 +229,10 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, m,
                                                       color, color, scale);
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
-          QVector3D m2 = va + (m - va) * 0.5;
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, lineWidth,
                                               color);
-          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m2, label);
         }
+        cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m2, label);
       }
     }
   }
