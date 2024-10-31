@@ -140,6 +140,8 @@ public:
   inline void highlightVertex(int v) { m_vertexHighlights.insert(v); }
   [[nodiscard]] const auto &vertexHighlights() const { return m_vertexHighlights; }
 
+  static Mesh * combine(const QList<Mesh*> &meshes);
+
 signals:
   void visibilityChanged();
   void transparencyChanged();
@@ -187,3 +189,4 @@ private:
   ScalarPropertyValues m_emptyProperty;
   isosurface::Parameters m_params;
 };
+

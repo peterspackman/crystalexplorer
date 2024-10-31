@@ -29,7 +29,7 @@ private:
   QString m_occExecutable{"occ"};
   QProcessEnvironment m_environment;
   QString m_name;
-  QString m_filename;
+  QStringList m_fileNames;
   QString m_defaultProperty{"dnorm"};
   isosurface::Parameters m_parameters;
   std::vector<GenericAtomIndex> m_atomsInside;

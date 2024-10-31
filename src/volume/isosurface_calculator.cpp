@@ -103,23 +103,26 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   m_name = surfaceName();
 
   m_defaultProperty = isosurface::defaultPropertyForKind(params.kind);
-  OccSurfaceTask *surface_task = new OccSurfaceTask();
-  surface_task->setExecutable(m_occExecutable);
-  surface_task->setEnvironment(m_environment);
-  surface_task->setSurfaceParameters(params);
-  surface_task->setProperty("name", m_name);
-  surface_task->setProperty("inputFile", interiorFilename);
-  surface_task->setProperty("environmentFile", exteriorFilename);
-  surface_task->setProperty("wavefunctionFile", wavefunctionFilename);
-  surface_task->setDeleteWorkingFiles(m_deleteWorkingFiles);
+  OccSurfaceTask *surfaceTask = new OccSurfaceTask();
+  surfaceTask->setExecutable(m_occExecutable);
+  surfaceTask->setEnvironment(m_environment);
+  surfaceTask->setSurfaceParameters(params);
+  surfaceTask->setProperty("name", m_name);
+  surfaceTask->setProperty("inputFile", interiorFilename);
+  surfaceTask->setProperty("environmentFile", exteriorFilename);
+  surfaceTask->setProperty("wavefunctionFile", wavefunctionFilename);
+  surfaceTask->setDeleteWorkingFiles(m_deleteWorkingFiles);
   qDebug() << "Generating " << isosurface::kindToString(params.kind)
            << "surface with isovalue: " << params.isovalue;
-  surface_task->setProperty("isovalue", params.isovalue);
+  surfaceTask->setProperty("isovalue", params.isovalue);
+  if(params.computeNegativeIsovalue) {
+    surfaceTask->setProperty("computeNegativeIsovalue", true);
+  }
 
-  auto taskId = m_taskManager->add(surface_task);
-  m_filename = "surface.ply";
+  auto taskId = m_taskManager->add(surfaceTask);
+  m_fileNames = surfaceTask->outputFileNames();
 
-  connect(surface_task, &Task::completed, this,
+  connect(surfaceTask, &Task::completed, this,
           &IsosurfaceCalculator::surfaceComplete);
 }
 
@@ -134,19 +137,26 @@ QString IsosurfaceCalculator::surfaceName() {
 
 void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
-  Mesh *mesh = io::loadMesh(m_filename);
+  QList<Mesh *> meshes = io::loadMeshes(m_fileNames);
   if (m_deleteWorkingFiles) {
-    io::deleteFile(m_filename);
+    io::deleteFiles(m_fileNames);
   }
-  mesh->setObjectName(m_name);
-  mesh->setParameters(m_parameters);
-  mesh->setSelectedProperty(m_defaultProperty);
-  mesh->setAtomsInside(m_atomsInside);
-  mesh->setAtomsOutside(m_atomsOutside);
-  mesh->setParent(m_structure);
-  // create the child instance that will be shown
-  MeshInstance *instance = new MeshInstance(mesh);
-  instance->setObjectName("+ {x,y,z} [0,0,0]");
+  int idx = 0;
+  for(auto * mesh: meshes) {
+    if(!mesh) continue;
+    auto params = m_parameters;
+    if(idx > 0) params.isovalue = - params.isovalue;
+    mesh->setObjectName(m_name);
+    mesh->setParameters(params);
+    mesh->setSelectedProperty(m_defaultProperty);
+    mesh->setAtomsInside(m_atomsInside);
+    mesh->setAtomsOutside(m_atomsOutside);
+    mesh->setParent(m_structure);
+    // create the child instance that will be shown
+    MeshInstance *instance = new MeshInstance(mesh);
+    instance->setObjectName("+ {x,y,z} [0,0,0]");
+    idx++;
+  }
 }
 
 } // namespace volume

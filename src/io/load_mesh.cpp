@@ -8,4 +8,12 @@ Mesh* loadMesh(const QString& filename) {
     return mesh ? mesh.release() : nullptr;
 }
 
+QList<Mesh*> loadMeshes(QStringList& filenames) {
+    QList<Mesh*> result;
+    for(const auto &filename: filenames) {
+        result.append(loadMesh(filename));
+    }
+    return result;
+}
+
 } // namespace io

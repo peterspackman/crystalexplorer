@@ -31,44 +31,51 @@ void OccSurfaceTask::start() {
   auto name = baseName();
   auto input = inputFileName();
   auto env = environmentFileName();
-  auto outputName = outputFileName();
   auto wfn = wavefunctionFilename();
 
   QStringList args{"isosurface", input};
 
   QList<FileDependency> reqs{FileDependency(input)};
+  QList<FileDependency> outputs;
 
   if (!env.isEmpty()) {
     args << env;
     reqs << env;
   }
 
-
-  args << "-o" << outputName;
+  args << "-o" << outputFileNameTemplate();
   args << QString("--kind=%1").arg(kind());
   args << QString("--separation=%1").arg(separation());
   args << QString("--isovalue=%1").arg(isovalue());
+
+  if (properties().value("computeNegativeIsovalue", false).toBool()) {
+    args << QString("--isovalue=%1").arg(-isovalue());
+  }
+
   args << QString("--threads=%1").arg(threads());
   if (properties().contains("background_density")) {
     args << QString("--background-density=%1")
                 .arg(properties().value("background_density").toFloat());
   }
 
-  if(!wfn.isEmpty()) {
+  if (!wfn.isEmpty()) {
     args << "-w" << wfn;
     reqs << wfn;
     appendWavefunctionTransformArguments(args);
   }
 
-  for(const auto &prop: m_parameters.additionalProperties) {
+  for (const auto &prop : m_parameters.additionalProperties) {
     args << "--properties=" + prop;
   }
 
   qDebug() << "Arguments:" << args;
   setArguments(args);
   setRequirements(reqs);
-  setOutputs({FileDependency(outputName, outputName)});
+  for (const auto &filename : outputFileNames()) {
+    outputs.append(FileDependency{filename, filename});
+  }
 
+  setOutputs(outputs);
   emit progressText("Starting OCC process");
   ExternalProgramTask::start();
   qDebug() << "Finish occ task start";
@@ -96,8 +103,18 @@ QString OccSurfaceTask::environmentFileName() const {
   return properties().value("environmentFile", "").toString();
 }
 
-QString OccSurfaceTask::outputFileName() const {
-  return properties().value("outputFile", "surface.ply").toString();
+QString OccSurfaceTask::outputFileNameTemplate() const {
+  return properties()
+      .value("outputFileNameTemplate", "surface{}.ply")
+      .toString();
+}
+
+QStringList OccSurfaceTask::outputFileNames() const {
+
+  if (properties().value("computeNegativeIsovalue", false).toBool()) {
+    return {"surface0.ply", "surface1.ply"};
+  }
+  return {"surface.ply"};
 }
 
 QString OccSurfaceTask::wavefunctionFilename() const {

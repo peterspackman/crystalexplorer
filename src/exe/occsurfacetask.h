@@ -18,7 +18,8 @@ public:
     QString environmentFileName() const;
     QString wavefunctionSuffix() const;
     QString wavefunctionFilename() const;
-    QString outputFileName() const;
+    QString outputFileNameTemplate() const;
+    QStringList outputFileNames() const;
 
     float separation() const;
     float isovalue() const;

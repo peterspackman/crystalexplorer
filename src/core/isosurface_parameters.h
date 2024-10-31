@@ -70,6 +70,7 @@ struct Parameters {
   Kind kind;
   float isovalue{0.0};
   float separation{0.2};
+  bool computeNegativeIsovalue{false};
   ChemicalStructure *structure{nullptr};
   MolecularWavefunction *wfn{nullptr};
   Eigen::Isometry3d wfn_transform{Eigen::Isometry3d::Identity()};
@@ -91,7 +92,6 @@ struct SurfacePropertyDescription {
   QString displayName;
   QString units;
   bool needsWavefunction{false};
-  bool needsIsovalue{false};
   bool needsOrbital{false};
   QString description;
 };
@@ -105,6 +105,7 @@ struct SurfaceDescription {
   bool needsOrbital{false};
   bool needsCluster{false};
   bool periodic{false};
+  bool computeNegativeIsovalue{false};
   QString units{""};
   QString description{"Unknown"};
   QStringList requestableProperties{"none"};

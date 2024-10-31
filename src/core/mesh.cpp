@@ -1,7 +1,7 @@
 #include "mesh.h"
-#include "meshinstance.h"
-#include "json.h"
 #include "eigen_json.h"
+#include "json.h"
+#include "meshinstance.h"
 #include <QFile>
 #include <QSignalBlocker>
 #include <fmt/os.h>
@@ -22,7 +22,6 @@ Mesh::Mesh(Eigen::Ref<const VertexList> vertices,
   m_vertexAreas = computeVertexAreas();
   m_vertexMask = Eigen::Matrix<bool, Eigen::Dynamic, 1>(m_vertices.cols());
   resetVertexMask(true);
-
 }
 
 Mesh::Mesh(Eigen::Ref<const VertexList> vertices, QObject *parent)
@@ -340,11 +339,12 @@ Mesh *Mesh::newFromJson(const nlohmann::json &object, QObject *parent) {
 
   // Parse properties
   const auto propertiesObj = object["properties"];
-  for (const auto &item: propertiesObj.items()) {
+  for (const auto &item : propertiesObj.items()) {
     const auto propertyValuesArray = item.value();
     ScalarPropertyValues propertyValues(propertyValuesArray.size());
     propertyValuesArray.get_to(propertyValues);
-    pointCloud->setVertexProperty(QString::fromStdString(item.key()), propertyValues);
+    pointCloud->setVertexProperty(QString::fromStdString(item.key()),
+                                  propertyValues);
   }
 
   return pointCloud;
@@ -374,12 +374,12 @@ bool Mesh::haveChildMatchingTransform(
     const Eigen::Isometry3d &transform) const {
   // TODO do this in bulk
 
-  auto check = [](occ::Vec3 a, occ::Vec3 b,
-                  double tolerance = 1e-1) {
-      return (a - b).norm() < tolerance;
+  auto check = [](occ::Vec3 a, occ::Vec3 b, double tolerance = 1e-1) {
+    return (a - b).norm() < tolerance;
   };
 
-  auto candidateCentroid = transform.rotation() * m_centroid + transform.translation();
+  auto candidateCentroid =
+      transform.rotation() * m_centroid + transform.translation();
 
   for (auto *child : children()) {
     auto *instance = qobject_cast<MeshInstance *>(child);
@@ -391,22 +391,99 @@ bool Mesh::haveChildMatchingTransform(
   return false;
 }
 
-void Mesh::resetFaceMask(bool value) {
-    m_faceMask.array() = value;
-}
+void Mesh::resetFaceMask(bool value) { m_faceMask.array() = value; }
 
-void Mesh::resetVertexMask(bool value) {
-    m_vertexMask.array() = value;
-}
+void Mesh::resetVertexMask(bool value) { m_vertexMask.array() = value; }
 
 ScalarPropertyValues Mesh::computeVertexAreas() const {
-  ScalarPropertyValues vertexAreas = ScalarPropertyValues::Zero(m_vertices.cols());
+  ScalarPropertyValues vertexAreas =
+      ScalarPropertyValues::Zero(m_vertices.cols());
 
   for (int i = 0; i < m_faces.cols(); ++i) {
-        float v = m_faceAreas(i) / 3.0f;
-        vertexAreas(m_faces(0, i)) += v;
-        vertexAreas(m_faces(1, i)) += v;
-        vertexAreas(m_faces(2, i)) += v;
+    float v = m_faceAreas(i) / 3.0f;
+    vertexAreas(m_faces(0, i)) += v;
+    vertexAreas(m_faces(1, i)) += v;
+    vertexAreas(m_faces(2, i)) += v;
   }
   return vertexAreas;
+}
+
+Mesh *Mesh::combine(const QList<Mesh *> &meshes) {
+  if (meshes.isEmpty()) {
+    return nullptr;
+  }
+
+  // Validate meshes are compatible
+  const auto &first = meshes.first();
+  for (const auto *mesh : meshes) {
+    if (!mesh)
+      continue;
+
+    if (mesh->kind() != first->kind()) {
+      qWarning() << "Cannot combine meshes of different kinds";
+      return nullptr;
+    }
+
+    if (mesh->atomsInside() != first->atomsInside() ||
+        mesh->atomsOutside() != first->atomsOutside()) {
+      qWarning() << "Cannot combine meshes with different atom configurations";
+      return nullptr;
+    }
+  }
+
+  int totalVertices = 0;
+  int totalFaces = 0;
+  for (const auto *mesh : meshes) {
+    if (!mesh)
+      continue;
+    totalVertices += mesh->numberOfVertices();
+    totalFaces += mesh->numberOfFaces();
+  }
+
+  // Prepare combined vertex and face matrices
+  VertexList combinedVertices(3, totalVertices);
+  FaceList combinedFaces(3, totalFaces);
+  ScalarPropertyValues isovalues(totalVertices);
+
+  // Copy data with offset tracking
+  int vertexOffset = 0;
+  int faceOffset = 0;
+
+  for (const auto *mesh : meshes) {
+    if (!mesh)
+      continue;
+
+    const int nVerts = mesh->numberOfVertices();
+    const int nFaces = mesh->numberOfFaces();
+
+    // Copy vertices
+    combinedVertices.block(0, vertexOffset, 3, nVerts) = mesh->vertices();
+
+    // Copy faces with offset
+    auto faces = mesh->faces();
+    faces.array() += vertexOffset;
+    combinedFaces.block(0, faceOffset, 3, nFaces) = faces;
+
+    // Set isovalues for this mesh's vertices
+    isovalues.segment(vertexOffset, nVerts).array() =
+        mesh->parameters().isovalue;
+
+    vertexOffset += nVerts;
+    faceOffset += nFaces;
+  }
+
+  // Create new mesh
+  auto *combinedMesh = new Mesh(combinedVertices, combinedFaces);
+
+  // Copy parameters from first mesh
+  combinedMesh->setParameters(first->parameters());
+
+  // Set the isovalue property
+  combinedMesh->setVertexProperty("isovalue", isovalues);
+
+  // Copy description
+  combinedMesh->setDescription(
+      QString("Combined mesh from %1 isosurfaces").arg(meshes.size()));
+
+  return combinedMesh;
 }

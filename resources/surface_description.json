@@ -1,206 +1,214 @@
 {
-    "properties": {
-	"none": {
-	    "cmap": "None",
-	    "occName": "none",
-	    "displayName": "None",
-	    "units": "",
-	    "needsWavefunction": false,
-	    "needsIsovalue": false,
-	    "needsOrbitalSelection": false,
-	    "description": "<p>No surface property. The surface has a solid color defined by the 'None' color set in the CrystalExplorer preferences</p>"
-	},
-	"di": {
-	    "cmap": "RedGreenBlue",
-	    "occName": "di",
-	    "displayName": "D_i",
-	    "units": "Å",
-	    "description": "<p>d<sub>i</sub></p>"
-	},
-	"di_norm": {
-	    "cmap": "RedGreenBlue",
-	    "occName": "di_norm",
-	    "displayName": "D_i (normalized)",
-	    "units": "",
-	    "description": "<p>d<sub>i</sub> (norm)</p>"
-	},
-	"de": {
-	    "cmap": "RedGreenBlue",
-	    "occName": "de",
-	    "displayName": "D_e",
-	    "description": "<p>d<sub>e</sub></p>"
-	},
-	"de_norm": {
-	    "cmap": "RedGreenBlue",
-	    "occName": "de_norm",
-	    "displayName": "D_e (normalized)",
-	    "units": "",
-	    "description": "<p>d<sub>e</sub> (norm)</p>"
-	},
-	"dnorm": {
-	    "cmap": "RedWhiteBlue",
-	    "occName": "dnorm",
-	    "displayName": "D_norm",
-	    "description": "<p>d<sub>norm</sub></p>"
-	},
-	"shape_index": {
-	    "cmap": "RedGreenBlue",
-	    "occName": "shape_index",
-	    "displayName": "Shape Index",
-	    "description": "<p>Shape Index</p>"
-	},
-	"curvedness": {
-	    "cmap": "RedGreenBlue",
-	    "occName": "curvedness",
-	    "displayName": "Curvedness",
-	    "description": "<p>Curvedness</p>"
-	},
-	"promolecule_density": {
-	    "cmap": "RedWhiteBlue",
-	    "occName": "promolecule_density",
-	    "displayName": "Promolecule Density",
-	    "units": "au",
-	    "description": "<p>The sum of spherical atom electron densities</p>"
-	},
-	"electron_density": {
-	    "cmap": "RedWhiteBlue",
-	    "occName": "rho",
-	    "displayName": "Electron Density",
-	    "units": "au",
-	    "needsWavefunction": true,
-	    "description": "<p>Total electron density calculated from a wavefunction</p>"
-	},
-	"deformation_density": {
-	    "cmap": "RedWhiteBlue",
-	    "occName": "deformation_density",
-	    "displayName": "Deformation Density",
-	    "units": "au",
-	    "needsWavefunction": true,
-	    "description": "<p>The difference between the <i>ab-initio</i> Electron density, and the Promolecule (sum of spherical atoms) electron density, calculated from the  wavefunction in the previous energy calculation.</p>"
-	},
-	"electric_potential": {
-	    "cmap": "RedWhiteBlue",
-	    "displayName": "Electrostatic Potential",
-	    "occName": "esp",
-	    "units": "au",
-	    "needsWavefunction": true,
-	    "description": "<p>The <i>ab-initio</i> electrostatic potential from the electrons and the nuclei, calculated from the wavefunction in the previous energy calculation.</p>"
-	},
-	"orbital": {
-	    "cmap": "RedWhiteBlue",
-	    "displayName": "Orbital",
-	    "occName": "mo",
-	    "needsWavefunction": true,
-	    "needsOrbital": true,
-	    "units": "au",
-	    "description": "<p>The value of the electron density of the chosen molecular orbital in the region of the surface.</p>"
-	},
-	"spin_density": {
-	    "cmap": "RedWhiteBlue",
-	    "displayName": "Spin Density",
-	    "occName": "spin_density",
-	    "units": "au",
-	    "description": "<p>Difference between the alpha and beta electron densities</p>"
-	},
-	"fragment_patch": {
-	    "cmap": "Qualitative14Dark",
-	    "displayName": "Fragment Patch",
-	    "occName": "fragment",
-	    "description": "<p>The index of the associated neighbouring fragment/molecule</p>"
-	}
+  "properties": {
+    "none": {
+      "cmap": "None",
+      "occName": "none",
+      "displayName": "None",
+      "units": "",
+      "needsWavefunction": false,
+      "needsOrbitalSelection": false,
+      "description": "<p>No surface property. The surface has a solid color defined by the 'None' color set in the CrystalExplorer preferences</p>"
     },
-
-    "surfaces": {
-	"hirshfeld": {
-	    "displayName": "Hirshfeld",
-	    "occName": "hirshfeld",
-	    "defaultIsovalue": 0.5,
-	    "needsIsovalue": false,
-	    "description": "<p>The Hirshfeld surface</p>",
-	    "requestableProperties": [
-		"promolecule_density", "electron_density", "deformation_density",
-		"electric_potential", "orbital"
-	    ]
-	},
-	"promolecule_density": {
-	    "displayName": "Promolecule Density",
-	    "occName": "promolecule",
-	    "defaultIsovalue": 0.002,
-	    "needsIsovalue": true,
-	    "units": "au",
-	    "description": "<p>The sum of spherical atom electron densities</p>",
-	    "requestableProperties": [
-		"electron_density", "deformation_density",
-		"electric_potential", "orbital"
-	    ]
-	},
-	"electron_density": {
-	    "occName": "rho",
-	    "displayName": "Electron Density",
-	    "units": "au",
-	    "needsWavefunction": true,
-	    "needsIsovalue": true,
-	    "defaultIsovalue": 0.002,
-	    "description": "<p>Total electron density calculated from a wavefunction</p>",
-	    "requestableProperties": [
-		"promolecule_density", "deformation_density",
-		"electric_potential", "orbital"
-	    ]
-	},
-        "void": {
-	    "displayName": "Crystal Void",
-	    "occName": "void",
-	    "defaultIsovalue": 0.002,
-	    "needsIsovalue": true,
-	    "needsCluster": true,
-	    "periodic": true,
-	    "description": "<p>A promolecule density isosurface including all the atoms in the cluster. The surface is capped withing the unit cell, and gives an idea of voids in the crystal. Choose a lower isovalue to investigate <i>channels</i> or <i>pores</i> in the crystal.</p>"
-	},
-	"deformation_density": {
-	    "occName": "deformation_density",
-	    "displayName": "Deformation Density",
-	    "units": "au",
-	    "needsWavefunction": true,
-	    "needsIsovalue": true,
-	    "defaultIsovalue": 0.008,
-	    "description": "<p>The difference between the <i>ab-initio</i> Electron density, and the Promolecule (sum of spherical atoms) electron density, calculated from the  wavefunction in the previous energy calculation.</p>"
-	},
-        "esp": {
-	    "displayName": "Electrostatic Potential",
-	    "occName": "esp",
-	    "units": "au",
-	    "needsWavefunction": true,
-	    "defaultIsovalue": 0.02,
-	    "needsIsovalue": true,
-	    "description": "<p>The <i>ab-initio</i> electrostatic potential from the electrons and the nuclei, calculated from the wavefunction in the previous energy calculation.</p>"
-	},
-	"orbital": {
-	    "displayName": "Orbital",
-	    "occName": "mo",
-	    "needsWavefunction": true,
-	    "needsOrbital": true,
-	    "needsIsovalue": true,
-	    "defaultIsovalue": 0.002,
-	    "units": "au",
-	    "description": "<p>The value of the electron density of the chosen molecular orbital in the region of the surface.</p>"
-	},
-	"spin_density": {
-	    "displayName": "Spin Density",
-	    "occName": "spin_density",
-	    "units": "au",
-	    "needsWavefunction": true,
-	    "needsOrbital": true,
-	    "needsIsovalue": true,
-	    "defaultIsovalue": 0.002,
-	    "description": "<p>Difference between the alpha and beta electron densities</p>"
-	}
+    "di": {
+      "cmap": "RedGreenBlue",
+      "occName": "di",
+      "displayName": "D_i",
+      "units": "Å",
+      "description": "<p>d<sub>i</sub></p>"
     },
-    "resolutionLevels": {
-	"Very Low": 1.5,
-	"Low": 0.8,
-	"Medium": 0.5,
-	"High": 0.2,
-	"Very High": 0.15,
-	"Unreasonably High": 0.05
+    "di_norm": {
+      "cmap": "RedGreenBlue",
+      "occName": "di_norm",
+      "displayName": "D_i (normalized)",
+      "units": "",
+      "description": "<p>d<sub>i</sub> (norm)</p>"
+    },
+    "de": {
+      "cmap": "RedGreenBlue",
+      "occName": "de",
+      "displayName": "D_e",
+      "description": "<p>d<sub>e</sub></p>"
+    },
+    "de_norm": {
+      "cmap": "RedGreenBlue",
+      "occName": "de_norm",
+      "displayName": "D_e (normalized)",
+      "units": "",
+      "description": "<p>d<sub>e</sub> (norm)</p>"
+    },
+    "dnorm": {
+      "cmap": "RedWhiteBlue",
+      "occName": "dnorm",
+      "displayName": "D_norm",
+      "description": "<p>d<sub>norm</sub></p>"
+    },
+    "shape_index": {
+      "cmap": "RedGreenBlue",
+      "occName": "shape_index",
+      "displayName": "Shape Index",
+      "description": "<p>Shape Index</p>"
+    },
+    "curvedness": {
+      "cmap": "RedGreenBlue",
+      "occName": "curvedness",
+      "displayName": "Curvedness",
+      "description": "<p>Curvedness</p>"
+    },
+    "promolecule_density": {
+      "cmap": "RedWhiteBlue",
+      "occName": "promolecule_density",
+      "displayName": "Promolecule Density",
+      "units": "au",
+      "description": "<p>The sum of spherical atom electron densities</p>"
+    },
+    "electron_density": {
+      "cmap": "RedWhiteBlue",
+      "occName": "rho",
+      "displayName": "Electron Density",
+      "units": "au",
+      "needsWavefunction": true,
+      "description": "<p>Total electron density calculated from a wavefunction</p>"
+    },
+    "deformation_density": {
+      "cmap": "RedWhiteBlue",
+      "occName": "deformation_density",
+      "displayName": "Deformation Density",
+      "units": "au",
+      "needsWavefunction": true,
+      "description": "<p>The difference between the <i>ab-initio</i> Electron density, and the Promolecule (sum of spherical atoms) electron density, calculated from the  wavefunction in the previous energy calculation.</p>"
+    },
+    "electric_potential": {
+      "cmap": "RedWhiteBlue",
+      "displayName": "Electrostatic Potential",
+      "occName": "esp",
+      "units": "au",
+      "needsWavefunction": true,
+      "description": "<p>The <i>ab-initio</i> electrostatic potential from the electrons and the nuclei, calculated from the wavefunction in the previous energy calculation.</p>"
+    },
+    "orbital": {
+      "cmap": "RedWhiteBlue",
+      "displayName": "Orbital",
+      "occName": "mo",
+      "needsWavefunction": true,
+      "needsOrbital": true,
+      "units": "au",
+      "description": "<p>The value of the electron density of the chosen molecular orbital in the region of the surface.</p>"
+    },
+    "spin_density": {
+      "cmap": "RedWhiteBlue",
+      "displayName": "Spin Density",
+      "occName": "spin_density",
+      "units": "au",
+      "description": "<p>Difference between the alpha and beta electron densities</p>"
+    },
+    "fragment_patch": {
+      "cmap": "Qualitative14Dark",
+      "displayName": "Fragment Patch",
+      "occName": "fragment",
+      "description": "<p>The index of the associated neighbouring fragment/molecule</p>"
     }
+  },
+  "surfaces": {
+    "hirshfeld": {
+      "displayName": "Hirshfeld",
+      "occName": "hirshfeld",
+      "defaultIsovalue": 0.5,
+      "needsIsovalue": false,
+      "description": "<p>The Hirshfeld surface</p>",
+      "requestableProperties": [
+        "promolecule_density",
+        "electron_density",
+        "deformation_density",
+        "electric_potential",
+        "orbital"
+      ]
+    },
+    "promolecule_density": {
+      "displayName": "Promolecule Density",
+      "occName": "promolecule",
+      "defaultIsovalue": 0.002,
+      "needsIsovalue": true,
+      "units": "au",
+      "description": "<p>The sum of spherical atom electron densities</p>",
+      "requestableProperties": [
+        "electron_density",
+        "deformation_density",
+        "electric_potential",
+        "orbital"
+      ]
+    },
+    "electron_density": {
+      "occName": "rho",
+      "displayName": "Electron Density",
+      "units": "au",
+      "needsWavefunction": true,
+      "needsIsovalue": true,
+      "defaultIsovalue": 0.002,
+      "description": "<p>Total electron density calculated from a wavefunction</p>",
+      "requestableProperties": [
+        "promolecule_density",
+        "deformation_density",
+        "electric_potential",
+        "orbital"
+      ]
+    },
+    "void": {
+      "displayName": "Crystal Void",
+      "occName": "void",
+      "defaultIsovalue": 0.002,
+      "needsIsovalue": true,
+      "needsCluster": true,
+      "periodic": true,
+      "description": "<p>A promolecule density isosurface including all the atoms in the cluster. The surface is capped withing the unit cell, and gives an idea of voids in the crystal. Choose a lower isovalue to investigate <i>channels</i> or <i>pores</i> in the crystal.</p>"
+    },
+    "deformation_density": {
+      "occName": "deformation_density",
+      "displayName": "Deformation Density",
+      "units": "au",
+      "needsWavefunction": true,
+      "needsIsovalue": true,
+      "computeNegativeIsovalue": true,
+      "defaultIsovalue": 0.008,
+      "description": "<p>The difference between the <i>ab-initio</i> Electron density, and the Promolecule (sum of spherical atoms) electron density, calculated from the  wavefunction in the previous energy calculation.</p>"
+    },
+    "esp": {
+      "displayName": "Electrostatic Potential",
+      "occName": "esp",
+      "units": "au",
+      "needsWavefunction": true,
+      "defaultIsovalue": 0.02,
+      "computeNegativeIsovalue": true,
+      "needsIsovalue": true,
+      "description": "<p>The <i>ab-initio</i> electrostatic potential from the electrons and the nuclei, calculated from the wavefunction in the previous energy calculation.</p>"
+    },
+    "orbital": {
+      "displayName": "Orbital",
+      "occName": "mo",
+      "needsWavefunction": true,
+      "needsOrbital": true,
+      "needsIsovalue": true,
+      "defaultIsovalue": 0.002,
+      "units": "au",
+      "description": "<p>The value of the electron density of the chosen molecular orbital in the region of the surface.</p>"
+    },
+    "spin_density": {
+      "displayName": "Spin Density",
+      "occName": "spin_density",
+      "units": "au",
+      "needsWavefunction": true,
+      "needsOrbital": true,
+      "needsIsovalue": true,
+      "defaultIsovalue": 0.002,
+      "computeNegativeIsovalue": true,
+      "description": "<p>Difference between the alpha and beta electron densities</p>"
+    }
+  },
+  "resolutionLevels": {
+    "Very Low": 1.5,
+    "Low": 0.8,
+    "Medium": 0.5,
+    "High": 0.2,
+    "Very High": 0.15,
+    "Unreasonably High": 0.05
+  }
 }

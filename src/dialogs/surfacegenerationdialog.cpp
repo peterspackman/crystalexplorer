@@ -97,6 +97,7 @@ void SurfaceGenerationDialog::validate() {
   isosurface::Parameters parameters;
   parameters.isovalue = ui->isovalueLineEdit->text().toFloat();
   parameters.kind = currentKind();
+  parameters.computeNegativeIsovalue = shouldAlsoCalculateNegativeIsovalue();
   QString prop = currentPropertyName();
   if (prop != "none") {
     parameters.additionalProperties.append(prop);
@@ -203,7 +204,12 @@ bool SurfaceGenerationDialog::needIsovalueBox() {
   const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
   const auto &currentSurfaceProperty =
       ui->propertyComboBox->currentSurfacePropertyDescription();
-  return currentSurface.needsIsovalue || currentSurfaceProperty.needsIsovalue;
+  return currentSurface.needsIsovalue;
+}
+
+bool SurfaceGenerationDialog::shouldAlsoCalculateNegativeIsovalue() const {
+  const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();
+  return currentSurface.computeNegativeIsovalue;
 }
 
 bool SurfaceGenerationDialog::needClusterOptions() {

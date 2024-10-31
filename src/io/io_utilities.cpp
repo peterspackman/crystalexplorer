@@ -46,6 +46,14 @@ bool deleteFile(const QString &filePath) {
   return true;
 }
 
+bool deleteFiles(const QStringList &filePaths) {
+  bool success = true;
+  for(const auto &filePath: filePaths) {
+    success &= deleteFile(filePath);
+  }
+  return success;
+}
+
 bool copyFile(const QString &sourcePath, const QString &targetPath,
               bool overwrite) {
   // if they're the same file just do nothing.

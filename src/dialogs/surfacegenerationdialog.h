@@ -66,6 +66,7 @@ private:
   bool needOrbitalBox();
   bool needWavefunction();
   bool mustCalculateWavefunction();
+  bool shouldAlsoCalculateNegativeIsovalue() const;
   bool needWavefunctionCalc();
 
   wfn::Parameters getCurrentWavefunctionParameters();

@@ -10,7 +10,6 @@ void to_json(nlohmann::json &j,
        {"occName", f.occName},
        {"displayName", f.displayName},
        {"units", f.needsWavefunction},
-       {"needsIsovalue", f.needsIsovalue},
        {"needsOrbital", f.needsOrbital},
        {"description", f.description}};
 }
@@ -22,19 +21,15 @@ void from_json(const nlohmann::json &j,
   j.at("displayName").get_to(f.displayName);
   j.at("description").get_to(f.description);
 
-  if(j.contains("units")) {
+  if (j.contains("units")) {
     j.at("units").get_to(f.units);
   }
-  if(j.contains("needsIsovalue")) {
-    j.at("needsIsovalue").get_to(f.needsIsovalue);
-  }
-  if(j.contains("needsOrbital")) {
+  if (j.contains("needsOrbital")) {
     j.at("needsOrbital").get_to(f.needsOrbital);
   }
-  if(j.contains("needsWavefunction")) {
+  if (j.contains("needsWavefunction")) {
     j.at("needsWavefunction").get_to(f.needsWavefunction);
   }
-
 }
 
 void to_json(nlohmann::json &j, const isosurface::SurfaceDescription &f) {
@@ -47,36 +42,40 @@ void to_json(nlohmann::json &j, const isosurface::SurfaceDescription &f) {
        {"needsCluster", f.needsCluster},
        {"periodic", f.periodic},
        {"units", f.units},
-       {"requestableProperties", f.requestableProperties}};
+       {"requestableProperties", f.requestableProperties},
+       {"computeNegativeIsovalue", f.computeNegativeIsovalue}};
 }
 
 void from_json(const nlohmann::json &j, isosurface::SurfaceDescription &s) {
   j.at("displayName").get_to(s.displayName);
   j.at("occName").get_to(s.occName);
   j.at("description").get_to(s.description);
-  if(j.contains("needsIsovalue")) {
+  if (j.contains("needsIsovalue")) {
     j.at("needsIsovalue").get_to(s.needsIsovalue);
   }
-  if(j.contains("defaultIsovalue")) {
+  if (j.contains("defaultIsovalue")) {
     j.at("defaultIsovalue").get_to(s.defaultIsovalue);
   }
-  if(j.contains("needsWavefunction")) {
+  if (j.contains("needsWavefunction")) {
     j.at("needsWavefunction").get_to(s.needsWavefunction);
   }
-  if(j.contains("needsOrbital")) {
+  if (j.contains("needsOrbital")) {
     j.at("needsOrbital").get_to(s.needsOrbital);
   }
-  if(j.contains("needsCluster")) {
+  if (j.contains("needsCluster")) {
     j.at("needsCluster").get_to(s.needsCluster);
   }
-  if(j.contains("periodic")) {
+  if (j.contains("periodic")) {
     j.at("periodic").get_to(s.periodic);
   }
-  if(j.contains("units")) {
+  if (j.contains("units")) {
     j.at("units").get_to(s.units);
   }
-  if(j.contains("requestableProperties")) {
+  if (j.contains("requestableProperties")) {
     j.at("requestableProperties").get_to(s.requestableProperties);
+  }
+  if (j.contains("computeNegativeIsovalue")) {
+    j.at("computeNegativeIsovalue").get_to(s.computeNegativeIsovalue);
   }
 }
 
@@ -181,8 +180,9 @@ loadSurfaceDescriptions(const nlohmann::json &json) {
       SurfaceDescription sd;
       from_json(item.value(), sd);
       surfaces.insert(s(item.key()), sd);
-    } catch (nlohmann::json::exception& e) {
-      qWarning() << "Failed to parse surface" << s(item.key()) << ":" << e.what();
+    } catch (nlohmann::json::exception &e) {
+      qWarning() << "Failed to parse surface" << s(item.key()) << ":"
+                 << e.what();
     }
   }
   return surfaces;
@@ -192,7 +192,8 @@ QMap<QString, double> loadResolutionLevels(const nlohmann::json &json) {
   QMap<QString, double> resolutions;
   auto s = [](const std::string &str) { return QString::fromStdString(str); };
 
-  if (!json.contains("resolutionLevels") || !json["resolutionLevels"].is_object()) {
+  if (!json.contains("resolutionLevels") ||
+      !json["resolutionLevels"].is_object()) {
     qWarning() << "JSON does not contain a 'resolutions' object";
     return resolutions;
   }
@@ -201,8 +202,9 @@ QMap<QString, double> loadResolutionLevels(const nlohmann::json &json) {
     try {
       double value = item.value().get<double>();
       resolutions.insert(s(item.key()), value);
-    } catch (nlohmann::json::exception& e) {
-      qWarning() << "Failed to parse resolution" << s(item.key()) << ":" << e.what();
+    } catch (nlohmann::json::exception &e) {
+      qWarning() << "Failed to parse resolution" << s(item.key()) << ":"
+                 << e.what();
     }
   }
   return resolutions;
