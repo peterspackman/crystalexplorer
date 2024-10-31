@@ -4,12 +4,12 @@
 #include <QTextDocument>
 #include <QWidget>
 
+#include "frameworkoptions.h"
 #include "mesh.h"
 #include "meshinstance.h"
 #include "meshpropertymodel.h"
 #include "molecular_wavefunction.h"
 #include "pair_energy_results.h"
-#include "frameworkoptions.h"
 #include "ui_childpropertycontroller.h"
 
 class ChildPropertyController : public QWidget,
@@ -27,7 +27,10 @@ public:
   bool toggleShowEnergyFramework();
   void reset();
 
+  // New unified method for handling object selection
+  void setCurrentObject(QObject *obj);
 public slots:
+
   void setCurrentMesh(Mesh *);
   void setCurrentMeshInstance(MeshInstance *);
   void setCurrentWavefunction(MolecularWavefunction *);
@@ -51,7 +54,6 @@ signals:
   void frameworkOptionsChanged(FrameworkOptions);
 
 private:
-
   enum class DisplayState {
     None,
     Mesh,
@@ -60,6 +62,7 @@ private:
   };
 
   void setFrameworkDisplay(FrameworkOptions::Display);
+  void handleStructureSelection(ChemicalStructure *structure);
 
   void showSurfaceTabs(bool);
   void showWavefunctionTabs(bool);
@@ -81,7 +84,8 @@ private:
 
   DisplayState m_state{DisplayState::None};
   FrameworkOptions::Display m_frameworkDisplay{FrameworkOptions::Display::None};
-  FrameworkOptions::Display m_previousNonNoneDisplay{FrameworkOptions::Display::Tubes};
+  FrameworkOptions::Display m_previousNonNoneDisplay{
+      FrameworkOptions::Display::Tubes};
 
   MeshPropertyModel *m_meshPropertyModel{nullptr};
   PairInteractions *m_pairInteractions{nullptr};

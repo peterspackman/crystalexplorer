@@ -37,7 +37,7 @@ public:
 
 private slots:
   void surfaceChanged(QString);
-  void propertyChanged();
+  void propertyChanged(QString);
   void updateDescriptions();
   void validate();
   void setSignLabel(int);
@@ -47,6 +47,10 @@ signals:
   void surfaceParametersChosenNeedWavefunction(isosurface::Parameters, wfn::Parameters);
 
 private:
+  isosurface::Kind currentKind() const;
+  QString currentKindName() const;
+  QString currentPropertyName() const;
+
   void init();
   void initConnections();
   void connectPropertyComboBox(bool);

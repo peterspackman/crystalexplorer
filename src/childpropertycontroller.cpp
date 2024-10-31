@@ -19,10 +19,17 @@ ChildPropertyController::ChildPropertyController(QWidget *parent)
 }
 
 void ChildPropertyController::reset() {
-  setCurrentMesh(nullptr);
-  setCurrentMeshInstance(nullptr);
-  setCurrentWavefunction(nullptr);
-  setCurrentPairInteractions(nullptr);
+  // Clear each type without affecting enabled state
+  m_meshPropertyModel->setMesh(nullptr);
+  m_pairInteractions = nullptr;
+
+  // Reset tabs
+  showSurfaceTabs(false);
+  showWavefunctionTabs(false);
+  showFrameworkTabs(false);
+
+  m_state = DisplayState::None;
+  setEnabled(false);
 }
 
 void ChildPropertyController::setup() {
@@ -201,9 +208,10 @@ void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
   showSurfaceTabs(true);
   showWavefunctionTabs(false);
   showFrameworkTabs(false);
-  m_state = ChildPropertyController::DisplayState::Mesh;
+  m_state = DisplayState::Mesh;
 
   m_meshPropertyModel->setMesh(mesh);
+  setEnabled(mesh != nullptr); // Enable/disable based on mesh validity
 }
 
 void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
@@ -213,20 +221,23 @@ void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
     disconnect(m_pairInteractions, &PairInteractions::interactionRemoved, this,
                &ChildPropertyController::updatePairInteractionModels);
   }
+
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
   showFrameworkTabs(true);
+
   m_pairInteractions = p;
-  m_state = ChildPropertyController::DisplayState::Framework;
+  m_state = DisplayState::Framework;
+
+  // Only enable if we have valid interactions
+  bool hasValidInteractions = (p && p->getCount() > 0);
+  setEnabled(hasValidInteractions);
 
   if (m_pairInteractions) {
-    setEnabled(m_pairInteractions->getCount() > 0);
-    if (m_pairInteractions) {
-      connect(m_pairInteractions, &PairInteractions::interactionAdded, this,
-              &ChildPropertyController::updatePairInteractionModels);
-      connect(m_pairInteractions, &PairInteractions::interactionRemoved, this,
-              &ChildPropertyController::updatePairInteractionModels);
-    }
+    connect(m_pairInteractions, &PairInteractions::interactionAdded, this,
+            &ChildPropertyController::updatePairInteractionModels);
+    connect(m_pairInteractions, &PairInteractions::interactionRemoved, this,
+            &ChildPropertyController::updatePairInteractionModels);
     updatePairInteractionModels();
   }
 }
@@ -485,4 +496,41 @@ void ChildPropertyController::setFrameworkDisplay(
   }
   m_frameworkDisplay = choice;
   emitFrameworkOptions();
+}
+
+void ChildPropertyController::setCurrentObject(QObject *obj) {
+  if (!obj) {
+    reset();
+    return;
+  }
+
+  if (auto *mesh = qobject_cast<Mesh *>(obj)) {
+    qDebug() << "Setting current mesh to" << mesh;
+    setCurrentMesh(mesh);
+  } else if (auto *meshInstance = qobject_cast<MeshInstance *>(obj)) {
+    qDebug() << "Setting current mesh instance to" << meshInstance;
+    setCurrentMeshInstance(meshInstance);
+  } else if (auto *wfn = qobject_cast<MolecularWavefunction *>(obj)) {
+    qDebug() << "Setting current wfn to" << wfn;
+    setCurrentWavefunction(wfn);
+  } else if (auto *interactions = qobject_cast<PairInteractions *>(obj)) {
+    qDebug() << "Setting pair interactions to" << interactions;
+    setCurrentPairInteractions(interactions);
+  } else if (auto *structure = qobject_cast<ChemicalStructure *>(obj)) {
+    handleStructureSelection(structure);
+  }
+}
+
+void ChildPropertyController::handleStructureSelection(
+    ChemicalStructure *structure) {
+  // Set pair interactions
+  setCurrentPairInteractions(structure->pairInteractions());
+
+  // Find and set first mesh if available
+  for (auto *child : structure->children()) {
+    if (auto *mesh = qobject_cast<Mesh *>(child)) {
+      setCurrentMesh(mesh);
+      break;
+    }
+  }
 }

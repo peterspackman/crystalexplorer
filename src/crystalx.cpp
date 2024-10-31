@@ -227,40 +227,20 @@ void Crystalx::createChildPropertyControllerDockWidget() {
           &ChildPropertyController::frameworkOptionsChanged, project,
           &Project::frameworkOptionsChanged);
 
-  connect(
-      crystalController, &CrystalController::childSelectionChanged,
-      [&](QModelIndex index) {
-        auto *mesh = crystalController->getChild<Mesh>(index);
-        auto *meshinstance = crystalController->getChild<MeshInstance>(index);
-        auto *wfn = crystalController->getChild<MolecularWavefunction>(index);
-        auto *pairInteractions =
-            crystalController->getChild<PairInteractions>(index);
-        auto *chemicalStructure =
-            crystalController->getChild<ChemicalStructure>(index);
+  connect(crystalController, &CrystalController::childSelectionChanged,
+          [&](QModelIndex index) {
+            auto *obj = crystalController->getChild<QObject>(index);
+            childPropertyController->setCurrentObject(obj);
 
-        // check for mesh instance first
-        if (mesh) {
-          qDebug() << "Setting current mesh to " << mesh;
-          childPropertyController->setCurrentMesh(mesh);
-        } else if (meshinstance) {
-          qDebug() << "Setting current mesh instance to " << meshinstance;
-          childPropertyController->setCurrentMeshInstance(meshinstance);
-
-        } else if (wfn) {
-          qDebug() << "Setting current wfn to " << wfn;
-          childPropertyController->setCurrentWavefunction(wfn);
-        } else if (pairInteractions) {
-          qDebug() << "Setting pair interactions to" << pairInteractions;
-          childPropertyController->setCurrentPairInteractions(pairInteractions);
-        } else if (chemicalStructure) {
-          int frame = 0;
-          auto prop = chemicalStructure->property("frame");
-          if (prop.isValid())
-            frame = prop.toInt();
-          qDebug() << "Setting frame to " << frame;
-          project->setCurrentFrame(frame);
-        }
-      });
+            // Handle frame setting separately since it's project-specific
+            if (auto *structure = qobject_cast<ChemicalStructure *>(obj)) {
+              int frame = 0;
+              auto prop = structure->property("frame");
+              if (prop.isValid())
+                frame = prop.toInt();
+              project->setCurrentFrame(frame);
+            }
+          });
 }
 
 void Crystalx::createCrystalControllerDockWidget() {
@@ -388,7 +368,8 @@ void Crystalx::initMenuConnections() {
   connect(actionExport_As, &QAction::triggered, this, &Crystalx::exportAs);
   connect(quickExportAction, &QAction::triggered, this,
           &Crystalx::quickExportCurrentGraphics);
-  connect(exportGeometryAction, &QAction::triggered, this, &Crystalx::handleExportCurrentGeometry);
+  connect(exportGeometryAction, &QAction::triggered, this,
+          &Crystalx::handleExportCurrentGeometry);
 
   // Scene menu
   connect(animateAction, &QAction::toggled, this, &Crystalx::setAnimateScene);
@@ -406,8 +387,10 @@ void Crystalx::initMenuConnections() {
   connect(enableMultipleUnitCellBoxesAction, &QAction::toggled, project,
           &Project::toggleMultipleUnitCellBoxes);
 
-  connect(showAtomicLabelsAction, &QAction::triggered, this, &Crystalx::handleAtomLabelActions);
-  connect(showFragmentLabelsAction, &QAction::triggered, this, &Crystalx::handleAtomLabelActions);
+  connect(showAtomicLabelsAction, &QAction::triggered, this,
+          &Crystalx::handleAtomLabelActions);
+  connect(showFragmentLabelsAction, &QAction::triggered, this,
+          &Crystalx::handleAtomLabelActions);
 
   connect(showHydrogenAtomsAction, &QAction::toggled, project,
           &Project::toggleHydrogenAtoms);
@@ -1438,7 +1421,6 @@ void Crystalx::handleAtomLabelActions() {
   glWindow->handleAtomLabelOptionsChanged(opts);
 }
 
-
 void Crystalx::newProject() {
   if (closeProjectConfirmed()) {
     project->reset();
@@ -1980,18 +1962,8 @@ void Crystalx::handleStructureChange() {
     return;
   }
   qDebug() << "Structure changed";
-  childPropertyController->setCurrentPairInteractions(
-      structure->pairInteractions());
-  for (auto *child : structure->children()) {
-    auto *mesh = qobject_cast<Mesh *>(child);
-    if (mesh) {
-      childPropertyController->setCurrentMesh(mesh);
-      break;
-    }
-  }
+  childPropertyController->setCurrentObject(structure);
   glWindow->redraw();
-  // update surface controller
-  // update list of surfaces
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

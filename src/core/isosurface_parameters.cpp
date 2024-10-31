@@ -31,6 +31,10 @@ void from_json(const nlohmann::json &j,
   if(j.contains("needsOrbital")) {
     j.at("needsOrbital").get_to(f.needsOrbital);
   }
+  if(j.contains("needsWavefunction")) {
+    j.at("needsWavefunction").get_to(f.needsWavefunction);
+  }
+
 }
 
 void to_json(nlohmann::json &j, const isosurface::SurfaceDescription &f) {

@@ -28,11 +28,11 @@ void OccSurfaceTask::appendWavefunctionTransformArguments(QStringList &args) {
 
 void OccSurfaceTask::start() {
   emit progressText("Generated JSON input");
-
-  QString name = baseName();
-  QString input = inputFileName();
-  QString env = environmentFileName();
-  QString outputName = outputFileName();
+  auto name = baseName();
+  auto input = inputFileName();
+  auto env = environmentFileName();
+  auto outputName = outputFileName();
+  auto wfn = wavefunctionFilename();
 
   QStringList args{"isosurface", input};
 
@@ -42,6 +42,8 @@ void OccSurfaceTask::start() {
     args << env;
     reqs << env;
   }
+
+
   args << "-o" << outputName;
   args << QString("--kind=%1").arg(kind());
   args << QString("--separation=%1").arg(separation());
@@ -52,9 +54,16 @@ void OccSurfaceTask::start() {
                 .arg(properties().value("background_density").toFloat());
   }
 
-  if (m_parameters.wfn != nullptr) {
+  if(!wfn.isEmpty()) {
+    args << "-w" << wfn;
+    reqs << wfn;
     appendWavefunctionTransformArguments(args);
   }
+
+  for(const auto &prop: m_parameters.additionalProperties) {
+    args << "--properties=" + prop;
+  }
+
   qDebug() << "Arguments:" << args;
   setArguments(args);
   setRequirements(reqs);
@@ -89,6 +98,10 @@ QString OccSurfaceTask::environmentFileName() const {
 
 QString OccSurfaceTask::outputFileName() const {
   return properties().value("outputFile", "surface.ply").toString();
+}
+
+QString OccSurfaceTask::wavefunctionFilename() const {
+  return properties().value("wavefunctionFile", "").toString();
 }
 
 QString OccSurfaceTask::wavefunctionSuffix() const {
