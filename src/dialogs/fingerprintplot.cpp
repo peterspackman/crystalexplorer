@@ -86,10 +86,10 @@ void FingerprintPlot::setMesh(Mesh *mesh) {
 }
 
 void FingerprintPlot::setPropertiesToPlot() {
-  qDebug() << "vertex property di";
-  m_x = m_mesh->vertexProperty("di").cast<double>();
-  qDebug() << "vertex property de";
-  m_y = m_mesh->vertexProperty("de").cast<double>();
+  QString diName = isosurface::getSurfacePropertyDisplayName("di");
+  QString deName = isosurface::getSurfacePropertyDisplayName("de");
+  m_x = m_mesh->vertexProperty(diName).cast<double>();
+  m_y = m_mesh->vertexProperty(deName).cast<double>();
 
   m_xmin = m_x.minCoeff();
   m_xmax = m_x.maxCoeff();
@@ -97,9 +97,9 @@ void FingerprintPlot::setPropertiesToPlot() {
   m_ymax = m_y.maxCoeff();
 
   qDebug() << "face property di";
-  m_xFace = m_mesh->averagedFaceProperty("di").cast<double>();
+  m_xFace = m_mesh->averagedFaceProperty(diName).cast<double>();
   qDebug() << "face property de";
-  m_yFace = m_mesh->averagedFaceProperty("de").cast<double>();
+  m_yFace = m_mesh->averagedFaceProperty(deName).cast<double>();
 
   m_xFaceMin = m_xFace.minCoeff();
   m_xFaceMax = m_xFace.maxCoeff();
@@ -621,8 +621,10 @@ void FingerprintPlot::computeFaceMask() {
     auto outsideNums =
         structure->atomicNumbersForIndices(m_mesh->atomsOutside());
 
-    Eigen::VectorXi di_idx = m_mesh->vertexProperty("di_idx").cast<int>();
-    Eigen::VectorXi de_idx = m_mesh->vertexProperty("de_idx").cast<int>();
+    QString diIdxName = isosurface::getSurfacePropertyDisplayName("di_idx");
+    QString deIdxName = isosurface::getSurfacePropertyDisplayName("de_idx");
+    Eigen::VectorXi di_idx = m_mesh->vertexProperty(diIdxName).cast<int>();
+    Eigen::VectorXi de_idx = m_mesh->vertexProperty(deIdxName).cast<int>();
 
     const auto &faces = m_mesh->faces();
     const auto &v2f = m_mesh->vertexToFace();

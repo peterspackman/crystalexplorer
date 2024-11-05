@@ -66,7 +66,8 @@ void InteractionInfoDocument::updateContent() {
     showNoDataMessage();
     return;
   }
-  static_cast<QStackedLayout*>(layout())->setCurrentIndex(0); // Index of m_tabWidget
+  static_cast<QStackedLayout *>(layout())->setCurrentIndex(
+      0); // Index of m_tabWidget
 
   QList<QString> sortedModels = interactions->interactionModels();
   std::sort(sortedModels.begin(), sortedModels.end());
@@ -96,7 +97,8 @@ void InteractionInfoDocument::updateContent() {
 }
 
 void InteractionInfoDocument::showNoDataMessage() {
-    static_cast<QStackedLayout*>(layout())->setCurrentIndex(1); // Index of noDataContainer
+  static_cast<QStackedLayout *>(layout())->setCurrentIndex(
+      1); // Index of noDataContainer
 }
 
 void InteractionInfoDocument::updateSettings(InteractionInfoSettings settings) {
@@ -170,18 +172,21 @@ QList<QString> InteractionInfoDocument::getOrderedComponents(
 
   QList<QString> sortedComponents;
 
+  QSet<QString> remainingComponents = uniqueComponents;
+
   // Add known components in the desired order
   for (const QString &component : knownComponentsOrder) {
-    if (uniqueComponents.contains(component)) {
+    if (remainingComponents.contains(component)) {
       sortedComponents << component;
+      remainingComponents.remove(component);
     }
   }
 
   // Add remaining components (excluding "total") in ascending order
-  QList<QString> remainingComponents = uniqueComponents.values();
-  remainingComponents.removeOne("total");
-  std::sort(remainingComponents.begin(), remainingComponents.end());
-  sortedComponents << remainingComponents;
+  remainingComponents.remove("total");
+  QList<QString> remainingComponentList = remainingComponents.values();
+  std::sort(remainingComponentList.begin(), remainingComponentList.end());
+  sortedComponents << remainingComponentList;
 
   // Add "total" component at the end if it exists
   if (uniqueComponents.contains("total")) {

@@ -12,35 +12,38 @@
     "di": {
       "cmap": "RedGreenBlue",
       "occName": "di",
-      "displayName": "D_i",
+      "displayName": "Distance to internal atom",
       "units": "Å",
-      "description": "<p>d<sub>i</sub></p>"
+      "description": "<p>d<sub>i</sub></p>",
+      "icon": "d_i.png"
     },
     "di_norm": {
       "cmap": "RedGreenBlue",
       "occName": "di_norm",
-      "displayName": "D_i (normalized)",
+      "displayName": "Distance to internal atom (normalized)",
       "units": "",
       "description": "<p>d<sub>i</sub> (norm)</p>"
     },
     "de": {
       "cmap": "RedGreenBlue",
       "occName": "de",
-      "displayName": "D_e",
-      "description": "<p>d<sub>e</sub></p>"
+      "displayName": "Distance to external atom",
+      "description": "<p>d<sub>e</sub></p>",
+      "icon": "d_e.png"
     },
     "de_norm": {
       "cmap": "RedGreenBlue",
       "occName": "de_norm",
-      "displayName": "D_e (normalized)",
+      "displayName": "Distance to external atom (normalized)",
       "units": "",
       "description": "<p>d<sub>e</sub> (norm)</p>"
     },
     "dnorm": {
       "cmap": "RedWhiteBlue",
       "occName": "dnorm",
-      "displayName": "D_norm",
-      "description": "<p>d<sub>norm</sub></p>"
+      "displayName": "d_norm",
+      "description": "<p>d<sub>norm</sub></p>",
+      "icon": "d_norm.png"
     },
     "shape_index": {
       "cmap": "RedGreenBlue",
@@ -114,6 +117,54 @@
       "displayName": "Fragment Patch",
       "occName": "fragment",
       "description": "<p>The index of the associated neighbouring fragment/molecule</p>"
+    },
+    "de_idx": {
+      "cmap": "Turbo",
+      "displayName": "External atom index",
+      "occName": "de_idx",
+      "description": "<p>The index of the associated external atom</p>"
+    },
+    "de_norm_idx": {
+      "cmap": "Turbo",
+      "displayName": "External atom index (normalized distance)",
+      "occName": "de_norm_idx",
+      "description": "<p>The index of the closest associated external atom (normalized distance)</p>"
+    },
+    "di_idx": {
+      "cmap": "Turbo",
+      "displayName": "Internal atom index",
+      "occName": "di_idx",
+      "description": "<p>The index of the associated internal atom</p>"
+    },
+    "di_norm_idx": {
+      "cmap": "Turbo",
+      "displayName": "Internal atom index (normalized distance)",
+      "occName": "di_norm_idx",
+      "description": "<p>The index of the closest associated internal atom (normalized distance)</p>"
+    },
+    "mean_curvature": {
+      "cmap": "Inferno",
+      "displayName": "Mean curvature",
+      "occName": "mean_curvature",
+      "description": "<p>The mean curvature</p>"
+    },
+    "gaussian_curvature": {
+      "cmap": "Inferno",
+      "displayName": "Gaussian curvature",
+      "occName": "gaussian_curvature",
+      "description": "<p>The Gaussian curvature</p>"
+    },
+    "k1": {
+      "cmap": "Inferno",
+      "displayName": "First curvature eigenvalue",
+      "occName": "k1",
+      "description": "<p>The first eigenvalue of the curvature</p>"
+    },
+    "k2": {
+      "cmap": "Inferno",
+      "displayName": "Second curvature eigenvalue",
+      "occName": "k2",
+      "description": "<p>The second eigenvalue of the curvature</p>"
     }
   },
   "surfaces": {

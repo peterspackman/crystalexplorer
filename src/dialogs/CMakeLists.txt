@@ -26,6 +26,7 @@ qt_add_library(cx_dialogs STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/closecontactcriteriawidget.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/closecontactsdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/colordelegate.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/collapsiblegroupbox.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/crystalinfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/depthfadingandclippingdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/elementeditor.cpp"

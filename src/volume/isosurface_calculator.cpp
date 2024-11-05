@@ -102,7 +102,6 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   m_parameters = params;
   m_name = surfaceName();
 
-  m_defaultProperty = isosurface::defaultPropertyForKind(params.kind);
   OccSurfaceTask *surfaceTask = new OccSurfaceTask();
   surfaceTask->setExecutable(m_occExecutable);
   surfaceTask->setEnvironment(m_environment);
@@ -148,7 +147,12 @@ void IsosurfaceCalculator::surfaceComplete() {
     if(idx > 0) params.isovalue = - params.isovalue;
     mesh->setObjectName(m_name);
     mesh->setParameters(params);
-    mesh->setSelectedProperty(m_defaultProperty);
+    if(params.additionalProperties.size() > 0) {
+      mesh->setSelectedProperty(isosurface::getSurfacePropertyDisplayName(params.additionalProperties[0]));
+    }
+    else {
+      mesh->setSelectedProperty(isosurface::getSurfacePropertyDisplayName(isosurface::defaultPropertyForKind(params.kind)));
+    }
     mesh->setAtomsInside(m_atomsInside);
     mesh->setAtomsOutside(m_atomsOutside);
     mesh->setParent(m_structure);

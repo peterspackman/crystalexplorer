@@ -30,7 +30,6 @@ private:
   QProcessEnvironment m_environment;
   QString m_name;
   QStringList m_fileNames;
-  QString m_defaultProperty{"dnorm"};
   isosurface::Parameters m_parameters;
   std::vector<GenericAtomIndex> m_atomsInside;
   std::vector<GenericAtomIndex> m_atomsOutside;

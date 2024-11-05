@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/images">
+        <file>d_e.png</file>
+        <file>d_i.png</file>
+        <file>d_norm.png</file>
         <file>open.png</file>
         <file>rotate.png</file>
         <file>translate.png</file>

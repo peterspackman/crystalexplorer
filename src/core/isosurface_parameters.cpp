@@ -24,6 +24,9 @@ void from_json(const nlohmann::json &j,
   if (j.contains("units")) {
     j.at("units").get_to(f.units);
   }
+  if (j.contains("icon")) {
+    j.at("icon").get_to(f.iconName);
+  }
   if (j.contains("needsOrbital")) {
     j.at("needsOrbital").get_to(f.needsOrbital);
   }
@@ -52,6 +55,9 @@ void from_json(const nlohmann::json &j, isosurface::SurfaceDescription &s) {
   j.at("description").get_to(s.description);
   if (j.contains("needsIsovalue")) {
     j.at("needsIsovalue").get_to(s.needsIsovalue);
+  }
+  if (j.contains("icon")) {
+    j.at("icon").get_to(s.iconName);
   }
   if (j.contains("defaultIsovalue")) {
     j.at("defaultIsovalue").get_to(s.defaultIsovalue);

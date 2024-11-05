@@ -93,6 +93,7 @@ struct SurfacePropertyDescription {
   QString units;
   bool needsWavefunction{false};
   bool needsOrbital{false};
+  QString iconName{""};
   QString description;
 };
 
@@ -108,6 +109,7 @@ struct SurfaceDescription {
   bool computeNegativeIsovalue{false};
   QString units{""};
   QString description{"Unknown"};
+  QString iconName{""};
   QStringList requestableProperties{"none"};
 };
 

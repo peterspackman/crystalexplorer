@@ -35,7 +35,10 @@ void ChildPropertyController::reset() {
 void ChildPropertyController::setup() {
 
   surfacePropertyComboBox->setModel(m_meshPropertyModel);
+  int lineHeight = surfacePropertyComboBox->sizeHint().height();
+  surfacePropertyComboBox->setIconSize(QSize(lineHeight * 4.0 / 3, lineHeight * 0.5));
   surfacePropertyComboBox2->setModel(m_meshPropertyModel);
+  surfacePropertyComboBox2->setIconSize(QSize(lineHeight * 4.0 / 3, lineHeight * 0.5));
 
   connect(m_meshPropertyModel, &QAbstractItemModel::modelReset, this,
           &ChildPropertyController::onMeshModelUpdate);

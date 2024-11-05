@@ -1,4 +1,5 @@
 #include "meshpropertymodel.h"
+#include <QIcon>
 
 MeshPropertyModel::MeshPropertyModel(QObject *parent)
     : QAbstractListModel(parent), m_mesh(nullptr) {
@@ -58,12 +59,10 @@ QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
   if (!index.isValid() || !m_mesh) {
     return QVariant();
   }
-
   QStringList properties = m_mesh->availableVertexProperties();
   if (index.row() < 0 || index.row() >= properties.size()) {
     return QVariant();
   }
-
   QString propertyName = properties.at(index.row());
 
   switch (role) {
@@ -74,6 +73,14 @@ QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
         return it->displayName;
       }
       return propertyName;
+    }
+    case Qt::DecorationRole: {
+      // Load icon if specified in the property description
+      auto it = m_propertyDescriptions.find(propertyName);
+      if (it != m_propertyDescriptions.end() && !it->iconName.isEmpty()) {
+        return QIcon(QString(":/images/%1").arg(it->iconName));
+      }
+      return QVariant();
     }
     case PropertyNameRole:
       return propertyName;
