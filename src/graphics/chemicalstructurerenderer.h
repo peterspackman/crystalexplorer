@@ -163,8 +163,6 @@ private:
 
   ChemicalStructure *m_structure{nullptr};
 
-  QMap<QString, ColorMapName> m_propertyColorMaps;
-
   RendererUniforms m_uniforms;
   FrameworkOptions m_frameworkOptions;
   std::vector<AggregateIndex> m_aggregateIndices;

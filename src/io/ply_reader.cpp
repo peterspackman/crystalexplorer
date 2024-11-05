@@ -201,7 +201,7 @@ std::unique_ptr<Mesh> PlyReader::constructMesh() {
   // Process additional properties
   for (const auto &[prop_name, prop] : m_properties) {
     QString displayName =
-        isosurface::getDisplayName(QString::fromStdString(prop_name));
+        isosurface::getSurfacePropertyDisplayName(QString::fromStdString(prop_name));
     setMeshProperty(mesh.get(), displayName, prop);
   }
 

@@ -25,16 +25,6 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   connect(m_structure, &ChemicalStructure::atomsChanged,
           [&]() { forceUpdates(); });
   initStructureChildren();
-
-  m_propertyColorMaps = {
-      {"None", ColorMapName::CE_None},
-      {"dnorm", ColorMapName::CE_bwr},
-      {"di", ColorMapName::CE_rgb},
-      {"de", ColorMapName::CE_rgb},
-      {"di_norm", ColorMapName::CE_bwr},
-      {"shape_index", ColorMapName::CE_rgb},
-      {"curvedness", ColorMapName::CE_rgb},
-  };
 }
 
 void ChemicalStructureRenderer::initStructureChildren() {

@@ -2872,18 +2872,51 @@ QColor ColorMapFunc::operator()(double x) const {
 
 std::vector<ColorMapName> availableColorMaps() {
   return std::vector<ColorMapName>{
-      ColorMapName::Parula,    ColorMapName::Heat,    ColorMapName::Jet,
-      ColorMapName::Turbo,     ColorMapName::Hot,     ColorMapName::Gray,
-      ColorMapName::Magma,     ColorMapName::Inferno, ColorMapName::Plasma,
-      ColorMapName::Viridis,   ColorMapName::Cividis, ColorMapName::Github,
-      ColorMapName::Cubehelix, ColorMapName::HSV,     ColorMapName::CE_bwr,
-      ColorMapName::CE_rgb,    ColorMapName::CE_None};
+      ColorMapName::Parula,     ColorMapName::Heat,
+      ColorMapName::Jet,        ColorMapName::Turbo,
+      ColorMapName::Hot,        ColorMapName::Gray,
+      ColorMapName::Magma,      ColorMapName::Inferno,
+      ColorMapName::Plasma,     ColorMapName::Viridis,
+      ColorMapName::Cividis,    ColorMapName::Github,
+      ColorMapName::Cubehelix,  ColorMapName::HSV,
+      ColorMapName::CE_bwr,     ColorMapName::CE_rgb,
+      ColorMapName::CE_None,    ColorMapName::Archambault,
+      ColorMapName::Austria,    ColorMapName::Benedictus,
+      ColorMapName::Cassatt1,   ColorMapName::Cassatt2,
+      ColorMapName::Cross,      ColorMapName::Degas,
+      ColorMapName::Demuth,     ColorMapName::Derain,
+      ColorMapName::Egypt,      ColorMapName::Gauguin,
+      ColorMapName::Greek,      ColorMapName::Hiroshige,
+      ColorMapName::Hokusai1,   ColorMapName::Hokusai2,
+      ColorMapName::Hokusai3,   ColorMapName::Homer1,
+      ColorMapName::Homer2,     ColorMapName::Ingres,
+      ColorMapName::Isfahan1,   ColorMapName::Isfahan2,
+      ColorMapName::Java,       ColorMapName::Johnson,
+      ColorMapName::Juarez,     ColorMapName::Kandinsky,
+      ColorMapName::Klimt,      ColorMapName::Lakota,
+      ColorMapName::Manet,      ColorMapName::Monet,
+      ColorMapName::Moreau,     ColorMapName::Morgenstern,
+      ColorMapName::Nattier,    ColorMapName::Navajo,
+      ColorMapName::NewKingdom, ColorMapName::Nizami,
+      ColorMapName::OKeeffe1,   ColorMapName::OKeeffe2,
+      ColorMapName::Paquin,     ColorMapName::Peru1,
+      ColorMapName::Peru2,      ColorMapName::Pillement,
+      ColorMapName::Pissaro,    ColorMapName::Redon,
+      ColorMapName::Renoir,     ColorMapName::Robert,
+      ColorMapName::Signac,     ColorMapName::Stevens,
+      ColorMapName::Tam,        ColorMapName::Tara,
+      ColorMapName::Thomas,     ColorMapName::Tiepolo,
+      ColorMapName::Troy,       ColorMapName::Tsimshian,
+      ColorMapName::VanGogh1,   ColorMapName::VanGogh2,
+      ColorMapName::VanGogh3,   ColorMapName::Veronese,
+      ColorMapName::Wissing};
 }
 
 ColorMapName colorMapFromString(const QString &s) {
   const auto &maps = availableColorMaps();
+  QString input = s.toLower();
   for (int i = 0; i < maps.size(); i++) {
-    if (s == colorMapToString(maps[i]))
+    if (input == QString(colorMapToString(maps[i])).toLower())
       return maps[i];
   }
   return ColorMapName::CE_None;
@@ -2920,9 +2953,125 @@ const char *colorMapToString(ColorMapName name) {
   case ColorMapName::HSV:
     return "HSV";
   case ColorMapName::CE_bwr:
-    return "CE Blue-White-Red";
+    return "RedWhiteBlue";
   case ColorMapName::CE_rgb:
-    return "CE Red-Green-Blue";
+    return "RedGreenBlue";
+  case ColorMapName::Archambault:
+    return "Archambault";
+  case ColorMapName::Austria:
+    return "Austria";
+  case ColorMapName::Benedictus:
+    return "Benedictus";
+  case ColorMapName::Cassatt1:
+    return "Cassatt1";
+  case ColorMapName::Cassatt2:
+    return "Cassatt2";
+  case ColorMapName::Cross:
+    return "Cross";
+  case ColorMapName::Degas:
+    return "Degas";
+  case ColorMapName::Demuth:
+    return "Demuth";
+  case ColorMapName::Derain:
+    return "Derain";
+  case ColorMapName::Egypt:
+    return "Egypt";
+  case ColorMapName::Gauguin:
+    return "Gauguin";
+  case ColorMapName::Greek:
+    return "Greek";
+  case ColorMapName::Hiroshige:
+    return "Hiroshige";
+  case ColorMapName::Hokusai1:
+    return "Hokusai1";
+  case ColorMapName::Hokusai2:
+    return "Hokusai2";
+  case ColorMapName::Hokusai3:
+    return "Hokusai3";
+  case ColorMapName::Homer1:
+    return "Homer1";
+  case ColorMapName::Homer2:
+    return "Homer2";
+  case ColorMapName::Ingres:
+    return "Ingres";
+  case ColorMapName::Isfahan1:
+    return "Isfahan1";
+  case ColorMapName::Isfahan2:
+    return "Isfahan2";
+  case ColorMapName::Java:
+    return "Java";
+  case ColorMapName::Johnson:
+    return "Johnson";
+  case ColorMapName::Juarez:
+    return "Juarez";
+  case ColorMapName::Kandinsky:
+    return "Kandinsky";
+  case ColorMapName::Klimt:
+    return "Klimt";
+  case ColorMapName::Lakota:
+    return "Lakota";
+  case ColorMapName::Manet:
+    return "Manet";
+  case ColorMapName::Monet:
+    return "Monet";
+  case ColorMapName::Moreau:
+    return "Moreau";
+  case ColorMapName::Morgenstern:
+    return "Morgenstern";
+  case ColorMapName::Nattier:
+    return "Nattier";
+  case ColorMapName::Navajo:
+    return "Navajo";
+  case ColorMapName::NewKingdom:
+    return "NewKingdom";
+  case ColorMapName::Nizami:
+    return "Nizami";
+  case ColorMapName::OKeeffe1:
+    return "OKeeffe1";
+  case ColorMapName::OKeeffe2:
+    return "OKeeffe2";
+  case ColorMapName::Paquin:
+    return "Paquin";
+  case ColorMapName::Peru1:
+    return "Peru1";
+  case ColorMapName::Peru2:
+    return "Peru2";
+  case ColorMapName::Pillement:
+    return "Pillement";
+  case ColorMapName::Pissaro:
+    return "Pissaro";
+  case ColorMapName::Redon:
+    return "Redon";
+  case ColorMapName::Renoir:
+    return "Renoir";
+  case ColorMapName::Robert:
+    return "Robert";
+  case ColorMapName::Signac:
+    return "Signac";
+  case ColorMapName::Stevens:
+    return "Stevens";
+  case ColorMapName::Tam:
+    return "Tam";
+  case ColorMapName::Tara:
+    return "Tara";
+  case ColorMapName::Thomas:
+    return "Thomas";
+  case ColorMapName::Tiepolo:
+    return "Tiepolo";
+  case ColorMapName::Troy:
+    return "Troy";
+  case ColorMapName::Tsimshian:
+    return "Tsimshian";
+  case ColorMapName::VanGogh1:
+    return "VanGogh1";
+  case ColorMapName::VanGogh2:
+    return "VanGogh2";
+  case ColorMapName::VanGogh3:
+    return "VanGogh3";
+  case ColorMapName::Veronese:
+    return "Veronese";
+  case ColorMapName::Wissing:
+    return "Wissing";
   default:
     return "None";
   }

@@ -77,6 +77,14 @@
       "needsWavefunction": true,
       "description": "<p>The difference between the <i>ab-initio</i> Electron density, and the Promolecule (sum of spherical atoms) electron density, calculated from the  wavefunction in the previous energy calculation.</p>"
     },
+    "electric_potential_eeq": {
+      "cmap": "RedWhiteBlue",
+      "displayName": "Electrostatic Potential (EEQ)",
+      "occName": "eeq_esp",
+      "units": "au",
+      "needsWavefunction": true,
+      "description": "<p>The <i>ab-initio</i> electrostatic potential from EEQ point charges calculated from the fragment geometry.</p>"
+    },
     "electric_potential": {
       "cmap": "RedWhiteBlue",
       "displayName": "Electrostatic Potential",

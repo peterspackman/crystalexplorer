@@ -1,17 +1,11 @@
 #include "meshinstancerenderer.h"
+#include "globalconfiguration.h"
 #include "shaderloader.h"
 
 #include <QOpenGLShaderProgram>
 
 MeshInstanceRenderer::MeshInstanceRenderer(Mesh *mesh)
     : QOpenGLExtraFunctions(QOpenGLContext::currentContext()) {
-
-  m_propertyColorMaps = {
-      {"None", ColorMapName::CE_None},   {"dnorm", ColorMapName::CE_bwr},
-      {"di", ColorMapName::CE_rgb},      {"de", ColorMapName::CE_rgb},
-      {"di_norm", ColorMapName::CE_bwr}, {"de_norm", ColorMapName::CE_bwr},
-      {"eeq_esp", ColorMapName::CE_bwr},
-  };
 
   m_program = new QOpenGLShaderProgram();
   m_program->addCacheableShaderFromSourceCode(
@@ -145,6 +139,7 @@ void MeshInstanceRenderer::setMesh(Mesh *mesh) {
   m_index.allocate(temp_faces.data(),
                    static_cast<int>(sizeof(GLuint) * m_numIndices));
 
+  auto const *globals = GlobalConfiguration::getInstance();
   {
     m_vertexPropertyBuffer.bind();
     std::vector<float> propertyData;
@@ -154,8 +149,9 @@ void MeshInstanceRenderer::setMesh(Mesh *mesh) {
       const auto &vals = mesh->vertexProperty(prop);
       auto range = mesh->vertexPropertyRange(prop);
 
-      ColorMapFunc cmap(m_propertyColorMaps.value(prop, ColorMapName::Viridis),
-                        range.lower, range.upper);
+      QString cmapName = globals->getColorMapNameForProperty(prop);
+      qDebug() << "Color map name: " << cmapName;
+      ColorMapFunc cmap(colorMapFromString(cmapName), range.lower, range.upper);
 
       for (size_t i = 0; i < vals.rows(); i++) {
         QColor color = cmap(vals(i));

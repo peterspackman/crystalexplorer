@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>469</width>
-    <height>374</height>
+    <height>387</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -38,7 +38,7 @@
       <string/>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="surfaceOptionsTab">
       <property name="sizePolicy">
@@ -63,7 +63,7 @@
          <item>
           <widget class="QComboBox" name="surfacePropertyComboBox">
            <property name="sizeAdjustPolicy">
-            <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
+            <enum>QComboBox::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
            </property>
           </widget>
          </item>
@@ -169,7 +169,7 @@
        <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -202,7 +202,7 @@
               <bool>true</bool>
              </property>
              <property name="buttonSymbols">
-              <enum>QAbstractSpinBox::NoButtons</enum>
+              <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
              </property>
              <property name="maximum">
               <double>999999.989999999990687</double>
@@ -232,7 +232,7 @@
               <bool>true</bool>
              </property>
              <property name="buttonSymbols">
-              <enum>QAbstractSpinBox::NoButtons</enum>
+              <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
              </property>
              <property name="maximum">
               <double>9999999.990000000223517</double>
@@ -308,7 +308,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="decimals">
             <number>3</number>
@@ -321,7 +321,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="decimals">
             <number>3</number>
@@ -333,7 +333,7 @@
        <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -368,7 +368,7 @@
          <item>
           <widget class="QComboBox" name="surfacePropertyComboBox2">
            <property name="sizeAdjustPolicy">
-            <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
+            <enum>QComboBox::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
            </property>
           </widget>
          </item>
@@ -386,7 +386,7 @@
          <item>
           <spacer name="horizontalSpacer_2">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -408,7 +408,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="decimals">
             <number>4</number>
@@ -471,7 +471,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="decimals">
             <number>4</number>
@@ -487,7 +487,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="decimals">
             <number>4</number>
@@ -503,7 +503,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="decimals">
             <number>4</number>
@@ -530,7 +530,7 @@
        <item>
         <spacer name="verticalSpacer_3">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -635,7 +635,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
           </widget>
          </item>
@@ -645,7 +645,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
           </widget>
          </item>
@@ -667,7 +667,7 @@
             <string>0B</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -677,7 +677,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
           </widget>
          </item>
@@ -718,7 +718,7 @@
             <bool>true</bool>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="suffix">
             <string> Eh</string>
@@ -739,7 +739,7 @@
        <item>
         <spacer name="wavefunctionVerticalSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -938,7 +938,7 @@
        <item>
         <spacer name="frameworkTabSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -955,7 +955,6 @@
   </layout>
  </widget>
  <resources>
-  <include location="../icons/crystalexplorer.qrc"/>
   <include location="../icons/crystalexplorer.qrc"/>
  </resources>
  <connections/>

@@ -1,7 +1,9 @@
 #include "meshpropertymodel.h"
 
 MeshPropertyModel::MeshPropertyModel(QObject *parent)
-    : QAbstractListModel(parent), m_mesh(nullptr) {}
+    : QAbstractListModel(parent), m_mesh(nullptr) {
+  loadSurfaceDescriptionConfiguration(m_propertyDescriptions, m_surfaceDescriptions, m_defaultIsovalues);
+}
 
 bool MeshPropertyModel::isValid() const {
   if (m_meshInstance || m_mesh)
@@ -38,7 +40,7 @@ void MeshPropertyModel::setMesh(Mesh *mesh) {
   m_blockedWhileResetting = true;
   beginResetModel();
   m_mesh = mesh;
-  m_meshInstance = nullptr; // not associated with a mesh instance
+  m_meshInstance = nullptr;
   QString prop = mesh->getSelectedProperty();
   endResetModel();
   setSelectedProperty(prop);
@@ -49,8 +51,83 @@ int MeshPropertyModel::rowCount(const QModelIndex &parent) const {
   if (parent.isValid() || !m_mesh) {
     return 0;
   }
-  return m_mesh->availableVertexProperties()
-      .size(); // Or face properties, depending on what you're listing
+  return m_mesh->availableVertexProperties().size();
+}
+
+QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
+  if (!index.isValid() || !m_mesh) {
+    return QVariant();
+  }
+
+  QStringList properties = m_mesh->availableVertexProperties();
+  if (index.row() < 0 || index.row() >= properties.size()) {
+    return QVariant();
+  }
+
+  QString propertyName = properties.at(index.row());
+
+  switch (role) {
+    case Qt::DisplayRole: {
+      // Use display name from property description if available
+      auto it = m_propertyDescriptions.find(propertyName);
+      if (it != m_propertyDescriptions.end()) {
+        return it->displayName;
+      }
+      return propertyName;
+    }
+    case PropertyNameRole:
+      return propertyName;
+    case PropertyUnitsRole: {
+      auto it = m_propertyDescriptions.find(propertyName);
+      if (it != m_propertyDescriptions.end()) {
+        return it->units;
+      }
+      return "";
+    }
+    case PropertyDescriptionRole: {
+      auto it = m_propertyDescriptions.find(propertyName);
+      if (it != m_propertyDescriptions.end()) {
+        return it->description;
+      }
+      return "";
+    }
+    case PropertyColorMapRole: {
+      auto it = m_propertyDescriptions.find(propertyName);
+      if (it != m_propertyDescriptions.end()) {
+        return it->cmap;
+      }
+      return "viridis"; // default colormap
+    }
+    case VolumeRole:
+      return volume();
+    case AreaRole:
+      return area();
+    case GlobularityRole:
+      return globularity();
+    case AsphericityRole:
+      return asphericity();
+    case TransparentRole:
+      return isTransparent();
+    case FingerprintableRole:
+      return isFingerprintable();
+    default:
+      return QVariant();
+  }
+}
+
+QHash<int, QByteArray> MeshPropertyModel::roleNames() const {
+  QHash<int, QByteArray> roles = QAbstractListModel::roleNames();
+  roles[PropertyNameRole] = "propertyName";
+  roles[PropertyUnitsRole] = "propertyUnits";
+  roles[PropertyDescriptionRole] = "propertyDescription";
+  roles[PropertyColorMapRole] = "propertyColorMap";
+  roles[VolumeRole] = "volume";
+  roles[AreaRole] = "area";
+  roles[GlobularityRole] = "globularity";
+  roles[AsphericityRole] = "asphericity";
+  roles[TransparentRole] = "transparent";
+  roles[FingerprintableRole] = "fingerprintable";
+  return roles;
 }
 
 double MeshPropertyModel::volume() const {
@@ -84,39 +161,6 @@ bool MeshPropertyModel::isFingerprintable() const {
   return params.kind == isosurface::Kind::Hirshfeld && params.separation < 0.21;
 }
 
-QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
-  if (!index.isValid() || !m_mesh) {
-    return QVariant();
-  }
-
-  // Handle custom roles
-  switch (role) {
-  case VolumeRole:
-    return volume();
-  case AreaRole:
-    return area();
-  case GlobularityRole:
-    return globularity();
-  case AsphericityRole:
-    return asphericity();
-  case TransparentRole:
-    return isTransparent();
-  default:
-    break;
-  }
-
-  if (role == Qt::DisplayRole) {
-    // Assuming you want to list vertex properties. Adjust accordingly if you're
-    // listing something else.
-    QStringList properties = m_mesh->availableVertexProperties();
-    if (index.row() >= 0 && index.row() < properties.size()) {
-      return properties.at(index.row());
-    }
-  }
-
-  return QVariant();
-}
-
 MeshPropertyModel::PropertyStatistics
 MeshPropertyModel::getSelectedPropertyStatistics() const {
 
@@ -131,6 +175,22 @@ Mesh::ScalarPropertyRange MeshPropertyModel::getSelectedPropertyRange() const {
   if (!m_mesh)
     return {};
   return m_mesh->vertexPropertyRange(getSelectedProperty());
+}
+
+QString MeshPropertyModel::getSelectedPropertyColorMap() const {
+  if (!m_mesh)
+    return "viridis";
+  QString propertyName = getSelectedProperty();
+  auto it = m_propertyDescriptions.find(propertyName);
+  if (it != m_propertyDescriptions.end()) {
+    return it->cmap;
+  }
+  return "viridis";
+}
+
+void MeshPropertyModel::setSelectedPropertyColorMap(const QString &mapName) {
+  // TODO
+  qDebug() << "TODO implement setting property color map";
 }
 
 void MeshPropertyModel::setSelectedPropertyRange(
@@ -180,17 +240,6 @@ void MeshPropertyModel::setTransparent(bool transparent) {
   } else {
     m_mesh->setTransparent(transparent);
   }
-}
-
-QHash<int, QByteArray> MeshPropertyModel::roleNames() const {
-  QHash<int, QByteArray> roles = QAbstractListModel::roleNames();
-  roles[VolumeRole] = "volume";
-  roles[AreaRole] = "area";
-  roles[GlobularityRole] = "globularity";
-  roles[AsphericityRole] = "asphericity";
-  roles[TransparentRole] = "transparent";
-  roles[FingerprintableRole] = "fingerprintable";
-  return roles;
 }
 
 Mesh *MeshPropertyModel::getMesh() { return m_mesh; }

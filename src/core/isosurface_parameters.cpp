@@ -156,6 +156,9 @@ loadPropertyDescriptions(const nlohmann::json &json) {
       SurfacePropertyDescription spd;
       from_json(item.value(), spd);
       properties.insert(s(item.key()), spd);
+      // allow referring by the occName or displayName as well
+      properties.insert(spd.occName, spd);
+      properties.insert(spd.displayName, spd);
     } catch (nlohmann::json::exception &e) {
       qWarning() << "Failed to parse property" << s(item.key()) << ":"
                  << e.what();
@@ -180,6 +183,8 @@ loadSurfaceDescriptions(const nlohmann::json &json) {
       SurfaceDescription sd;
       from_json(item.value(), sd);
       surfaces.insert(s(item.key()), sd);
+      surfaces.insert(sd.occName, sd);
+      surfaces.insert(sd.displayName, sd);
     } catch (nlohmann::json::exception &e) {
       qWarning() << "Failed to parse surface" << s(item.key()) << ":"
                  << e.what();
@@ -246,9 +251,18 @@ SurfaceDescription getSurfaceDescription(Kind kind) {
   return {};
 }
 
-QString getDisplayName(QString s) {
+QString getSurfaceDisplayName(QString s) {
   const auto &descriptions =
       GlobalConfiguration::getInstance()->getSurfaceDescriptions();
+  auto loc = descriptions.find(s);
+  if (loc != descriptions.end())
+    return (*loc).displayName;
+  return s;
+}
+
+QString getSurfacePropertyDisplayName(QString s) {
+  const auto &descriptions =
+      GlobalConfiguration::getInstance()->getPropertyDescriptions();
   auto loc = descriptions.find(s);
   if (loc != descriptions.end())
     return (*loc).displayName;
