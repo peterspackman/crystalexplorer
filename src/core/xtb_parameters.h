@@ -25,6 +25,8 @@ struct Parameters {
   bool accepted{false};
   QString name{"XtbCalculation"};
   bool write_molden{false};
+  bool userEditRequested{false};
+  QString userInputContents;
 
   inline bool hasEquivalentMethodTo(const Parameters &rhs) const {
     return (method == rhs.method);

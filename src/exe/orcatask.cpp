@@ -34,20 +34,20 @@ QString OrcaSCFTask::moldenFilename() const {
 }
 
 void OrcaSCFTask::start() {
-  QString input = io::orcaInputString(m_parameters);
+  QString input = m_parameters.userInputContents;
+
+  if (!m_parameters.userEditRequested) {
+    input = io::orcaInputString(m_parameters);
+  }
+
   emit progressText("Generated ORCA input");
 
   QString name = baseName();
   QString inputName = name + inputSuffix();
   QString outputName = jsonFilename();
 
-  if (!io::editableTextToFileBlocking(inputName, input,
-                                      m_parameters.userEditRequested)) {
-    QString errorString = "Failed to write input file";
-    if (m_parameters.userEditRequested) {
-      errorString = "User canceled writing of input file";
-    }
-    emit errorOccurred(errorString);
+  if (!io::writeTextFile(inputName, input)) {
+    emit errorOccurred("Could not write input file");
     return;
   }
 

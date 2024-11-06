@@ -5,9 +5,7 @@ namespace io {
 
 bool isTextFile(const QString &filePath);
 bool writeTextFile(const QString &filename, const QString &text);
-bool editableTextToFileBlocking(const QString &filename, const QString &text,
-                                bool showEditor = false,
-                                QWidget *parent = nullptr);
+QString requestUserTextEdit(const QString &title, const QString &text, QWidget *parent = nullptr);
 
 bool copyFile(const QString &sourcePath, const QString &targetPath,
               bool overwrite);

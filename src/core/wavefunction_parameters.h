@@ -20,6 +20,7 @@ struct Parameters {
   std::vector<GenericAtomIndex> atoms;
   bool accepted{false};
   bool userEditRequested{false};
+  QString userInputContents;
 
   inline bool hasEquivalentMethodTo(const Parameters &rhs) const {
     return (method.toLower() == rhs.method.toLower()) &&

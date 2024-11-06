@@ -4,6 +4,8 @@
 #include "molecular_wavefunction.h"
 #include "occwavefunctiontask.h"
 #include "orcatask.h"
+#include "occinput.h"
+#include "orcainput.h"
 #include "settings.h"
 #include <QFile>
 #include <QTextStream>
@@ -41,6 +43,7 @@ inline xtb::Parameters wfn2xtb(const wfn::Parameters &params) {
   result.atoms = params.atoms;
   result.accepted = params.accepted;
   result.write_molden = true;
+  result.userEditRequested = params.userEditRequested;
   return result;
 }
 
@@ -53,6 +56,7 @@ inline wfn::Parameters xtb2wfn(const xtb::Parameters &params) {
   result.structure = params.structure;
   result.atoms = params.atoms;
   result.accepted = params.accepted;
+  result.userEditRequested = params.userEditRequested;
   return result;
 }
 
@@ -88,6 +92,12 @@ Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
   occ::Mat3N pos = params.structure->atomicPositionsForIndices(idx);
 
   QString wavefunctionName = generateWavefunctionName(params);
+
+  if(params.userEditRequested) {
+    params.userInputContents = io::requestUserTextEdit("OCC input", io::getOccWavefunctionJson(params));
+    // TODO report to user that the job will be canceled
+    if(params.userInputContents.isEmpty()) return nullptr;
+  }
   auto *task = new OccWavefunctionTask();
   task->setParameters(params);
   task->setProperty("name", wavefunctionName);
@@ -107,6 +117,13 @@ Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
 
 Task *WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
   QString wavefunctionName = generateWavefunctionName(params);
+
+  if(params.userEditRequested) {
+    params.userInputContents = io::requestUserTextEdit("OCC input", io::orcaInputString(params));
+    // TODO report to user that the job will be canceled
+    if(params.userInputContents.isEmpty()) return nullptr;
+  }
+
   auto *task = new OrcaWavefunctionTask();
   task->setParameters(params);
   task->setProperty("name", wavefunctionName);

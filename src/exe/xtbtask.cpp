@@ -47,15 +47,20 @@ QString XtbTask::propertiesContents() const {
 QString XtbTask::coordFilename() const { return baseName() + inputSuffix(); }
 
 void XtbTask::preProcess() {
-  QString coord = xtbCoordString(m_parameters);
-  emit progressText("Generated coord input");
 
   QString name = baseName();
 
+  QString coord = m_parameters.userInputContents;
+  if(!m_parameters.userEditRequested) {
+    coord = xtbCoordString(m_parameters);
+  }
+  emit progressText("Generated coord input");
+
   if (!io::writeTextFile(coordFilename(), coord)) {
-    emit errorOccurred("Could not write input file");
+    emit errorOccurred("Failed to write input file");
     return;
   }
+
   emit progressText("Wrote input file");
 
   QStringList arguments{coordFilename()};

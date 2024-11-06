@@ -91,46 +91,15 @@ QString changeSuffix(const QString &filePath, const QString &suffix) {
   return fileInfo.completeBaseName() + suffix;
 }
 
-bool editableTextToFileBlocking(const QString &filename, const QString &text,
-                                bool showEditor, QWidget *parent) {
-  QString contentToWrite = text;
+QString requestUserTextEdit(const QString &title, const QString &text,
+                            QWidget *parent) {
+  QString contentToWrite{""};
 
-  if (showEditor) {
-    TextEditDialog dialog(text, parent);
-    if (dialog.exec() == QDialog::Accepted) {
-      contentToWrite = dialog.getText();
-    } else {
-      // User cancelled the editing
-      return false;
-    }
+  TextEditDialog dialog(text, parent);
+  if (dialog.exec() == QDialog::Accepted) {
+    contentToWrite = dialog.getText();
   }
-
-  QFile file(filename);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-    if (showEditor) {
-      QMessageBox::critical(parent, "Error",
-                            QString("Failed to open file %1 for writing: %2")
-                                .arg(filename)
-                                .arg(file.errorString()));
-    }
-    return false;
-  }
-
-  // Write the content
-  QByteArray data = contentToWrite.toUtf8();
-  qint64 bytesWritten = file.write(data);
-  file.close();
-
-  if (bytesWritten != data.size()) {
-    if (showEditor) {
-      QMessageBox::critical(
-          parent, "Error",
-          QString("Failed to write complete data to file %1").arg(filename));
-    }
-    return false;
-  }
-
-  return true;
+  return contentToWrite;
 }
 
 } // namespace io

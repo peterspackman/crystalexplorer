@@ -1,5 +1,6 @@
 #include "xtb_energy_calculator.h"
 #include "exefileutilities.h"
+#include "io_utilities.h"
 #include "settings.h"
 #include "xtb.h"
 #include "xtbtask.h"
@@ -31,6 +32,11 @@ void XtbEnergyCalculator::start(xtb::Parameters params) {
 
   if (params.name == "XtbCalculation") {
     params.name = xtb::methodToString(params.method);
+  }
+  if(params.userEditRequested) {
+    params.userInputContents = io::requestUserTextEdit("XTB input", xtbCoordString(params));
+    // TODO report to user that the job will be canceled
+    if(params.userInputContents.isEmpty()) return;
   }
   auto *task = new XtbTask();
   task->setParameters(params);
