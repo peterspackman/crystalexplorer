@@ -134,7 +134,6 @@ void SurfaceGenerationDialog::updateSettings() {
   // TODO defaultOrbitalType
   ui->comboBoxHL->setCurrentIndex(0);
   ui->surfaceOptionsBox->setHidden(defaultHideSurfaceOptionsBox);
-  ui->editCheckBox->setCheckState(defaultEditTonto);
   ui->showDescriptionsCheckBox->setCheckState(defaultShowDescriptions);
 
   updateDescriptions();

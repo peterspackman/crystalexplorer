@@ -92,7 +92,7 @@
       <item>
        <widget class="Line" name="line">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
        </widget>
       </item>
@@ -141,14 +141,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="editTontoInputFileCheckbox">
-     <property name="text">
-      <string>Edit &amp;pair energy input file(s)</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="editWavefunctionInputFileCheckbox">
+    <widget class="QCheckBox" name="editWavefunctionInputFileCheckBox">
      <property name="text">
       <string>Edit wavefunction &amp;input file(s)</string>
      </property>
@@ -157,7 +150,7 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
     </widget>
    </item>

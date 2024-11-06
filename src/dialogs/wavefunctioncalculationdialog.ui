@@ -108,7 +108,7 @@
    <item>
     <layout class="QHBoxLayout">
      <item>
-      <widget class="QCheckBox" name="editInputFileCheckbox">
+      <widget class="QCheckBox" name="editInputFileCheckBox">
        <property name="font">
         <font>
          <pointsize>11</pointsize>
@@ -125,10 +125,10 @@
      <item>
       <spacer name="Spacer23">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeType">
-        <enum>QSizePolicy::Expanding</enum>
+        <enum>QSizePolicy::Policy::Expanding</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -143,7 +143,7 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
     </widget>
    </item>
@@ -156,7 +156,7 @@
   <tabstop>basisComboBox</tabstop>
   <tabstop>chargeSpinBox</tabstop>
   <tabstop>multiplicitySpinBox</tabstop>
-  <tabstop>editInputFileCheckbox</tabstop>
+  <tabstop>editInputFileCheckBox</tabstop>
  </tabstops>
  <resources/>
  <connections>

@@ -124,12 +124,17 @@ bool WavefunctionCalculationDialog::isXtbMethod() const {
   return xtb::isXtbMethod(method());
 }
 
+bool WavefunctionCalculationDialog::userEditRequested() const {
+  return editInputFileCheckBox->isChecked();
+}
+
 void WavefunctionCalculationDialog::accept() {
   m_parameters.charge = charge();
   m_parameters.multiplicity = multiplicity();
   m_parameters.program = selectedProgram();
   m_parameters.method = method();
   m_parameters.basis = basis();
+  m_parameters.userEditRequested = userEditRequested();
 
   emit wavefunctionParametersChosen(m_parameters);
 

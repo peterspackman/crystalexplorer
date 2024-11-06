@@ -20,7 +20,6 @@ static const QStringList surfaceIsovalueUnits =
 
 static const bool defaultHideWavefunctionBox = true;
 static const bool defaultHideSurfaceOptionsBox = true;
-static const Qt::CheckState defaultEditTonto = Qt::Unchecked;
 static const Qt::CheckState defaultShowDescriptions = Qt::Unchecked;
 
 class SurfaceGenerationDialog : public QDialog {

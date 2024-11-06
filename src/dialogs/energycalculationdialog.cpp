@@ -18,8 +18,7 @@ void EnergyCalculationDialog::setChemicalStructure(
 void EnergyCalculationDialog::init() {
   setModal(true);
   adjustSize();
-  editTontoInputFileCheckbox->setChecked(false);
-  editWavefunctionInputFileCheckbox->setChecked(false);
+  editWavefunctionInputFileCheckBox->setChecked(false);
 
   handleStructureChange();
 
@@ -46,6 +45,8 @@ void EnergyCalculationDialog::initConnections() {
   connect(gfnComboBox, &QComboBox::currentTextChanged, this,
           &EnergyCalculationDialog::handleModelChange);
   connect(userWavefunctionRadioButton, &QRadioButton::toggled, this,
+          &EnergyCalculationDialog::handleModelChange);
+  connect(editWavefunctionInputFileCheckBox, &QCheckBox::toggled, this,
           &EnergyCalculationDialog::handleModelChange);
 }
 
@@ -85,6 +86,7 @@ void EnergyCalculationDialog::handleModelChange() {
   for (auto &wfn : m_requiredWavefunctions) {
     wfn.method = m_method;
     wfn.basis = m_basis;
+    wfn.userEditRequested = editWavefunctionInputFileCheckBox->isChecked();
   }
 }
 

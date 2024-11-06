@@ -19,6 +19,7 @@ struct Parameters {
   ChemicalStructure *structure{nullptr};
   std::vector<GenericAtomIndex> atoms;
   bool accepted{false};
+  bool userEditRequested{false};
 
   inline bool hasEquivalentMethodTo(const Parameters &rhs) const {
     return (method.toLower() == rhs.method.toLower()) &&

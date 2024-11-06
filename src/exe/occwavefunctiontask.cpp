@@ -58,8 +58,13 @@ void OccWavefunctionTask::start() {
   QString inputName = name + inputSuffix();
   QString outputName = wavefunctionFilename();
 
-  if (!io::writeTextFile(inputName, json)) {
-    emit errorOccurred("Could not write input file");
+  if (!io::editableTextToFileBlocking(inputName, json,
+                                      m_parameters.userEditRequested)) {
+    QString errorString = "Failed to write input file";
+    if (m_parameters.userEditRequested) {
+      errorString = "User canceled writing of input file";
+    }
+    emit errorOccurred(errorString);
     return;
   }
   emit progressText("Wrote input file");

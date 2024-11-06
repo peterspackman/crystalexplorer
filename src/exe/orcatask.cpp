@@ -41,10 +41,16 @@ void OrcaSCFTask::start() {
   QString inputName = name + inputSuffix();
   QString outputName = jsonFilename();
 
-  if (!io::writeTextFile(inputName, input)) {
-    emit errorOccurred("Could not write input file");
+  if (!io::editableTextToFileBlocking(inputName, input,
+                                      m_parameters.userEditRequested)) {
+    QString errorString = "Failed to write input file";
+    if (m_parameters.userEditRequested) {
+      errorString = "User canceled writing of input file";
+    }
+    emit errorOccurred(errorString);
     return;
   }
+
   emit progressText("Wrote input file");
 
   QStringList arguments{inputName};

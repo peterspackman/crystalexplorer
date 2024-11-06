@@ -29,6 +29,7 @@ public:
   QString selectedProgramName() const;
   wfn::Program selectedProgram() const;
 
+  bool userEditRequested() const;
 
   const wfn::Parameters& getParameters() const;
 

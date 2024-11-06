@@ -1,4 +1,5 @@
 #include "io_utilities.h"
+#include "texteditdialog.h"
 #include <QByteArray>
 #include <QFileInfo>
 #include <QTextStream>
@@ -48,7 +49,7 @@ bool deleteFile(const QString &filePath) {
 
 bool deleteFiles(const QStringList &filePaths) {
   bool success = true;
-  for(const auto &filePath: filePaths) {
+  for (const auto &filePath : filePaths) {
     success &= deleteFile(filePath);
   }
   return success;
@@ -88,6 +89,48 @@ bool writeTextFile(const QString &filename, const QString &text) {
 QString changeSuffix(const QString &filePath, const QString &suffix) {
   QFileInfo fileInfo(filePath);
   return fileInfo.completeBaseName() + suffix;
+}
+
+bool editableTextToFileBlocking(const QString &filename, const QString &text,
+                                bool showEditor, QWidget *parent) {
+  QString contentToWrite = text;
+
+  if (showEditor) {
+    TextEditDialog dialog(text, parent);
+    if (dialog.exec() == QDialog::Accepted) {
+      contentToWrite = dialog.getText();
+    } else {
+      // User cancelled the editing
+      return false;
+    }
+  }
+
+  QFile file(filename);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (showEditor) {
+      QMessageBox::critical(parent, "Error",
+                            QString("Failed to open file %1 for writing: %2")
+                                .arg(filename)
+                                .arg(file.errorString()));
+    }
+    return false;
+  }
+
+  // Write the content
+  QByteArray data = contentToWrite.toUtf8();
+  qint64 bytesWritten = file.write(data);
+  file.close();
+
+  if (bytesWritten != data.size()) {
+    if (showEditor) {
+      QMessageBox::critical(
+          parent, "Error",
+          QString("Failed to write complete data to file %1").arg(filename));
+    }
+    return false;
+  }
+
+  return true;
 }
 
 } // namespace io

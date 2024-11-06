@@ -10,6 +10,7 @@ add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/orcainput.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pdbfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ply_reader.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/texteditdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyply.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefrontobjfile.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/xyzfile.cpp"
@@ -20,7 +21,7 @@ target_link_libraries(
     cx_io PUBLIC 
     cx_core
     cx_graphics
-    Qt6::Core Qt6::Gui
+    Qt6::Core Qt6::Gui Qt6::Widgets
     Eigen3::Eigen fmt::fmt
     unordered_dense::unordered_dense
     occ_core
