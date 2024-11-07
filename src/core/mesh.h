@@ -95,7 +95,7 @@ public:
   [[nodiscard]] inline const auto &kind() const { return m_params.kind; }
 
   [[nodiscard]] inline const auto &parameters() const { return m_params; }
-  inline void setParameters(isosurface::Parameters params) { m_params = params; }
+  void setParameters(isosurface::Parameters params);
 
   static Mesh *newFromJson(const nlohmann::json&, QObject *parent = nullptr);
   static Mesh *newFromJsonFile(const QString &, QObject *parent = nullptr);

@@ -12,7 +12,7 @@
 #include <occ/core/element.h>
 
 inline QString generateWavefunctionName(const wfn::Parameters &params) {
-  QString methodString = params.method + "/" + params.basis;
+  QString methodString = params.method + " " + params.basis;
   if (params.isXtbMethod()) {
     methodString = params.method;
   }
@@ -101,6 +101,7 @@ Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
   auto *task = new OccWavefunctionTask();
   task->setParameters(params);
   task->setProperty("name", wavefunctionName);
+  task->setProperty("basename", wavefunctionName);
   task->setExecutable(m_occExecutable);
   task->setEnvironment(m_environment);
   task->setDeleteWorkingFiles(m_deleteWorkingFiles);

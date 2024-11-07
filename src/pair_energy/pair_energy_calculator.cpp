@@ -58,8 +58,9 @@ void PairEnergyCalculator::start(pair_energy::Parameters params) {
     else {
         auto * task = new OccPairTask();
         task->setParameters(params);
-        QString name = "pair";
+        QString name = params.deriveName().replace("/", "o");
         task->setProperty("basename", name);
+        task->setProperty("name", name);
         task->setJsonFilename(QString("%1_energies.json").arg(name));
         task->setExecutable(m_occExecutable);
         task->setEnvironment(m_environment);
@@ -95,10 +96,10 @@ void PairEnergyCalculator::start_batch(const std::vector<pair_energy::Parameters
         }
 
         auto *task = new OccPairTask();
+        QString name = params.deriveName().replace("/", "o");
         task->setParameters(params);
         task->setExecutable(m_occExecutable);
         task->setEnvironment(m_environment);
-        QString name = QString("pair_%1").arg(idx++);
         task->setProperty("name", name);
         task->setProperty("basename", name);
         task->setJsonFilename(QString("%1_energies.json").arg(name));

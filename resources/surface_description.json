@@ -165,6 +165,13 @@
       "displayName": "Second curvature eigenvalue",
       "occName": "k2",
       "description": "<p>The second eigenvalue of the curvature</p>"
+    },
+    "isovalue": {
+      "cmap": "RedWhiteBlue",
+      "occName": "isovalue",
+      "displayName": "Isovalue",
+      "units": "",
+      "description": "<p>The corresponding isovalue for the surface</p>"
     }
   },
   "surfaces": {

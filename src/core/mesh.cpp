@@ -354,6 +354,17 @@ size_t Mesh::rendererIndex() const { return m_rendererIndex; }
 
 void Mesh::setRendererIndex(size_t idx) { m_rendererIndex = idx; }
 
+
+void Mesh::setParameters(isosurface::Parameters params) { 
+  m_params = params; 
+
+  if(m_vertices.size() > 0) {
+    ScalarPropertyValues isovalues(numberOfVertices());
+    isovalues.setConstant(params.isovalue);
+    setVertexProperty("Isovalue", isovalues);
+  }
+}
+
 void Mesh::setAtomsInside(const std::vector<GenericAtomIndex> &idxs) {
   m_atomsInside = idxs;
 }
@@ -479,7 +490,7 @@ Mesh *Mesh::combine(const QList<Mesh *> &meshes) {
   combinedMesh->setParameters(first->parameters());
 
   // Set the isovalue property
-  combinedMesh->setVertexProperty("isovalue", isovalues);
+  combinedMesh->setVertexProperty("Isovalue", isovalues);
 
   // Copy description
   combinedMesh->setDescription(

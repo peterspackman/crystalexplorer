@@ -165,7 +165,7 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     }
   }
 
-  for(auto &[idx, frag]: m_symmetryUniqueFragments) {
+  for (auto &[idx, frag] : m_symmetryUniqueFragments) {
     frag.name = getFragmentLabel(idx);
   }
 
@@ -566,7 +566,8 @@ ChemicalStructure::getFragmentForAtom(GenericAtomIndex atomIndex) const {
 }
 
 FragmentIndex ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
-  if(atomIndex < 0) return FragmentIndex{-1};
+  if (atomIndex < 0)
+    return FragmentIndex{-1};
   return m_fragmentForAtom[atomIndex];
 }
 
@@ -1156,6 +1157,65 @@ ChemicalStructure::getFragment(const FragmentIndex &fragIndex) const {
   return std::nullopt;
 }
 
+QString ChemicalStructure::getFragmentLabelForAtoms(
+    const std::vector<GenericAtomIndex> &idxs) {
+  if (idxs.empty())
+    return "None";
+
+  // Get unique fragment indices for the atoms
+  ankerl::unordered_dense::set<FragmentIndex, FragmentIndexHash> uniqueFragments;
+  for (const auto &idx : idxs) {
+    uniqueFragments.insert(fragmentIndexForAtom(idx));
+  }
+
+  // Get chemical formula for these atoms
+  QString formula = formulaSumForAtoms(idxs, false);
+
+  // Calculate centroid
+  occ::Mat3N positions = atomicPositionsForIndices(idxs);
+  occ::Vec3 centroid = positions.rowwise().mean();
+  QString centroidStr = QString("[%.2f, %.2f, %.2f]")
+                            .arg(centroid(0))
+                            .arg(centroid(1))
+                            .arg(centroid(2));
+
+  // If all atoms belong to same fragment
+  if (uniqueFragments.size() == 1) {
+    FragmentIndex fragIdx = *uniqueFragments.begin();
+    if (fragIdx.u < 0)
+      return QString("%1 %2").arg(formula, centroidStr);
+
+    auto fragment = getFragment(fragIdx);
+    if (!fragment)
+      return QString("%1 %2").arg(formula, centroidStr);
+
+    // Check if these atoms constitute the complete fragment
+    if (fragment->get().atomIndices.size() == idxs.size()) {
+      // Complete fragment
+      return getFragmentLabel(fragIdx);
+    } else {
+      // Partial fragment
+      return QString("Part of %1 - %2 %3")
+          .arg(getFragmentLabel(fragIdx))
+          .arg(formula)
+          .arg(centroidStr);
+    }
+  }
+
+  // Case 3: Multiple fragments
+  QStringList fragmentLabels;
+  for (const auto &fragIdx : uniqueFragments) {
+    if (fragIdx.u >= 0) {
+      fragmentLabels.append(getFragmentLabel(fragIdx));
+    }
+  }
+
+  return QString("Mix of %1 - %2 %3")
+      .arg(fragmentLabels.join(", "))
+      .arg(formula)
+      .arg(centroidStr);
+}
+
 QString ChemicalStructure::getFragmentLabel(const FragmentIndex &index) {
   const auto &fragments = symmetryUniqueFragments();
   if (m_fragmentLabels.size() != fragments.size()) {
@@ -1214,22 +1274,25 @@ occ::Mat3N ChemicalStructure::convertCoordinates(
 }
 
 nlohmann::json ChemicalStructure::toJson() const {
-  return {
-    {"structureType", "cluster"},
-    {"atomicPositions", m_atomicPositions},
-    {"atomicNumbers", m_atomicNumbers},
-    {"labels", m_labels},
-    {"flags", m_flags}
-  };
+  return {{"structureType", "cluster"},
+          {"atomicPositions", m_atomicPositions},
+          {"atomicNumbers", m_atomicNumbers},
+          {"labels", m_labels},
+          {"flags", m_flags}};
 }
 
 bool ChemicalStructure::fromJson(const nlohmann::json &j) {
-  if(j.contains("structureType") && j.at("structureType") != "cluster") return false;
+  if (j.contains("structureType") && j.at("structureType") != "cluster")
+    return false;
 
-  if(!j.contains("atomicPositions")) return false;
-  if(!j.contains("atomicNumbers")) return false;
-  if(!j.contains("labels")) return false;
-  if(!j.contains("flags")) return false;
+  if (!j.contains("atomicPositions"))
+    return false;
+  if (!j.contains("atomicNumbers"))
+    return false;
+  if (!j.contains("labels"))
+    return false;
+  if (!j.contains("flags"))
+    return false;
 
   clearAtoms();
 
@@ -1239,7 +1302,7 @@ bool ChemicalStructure::fromJson(const nlohmann::json &j) {
 
   std::vector<std::pair<GenericAtomIndex, AtomFlags>> flags;
   j.at("flags").get_to(flags);
-  for(const auto &kv: flags) {
+  for (const auto &kv : flags) {
     qDebug() << kv.first << "flags" << kv.second;
     m_flags.insert(kv);
   }

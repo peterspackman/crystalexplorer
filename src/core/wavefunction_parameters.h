@@ -15,11 +15,12 @@ struct Parameters {
   int multiplicity{1};
   Program program{Program::Occ};
   QString method{"b3lyp"};
-  QString basis{"def2-qzvp"};
+  QString basis{"def2-svp"};
   ChemicalStructure *structure{nullptr};
   std::vector<GenericAtomIndex> atoms;
   bool accepted{false};
   bool userEditRequested{false};
+  QString name{"wavefunction"};
   QString userInputContents;
 
   inline bool hasEquivalentMethodTo(const Parameters &rhs) const {

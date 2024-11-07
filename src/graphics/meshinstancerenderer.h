@@ -32,6 +32,7 @@ public:
   void setMesh(Mesh *);
 
   inline const auto &availableProperties() const { return m_availableProperties; }
+  bool hasTransparentObjects() const;
 
 private:
   void updateBuffers();

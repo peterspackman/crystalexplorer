@@ -582,13 +582,6 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
 
   handleMeshesUpdate();
 
-  for (auto *meshRenderer : m_meshRenderers) {
-    meshRenderer->bind();
-    m_uniforms.apply(meshRenderer);
-    meshRenderer->draw();
-    meshRenderer->release();
-  }
-
   for (auto *renderer : m_pointCloudRenderers) {
     renderer->bind();
     m_uniforms.apply(renderer);
@@ -596,7 +589,35 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     renderer->release();
   }
 
+  // Sort mesh renderers into opaque and transparent groups
+  std::vector<MeshInstanceRenderer *> opaqueMeshes;
+  std::vector<MeshInstanceRenderer *> transparentMeshes;
+
+  for (auto *renderer : m_meshRenderers) {
+    if (renderer->hasTransparentObjects()) {
+      transparentMeshes.push_back(renderer);
+    } else {
+      opaqueMeshes.push_back(renderer);
+    }
+  }
+
+  // Draw opaque meshes first
+  for (auto *meshRenderer : opaqueMeshes) {
+    meshRenderer->bind();
+    m_uniforms.apply(meshRenderer);
+    meshRenderer->draw();
+    meshRenderer->release();
+  }
+
   m_frameworkRenderer->draw();
+
+  // Draw transparent meshes last
+  for (auto *meshRenderer : transparentMeshes) {
+    meshRenderer->bind();
+    m_uniforms.apply(meshRenderer);
+    meshRenderer->draw();
+    meshRenderer->release();
+  }
 
   if (!forPicking) {
     m_labelRenderer->bind();

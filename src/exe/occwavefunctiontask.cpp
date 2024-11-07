@@ -32,7 +32,7 @@ void OccWavefunctionTask::start() {
   QString outputName = wavefunctionFilename();
 
   if (!io::writeTextFile(inputName, json)) {
-    emit errorOccurred("Could not write input file");
+    emit errorOccurred("Could not write input file: " + inputName);
     return;
   }
   emit progressText("Wrote input file");

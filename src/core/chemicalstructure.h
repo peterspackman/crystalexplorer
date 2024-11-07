@@ -271,6 +271,8 @@ public:
   wavefunctionsAndTransformsForAtoms(const std::vector<GenericAtomIndex> &);
 
   [[nodiscard]] inline ObjectTreeModel *treeModel() { return m_treeModel; }
+
+  [[nodiscard]] QString getFragmentLabelForAtoms(const std::vector<GenericAtomIndex> &idxs);
   [[nodiscard]] QString
   formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs,
                      bool richText) const;

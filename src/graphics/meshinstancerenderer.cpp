@@ -103,6 +103,15 @@ MeshInstanceRenderer::MeshInstanceRenderer(Mesh *mesh)
   m_program->release();
 }
 
+bool MeshInstanceRenderer::hasTransparentObjects() const {
+  for (const auto &instance : m_instances) {
+    if (instance.alpha() < 1.0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void MeshInstanceRenderer::setMesh(Mesh *mesh) {
   m_vertex.bind();
   m_index.bind();
