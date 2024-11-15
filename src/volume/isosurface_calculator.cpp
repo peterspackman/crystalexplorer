@@ -134,6 +134,37 @@ QString IsosurfaceCalculator::surfaceName() {
       .arg(m_parameters.isovalue);
 }
 
+void setFragmentPatchForMesh(Mesh * mesh, ChemicalStructure *structure) {
+  if(!mesh) return;
+  if(!structure) return;
+  ankerl::unordered_dense::map<FragmentIndex, int, FragmentIndexHash> fragmentIndices;
+
+  Mesh::ScalarPropertyValues fragmentPatch(mesh->numberOfVertices());
+  fragmentPatch.setConstant(-1.0);
+  occ::IVec de_idxs = mesh->vertexProperty("External atom index").cast<int>();
+  auto atomIndices = mesh->atomsOutside();
+  for (int i = 0; i < de_idxs.size(); i++) {
+    int idx = de_idxs(i);
+    if (idx >= atomIndices.size()) {
+        continue;
+    }
+    const auto &genericIndex = atomIndices[idx];
+    FragmentIndex fidx = structure->fragmentIndexForGeneralAtom(genericIndex);
+    if(fidx.u == -1)  {
+      continue;
+    }
+    const auto kv = fragmentIndices.find(fidx);
+    if(kv != fragmentIndices.end()) {
+      fragmentPatch(i) = kv->second;
+    }
+    else {
+      fragmentPatch(i) = fragmentIndices.size();
+      fragmentIndices.insert({fidx, fragmentIndices.size()});
+    }
+  }
+  mesh->setVertexProperty("Fragment Patch", fragmentPatch);
+}
+
 void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
   QList<Mesh *> meshes = io::loadMeshes(m_fileNames);
@@ -155,6 +186,7 @@ void IsosurfaceCalculator::surfaceComplete() {
     }
     mesh->setAtomsInside(m_atomsInside);
     mesh->setAtomsOutside(m_atomsOutside);
+    setFragmentPatchForMesh(mesh, params.structure);
     mesh->setParent(m_structure);
     // create the child instance that will be shown
     MeshInstance *instance = new MeshInstance(mesh);

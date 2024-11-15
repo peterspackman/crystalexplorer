@@ -113,9 +113,9 @@
       "description": "<p>Difference between the alpha and beta electron densities</p>"
     },
     "fragment_patch": {
-      "cmap": "Qualitative14Dark",
+      "cmap": "Turbo",
       "displayName": "Fragment Patch",
-      "occName": "fragment",
+      "occName": "fragment_patch",
       "description": "<p>The index of the associated neighbouring fragment/molecule</p>"
     },
     "de_idx": {

@@ -599,6 +599,7 @@ void CrystalStructure::completeFragmentContaining(GenericAtomIndex index) {
   }
   updateBondGraph();
 }
+
 void CrystalStructure::completeFragmentContaining(int atomIndex) {
   if (atomIndex < 0 || atomIndex >= numberOfAtoms())
     return;
@@ -1098,6 +1099,17 @@ const FragmentMap &CrystalStructure::symmetryUniqueFragments() const {
   return m_symmetryUniqueFragments;
 }
 
+FragmentIndex
+CrystalStructure::fragmentIndexForGeneralAtom(GenericAtomIndex index) const {
+  if(m_unitCellAtomFragments.size() == 0) return ChemicalStructure::fragmentIndexForGeneralAtom(index);
+  qDebug() << m_unitCellAtomFragments.size() << index.unique;
+  FragmentIndex fragmentIndex = m_unitCellAtomFragments.at(index.unique);
+  fragmentIndex.h += index.x;
+  fragmentIndex.k += index.y;
+  fragmentIndex.l += index.z;
+  return fragmentIndex;
+}
+
 Fragment::State CrystalStructure::getSymmetryUniqueFragmentState(
     FragmentIndex fragmentIndex) const {
   const auto kv = m_symmetryUniqueFragments.find(fragmentIndex);
@@ -1331,7 +1343,9 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
       params.fragmentDimer = ud;
       params.nearestAtomDistance = d.nearestAtomDistance;
       params.centroidDistance = d.centroidDistance;
-      params.hasInversionSymmetry = false;
+      // TODO better handling of inversion symmetry
+      QString modelName = pair->interactionModel();
+      params.hasInversionSymmetry = !(modelName == "cg" || modelName.startsWith("crystalclear"));
       pair->setParameters(params);
       p->add(pair);
     }

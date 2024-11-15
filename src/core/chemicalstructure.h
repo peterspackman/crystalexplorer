@@ -187,7 +187,7 @@ public:
 
   inline size_t numberOfFragments() const { return m_fragments.size(); }
   FragmentIndex fragmentIndexForAtom(int) const;
-  FragmentIndex fragmentIndexForAtom(GenericAtomIndex) const;
+  virtual FragmentIndex fragmentIndexForGeneralAtom(GenericAtomIndex) const;
 
   MaybeFragment getFragmentForAtom(int) const;
   MaybeFragment getFragmentForAtom(GenericAtomIndex) const;

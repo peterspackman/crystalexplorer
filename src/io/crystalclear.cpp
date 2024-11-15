@@ -56,10 +56,15 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
     return nullptr;
 
   occ::crystal::Crystal crystal = loadOccCrystal(json["crystal"]);
+  // TODO check if it's cg and then set symmetry of interactions
 
   QList<PairInteractions::PairInteractionList> interactions;
   QList<QList<DimerAtoms>> atomIndices;
 
+  QString modelName = "cg";
+  if(json.contains("model")) {
+    modelName = QString::fromStdString(json["model"]);
+  }
   // Parse neighbor energies
   auto pairsArray = json["pairs"];
   interactions.resize(pairsArray.size());
@@ -69,7 +74,7 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
     auto &neighbors = interactions[i];
     auto &offsets = atomIndices[i];
     for (int j = 0; j < siteEnergies.size(); ++j) {
-      auto *pair = new PairInteraction("cg");
+      auto *pair = new PairInteraction(modelName);
       auto dimerObj = siteEnergies[j];
       auto energiesObj = dimerObj["energies"];
       pair->setLabel(QString::number(j + 1));

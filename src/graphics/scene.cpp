@@ -238,7 +238,8 @@ void Scene::setSelectStatusForAtomDoubleClick(int atom) {
   auto atomIndex = m_structure->indexToGenericIndex(atom);
   if (m_structure->testAtomFlag(atomIndex, AtomFlag::Contact))
     return;
-  const auto fragmentIndex = m_structure->fragmentIndexForAtom(atomIndex);
+  const auto fragmentIndex =
+      m_structure->fragmentIndexForGeneralAtom(atomIndex);
   const auto &atomIndices = m_structure->atomIndicesForFragment(fragmentIndex);
   auto idx = m_structure->indexToGenericIndex(atom);
   m_structure->setAtomFlag(idx, AtomFlag::Selected, true);
@@ -1424,7 +1425,7 @@ void Scene::generateAllExternalFragments() {
     qDebug() << "Generate external fragment";
     if (!mesh)
       return;
-    occ::IVec de_idxs = mesh->vertexProperty("de_idx").cast<int>();
+    occ::IVec de_idxs = mesh->vertexProperty("External atom index").cast<int>();
     qDebug() << "num de_idxs" << de_idxs.size();
     ankerl::unordered_dense::set<int> unique(de_idxs.data(),
                                              de_idxs.data() + de_idxs.size());
@@ -1540,7 +1541,7 @@ void Scene::colorSelectedAtoms(const QColor &color, bool fragments) {
   auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
   if (fragments) {
     for (const auto &idx : idxs) {
-      const auto frag = m_structure->fragmentIndexForAtom(idx);
+      const auto frag = m_structure->fragmentIndexForGeneralAtom(idx);
       m_structure->setFragmentColor(frag, color);
     }
   } else {

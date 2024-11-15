@@ -10,9 +10,15 @@
 #include <occ/core/kdtree.h>
 
 namespace impl {
-template <typename Index>
+
 MaybeFragment getFragmentForAtom(const ChemicalStructure &structure,
-                                 Index atomIndex) {
+                                 GenericAtomIndex atomIndex) {
+  auto fragIndex = structure.fragmentIndexForGeneralAtom(atomIndex);
+  return structure.getFragment(fragIndex);
+}
+
+MaybeFragment getFragmentForAtom(const ChemicalStructure &structure,
+                                 int atomIndex) {
   auto fragIndex = structure.fragmentIndexForAtom(atomIndex);
   return structure.getFragment(fragIndex);
 }
@@ -572,7 +578,7 @@ FragmentIndex ChemicalStructure::fragmentIndexForAtom(int atomIndex) const {
 }
 
 FragmentIndex
-ChemicalStructure::fragmentIndexForAtom(GenericAtomIndex idx) const {
+ChemicalStructure::fragmentIndexForGeneralAtom(GenericAtomIndex idx) const {
   return fragmentIndexForAtom(genericIndexToIndex(idx));
 }
 
@@ -627,7 +633,7 @@ QColor ChemicalStructure::atomColor(GenericAtomIndex atomIndex) const {
       return Qt::black;
   }
   case AtomColoring::Fragment: {
-    auto fragIndex = fragmentIndexForAtom(atomIndex);
+    auto fragIndex = fragmentIndexForGeneralAtom(atomIndex);
     return getFragmentColor(fragIndex);
   }
   case AtomColoring::Index:
@@ -1163,9 +1169,10 @@ QString ChemicalStructure::getFragmentLabelForAtoms(
     return "None";
 
   // Get unique fragment indices for the atoms
-  ankerl::unordered_dense::set<FragmentIndex, FragmentIndexHash> uniqueFragments;
+  ankerl::unordered_dense::set<FragmentIndex, FragmentIndexHash>
+      uniqueFragments;
   for (const auto &idx : idxs) {
-    uniqueFragments.insert(fragmentIndexForAtom(idx));
+    uniqueFragments.insert(fragmentIndexForGeneralAtom(idx));
   }
 
   // Get chemical formula for these atoms

@@ -43,6 +43,7 @@ public:
   inline const auto &spaceGroup() const { return m_crystal.space_group(); }
   occ::Mat3N convertCoordinates(const occ::Mat3N &pos, ChemicalStructure::CoordinateConversion) const override;
 
+  FragmentIndex fragmentIndexForGeneralAtom(GenericAtomIndex) const override;
   void deleteFragmentContainingAtomIndex(int atomIndex) override;
   void deleteIncompleteFragments() override;
   void deleteAtoms(const std::vector<GenericAtomIndex> &) override;

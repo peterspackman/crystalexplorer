@@ -883,6 +883,10 @@ void Crystalx::loadExternalFileData(QString filename) {
     showStatusMessage(
         QString("Loading crystal clear output from %1").arg(filename));
     project->loadCrystalClearJson(filename);
+  }
+  if (filename.endsWith("elat_results.json")) {
+    showStatusMessage(QString("Loading occ elat output from %1").arg(filename));
+    project->loadCrystalClearJson(filename);
   } else if (filename.endsWith("surface.json")) {
     showStatusMessage(QString("Loading crystal surface from %1").arg(filename));
     project->loadCrystalClearSurfaceJson(filename);
