@@ -65,6 +65,11 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
   if(json.contains("model")) {
     modelName = QString::fromStdString(json["model"]);
   }
+  bool hasPermutationSymmetry{true};
+  if(json.contains("has_permutation_symmetry")) {
+    hasPermutationSymmetry = json["has_permutation_symmetry"];
+  }
+
   // Parse neighbor energies
   auto pairsArray = json["pairs"];
   interactions.resize(pairsArray.size());
@@ -75,6 +80,10 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
     auto &offsets = atomIndices[i];
     for (int j = 0; j < siteEnergies.size(); ++j) {
       auto *pair = new PairInteraction(modelName);
+      pair_energy::Parameters params;
+      params.hasPermutationSymmetry = hasPermutationSymmetry;
+      pair->setParameters(params);
+
       auto dimerObj = siteEnergies[j];
       auto energiesObj = dimerObj["energies"];
       pair->setLabel(QString::number(j + 1));

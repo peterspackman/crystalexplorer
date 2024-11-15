@@ -1386,7 +1386,7 @@ void Scene::togglePairHighlighting(bool show) {
     // TODO fix this to be more robust
     auto *interactions = m_structure->pairInteractions();
     FragmentPairSettings settings;
-    settings.allowInversion = interactions->hasInversionSymmetry();
+    settings.allowInversion = interactions->hasPermutationSymmetry();
     colorFragmentsByEnergyPair(settings);
     _disorderCycleIndex = 0; // Turn off disorder highlighting
   } else {

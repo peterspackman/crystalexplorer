@@ -1339,13 +1339,10 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
 
       added.insert(unique);
 
-      pair_energy::Parameters params;
+      pair_energy::Parameters params = pair->parameters();
       params.fragmentDimer = ud;
       params.nearestAtomDistance = d.nearestAtomDistance;
       params.centroidDistance = d.centroidDistance;
-      // TODO better handling of inversion symmetry
-      QString modelName = pair->interactionModel();
-      params.hasInversionSymmetry = !(modelName == "cg" || modelName.startsWith("crystalclear"));
       pair->setParameters(params);
       p->add(pair);
     }

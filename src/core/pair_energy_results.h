@@ -91,7 +91,7 @@ public:
 
   int getCount(const QString &model = "") const;
   bool haveInteractions(const QString &model = "") const;
-  bool hasInversionSymmetry(const QString &model = "") const;
+  bool hasPermutationSymmetry(const QString &model = "") const;
 
 signals:
   void interactionAdded();

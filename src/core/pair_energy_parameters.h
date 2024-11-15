@@ -43,7 +43,7 @@ struct Parameters {
   int charge() const;
   bool operator==(const Parameters &rhs) const;
   bool isXtbModel() const;
-  bool hasInversionSymmetry{true};
+  bool hasPermutationSymmetry{true};
 };
 
 struct Result {

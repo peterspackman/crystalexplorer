@@ -106,7 +106,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
   pairSettings.allowInversion =
       m_options.allowInversion &
-      m_interactions->hasInversionSymmetry(m_options.model);
+      m_interactions->hasPermutationSymmetry(m_options.model);
   auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
 
   std::vector<FragmentDimer> uniquePairs = fragmentPairs.uniquePairs;
@@ -150,12 +150,19 @@ void FrameworkRenderer::handleInteractionsUpdate() {
         break;
       case FrameworkOptions::LabelDisplay::Interaction: {
         const auto &params = interaction->parameters();
-        label = interaction->label() + QString("<sub>%1</sub>").arg(m_structure->getFragmentLabel(params.fragmentDimer.a.asymmetricFragmentIndex));
+        label = interaction->label() +
+                QString("<sub>%1</sub>")
+                    .arg(m_structure->getFragmentLabel(
+                        params.fragmentDimer.a.asymmetricFragmentIndex));
         break;
       }
       case FrameworkOptions::LabelDisplay::Fragments: {
         const auto &params = interaction->parameters();
-        label = m_structure->getFragmentLabel(params.fragmentDimer.a.asymmetricFragmentIndex) + ":" + m_structure->getFragmentLabel(params.fragmentDimer.b.asymmetricFragmentIndex);
+        label = m_structure->getFragmentLabel(
+                    params.fragmentDimer.a.asymmetricFragmentIndex) +
+                ":" +
+                m_structure->getFragmentLabel(
+                    params.fragmentDimer.b.asymmetricFragmentIndex);
         break;
       }
       default:

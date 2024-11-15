@@ -217,18 +217,18 @@ bool PairInteractions::haveInteractions(const QString &model) const {
 }
 
 
-bool PairInteractions::hasInversionSymmetry(const QString &model) const {
+bool PairInteractions::hasPermutationSymmetry(const QString &model) const {
   if (model.isEmpty()) {
     for (const auto &[k, v] : m_pairInteractions) {
       for(const auto &[interaction_key, interaction]: v) {
-        if(!interaction->parameters().hasInversionSymmetry) return false;
+        if(!interaction->parameters().hasPermutationSymmetry) return false;
       }
     }
   } else {
     const auto kv = m_pairInteractions.find(model);
     if (kv != m_pairInteractions.end()) {
       for(const auto &[interaction_key, interaction]: kv->second) {
-        if(!interaction->parameters().hasInversionSymmetry) return false;
+        if(!interaction->parameters().hasPermutationSymmetry) return false;
       }
     }
   }
