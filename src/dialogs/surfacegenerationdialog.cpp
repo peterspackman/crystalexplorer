@@ -87,6 +87,8 @@ isosurface::Kind SurfaceGenerationDialog::currentKind() const {
 }
 
 QString SurfaceGenerationDialog::currentPropertyName() const {
+  if(ui->propertyComboBox->currentText() == "None") return "None";
+
   const auto &currentSurfaceProperty =
       ui->propertyComboBox->currentSurfacePropertyDescription();
   return currentSurfaceProperty.occName;
@@ -99,7 +101,7 @@ void SurfaceGenerationDialog::validate() {
   parameters.kind = currentKind();
   parameters.computeNegativeIsovalue = shouldAlsoCalculateNegativeIsovalue();
   QString prop = currentPropertyName();
-  if (prop != "none") {
+  if (prop != "None") {
     parameters.additionalProperties.append(prop);
   }
   parameters.separation =

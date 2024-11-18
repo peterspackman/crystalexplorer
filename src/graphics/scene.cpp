@@ -1454,7 +1454,7 @@ void Scene::generateExternalFragment() {
     qDebug() << "Generate external fragment";
     if (!mesh)
       return;
-    const auto &de_idxs = mesh->vertexProperty("de_idx");
+    occ::IVec de_idxs = mesh->vertexProperty("External atom index").cast<int>();
     qDebug() << "num de_idxs" << de_idxs.size();
     if ((de_idxs.size() < m_selection.secondaryIndex) ||
         (m_selection.secondaryIndex < 0))

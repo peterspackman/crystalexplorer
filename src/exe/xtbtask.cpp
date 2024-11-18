@@ -17,15 +17,15 @@ void XtbTask::setParameters(const xtb::Parameters &params) {
 const xtb::Parameters &XtbTask::getParameters() const { return m_parameters; }
 
 QString XtbTask::jsonFilename() const {
-  return QString("%1.xtbout.json").arg(baseName());
+  return QString("%1.xtbout.json").arg(hashedBaseName());
 }
 
 QString XtbTask::moldenFilename() const {
-  return QString("%1.molden.input").arg(baseName());
+  return QString("%1.molden.input").arg(hashedBaseName());
 }
 
 QString XtbTask::propertiesFilename() const {
-  return QString("%1_properties.txt").arg(baseName());
+  return QString("%1_properties.txt").arg(hashedBaseName());
 }
 
 QString XtbTask::stdoutContents() const {
@@ -44,11 +44,11 @@ QString XtbTask::propertiesContents() const {
   return property(getOutputFilePropertyName("properties.txt")).toString();
 }
 
-QString XtbTask::coordFilename() const { return baseName() + inputSuffix(); }
+QString XtbTask::coordFilename() const { return hashedBaseName() + inputSuffix(); }
 
 void XtbTask::preProcess() {
 
-  QString name = baseName();
+  QString name = hashedBaseName();
 
   QString coord = m_parameters.userInputContents;
   if(!m_parameters.userEditRequested) {

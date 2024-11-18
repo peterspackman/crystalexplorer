@@ -13,7 +13,8 @@ class ExternalProgramTask : public Task {
     Q_OBJECT
 public:
 
-    explicit ExternalProgramTask(QObject *parent);
+    explicit ExternalProgramTask(QObject *parent = nullptr);
+    ~ExternalProgramTask();
 
     void setExecutable(const QString &exe);
     inline const auto &executable() const { return m_executable; }
@@ -42,6 +43,7 @@ public:
     virtual void stop() override;
 
     virtual QString baseName() const;
+    QString hashedBaseName() const;
 
     void setOverwrite(bool overwrite=true);
     bool overwrite() const;
@@ -59,6 +61,7 @@ signals:
     void stdoutChanged();
 
 private:
+    QTemporaryDir *m_tempDir{nullptr};
     void updateStdoutStderr(QProcess&);
     bool copyRequirements(const QString &path);
     bool copyResults(const QString &path);

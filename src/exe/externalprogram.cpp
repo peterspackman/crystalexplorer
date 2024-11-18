@@ -37,6 +37,12 @@ QString errorString(const QProcess::ProcessError &errorType) {
 ExternalProgramTask::ExternalProgramTask(QObject *parent)
     : Task(parent), m_environment(QProcessEnvironment::systemEnvironment()) {}
 
+ExternalProgramTask::~ExternalProgramTask() {
+  if (m_tempDir) {
+    delete m_tempDir;
+  }
+}
+
 QString ExternalProgramTask::getInputFilePropertyName(QString filename) {
   return "inp: " + filename;
 }
@@ -131,7 +137,8 @@ bool ExternalProgramTask::copyResults(const QString &path) {
       qDebug() << errorMessage();
       return false;
     }
-    setProperty(getOutputFilePropertyName(output), exe::readFileContents(tmpOutput));
+    setProperty(getOutputFilePropertyName(output),
+                exe::readFileContents(tmpOutput));
   }
   return true;
 }
@@ -161,8 +168,13 @@ bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
   QProcess process;
   qDebug() << "In task logic";
 
-  QTemporaryDir tempDir;
-  if (!tempDir.isValid()) {
+  if (m_tempDir) {
+    delete m_tempDir; // Clean up any previous instance
+  }
+
+  m_tempDir = new QTemporaryDir();
+
+  if (!m_tempDir->isValid()) {
     setErrorMessage("Cannot create temporary directory");
     promise.finish();
     return false;
@@ -170,12 +182,12 @@ bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
   promise.setProgressValueAndText(1, "Temporary directory created");
 
   process.setProcessEnvironment(m_environment);
-  process.setWorkingDirectory(tempDir.path());
+  process.setWorkingDirectory(m_tempDir->path());
   promise.setProgressValueAndText(2, "Process environment set");
 
   setupProcessConnectionsPrivate(process);
 
-  if (!copyRequirements(tempDir.path())) {
+  if (!copyRequirements(m_tempDir->path())) {
     setErrorMessage("Could not copy necessary files into temporary directory");
     return false;
   }
@@ -220,7 +232,7 @@ bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
   updateStdoutStderr(process);
   // SUCCESS
   if (m_exitCode == 0) {
-    if (!copyResults(tempDir.path())) {
+    if (!copyResults(m_tempDir->path())) {
       setErrorMessage("Could not copy results out of temporary directory");
     }
   } else {
@@ -248,7 +260,6 @@ void ExternalProgramTask::start() {
     promise.setProgressValueAndText(100, "Task complete");
     qDebug() << "Task " << property("name").toString() << " finished"
              << errorMessage();
-
 
     promise.finish();
   };
@@ -278,6 +289,10 @@ QString ExternalProgramTask::baseName() const {
     return loc->toString();
   }
   return "external_calculation";
+}
+
+QString ExternalProgramTask::hashedBaseName() const {
+  return QString::number(qHash(baseName()), 16);
 }
 
 void ExternalProgramTask::setOverwrite(bool overwrite) {

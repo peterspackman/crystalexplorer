@@ -54,8 +54,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
 
   if (params.wfn) {
     QString suffix = params.wfn->fileFormatSuffix();
-    wavefunctionFilename =
-        m_structure->name() + "_wfn" + suffix;
+    wavefunctionFilename = m_structure->name() + "_wfn" + suffix;
     // TODO report error
     params.wfn->writeToFile(wavefunctionFilename);
   }
@@ -114,7 +113,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   qDebug() << "Generating " << isosurface::kindToString(params.kind)
            << "surface with isovalue: " << params.isovalue;
   surfaceTask->setProperty("isovalue", params.isovalue);
-  if(params.computeNegativeIsovalue) {
+  if (params.computeNegativeIsovalue) {
     surfaceTask->setProperty("computeNegativeIsovalue", true);
   }
 
@@ -134,10 +133,13 @@ QString IsosurfaceCalculator::surfaceName() {
       .arg(m_parameters.isovalue);
 }
 
-void setFragmentPatchForMesh(Mesh * mesh, ChemicalStructure *structure) {
-  if(!mesh) return;
-  if(!structure) return;
-  ankerl::unordered_dense::map<FragmentIndex, int, FragmentIndexHash> fragmentIndices;
+void setFragmentPatchForMesh(Mesh *mesh, ChemicalStructure *structure) {
+  if (!mesh)
+    return;
+  if (!structure)
+    return;
+  ankerl::unordered_dense::map<FragmentIndex, int, FragmentIndexHash>
+      fragmentIndices;
 
   Mesh::ScalarPropertyValues fragmentPatch(mesh->numberOfVertices());
   fragmentPatch.setConstant(-1.0);
@@ -146,18 +148,17 @@ void setFragmentPatchForMesh(Mesh * mesh, ChemicalStructure *structure) {
   for (int i = 0; i < de_idxs.size(); i++) {
     int idx = de_idxs(i);
     if (idx >= atomIndices.size()) {
-        continue;
+      continue;
     }
     const auto &genericIndex = atomIndices[idx];
     FragmentIndex fidx = structure->fragmentIndexForGeneralAtom(genericIndex);
-    if(fidx.u == -1)  {
+    if (fidx.u == -1) {
       continue;
     }
     const auto kv = fragmentIndices.find(fidx);
-    if(kv != fragmentIndices.end()) {
+    if (kv != fragmentIndices.end()) {
       fragmentPatch(i) = kv->second;
-    }
-    else {
+    } else {
       fragmentPatch(i) = fragmentIndices.size();
       fragmentIndices.insert({fidx, fragmentIndices.size()});
     }
@@ -172,21 +173,26 @@ void IsosurfaceCalculator::surfaceComplete() {
     io::deleteFiles(m_fileNames);
   }
   int idx = 0;
-  for(auto * mesh: meshes) {
-    if(!mesh) continue;
+  for (auto *mesh : meshes) {
+    if (!mesh)
+      continue;
     auto params = m_parameters;
-    if(idx > 0) params.isovalue = - params.isovalue;
+    if (idx > 0)
+      params.isovalue = -params.isovalue;
     mesh->setObjectName(m_name);
     mesh->setParameters(params);
-    if(params.additionalProperties.size() > 0) {
-      mesh->setSelectedProperty(isosurface::getSurfacePropertyDisplayName(params.additionalProperties[0]));
-    }
-    else {
-      mesh->setSelectedProperty(isosurface::getSurfacePropertyDisplayName(isosurface::defaultPropertyForKind(params.kind)));
-    }
     mesh->setAtomsInside(m_atomsInside);
     mesh->setAtomsOutside(m_atomsOutside);
     setFragmentPatchForMesh(mesh, params.structure);
+
+    if (params.additionalProperties.size() > 0) {
+      mesh->setSelectedProperty(isosurface::getSurfacePropertyDisplayName(
+          params.additionalProperties[0]));
+    } else {
+      mesh->setSelectedProperty(isosurface::getSurfacePropertyDisplayName(
+          isosurface::defaultPropertyForKind(params.kind)));
+    }
+
     mesh->setParent(m_structure);
     // create the child instance that will be shown
     MeshInstance *instance = new MeshInstance(mesh);

@@ -128,10 +128,6 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   std::vector<std::tuple<QColor, double, QString>> energies;
   energies.reserve(uniqueInteractions.size());
 
-  for (const auto &pair : uniquePairs) {
-    qDebug() << pair.index;
-  }
-
   double emin = std::numeric_limits<double>::max();
   double emax = std::numeric_limits<double>::min();
 

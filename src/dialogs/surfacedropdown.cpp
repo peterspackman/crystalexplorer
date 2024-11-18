@@ -74,6 +74,7 @@ void SurfacePropertyTypeDropdown::onSurfaceSelectionChanged(
   isosurface::SurfaceDescription selectedSurface =
       getSurfaceDescription(selectedSurfaceKey);
 
+  addItem("None", "None");
   for (const QString &property : selectedSurface.requestableProperties) {
     isosurface::SurfacePropertyDescription propertyDescription =
         getSurfacePropertyDescription(property);
