@@ -29,7 +29,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME gemmi
     GITHUB_REPOSITORY project-gemmi/gemmi
-    GIT_TAG master
+    GIT_TAG "v0.6.7"
     OPTIONS "BUILD_SHARED_LIBS OFF" "BUILD_GEMMI_PROGRAM OFF"
     EXCLUDE_FROM_ALL YES
 )

@@ -40,4 +40,5 @@ private:
   std::shared_ptr<tinyply::PlyData> m_faces;
   std::shared_ptr<tinyply::PlyData> m_normals;
   std::map<std::string, std::shared_ptr<tinyply::PlyData>> m_properties;
+  std::vector<uint8_t> m_fileBuffer;
 };

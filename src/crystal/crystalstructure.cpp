@@ -1102,7 +1102,6 @@ const FragmentMap &CrystalStructure::symmetryUniqueFragments() const {
 FragmentIndex
 CrystalStructure::fragmentIndexForGeneralAtom(GenericAtomIndex index) const {
   if(m_unitCellAtomFragments.size() == 0) return ChemicalStructure::fragmentIndexForGeneralAtom(index);
-  qDebug() << m_unitCellAtomFragments.size() << index.unique;
   FragmentIndex fragmentIndex = m_unitCellAtomFragments.at(index.unique);
   fragmentIndex.h += index.x;
   fragmentIndex.k += index.y;
