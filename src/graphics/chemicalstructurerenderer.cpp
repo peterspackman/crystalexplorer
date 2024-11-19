@@ -512,10 +512,10 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
     if (bondStyle() == BondDrawingStyle::Line) {
       cx::graphics::addLineToLineRenderer(
           *m_bondLineRenderer, pointA, 0.5 * pointA + 0.5 * pointB,
-          DrawingStyleConstants::bondLineWidth, colorA);
+          DrawingStyleConstants::bondLineWidth, colorA, id_color, selectedA);
       cx::graphics::addLineToLineRenderer(
           *m_bondLineRenderer, pointB, 0.5 * pointA + 0.5 * pointB,
-          DrawingStyleConstants::bondLineWidth, colorB);
+          DrawingStyleConstants::bondLineWidth, colorB, id_color, selectedB);
     } else {
       cx::graphics::addCylinderToCylinderRenderer(
           m_cylinderRenderer, pointA, pointB, colorA, colorB, radius, id_color,

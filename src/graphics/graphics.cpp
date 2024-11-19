@@ -138,14 +138,25 @@ LineRenderer *createLineRenderer(const QVector3D &pointA,
 
 void addLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
                            const QVector3D &pointB, float lineWidth,
-                           const QColor &color) {
+                           const QColor &color, const QVector3D &id, bool selected) {
   QVector3D col(color.redF(), color.greenF(), color.blueF());
   r.addLines({
-      LineVertex(pointA, pointB, col, col, QVector2D(-1, 1), lineWidth),
-      LineVertex(pointA, pointB, col, col, QVector2D(-1, -1), lineWidth),
-      LineVertex(pointA, pointB, col, col, QVector2D(1, 1), lineWidth),
-      LineVertex(pointA, pointB, col, col, QVector2D(1, -1), lineWidth),
+      LineVertex(pointA, pointB, col, col, QVector2D(-1, 1), lineWidth, id),
+      LineVertex(pointA, pointB, col, col, QVector2D(-1, -1), lineWidth, id),
+      LineVertex(pointA, pointB, col, col, QVector2D(1, 1), lineWidth, id),
+      LineVertex(pointA, pointB, col, col, QVector2D(1, -1), lineWidth, id),
   });
+  if(selected) {
+      QColor selectionColor =
+          settings::readSetting(settings::keys::SELECTION_COLOR).toString();
+      QVector3D y(selectionColor.redF(), selectionColor.greenF(), selectionColor.blueF());
+      r.addLines({
+          LineVertex(pointA, pointB, y, y, QVector2D(-1, 1.01), lineWidth*2),
+          LineVertex(pointA, pointB, y, y, QVector2D(-1, -1.01), lineWidth*2),
+          LineVertex(pointA, pointB, y, y, QVector2D(1, 1.01), lineWidth*2),
+          LineVertex(pointA, pointB, y, y, QVector2D(1, -1.01), lineWidth*2),
+      });
+  }
 }
 
 void addDashedLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,

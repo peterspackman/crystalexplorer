@@ -5,6 +5,7 @@ layout(location = 2) in vec3 colorA;
 layout(location = 3) in vec3 colorB;
 layout(location = 4) in vec2 mapping;
 layout(location = 5) in float lineWidth;
+layout(location = 6) in vec3 selectionColor;
 
 uniform mat4 u_projectionMat;
 uniform mat4 u_viewMat;
@@ -17,9 +18,7 @@ uniform vec2 u_viewport_size;
 uniform float u_lineScale;
 
 out vec4 v_color;
-
-
-const float boxCorrection = 1.5;
+flat out vec4 v_selectionColor;
 
 void main()
 {
@@ -27,6 +26,7 @@ void main()
     float linewidth = u_lineScale * lineWidth * u_scale;
     vec4 start = u_modelViewMat * vec4(posA, 1.0);
     vec4 end = u_modelViewMat * vec4(posB, 1.0);
+    float depthOffset = abs(mapping.y) - 1.0;
 
     // clip space
     vec4 clipStart = u_projectionMat * start;
@@ -41,26 +41,19 @@ void main()
 
     // account for clip-space aspect ratio
     dir.x *= aspect;
-    dir = normalize( dir );
+    dir = normalize(dir);
 
     // perpendicular to dir
-    vec2 offset = vec2( dir.y, - dir.x );
+    vec2 offset = vec2(dir.y, -dir.x);
 
     // undo aspect ratio adjustment
     dir.x /= aspect;
     offset.x /= aspect;
 
     // sign flip
-    if ( mapping.x < 0.0 ) offset *= - 1.0;
+    if (mapping.x < 0.0) offset *= -1.0;
 
     v_color = vec4(colorA, 1.0);
-    // not used
-    // // endcaps
-    if ( mapping.y < 0.0 ) {
-        offset += -dir;
-    } else if ( mapping.y > 0.0 ) {
-        offset += dir;
-    }
 
     // adjust for linewidth
     offset *= linewidth;
@@ -69,11 +62,23 @@ void main()
     offset /= u_viewport_size.y;
 
     // select end
-    vec4 clip = ( mapping.y < 0.5 ) ? clipStart : clipEnd;
+    vec4 clip = (mapping.y < 0.5) ? clipStart : clipEnd;
+    v_selectionColor = vec4(selectionColor, 1.0);
 
     // back to clip space
     offset *= clip.w;
     clip.xy += offset;
+
+    // If we have a depth offset, extend the line at the ends
+    if (depthOffset > 0.0) {
+        // Extend the line in the direction of its endpoint
+        if (mapping.y < 0.0) {
+            clip.xy -= (0.5 * dir * linewidth * clip.w) / u_viewport_size.y; // extend start
+        } else if (mapping.y > 0.0) {
+            clip.xy += (0.5 * dir * linewidth * clip.w) / u_viewport_size.y; // extend end
+        }
+    }
+
+    clip.z -= 0.1 * depthOffset;
     gl_Position = clip;
 }
-

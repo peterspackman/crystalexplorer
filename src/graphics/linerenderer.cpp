@@ -1,13 +1,14 @@
 #include "linerenderer.h"
+#include "shaderloader.h"
 #include <QOpenGLShaderProgram>
 
 LineRenderer::LineRenderer() {
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceFile(QOpenGLShader::Vertex,
-                                              ":/shaders/line.vert");
-  m_program->addCacheableShaderFromSourceFile(QOpenGLShader::Fragment,
-                                              ":/shaders/line.frag");
+  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex,
+                                              cx::shader::loadShaderFile(":/shaders/line.vert"));
+  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Fragment,
+                                              cx::shader::loadShaderFile(":/shaders/line.frag"));
   m_program->link();
   m_program->bind();
 
@@ -30,6 +31,7 @@ LineRenderer::LineRenderer() {
   m_program->enableAttributeArray(3);
   m_program->enableAttributeArray(4);
   m_program->enableAttributeArray(5);
+  m_program->enableAttributeArray(6);
 
   m_program->setAttributeBuffer(0, GL_FLOAT, LineVertex::pointAOffset(),
                                 LineVertex::PointATupleSize,
@@ -49,6 +51,9 @@ LineRenderer::LineRenderer() {
   m_program->setAttributeBuffer(5, GL_FLOAT, LineVertex::lineWidthOffset(),
                                 LineVertex::LineWidthSize,
                                 LineVertex::stride());
+  m_program->setAttributeBuffer(6, GL_FLOAT, LineVertex::selectionColorOffset(),
+                                LineVertex::SelectionColorTupleSize,
+                                LineVertex::stride());
   // Release (unbind) all
   m_index.release();
   m_object.release();
@@ -60,10 +65,10 @@ LineRenderer::LineRenderer(const vector<LineVertex> &vertices)
     : m_vertex(QOpenGLBuffer::VertexBuffer) {
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceFile(QOpenGLShader::Vertex,
-                                              ":/shaders/line.vert");
-  m_program->addCacheableShaderFromSourceFile(QOpenGLShader::Fragment,
-                                              ":/shaders/line.frag");
+  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex,
+                                              cx::shader::loadShaderFile(":/shaders/line.vert"));
+  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Fragment,
+                                              cx::shader::loadShaderFile(":/shaders/line.frag"));
   m_program->link();
   m_program->bind();
 
@@ -89,6 +94,7 @@ LineRenderer::LineRenderer(const vector<LineVertex> &vertices)
   m_program->enableAttributeArray(3);
   m_program->enableAttributeArray(4);
   m_program->enableAttributeArray(5);
+  m_program->enableAttributeArray(6);
 
   m_program->setAttributeBuffer(0, GL_FLOAT, LineVertex::pointAOffset(),
                                 LineVertex::PointATupleSize,
@@ -108,6 +114,10 @@ LineRenderer::LineRenderer(const vector<LineVertex> &vertices)
   m_program->setAttributeBuffer(5, GL_FLOAT, LineVertex::lineWidthOffset(),
                                 LineVertex::LineWidthSize,
                                 LineVertex::stride());
+  m_program->setAttributeBuffer(6, GL_FLOAT, LineVertex::selectionColorOffset(),
+                                LineVertex::SelectionColorTupleSize,
+                                LineVertex::stride());
+
   // Release (unbind) all
   m_index.release();
   m_object.release();

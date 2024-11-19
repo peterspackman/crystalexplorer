@@ -46,7 +46,7 @@ LineRenderer *createLineRenderer(const QVector3D &pointA,
 				      float lineWidth, const QColor &color);
 void addLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
 				const QVector3D &pointB, float lineWidth,
-				const QColor &color);
+                const QColor &color, const QVector3D &idA = {}, bool selected=false);
 void addDashedLineToLineRenderer(LineRenderer &r,
 				      const QVector3D &pointA,
 				      const QVector3D &pointB,

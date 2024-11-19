@@ -221,7 +221,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb,
                                               lineWidth, color);
         }
-        cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m, label);
+        if(!label.isEmpty())
+            cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m, label);
       } else {
         QVector3D m2 = va + (m - va) * 0.5;
         if (m_options.display == FrameworkOptions::Display::Tubes) {
@@ -235,7 +236,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, lineWidth,
                                               color);
         }
-        cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m2, label);
+        if(!label.isEmpty())
+            cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m2, label);
       }
     }
   }
