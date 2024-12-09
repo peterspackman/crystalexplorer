@@ -14,6 +14,8 @@ class MeshInstance : public QObject {
       bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
   Q_PROPERTY(bool transparent READ isTransparent WRITE setTransparent NOTIFY
                  transparencyChanged)
+  Q_PROPERTY(float transparency READ getTransparency WRITE setTransparency NOTIFY
+                 transparencyChanged)
   Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE
                  setSelectedProperty NOTIFY selectedPropertyChanged)
 
@@ -66,6 +68,8 @@ public:
 
   [[nodiscard]] bool isTransparent() const;
   void setTransparent(bool);
+  [[nodiscard]] float getTransparency() const;
+  void setTransparency(float);
 
   [[nodiscard]] const QString &getSelectedProperty() const;
   bool setSelectedProperty(const QString &);
@@ -85,6 +89,7 @@ private:
   void populateSurroundingAtoms();
   bool m_visible{true};
   bool m_transparent{false};
+  float m_transparency{0.8};
   QString m_selectedProperty;
   Mesh *m_mesh{nullptr};
   MeshTransform m_transform;

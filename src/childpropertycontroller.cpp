@@ -50,6 +50,8 @@ void ChildPropertyController::setup() {
 
   connect(enableTransparencyCheckBox, &QCheckBox::toggled, this,
           &ChildPropertyController::onSurfaceTransparencyChange);
+  connect(transparencySpinBox, &QDoubleSpinBox::valueChanged, this,
+          &ChildPropertyController::onSurfaceVarTransparecyChange);
 
   connect(surfacePropertyComboBox, &QComboBox::currentTextChanged, this,
           &ChildPropertyController::onComboBoxPropertySelectionChanged);
@@ -371,6 +373,10 @@ void ChildPropertyController::setCurrentWavefunction(
 
 void ChildPropertyController::onSurfaceTransparencyChange(bool transparent) {
   m_meshPropertyModel->setTransparent(transparent);
+}
+
+void ChildPropertyController::onSurfaceVarTransparecyChange(float transparency) {
+  m_meshPropertyModel->setTransparency(transparency);
 }
 
 void ChildPropertyController::onComboBoxPropertySelectionChanged(

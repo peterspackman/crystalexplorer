@@ -23,7 +23,9 @@ public:
     GlobularityRole,
     AsphericityRole,
     TransparentRole,
-    FingerprintableRole
+    TransparencyRole,
+    FingerprintableRole,
+    Transparen
   };
 
   explicit MeshPropertyModel(QObject *parent = nullptr);
@@ -45,6 +47,7 @@ public:
   QString getSelectedProperty() const;
 
   bool isTransparent() const;
+  float getTransparency() const;
   double volume() const;
   double area() const;
   double globularity() const;
@@ -58,6 +61,7 @@ signals:
 public slots:
   void setSelectedProperty(QString);
   void setTransparent(bool);
+  void setTransparency(float);
 
 protected:
   QHash<int, QByteArray> roleNames() const override;

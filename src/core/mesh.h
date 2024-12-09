@@ -11,6 +11,9 @@ class Mesh : public QObject {
   Q_OBJECT
   Q_PROPERTY(
       bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
+
+  Q_PROPERTY(float transparency READ getTransparency WRITE setTransparency NOTIFY
+                 transparencyChanged)
   Q_PROPERTY(bool transparent READ isTransparent WRITE setTransparent NOTIFY
                  transparencyChanged)
   Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE
@@ -113,7 +116,8 @@ public:
 
   [[nodiscard]] bool isTransparent() const;
   void setTransparent(bool);
-
+  [[nodiscard]] float getTransparency() const;
+  void setTransparency(float);
   size_t rendererIndex() const;
   void setRendererIndex(size_t idx);
 
@@ -183,6 +187,7 @@ private:
   Eigen::Matrix<bool, Eigen::Dynamic, 1> m_vertexMask;
 
   bool m_transparent{false};
+  float m_transparency{0.8};
   size_t m_rendererIndex{0};
 
   QString m_selectedProperty;
