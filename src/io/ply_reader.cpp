@@ -6,14 +6,15 @@
 namespace {
 class MemoryBuffer : public std::streambuf {
 public:
-    MemoryBuffer(char const* first_elem, size_t size) {
-        if (!first_elem || size == 0) {
-            throw std::runtime_error("Invalid buffer parameters");
-        }
-        p_start = const_cast<char*>(first_elem);
-        p_end = p_start + size;
-        setg(p_start, p_start, p_end);
+  MemoryBuffer(char const *first_elem, size_t size) {
+    if (!first_elem || size == 0) {
+      throw std::runtime_error("Invalid buffer parameters");
     }
+    p_start = const_cast<char *>(first_elem);
+    p_end = p_start + size;
+    setg(p_start, p_start, p_end);
+  }
+
 private:
   pos_type seekoff(off_type off, std::ios_base::seekdir dir,
                    std::ios_base::openmode) override {
@@ -45,69 +46,66 @@ PlyReader::PlyReader(std::unique_ptr<std::istream> stream)
       m_plyFile(std::make_unique<tinyply::PlyFile>()) {}
 
 PlyReader::PlyReader(const QString &filepath) {
-    m_fileBuffer = readFileBinary(filepath);
-    m_stream = std::make_unique<MemoryStream>(
-        reinterpret_cast<char *>(m_fileBuffer.data()), m_fileBuffer.size());
-    m_plyFile = std::make_unique<tinyply::PlyFile>();
+  m_fileBuffer = readFileBinary(filepath);
+  m_stream = std::make_unique<MemoryStream>(
+      reinterpret_cast<char *>(m_fileBuffer.data()), m_fileBuffer.size());
+  m_plyFile = std::make_unique<tinyply::PlyFile>();
 
-    // Ensure stream is in good state and at beginning
-    m_stream->clear();
-    m_stream->seekg(0, std::ios::beg);
+  m_stream->clear();
+  m_stream->seekg(0, std::ios::beg);
 }
 
-std::vector<uint8_t> PlyReader::readFileBinary(const QString& filepath) {
-    std::ifstream file(filepath.toStdString(), std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open file: " + filepath.toStdString());
-    }
+std::vector<uint8_t> PlyReader::readFileBinary(const QString &filepath) {
+  std::ifstream file(filepath.toStdString(), std::ios::binary);
+  if (!file.is_open()) {
+    throw std::runtime_error("Could not open file: " + filepath.toStdString());
+  }
 
-    file.seekg(0, std::ios::end);
-    if (file.fail()) {
-        throw std::runtime_error("Failed to seek to end of file");
-    }
+  file.seekg(0, std::ios::end);
+  if (file.fail()) {
+    throw std::runtime_error("Failed to seek to end of file");
+  }
 
-    size_t sizeBytes = file.tellg();
-    if (sizeBytes == 0) {
-        throw std::runtime_error("File is empty");
-    }
+  size_t sizeBytes = file.tellg();
+  if (sizeBytes == 0) {
+    throw std::runtime_error("File is empty");
+  }
 
-    file.seekg(0, std::ios::beg);
-    if (file.fail()) {
-        throw std::runtime_error("Failed to seek to beginning of file");
-    }
+  file.seekg(0, std::ios::beg);
+  if (file.fail()) {
+    throw std::runtime_error("Failed to seek to beginning of file");
+  }
 
-    std::vector<uint8_t> buffer(sizeBytes);
-    if (!file.read(reinterpret_cast<char*>(buffer.data()), sizeBytes)) {
-        throw std::runtime_error("Failed to read file: " + filepath.toStdString() +
-                                 " (read " + std::to_string(file.gcount()) +
-                                 " of " + std::to_string(sizeBytes) + " bytes)");
-    }
+  std::vector<uint8_t> buffer(sizeBytes);
+  if (!file.read(reinterpret_cast<char *>(buffer.data()), sizeBytes)) {
+    throw std::runtime_error("Failed to read file: " + filepath.toStdString() +
+                             " (read " + std::to_string(file.gcount()) +
+                             " of " + std::to_string(sizeBytes) + " bytes)");
+  }
 
-    return buffer;
+  return buffer;
 }
 
 void PlyReader::parseHeader() {
-    if (!m_stream || m_stream->fail()) {
-        throw std::runtime_error("Invalid stream");
+  if (!m_stream || m_stream->fail()) {
+    throw std::runtime_error("Invalid stream");
+  }
+
+  qDebug() << "Stream position:" << m_stream->tellg()
+           << "Stream good:" << m_stream->good()
+           << "Stream eof:" << m_stream->eof();
+
+  try {
+    m_plyFile->parse_header(*m_stream);
+    // Debug parsed elements
+    for (const auto &element : m_plyFile->get_elements()) {
+      qDebug() << "Found element:" << QString::fromStdString(element.name)
+               << "count:" << element.size;
     }
-
-    // Debug stream state
-    qDebug() << "Stream position:" << m_stream->tellg()
-             << "Stream good:" << m_stream->good()
-             << "Stream eof:" << m_stream->eof();
-
-    try {
-        m_plyFile->parse_header(*m_stream);
-
-        // Debug parsed elements
-        for (const auto& element : m_plyFile->get_elements()) {
-            qDebug() << "Found element:" << QString::fromStdString(element.name)
-            << "count:" << element.size;
-        }
-    } catch (const std::exception& e) {
-        qDebug() << "Parse header failed:" << e.what();
-        throw;
-    }
+  } catch (const std::exception &e) {
+    qDebug() << "Parse header failed:" << e.what();
+    throw;
+  }
 }
 
 void PlyReader::requestProperties() {
@@ -237,8 +235,8 @@ std::unique_ptr<Mesh> PlyReader::constructMesh() {
 
   // Process additional properties
   for (const auto &[prop_name, prop] : m_properties) {
-    QString displayName =
-        isosurface::getSurfacePropertyDisplayName(QString::fromStdString(prop_name));
+    QString displayName = isosurface::getSurfacePropertyDisplayName(
+        QString::fromStdString(prop_name));
     setMeshProperty(mesh.get(), displayName, prop);
   }
 
