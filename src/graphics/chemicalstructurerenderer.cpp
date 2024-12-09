@@ -667,8 +667,8 @@ void addInstanceToInstanceRenderer(
 
   int propertyIndex =
       availableProperties.indexOf(instance->getSelectedProperty());
-  // TODO transparency
-  float alpha = instance->isTransparent() ? 0.8 : 1.0;
+
+  float alpha = instance->isTransparent() ? instance->getTransparency() : 1.0;
 
   QVector3D selectionColor;
 

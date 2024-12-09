@@ -86,6 +86,7 @@ void MeshInstance::setTransform(const MeshTransform &transform) {
 }
 
 bool MeshInstance::isTransparent() const { return m_transparent; }
+float MeshInstance::getTransparency() const { return m_transparency; }
 
 void MeshInstance::setTransparent(bool transparent) {
   if (transparent == m_transparent)
@@ -94,6 +95,13 @@ void MeshInstance::setTransparent(bool transparent) {
   emit transparencyChanged();
 }
 
+void MeshInstance::setTransparency(float transparency)
+{
+  if (transparency == m_transparency)
+    return;
+  m_transparency = transparency;
+  emit transparencyChanged();
+}
 bool MeshInstance::isVisible() const { return m_visible; }
 
 void MeshInstance::setVisible(bool visible) {
