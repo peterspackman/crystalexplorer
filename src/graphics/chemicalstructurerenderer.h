@@ -1,5 +1,6 @@
 #pragma once
 #include "atom_label_options.h"
+#include "bimap.h"
 #include "billboardrenderer.h"
 #include "chemicalstructure.h"
 #include "colormap.h"
@@ -96,6 +97,7 @@ public:
   [[nodiscard]] inline double getThermalEllipsoidProbability() const { return m_thermalEllipsoidProbability; }
 
   [[nodiscard]] MeshInstance *getMeshInstance(size_t index) const;
+  [[nodiscard]] int getMeshInstanceIndex(MeshInstance *) const;
 
 signals:
   void meshesChanged();
@@ -142,7 +144,7 @@ private:
   AtomLabelOptions m_atomLabelOptions;
 
   // helper for keeping track of mesh selection
-  std::vector<MeshInstance *> m_meshIndexToMesh;
+  BiMap<MeshInstance *> m_meshMap;
 
   DrawingStyle m_drawingStyle{DrawingStyle::BallAndStick};
   AtomDrawingStyle m_atomStyle{AtomDrawingStyle::CovalentRadiusSphere};

@@ -30,6 +30,7 @@ public:
   void setMesh(Mesh *);
   void setMeshInstance(MeshInstance *);
   Mesh *getMesh();
+  MeshInstance *getMeshInstance();
 
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
   QVariant data(const QModelIndex &index,
@@ -54,6 +55,7 @@ public:
 
 signals:
   void propertySelectionChanged(QString);
+  void meshSelectionChanged();
 
 public slots:
   void setSelectedProperty(QString);

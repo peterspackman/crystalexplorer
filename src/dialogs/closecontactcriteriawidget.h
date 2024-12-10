@@ -34,6 +34,6 @@ private:
   void addHeader();
   QGridLayout *m_layout;
   double m_vdwMax{3.0};
-  ColorMapFunc m_colorMap;
+  ColorMap m_colorMap;
 };
 

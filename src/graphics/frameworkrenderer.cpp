@@ -171,7 +171,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   }
 
   if (m_options.coloring == FrameworkOptions::Coloring::Value) {
-    ColorMapFunc cmap(ColorMapName::Turbo, emin, emax);
+    ColorMap cmap("Turbo", emin, emax);
     for (auto &[color, energy, label] : energies) {
       color = cmap(energy);
     }

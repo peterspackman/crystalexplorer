@@ -520,6 +520,22 @@ MeasurementObject Scene::processMeasurementSingleClick(const QColor &color,
   return result;
 }
 
+void Scene::setSelectedSurface(MeshInstance *meshInstance) {
+  if (!meshInstance)
+    return;
+  if (!m_structureRenderer)
+    return;
+  int idx = m_structureRenderer->getMeshInstanceIndex(meshInstance);
+  qDebug() << "Setting selected surface in Scene to" << meshInstance
+           << "with index" << idx;
+  if (idx < 0)
+    return;
+  m_selection.type = SelectionType::Surface;
+  m_selection.index = idx;
+  m_selection.secondaryIndex = 0;
+  populateSelectedSurface();
+}
+
 void Scene::populateSelectedSurface() {
   m_selectedSurface.index = m_selection.index;
   m_selectedSurface.faceIndex = m_selection.secondaryIndex;
@@ -1345,8 +1361,7 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
         FragmentColorSettings::Method::Constant, Qt::gray});
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
-    ColorMapFunc colorMap(ColorMapName::Austria, 0,
-                          fragmentPairs.uniquePairs.size() - 1);
+    ColorMap colorMap("Austria", 0, fragmentPairs.uniquePairs.size() - 1);
     std::vector<int> counts(fragmentPairs.uniquePairs.size(), 0);
     for (const auto &[fragmentPair, idx] :
          fragmentPairs.pairs[selectedFragments[0]]) {

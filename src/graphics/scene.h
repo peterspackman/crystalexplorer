@@ -112,6 +112,7 @@ public:
   const SelectedAtom &selectedAtom() const;
   const SelectedBond &selectedBond() const;
   const SelectedSurface &selectedSurface() const;
+  void setSelectedSurface(MeshInstance *);
 
   bool showCells();
   void setShowCells(bool show);

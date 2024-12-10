@@ -254,5 +254,5 @@ private:
   QString m_insideFilterElementSymbol{"H"};
   QString m_outsideFilterElementSymbol{"H"};
 
-  ColorMapName m_colorScheme{ColorMapName::CE_rgb};
+  QString m_colorScheme{"CE_RGB"};
 };

@@ -361,7 +361,7 @@ void CrystalStructure::setAllFragmentColors(
   } else if (settings.method ==
              FragmentColorSettings::Method::SymmetryUniqueFragment) {
     size_t nasym = m_symmetryUniqueFragments.size();
-    ColorMapFunc cmap(ColorMapName::Hokusai1, 0, nasym);
+    ColorMap cmap("Hokusai1", 0, nasym);
     for (auto &[idx, frag] : m_fragments) {
       frag.color = cmap(frag.asymmetricFragmentIndex.u);
     }

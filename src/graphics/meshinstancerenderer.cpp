@@ -159,7 +159,7 @@ void MeshInstanceRenderer::setMesh(Mesh *mesh) {
       auto range = mesh->vertexPropertyRange(prop);
 
       QString cmapName = globals->getColorMapNameForProperty(prop);
-      ColorMapFunc cmap(colorMapFromString(cmapName), range.lower, range.upper);
+      ColorMap cmap(cmapName, range.lower, range.upper);
 
       for (size_t i = 0; i < vals.rows(); i++) {
         QColor color = cmap(vals(i));

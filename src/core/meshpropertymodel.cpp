@@ -3,7 +3,8 @@
 
 MeshPropertyModel::MeshPropertyModel(QObject *parent)
     : QAbstractListModel(parent), m_mesh(nullptr) {
-  loadSurfaceDescriptionConfiguration(m_propertyDescriptions, m_surfaceDescriptions, m_defaultIsovalues);
+  loadSurfaceDescriptionConfiguration(
+      m_propertyDescriptions, m_surfaceDescriptions, m_defaultIsovalues);
 }
 
 bool MeshPropertyModel::isValid() const {
@@ -66,59 +67,59 @@ QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
   QString propertyName = properties.at(index.row());
 
   switch (role) {
-    case Qt::DisplayRole: {
-      // Use display name from property description if available
-      auto it = m_propertyDescriptions.find(propertyName);
-      if (it != m_propertyDescriptions.end()) {
-        return it->displayName;
-      }
-      return propertyName;
+  case Qt::DisplayRole: {
+    // Use display name from property description if available
+    auto it = m_propertyDescriptions.find(propertyName);
+    if (it != m_propertyDescriptions.end()) {
+      return it->displayName;
     }
-    case Qt::DecorationRole: {
-      // Load icon if specified in the property description
-      auto it = m_propertyDescriptions.find(propertyName);
-      if (it != m_propertyDescriptions.end() && !it->iconName.isEmpty()) {
-        return QIcon(QString(":/images/%1").arg(it->iconName));
-      }
-      return QVariant();
+    return propertyName;
+  }
+  case Qt::DecorationRole: {
+    // Load icon if specified in the property description
+    auto it = m_propertyDescriptions.find(propertyName);
+    if (it != m_propertyDescriptions.end() && !it->iconName.isEmpty()) {
+      return QIcon(QString(":/images/%1").arg(it->iconName));
     }
-    case PropertyNameRole:
-      return propertyName;
-    case PropertyUnitsRole: {
-      auto it = m_propertyDescriptions.find(propertyName);
-      if (it != m_propertyDescriptions.end()) {
-        return it->units;
-      }
-      return "";
+    return QVariant();
+  }
+  case PropertyNameRole:
+    return propertyName;
+  case PropertyUnitsRole: {
+    auto it = m_propertyDescriptions.find(propertyName);
+    if (it != m_propertyDescriptions.end()) {
+      return it->units;
     }
-    case PropertyDescriptionRole: {
-      auto it = m_propertyDescriptions.find(propertyName);
-      if (it != m_propertyDescriptions.end()) {
-        return it->description;
-      }
-      return "";
+    return "";
+  }
+  case PropertyDescriptionRole: {
+    auto it = m_propertyDescriptions.find(propertyName);
+    if (it != m_propertyDescriptions.end()) {
+      return it->description;
     }
-    case PropertyColorMapRole: {
-      auto it = m_propertyDescriptions.find(propertyName);
-      if (it != m_propertyDescriptions.end()) {
-        return it->cmap;
-      }
-      return "viridis"; // default colormap
+    return "";
+  }
+  case PropertyColorMapRole: {
+    auto it = m_propertyDescriptions.find(propertyName);
+    if (it != m_propertyDescriptions.end()) {
+      return it->cmap;
     }
-    case VolumeRole:
-      return volume();
-    case AreaRole:
-      return area();
-    case GlobularityRole:
-      return globularity();
-    case AsphericityRole:
-      return asphericity();
-    case TransparentRole:
-      return isTransparent();
-    case FingerprintableRole:
-      return isFingerprintable();
-    default:
-      return QVariant();
+    return "Viridis"; // default colormap
+  }
+  case VolumeRole:
+    return volume();
+  case AreaRole:
+    return area();
+  case GlobularityRole:
+    return globularity();
+  case AsphericityRole:
+    return asphericity();
+  case TransparentRole:
+    return isTransparent();
+  case FingerprintableRole:
+    return isFingerprintable();
+  default:
+    return QVariant();
   }
 }
 
@@ -186,13 +187,13 @@ Mesh::ScalarPropertyRange MeshPropertyModel::getSelectedPropertyRange() const {
 
 QString MeshPropertyModel::getSelectedPropertyColorMap() const {
   if (!m_mesh)
-    return "viridis";
+    return "Viridis";
   QString propertyName = getSelectedProperty();
   auto it = m_propertyDescriptions.find(propertyName);
   if (it != m_propertyDescriptions.end()) {
     return it->cmap;
   }
-  return "viridis";
+  return "Viridis";
 }
 
 void MeshPropertyModel::setSelectedPropertyColorMap(const QString &mapName) {
@@ -250,3 +251,4 @@ void MeshPropertyModel::setTransparent(bool transparent) {
 }
 
 Mesh *MeshPropertyModel::getMesh() { return m_mesh; }
+MeshInstance *MeshPropertyModel::getMeshInstance() { return m_meshInstance; }

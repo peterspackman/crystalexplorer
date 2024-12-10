@@ -67,7 +67,7 @@ QColor CloseContactCriteriaWidget::getButtonColor(QToolButton *colorButton) {
 }
 
 CloseContactCriteriaWidget::CloseContactCriteriaWidget(QWidget *parent)
-    : QWidget(parent), m_colorMap(ColorMapName::Turbo, 0.0, 10.0) {
+    : QWidget(parent), m_colorMap("Turbo", 0.0, 10.0) {
   m_layout = new QGridLayout(this);
 
   addHeader();
@@ -158,7 +158,6 @@ CloseContactCriteria CloseContactCriteriaWidget::getCriteria(int row) {
 int CloseContactCriteriaWidget::count() const {
   return m_layout->rowCount() - 1;
 }
-
 
 void CloseContactCriteriaWidget::criteriaChanged(int row) {
   emit closeContactsSettingsChanged(row, getCriteria(row));

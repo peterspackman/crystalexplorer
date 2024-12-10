@@ -1,7 +1,7 @@
 #pragma once
+#include "colormap.h"
 #include "mesh.h"
 #include "meshinstancevertex.h"
-#include "colormap.h"
 #include "renderer.h"
 #include <QOpenGLBuffer>
 #include <QOpenGLExtraFunctions>
@@ -10,11 +10,10 @@
 #include <QOpenGLVertexArrayObject>
 #include <vector>
 
-class PointCloudInstanceRenderer : public Renderer, protected QOpenGLExtraFunctions {
+class PointCloudInstanceRenderer : public Renderer,
+                                   protected QOpenGLExtraFunctions {
 public:
-
   explicit PointCloudInstanceRenderer(Mesh *mesh = nullptr);
-
 
   void addInstance(const MeshInstanceVertex &);
   void addInstances(const std::vector<MeshInstanceVertex> &instances);
@@ -28,11 +27,8 @@ public:
   [[nodiscard]] inline auto &instances() { return m_instances; }
   void setMesh(Mesh *);
 
-  inline const auto &availableProperties() const { return m_availableProperties; }
-
-  inline const auto &colorMaps() const { return m_propertyColorMaps; }
-  inline void setColorMaps(const QMap<QString, ColorMapName> val) {
-      m_propertyColorMaps = val;
+  inline const auto &availableProperties() const {
+    return m_availableProperties;
   }
 
 private:
@@ -43,8 +39,7 @@ private:
   std::vector<MeshInstanceVertex> m_instances;
 
   QOpenGLBuffer m_vertexPropertyBuffer;
-  QOpenGLTexture *m_vertexPropertyTexture{nullptr}; 
-  QMap<QString, ColorMapName> m_propertyColorMaps;
+  QOpenGLTexture *m_vertexPropertyTexture{nullptr};
 
   QStringList m_availableProperties;
   int m_numIndices{0};

@@ -85,6 +85,7 @@ public slots:
   void clearStatusMessage();
   void handleExportCurrentGeometry();
   void handleAtomLabelActions();
+  void handleMeshSelectionChanged();
 
 protected slots:
   void closeEvent(QCloseEvent *);

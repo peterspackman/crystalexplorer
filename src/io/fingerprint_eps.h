@@ -19,7 +19,7 @@ public:
   inline void setXOffset(int x) { m_xOffset = x; }
   inline void setYOffset(int y) { m_yOffset = y; }
 
-  inline void setColorScheme(ColorMapName cmap) { m_colorScheme = cmap; }
+  inline void setColorScheme(const QString &cmap) { m_colorScheme = cmap; }
 
 private:
   void writeHeader(QTextStream &ts, const QString &title);
@@ -40,7 +40,7 @@ private:
   int m_xOffset{0};
   int m_yOffset{0};
 
-  ColorMapName m_colorScheme{ColorMapName::CE_rgb};
+  QString m_colorScheme{"CE_RGB"};
 
   // Constants (you might want to make these configurable)
   static constexpr double EPS_DPCM = 28.36;

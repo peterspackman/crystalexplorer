@@ -656,10 +656,10 @@ void ChemicalStructureRenderer::clearMeshRenderers() {
 }
 
 template <class Renderer>
-void addInstanceToInstanceRenderer(
-    MeshInstance *instance, Renderer *instanceRenderer,
-    RenderSelection *selectionHandler,
-    std::vector<MeshInstance *> &meshIndexToMesh) {
+void addInstanceToInstanceRenderer(MeshInstance *instance,
+                                   Renderer *instanceRenderer,
+                                   RenderSelection *selectionHandler,
+                                   BiMap<MeshInstance *> &meshMap) {
 
   const auto &availableProperties = instanceRenderer->availableProperties();
   if (!instance || !instance->isVisible())
@@ -673,9 +673,8 @@ void addInstanceToInstanceRenderer(
   QVector3D selectionColor;
 
   if (selectionHandler) {
-    auto selectionId =
-        selectionHandler->add(SelectionType::Surface, meshIndexToMesh.size());
-    meshIndexToMesh.push_back(instance);
+    auto index = meshMap.add(instance);
+    auto selectionId = selectionHandler->add(SelectionType::Surface, index);
     selectionColor = selectionHandler->getColorFromId(selectionId);
   }
 
@@ -705,7 +704,7 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
   m_meshRenderers.clear();
   m_pointCloudRenderers.clear();
 
-  m_meshIndexToMesh.clear();
+  m_meshMap.clear();
   m_highlightRenderer->clear();
 
   if (m_selectionHandler) {
@@ -723,8 +722,7 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
       for (auto *meshChild : child->children()) {
         auto *meshInstance = qobject_cast<MeshInstance *>(meshChild);
         addInstanceToInstanceRenderer<PointCloudInstanceRenderer>(
-            meshInstance, instanceRenderer, m_selectionHandler,
-            m_meshIndexToMesh);
+            meshInstance, instanceRenderer, m_selectionHandler, m_meshMap);
         addFaceHighlightsForMeshInstance(mesh, meshInstance);
         mesh->setRendererIndex(m_pointCloudRenderers.size());
       }
@@ -737,8 +735,7 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
       for (auto *meshChild : child->children()) {
         auto *meshInstance = qobject_cast<MeshInstance *>(meshChild);
         addInstanceToInstanceRenderer<MeshInstanceRenderer>(
-            meshInstance, instanceRenderer, m_selectionHandler,
-            m_meshIndexToMesh);
+            meshInstance, instanceRenderer, m_selectionHandler, m_meshMap);
 
         addFaceHighlightsForMeshInstance(mesh, meshInstance);
         mesh->setRendererIndex(m_meshRenderers.size());
@@ -805,9 +802,15 @@ void ChemicalStructureRenderer::setFrameworkOptions(
 }
 
 MeshInstance *ChemicalStructureRenderer::getMeshInstance(size_t index) const {
-  if (index >= m_meshIndexToMesh.size())
-    return nullptr;
-  return m_meshIndexToMesh.at(index);
+  return m_meshMap.get(index);
+}
+
+int ChemicalStructureRenderer::getMeshInstanceIndex(
+    MeshInstance *meshInstance) const {
+  auto result = m_meshMap.getIndex(meshInstance);
+  if (!result)
+    return -1;
+  return static_cast<int>(*result);
 }
 
 } // namespace cx::graphics

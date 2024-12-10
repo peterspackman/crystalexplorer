@@ -233,7 +233,7 @@ void FingerprintEpsWriter::writeBins(QTextStream &ts,
   double maxValue =
       (stdAreaForSaturatedColor / enhancementFactor) * binnedAreas.sum();
 
-  auto func = ColorMapFunc(m_colorScheme);
+  auto func = ColorMap(m_colorScheme);
   func.lower = 0.0;
   func.upper = maxValue;
   func.reverse = true;
