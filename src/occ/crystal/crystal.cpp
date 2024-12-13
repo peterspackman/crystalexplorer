@@ -359,7 +359,10 @@ Crystal::atoms_surrounding_points(const Mat3N &frac_pos, double radius,
 
 Crystal::Crystal(const AsymmetricUnit &asym, const SpaceGroup &sg,
                  const UnitCell &uc)
-    : m_asymmetric_unit(asym), m_space_group(sg), m_unit_cell(uc) {}
+    : m_asymmetric_unit(asym), m_space_group(sg), m_unit_cell(uc) {
+  m_bond_mapping_table =
+      DimerMappingTable::create_atomic_pair_table(*this, true);
+}
 
 const PeriodicBondGraph &Crystal::unit_cell_connectivity() const {
   if (m_unit_cell_connectivity_needs_update)
@@ -371,17 +374,34 @@ void Crystal::set_connectivity_criteria(bool guess) {
   m_guess_connectivity = guess;
 }
 
-void Crystal::add_bond_override(
-    size_t atom_a, size_t atom_b, const HKL &cell_offset,
-    occ::core::graph::PeriodicEdge::Connection type) {
-  occ::core::graph::PBCEdge edge{
-      static_cast<int>(atom_a),
-      static_cast<int>(atom_b),
-      cell_offset.h,
-      cell_offset.k,
-      cell_offset.l};
-  m_bond_overrides.insert({edge, type});
+void Crystal::add_bond_override(size_t atom_a, size_t atom_b,
+                                const HKL &cell_offset,
+                                core::graph::PeriodicEdge::Connection type) {
+  // Create original edge and corresponding dimer
+  core::graph::PBCEdge edge{static_cast<int>(atom_a), static_cast<int>(atom_b),
+                            cell_offset.h, cell_offset.k, cell_offset.l};
+
+  DimerIndex dimer{{edge.source, {0, 0, 0}},
+                   {edge.target, {edge.h, edge.k, edge.l}}};
+
+  // Get canonical form
+  DimerIndex canonical = m_bond_mapping_table.symmetry_unique_dimer(dimer);
+
+  // Convert back to edge and store
+  core::graph::PBCEdge canonical_edge{static_cast<int>(canonical.a.offset),
+                                      static_cast<int>(canonical.b.offset),
+                                      canonical.b.hkl.h, canonical.b.hkl.k,
+                                      canonical.b.hkl.l};
+
+  m_bond_overrides[canonical_edge] = type;
   m_unit_cell_connectivity_needs_update = true;
+}
+
+void Crystal::clear_bond_overrides() {
+  if (!m_bond_overrides.empty()) {
+    m_bond_overrides.clear();
+    m_unit_cell_connectivity_needs_update = true;
+  }
 }
 
 void Crystal::update_unit_cell_connectivity() const {
@@ -390,15 +410,41 @@ void Crystal::update_unit_cell_connectivity() const {
     return;
   }
 
+  BondOverrides full_overrides;
+
+  // Generate all symmetry-related overrides
+  for (const auto &[edge, conn_type] : m_bond_overrides) {
+    DimerIndex dimer{{edge.source, {0, 0, 0}},
+                     {edge.target, {edge.h, edge.k, edge.l}}};
+
+    // Get all related dimers
+    auto related = m_bond_mapping_table.symmetry_related_dimers(dimer);
+
+    for (const auto &related_dimer : related) {
+      // Forward direction
+      core::graph::PBCEdge sym_edge{
+          static_cast<int>(related_dimer.a.offset),
+          static_cast<int>(related_dimer.b.offset), related_dimer.b.hkl.h,
+          related_dimer.b.hkl.k, related_dimer.b.hkl.l};
+      full_overrides[sym_edge] = conn_type;
+
+      // Reverse direction
+      core::graph::PBCEdge reverse_edge{sym_edge.target, sym_edge.source,
+                                        -sym_edge.h, -sym_edge.k, -sym_edge.l};
+      full_overrides[reverse_edge] = conn_type;
+    }
+  }
+
   UnitCellConnectivityBuilder builder(*this);
-  m_bond_graph = builder.build(m_bond_overrides);
+  m_bond_graph = builder.build(full_overrides);
   m_unit_cell_connectivity_needs_update = false;
   m_symmetry_unique_molecules_needs_update = true;
   m_unit_cell_molecules_needs_update = true;
 }
 
 const std::vector<occ::core::Molecule> &Crystal::unit_cell_molecules() const {
-  if (m_unit_cell_molecules_needs_update || m_unit_cell_connectivity_needs_update)
+  if (m_unit_cell_molecules_needs_update ||
+      m_unit_cell_connectivity_needs_update)
     update_unit_cell_molecules();
   return m_unit_cell_molecules;
 }
@@ -481,7 +527,8 @@ void Crystal::update_unit_cell_molecules() const {
 
 const std::vector<occ::core::Molecule> &
 Crystal::symmetry_unique_molecules() const {
-  if (m_symmetry_unique_molecules_needs_update || m_unit_cell_connectivity_needs_update)
+  if (m_symmetry_unique_molecules_needs_update ||
+      m_unit_cell_connectivity_needs_update)
     update_symmetry_unique_molecules();
   return m_symmetry_unique_molecules;
 }

@@ -17,6 +17,8 @@ public:
   PeriodicBondGraph build(const BondOverrides &overrides);
 
 private:
+  void finalize_unimplemented_connections(PeriodicBondGraph &graph,
+                                          const BondOverrides &overrides);
   void initialize_vertices(PeriodicBondGraph &graph);
 
   void build_kdtree(const CrystalAtomRegion &slab);

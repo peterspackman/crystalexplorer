@@ -21,6 +21,8 @@ UnitCellConnectivityBuilder::build(const BondOverrides &overrides) {
   BondOverrides overrides_copy = overrides;
   // copy so that we can modify it to remove overrides that have been done
   detect_connections(graph, m_slab, overrides_copy);
+  // implement those that weren't detected as nearby
+  finalize_unimplemented_connections(graph, overrides_copy);
 
   return graph;
 }
@@ -134,10 +136,45 @@ void UnitCellConnectivityBuilder::detect_atom_connections(
       }
     }
   }
-  for(const auto &edge: implemented_overrides) {
+  for (const auto &edge : implemented_overrides) {
     overrides.erase(edge);
     PBCEdge back{edge.target, edge.source, -edge.h, -edge.k, -edge.l};
     overrides.erase(back);
+  }
+}
+
+void UnitCellConnectivityBuilder::finalize_unimplemented_connections(
+    PeriodicBondGraph &graph, const BondOverrides &overrides) {
+  using Connection = PeriodicEdge::Connection;
+  for (const auto &[edge, conn] : overrides) {
+    if (conn == Connection::DontBond)
+      continue;
+    if (edge.source > edge.target)
+      continue;
+
+    size_t uc_idx_l = edge.source;
+    size_t uc_idx_r = edge.target;
+    size_t asym_idx_l = m_unit_cell_atoms.asym_idx(uc_idx_l);
+    size_t asym_idx_r = m_unit_cell_atoms.asym_idx(uc_idx_r);
+    int el_a = m_elements(asym_idx_l);
+    int el_b = m_elements(asym_idx_r);
+    int h = edge.h;
+    int k = edge.k;
+    int l = edge.l;
+
+    auto add_edge = [&](Connection c, double dist) {
+      PeriodicEdge left_right{dist, uc_idx_l, uc_idx_r, asym_idx_l, asym_idx_r,
+                              h,    k,        l,        c};
+      PeriodicEdge right_left{dist, uc_idx_r, uc_idx_l, asym_idx_r, asym_idx_l,
+                              -h,   -k,       -l,       c};
+      graph.add_edge(m_vertices[uc_idx_l], m_vertices[uc_idx_r], left_right);
+      graph.add_edge(m_vertices[uc_idx_r], m_vertices[uc_idx_l], right_left);
+    };
+
+    add_edge(conn, 0.0);
+    if (conn == Connection::CloseContact && can_hbond(el_a, el_b)) {
+      add_edge(Connection::HydrogenBond, 0.0);
+    }
   }
 }
 
