@@ -76,11 +76,30 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   int numConnections = 0;
 
   auto addEdge = [&](double d, size_t l, size_t r, Connection bondType) {
-    Edge leftToRight{std::sqrt(d), l, r, bondType};
-    m_bondGraphEdges.push_back(m_bondGraph.add_edge(l, r, leftToRight));
-    Edge rightToLeft{std::sqrt(d), r, l, bondType};
-    m_bondGraph.add_edge(r, l, rightToLeft);
-    numConnections++;
+    GenericAtomIndex left = indexToGenericIndex(l);
+    GenericAtomIndex right = indexToGenericIndex(r);
+
+    // Check override
+    switch (getBondOverride(left, right)) {
+    case BondMethod::Bond: {
+      // should be handled separately
+      break;
+    }
+    case BondMethod::DontBond:
+      // Skip adding any bond
+      break;
+
+    case BondMethod::Detect: {
+      // Normal bond addition logic
+      Edge leftToRight{std::sqrt(d), l, r, bondType};
+      m_bondGraphEdges.push_back(m_bondGraph.add_edge(l, r, leftToRight));
+      Edge rightToLeft{std::sqrt(d), r, l, bondType};
+      m_bondGraph.add_edge(r, l, rightToLeft);
+      numConnections++;
+      // Fall through to normal distance-based detection
+      break;
+    }
+    }
   };
 
   auto canHydrogenBond = [](int a, int b) {
@@ -93,6 +112,18 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     }
     return false;
   };
+
+  for (const auto &[k, v] : m_bondOverrides) {
+    if(v != BondMethod::Bond) continue;
+    size_t l = genericIndexToIndex(k.a);
+    size_t r = genericIndexToIndex(k.b);
+    double d = (m_atomicPositions.col(r) - m_atomicPositions.col(l)).norm();
+    Edge leftToRight{d, l, r, Connection::CovalentBond};
+    m_bondGraphEdges.push_back(m_bondGraph.add_edge(l, r, leftToRight));
+    Edge rightToLeft{d, r, l, Connection::CovalentBond};
+    m_bondGraph.add_edge(r, l, rightToLeft);
+    numConnections++;
+  }
 
   for (int a = 0; a < numberOfAtoms(); a++) {
     double cov_a = cov(a);
@@ -118,6 +149,8 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     }
     results.clear();
   }
+
+
 
   m_bondsNeedUpdate = false;
   m_fragments.clear();
@@ -190,6 +223,27 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
       break;
     }
   }
+}
+
+void ChemicalStructure::addBondOverride(BondOverride override) {
+  m_bondOverrides[makeBondPair(override.a, override.b)] = override.bond;
+  m_bondsNeedUpdate = true;
+  updateBondGraph();
+}
+
+void ChemicalStructure::addBondOverrides(
+    const std::vector<BondOverride> &overrides) {
+  for (const auto &override : overrides) {
+    m_bondOverrides[makeBondPair(override.a, override.b)] = override.bond;
+  }
+  m_bondsNeedUpdate = true;
+  updateBondGraph();
+}
+
+BondMethod ChemicalStructure::getBondOverride(GenericAtomIndex a,
+                                              GenericAtomIndex b) const {
+  auto it = m_bondOverrides.find(makeBondPair(a, b));
+  return it != m_bondOverrides.end() ? it->second : BondMethod::Detect;
 }
 
 const AtomFlags &ChemicalStructure::atomFlags(GenericAtomIndex index) const {

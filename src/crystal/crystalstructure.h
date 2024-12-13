@@ -24,7 +24,7 @@ public:
   setPairInteractionsFromDimerAtoms(const QList<QList<PairInteraction *>> &,
                                     const QList<QList<DimerAtoms>> &);
 
-  virtual inline StructureType structureType() const override {
+  inline StructureType structureType() const override {
     return StructureType::Crystal;
   }
 
@@ -41,7 +41,9 @@ public:
   }
 
   inline const auto &spaceGroup() const { return m_crystal.space_group(); }
-  occ::Mat3N convertCoordinates(const occ::Mat3N &pos, ChemicalStructure::CoordinateConversion) const override;
+  occ::Mat3N
+  convertCoordinates(const occ::Mat3N &pos,
+                     ChemicalStructure::CoordinateConversion) const override;
 
   FragmentIndex fragmentIndexForGeneralAtom(GenericAtomIndex) const override;
   void deleteFragmentContainingAtomIndex(int atomIndex) override;
@@ -55,6 +57,8 @@ public:
   GenericAtomIndex indexToGenericIndex(int) const override;
 
   void updateBondGraph() override;
+  void addBondOverride(BondOverride) override;
+  void addBondOverrides(const std::vector<BondOverride> &) override;
 
   void resetAtomsAndBonds(bool toSelection = false) override;
 
@@ -121,15 +125,21 @@ public:
   [[nodiscard]] AtomicDisplacementParameters
       atomicDisplacementParameters(GenericAtomIndex) const override;
 
-  [[nodiscard]] QString getTransformationString(const Eigen::Isometry3d &result) const;
+  [[nodiscard]] QString
+  getTransformationString(const Eigen::Isometry3d &result) const;
 
   [[nodiscard]] nlohmann::json toJson() const override;
-  bool fromJson(const nlohmann::json&) override;
+  bool fromJson(const nlohmann::json &) override;
 
 private:
+  void updateFragments();
+  void updateAtomFragmentMapping(const Fragment &frag);
+  void updateAtomicDisplacementParameters();
+
   Fragment makeFragmentFromFragmentIndex(FragmentIndex) const;
   FragmentIndex findUnitCellFragment(const Fragment &frag) const;
-  Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol, FragmentIndex);
+  Fragment makeFragmentFromOccMolecule(const occ::core::Molecule &mol,
+                                       FragmentIndex);
 
   void addAtomsByCrystalIndex(const std::vector<GenericAtomIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);

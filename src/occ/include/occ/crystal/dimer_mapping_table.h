@@ -1,7 +1,7 @@
 #pragma once
 #include <fmt/core.h>
-#include <occ/core/graph.h>
 #include <occ/core/dimer.h>
+#include <occ/core/graph.h>
 #include <occ/crystal/crystal.h>
 #include <occ/crystal/site_index.h>
 #include <occ/crystal/unitcell.h>
@@ -33,8 +33,8 @@ struct DimerIndex {
 
 struct DimerIndexHash {
   using is_avalanching = void;
-  [[nodiscard]] auto
-  operator()(DimerIndex const &idx) const noexcept -> uint64_t {
+  [[nodiscard]] auto operator()(DimerIndex const &idx) const noexcept
+      -> uint64_t {
     static_assert(std::has_unique_object_representations_v<DimerIndex>);
     return ankerl::unordered_dense::detail::wyhash::hash(&idx, sizeof(idx));
   }
@@ -56,9 +56,12 @@ using DimerMappingGraph =
 class DimerMappingTable {
 public:
   DimerMappingTable() = default;
-  DimerMappingTable(const Crystal &crystal,
-                    const CrystalDimers &dimers,
+  DimerMappingTable(const Crystal &crystal, const CrystalDimers &dimers,
                     bool consider_inversion);
+
+  static DimerMappingTable
+  create_atomic_pair_table(const Crystal &crystal,
+                           bool consider_inversion = false);
 
   DimerIndex symmetry_unique_dimer(const DimerIndex &dimer) const;
   std::vector<DimerIndex>
@@ -99,8 +102,7 @@ private:
 
 } // namespace occ::crystal
 
-template <>
-struct fmt::formatter<occ::crystal::DimerIndex> : formatter<int> {
-  auto format(const occ::crystal::DimerIndex &,
-              format_context &ctx) const -> format_context::iterator;
+template <> struct fmt::formatter<occ::crystal::DimerIndex> : formatter<int> {
+  auto format(const occ::crystal::DimerIndex &, format_context &ctx) const
+      -> format_context::iterator;
 };

@@ -59,4 +59,7 @@ public:
   size_t size() const { return cloud.pts.size(); }
 };
 
+using KdResultSet = std::vector<std::pair<Eigen::Index, double>>;
+using KdRadiusResultSet = nanoflann::RadiusResultSet<double, Eigen::Index>;
+
 } // namespace occ::core

@@ -4,6 +4,7 @@
 #include <occ/core/kdtree.h>
 #include <occ/core/linear_algebra.h>
 #include <occ/crystal/crystal.h>
+#include <occ/crystal/unit_cell_connectivity.h>
 
 namespace occ::crystal {
 
@@ -19,7 +20,7 @@ inline Mat3N clean_small_values(const Mat3N &v, double epsilon = 1e-14) {
       [epsilon](double x) { return (std::abs(x) < epsilon) ? 0.0 : x; });
 }
 
-inline Mat3N wrap_to_unit_cell(const Mat3N& v) {
+inline Mat3N wrap_to_unit_cell(const Mat3N &v) {
   return (v.array() - v.array().floor());
 }
 
@@ -143,8 +144,8 @@ CrystalAtomRegion Crystal::atom_surroundings(int asym_idx,
                                  occ::core::max_leaf);
   tree.index->buildIndex();
 
-  std::vector<std::pair<Eigen::Index, double>> idxs_dists;
-  nanoflann::RadiusResultSet results(radius * radius, idxs_dists);
+  core::KdResultSet idxs_dists;
+  core::KdRadiusResultSet results(radius * radius, idxs_dists);
 
   Mat3N asym_cart_pos = to_cartesian(m_asymmetric_unit.positions);
 
@@ -201,8 +202,8 @@ Crystal::asymmetric_unit_atom_surroundings(double radius) const {
                                  occ::core::max_leaf);
   tree.index->buildIndex();
 
-  std::vector<std::pair<Eigen::Index, double>> idxs_dists;
-  nanoflann::RadiusResultSet results(radius * radius, idxs_dists);
+  core::KdResultSet idxs_dists;
+  core::KdRadiusResultSet results(radius * radius, idxs_dists);
 
   Mat3N asym_cart_pos = to_cartesian(m_asymmetric_unit.positions);
 
@@ -370,107 +371,34 @@ void Crystal::set_connectivity_criteria(bool guess) {
   m_guess_connectivity = guess;
 }
 
+void Crystal::add_bond_override(
+    size_t atom_a, size_t atom_b, const HKL &cell_offset,
+    occ::core::graph::PeriodicEdge::Connection type) {
+  occ::core::graph::PBCEdge edge{
+      static_cast<int>(atom_a),
+      static_cast<int>(atom_b),
+      cell_offset.h,
+      cell_offset.k,
+      cell_offset.l};
+  m_bond_overrides.insert({edge, type});
+  m_unit_cell_connectivity_needs_update = true;
+}
+
 void Crystal::update_unit_cell_connectivity() const {
-  auto s = slab({-2, -2, -2}, {2, 2, 2});
-  size_t n_uc = m_unit_cell_atoms.size();
-  m_bond_graph_vertices.clear();
-
-  for (size_t i = 0; i < n_uc; i++) {
-    m_bond_graph_vertices.push_back(
-        m_bond_graph.add_vertex(occ::core::graph::PeriodicVertex{i}));
-  }
-
   if (!m_guess_connectivity) {
     m_unit_cell_connectivity_needs_update = false;
     return;
   }
 
-  occ::core::KDTree<double> tree(s.cart_pos.rows(), s.cart_pos,
-                                 occ::core::max_leaf);
-  tree.index->buildIndex();
-  auto covalent_radii = m_asymmetric_unit.covalent_radii();
-  const auto &elements = m_asymmetric_unit.atomic_numbers;
-  auto vdw_radii = m_asymmetric_unit.vdw_radii();
-  double max_vdw = vdw_radii.maxCoeff();
-
-  std::vector<std::pair<size_t, double>> idxs_dists;
-  double max_dist = (max_vdw * 2 + 0.6) * (max_vdw * 2 + 0.6);
-  nanoflann::RadiusResultSet results(max_dist, idxs_dists);
-  using Connection = occ::core::graph::PeriodicEdge::Connection;
-
-  size_t num_connections = 0;
-  auto add_edge = [&](double d, size_t uc_l, size_t uc_r, size_t asym_l,
-                      size_t asym_r, const IVec3 &hkl,
-                      Connection connectionType) {
-    occ::core::graph::PeriodicEdge left_right{sqrt(d), uc_l,   uc_r,
-                                              asym_l,  asym_r, hkl(0),
-                                              hkl(1),  hkl(2), connectionType};
-    m_bond_graph.add_edge(m_bond_graph_vertices[uc_l],
-                          m_bond_graph_vertices[uc_r], left_right);
-    occ::core::graph::PeriodicEdge right_left{sqrt(d), uc_r,    uc_l,
-                                              asym_r,  asym_l,  -hkl(0),
-                                              -hkl(1), -hkl(2), connectionType};
-    m_bond_graph.add_edge(m_bond_graph_vertices[uc_r],
-                          m_bond_graph_vertices[uc_l], right_left);
-    num_connections++;
-  };
-
-  auto can_hbond = [](int a, int b) {
-    if (a == 1) {
-      if (b == 7 || b == 8 || b == 9)
-        return true;
-    } else if (b == 1) {
-      if (a == 7 || a == 8 || a == 9)
-        return true;
-    }
-    return false;
-  };
-
-  for (size_t uc_idx_l = 0; uc_idx_l < n_uc; uc_idx_l++) {
-    size_t asym_idx_l = m_unit_cell_atoms.asym_idx(uc_idx_l);
-    double cov_a = covalent_radii(asym_idx_l);
-    double vdw_a = vdw_radii(asym_idx_l);
-    int el_a = elements(asym_idx_l);
-
-    double *q = s.cart_pos.col(uc_idx_l).data();
-    tree.index->findNeighbors(results, q, nanoflann::SearchParams());
-    for (const auto &r : idxs_dists) {
-      size_t idx;
-      double d;
-      std::tie(idx, d) = r;
-      if (idx == uc_idx_l)
-        continue;
-      size_t uc_idx_r = idx % n_uc;
-      if (uc_idx_r < uc_idx_l)
-        continue;
-      size_t asym_idx_r = m_unit_cell_atoms.asym_idx(uc_idx_r);
-      double cov_b = covalent_radii(asym_idx_r);
-      double vdw_b = vdw_radii(asym_idx_r);
-      int el_b = elements(asym_idx_r);
-
-      double threshold = (cov_a + cov_b + 0.4) * (cov_a + cov_b + 0.4);
-      double threshold_vdw = (vdw_a + vdw_b + 0.6) * (vdw_a + vdw_b + 0.6);
-      if (d < threshold) {
-        auto hkl = s.hkl.col(idx);
-        add_edge(d, uc_idx_l, uc_idx_r, asym_idx_l, asym_idx_r, hkl,
-                 Connection::CovalentBond);
-      } else if (d < threshold_vdw) {
-        auto hkl = s.hkl.col(idx);
-        add_edge(d, uc_idx_l, uc_idx_r, asym_idx_l, asym_idx_r, hkl,
-                 Connection::CloseContact);
-        if (can_hbond(el_a, el_b)) {
-          add_edge(d, uc_idx_l, uc_idx_r, asym_idx_l, asym_idx_r, hkl,
-                   Connection::HydrogenBond);
-        }
-      }
-    }
-    results.clear();
-  }
+  UnitCellConnectivityBuilder builder(*this);
+  m_bond_graph = builder.build(m_bond_overrides);
   m_unit_cell_connectivity_needs_update = false;
+  m_symmetry_unique_molecules_needs_update = true;
+  m_unit_cell_molecules_needs_update = true;
 }
 
 const std::vector<occ::core::Molecule> &Crystal::unit_cell_molecules() const {
-  if (m_unit_cell_molecules_needs_update)
+  if (m_unit_cell_molecules_needs_update || m_unit_cell_connectivity_needs_update)
     update_unit_cell_molecules();
   return m_unit_cell_molecules;
 }
@@ -553,7 +481,7 @@ void Crystal::update_unit_cell_molecules() const {
 
 const std::vector<occ::core::Molecule> &
 Crystal::symmetry_unique_molecules() const {
-  if (m_symmetry_unique_molecules_needs_update)
+  if (m_symmetry_unique_molecules_needs_update || m_unit_cell_connectivity_needs_update)
     update_symmetry_unique_molecules();
   return m_symmetry_unique_molecules;
 }

@@ -556,6 +556,11 @@ public:
    */
   static Crystal create_primitive_supercell(const Crystal &c, HKL hkl);
 
+  void add_bond_override(size_t atom_a, size_t atom_b, const HKL &cell_offset,
+                         occ::core::graph::PeriodicEdge::Connection type);
+
+  inline const auto &bond_overrides() const { return m_bond_overrides; }
+
 private:
   AsymmetricUnit m_asymmetric_unit;
   SpaceGroup m_space_group;
@@ -566,6 +571,10 @@ private:
   void update_unit_cell_connectivity() const;
   void update_unit_cell_atoms() const;
 
+  ankerl::unordered_dense::map<occ::core::graph::PBCEdge,
+                               occ::core::graph::PeriodicEdge::Connection,
+                               occ::core::graph::PBCEdgeHash>
+      m_bond_overrides;
   mutable std::vector<typename PeriodicBondGraph::VertexDescriptor>
       m_bond_graph_vertices;
   mutable PeriodicBondGraph m_bond_graph;

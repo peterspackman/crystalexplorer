@@ -6,6 +6,7 @@ add_library(occ_crystal
     "${CMAKE_CURRENT_SOURCE_DIR}/spacegroup.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/symmetryoperation.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/unitcell.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/unit_cell_connectivity.cpp"
     ${occ_INCLUDE_FILES}
 )
 

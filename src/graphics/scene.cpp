@@ -1507,11 +1507,29 @@ void Scene::resetAllAtomColors() {
 }
 
 void Scene::bondSelectedAtoms() {
-  // TODO bond selected atoms
+  if (!m_structure)
+    return;
+  std::vector<BondOverride> overrides;
+  auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
+  for (int i = 0; i < idxs.size(); i++) {
+    for (int j = i + 1; j < idxs.size(); j++) {
+      overrides.push_back(BondOverride{idxs[i], idxs[j], BondMethod::Bond});
+    }
+  }
+  m_structure->addBondOverrides(overrides);
 }
 
 void Scene::unbondSelectedAtoms() {
-  // TODO unbond selected atoms
+  if (!m_structure)
+    return;
+  std::vector<BondOverride> overrides;
+  auto idxs = m_structure->atomsWithFlags(AtomFlag::Selected);
+  for (int i = 0; i < idxs.size(); i++) {
+    for (int j = i + 1; j < idxs.size(); j++) {
+      overrides.push_back(BondOverride{idxs[i], idxs[j], BondMethod::DontBond});
+    }
+  }
+  m_structure->addBondOverrides(overrides);
 }
 
 void Scene::suppressSelectedAtoms() {
