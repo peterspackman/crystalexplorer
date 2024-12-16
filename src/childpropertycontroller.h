@@ -21,6 +21,7 @@ public:
   void enableFingerprintButton(bool);
   void currentSurfaceVisibilityChanged(bool);
   Mesh *getCurrentMesh();
+  MeshInstance *getCurrentMeshInstance();
 
   bool showEnergyFramework() const;
   void setShowEnergyFramework(bool);
@@ -53,6 +54,7 @@ signals:
   void showFingerprint();
   void exportCurrentSurface();
   void frameworkOptionsChanged(FrameworkOptions);
+  void meshSelectionChanged();
 
 private:
   enum class DisplayState {

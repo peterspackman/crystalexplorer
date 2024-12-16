@@ -10,7 +10,7 @@ class QTextCursor;
 class QShowEvent;
 
 struct InteractionInfoSettings {
-  QString colorScheme{"viridis"};
+  QString colorScheme{"Viridis"};
   int distancePrecision{2};
   int energyPrecision{1};
 };

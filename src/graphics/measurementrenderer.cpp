@@ -13,9 +13,7 @@ MeasurementRenderer::MeasurementRenderer(QObject *parent) : QObject(parent) {
 void MeasurementRenderer::add(const Measurement &m) {
   auto idx = m_measurementList.size();
   m_measurementList.append(m);
-  auto func = ColorMapFunc(ColorMapName::Turbo);
-  func.lower = 0.0;
-  func.upper = qMax(m_measurementList.size(), 10);
+  auto func = ColorMap("Turbo", 0.0, qMax(m_measurementList.size(), 10));
   m_measurementList.back().setColor(func(idx));
   qDebug() << "Add measurement";
   m_needsUpdate = true;

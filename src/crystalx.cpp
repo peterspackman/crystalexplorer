@@ -241,6 +241,9 @@ void Crystalx::createChildPropertyControllerDockWidget() {
               project->setCurrentFrame(frame);
             }
           });
+  connect(childPropertyController,
+          &ChildPropertyController::meshSelectionChanged, this,
+          &Crystalx::handleMeshSelectionChanged);
 }
 
 void Crystalx::createCrystalControllerDockWidget() {
@@ -1268,6 +1271,14 @@ void Crystalx::handleAtomSelectionChanged() {
   enableGenerateSurfaceAction(true);
   enableCalculateEnergiesAction(true);
   updateInfo(infoViewer->currentTab());
+}
+
+void Crystalx::handleMeshSelectionChanged() {
+  allowCloneSurfaceAction();
+  auto scene = project->currentScene();
+  if (!scene)
+    return;
+  scene->setSelectedSurface(childPropertyController->getCurrentMeshInstance());
 }
 
 void Crystalx::enableGenerateSurfaceAction(bool enable) {

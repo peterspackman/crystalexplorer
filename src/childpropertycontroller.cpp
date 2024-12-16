@@ -36,9 +36,11 @@ void ChildPropertyController::setup() {
 
   surfacePropertyComboBox->setModel(m_meshPropertyModel);
   int lineHeight = surfacePropertyComboBox->sizeHint().height();
-  surfacePropertyComboBox->setIconSize(QSize(lineHeight * 4.0 / 3, lineHeight * 0.5));
+  surfacePropertyComboBox->setIconSize(
+      QSize(lineHeight * 4.0 / 3, lineHeight * 0.5));
   surfacePropertyComboBox2->setModel(m_meshPropertyModel);
-  surfacePropertyComboBox2->setIconSize(QSize(lineHeight * 4.0 / 3, lineHeight * 0.5));
+  surfacePropertyComboBox2->setIconSize(
+      QSize(lineHeight * 4.0 / 3, lineHeight * 0.5));
 
   connect(m_meshPropertyModel, &QAbstractItemModel::modelReset, this,
           &ChildPropertyController::onMeshModelUpdate);
@@ -217,6 +219,7 @@ void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
 
   m_meshPropertyModel->setMesh(mesh);
   setEnabled(mesh != nullptr); // Enable/disable based on mesh validity
+  emit meshSelectionChanged();
 }
 
 void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
@@ -346,6 +349,7 @@ void ChildPropertyController::setCurrentMeshInstance(MeshInstance *mi) {
 
   m_state = ChildPropertyController::DisplayState::Mesh;
   m_meshPropertyModel->setMeshInstance(mi);
+  emit meshSelectionChanged();
 }
 
 void ChildPropertyController::setCurrentWavefunction(
@@ -470,6 +474,12 @@ Mesh *ChildPropertyController::getCurrentMesh() {
   if (m_state != ChildPropertyController::DisplayState::Mesh)
     return nullptr;
   return m_meshPropertyModel->getMesh();
+}
+
+MeshInstance *ChildPropertyController::getCurrentMeshInstance() {
+  if (m_state != ChildPropertyController::DisplayState::Mesh)
+    return nullptr;
+  return m_meshPropertyModel->getMeshInstance();
 }
 
 void ChildPropertyController::setFrameworkDisplay(

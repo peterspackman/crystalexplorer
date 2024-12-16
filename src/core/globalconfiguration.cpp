@@ -13,15 +13,18 @@ GlobalConfiguration *GlobalConfiguration::getInstance() {
 }
 
 bool GlobalConfiguration::load() {
-  bool success = true;
-  success = isosurface::loadSurfaceDescriptionConfiguration(
+  bool surfaceSuccess = isosurface::loadSurfaceDescriptionConfiguration(
       surfacePropertyDescriptions, surfaceDescriptions,
       surfaceResolutionLevels);
-  if (!success) {
+
+  if (!surfaceSuccess) {
     qWarning() << "Unable to load surface descriptions from file";
-    return false;
   }
-  return success;
+  bool colorMapSuccess = loadColorMapConfiguration(colorMapDescriptions);
+  if (!colorMapSuccess) {
+    qWarning() << "Unable to load surface descriptions from file";
+  }
+  return surfaceSuccess && colorMapSuccess;
 }
 
 const QMap<QString, isosurface::SurfacePropertyDescription> &
@@ -39,11 +42,16 @@ GlobalConfiguration::getSurfaceResolutionLevels() const {
   return surfaceResolutionLevels;
 }
 
+
+const QMap<QString, ColorMapDescription> GlobalConfiguration::getColorMapDescriptions() const {
+  return colorMapDescriptions;
+}
+
 QString GlobalConfiguration::getColorMapNameForProperty(
     const QString &propertyName) const {
   auto it = surfacePropertyDescriptions.find(propertyName);
   if (it != surfacePropertyDescriptions.end()) {
     return it->cmap;
   }
-  return "viridis";
+  return "Viridis";
 }

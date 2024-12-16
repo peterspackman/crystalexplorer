@@ -1,17 +1,11 @@
 #include "pointcloudinstancerenderer.h"
+#include "globalconfiguration.h"
 #include "shaderloader.h"
 
 #include <QOpenGLShaderProgram>
 
 PointCloudInstanceRenderer::PointCloudInstanceRenderer(Mesh *mesh)
     : QOpenGLExtraFunctions(QOpenGLContext::currentContext()) {
-
-  m_propertyColorMaps = {
-      {"None", ColorMapName::CE_None},   {"dnorm", ColorMapName::CE_bwr},
-      {"di", ColorMapName::CE_rgb},      {"de", ColorMapName::CE_rgb},
-      {"di_norm", ColorMapName::CE_bwr}, {"de_norm", ColorMapName::CE_bwr},
-      {"eeq_esp", ColorMapName::CE_bwr},
-  };
 
   m_program = new QOpenGLShaderProgram();
   m_program->addCacheableShaderFromSourceCode(
@@ -127,6 +121,7 @@ void PointCloudInstanceRenderer::setMesh(Mesh *mesh) {
 
   m_vertex.allocate(temp.data(), static_cast<int>(sizeof(float) * temp.size()));
 
+  auto const *globals = GlobalConfiguration::getInstance();
   {
     m_vertexPropertyBuffer.bind();
     std::vector<float> propertyData;
@@ -136,12 +131,13 @@ void PointCloudInstanceRenderer::setMesh(Mesh *mesh) {
       const auto &vals = mesh->vertexProperty(prop);
       auto range = mesh->vertexPropertyRange(prop);
 
-      ColorMapFunc cmap(m_propertyColorMaps.value(prop, ColorMapName::Viridis),
-                        range.lower, range.upper);
+      QString cmapName = globals->getColorMapNameForProperty(prop);
+      ColorMap cmap(cmapName, range.lower, range.upper);
 
       for (size_t i = 0; i < vals.rows(); i++) {
         QColor color = cmap(vals(i));
-        if(!vertexMask(i)) color = color.darker();
+        if (!vertexMask(i))
+          color = color.darker();
         propertyData.push_back(color.redF());
         propertyData.push_back(color.greenF());
         propertyData.push_back(color.blueF());
@@ -173,7 +169,8 @@ void PointCloudInstanceRenderer::addInstances(
     updateBuffers();
 }
 
-void PointCloudInstanceRenderer::addInstance(const MeshInstanceVertex &instance) {
+void PointCloudInstanceRenderer::addInstance(
+    const MeshInstanceVertex &instance) {
   m_instances.push_back(instance);
   if (!m_updatesDisabled)
     updateBuffers();
@@ -194,7 +191,7 @@ void PointCloudInstanceRenderer::draw() {
 
   this->glEnable(GL_PROGRAM_POINT_SIZE);
   this->glDrawArraysInstanced(GL_POINTS, 0, m_numVertices,
-                                static_cast<int>(m_instances.size()));
+                              static_cast<int>(m_instances.size()));
   this->glDisable(GL_PROGRAM_POINT_SIZE);
 
   m_vertexPropertyTexture->release();

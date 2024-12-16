@@ -91,11 +91,11 @@ void PreferencesDialog::init() {
   showLightPositionsCheckBox->setChecked(
       settings::readSetting(settings::keys::SHOW_LIGHT_POSITIONS).toBool());
 
-  ColorMapName currentScheme = colorMapFromString(
-      settings::readSetting(settings::keys::ENERGY_COLOR_SCHEME).toString());
+  QString currentScheme =
+      settings::readSetting(settings::keys::ENERGY_COLOR_SCHEME).toString();
   int idx = 0;
   for (const auto &scheme : availableColorMaps()) {
-    energyColorSchemeComboBox->addItem(colorMapToString(scheme));
+    energyColorSchemeComboBox->addItem(scheme);
     if (scheme == currentScheme)
       energyColorSchemeComboBox->setCurrentIndex(idx);
     idx++;

@@ -69,10 +69,9 @@ void FingerprintPlot::updateFilter(FingerprintFilterMode filterMode,
   updateFingerprintPlot();
 }
 
-void FingerprintPlot::setRange(FingerprintPlotRange range) { 
-  m_range = range; 
+void FingerprintPlot::setRange(FingerprintPlotRange range) {
+  m_range = range;
   m_settings = plotRangeSettings(m_range);
-
 }
 
 void FingerprintPlot::updatePlotRange(FingerprintPlotRange range) {
@@ -462,7 +461,7 @@ void FingerprintPlot::outputFingerprintAsJSON() {
     int numxBins = numxBinsInCurrentPlotRange();
     int numyBins = numyBinsInCurrentPlotRange();
 
-    auto func = ColorMapFunc(m_colorScheme);
+    auto func = ColorMap(m_colorScheme);
     func.lower = 0.0;
     func.upper = maxValue;
 
@@ -532,9 +531,7 @@ void FingerprintPlot::outputFingerprintAsTable() {
     ts << "* The corresponding color of that bin" << Qt::endl;
     ts << Qt::endl;
 
-    auto func = ColorMapFunc(m_colorScheme);
-    func.lower = 0;
-    func.upper = maxValue;
+    auto func = ColorMap(m_colorScheme, maxValue);
     for (int i = 0; i < numxBins; ++i) {
       for (int j = 0; j < numyBins; ++j) {
         int iBin = i + min_i;
@@ -641,21 +638,21 @@ void FingerprintPlot::computeFaceMask() {
     const int m_i = m_filterInsideElement;
     const int m_o = m_filterOutsideElement;
 
-    for(int v = 0; v < di_idx.rows(); v++) {
-        int i = insideNums(di_idx(v));
-        int o = outsideNums(de_idx(v));
+    for (int v = 0; v < di_idx.rows(); v++) {
+      int i = insideNums(di_idx(v));
+      int o = outsideNums(de_idx(v));
 
-        vmask(v) = check(m_i, i) && check(m_o, o);
-        if (m_includeReciprocalContacts) {
-          vmask(v) |= (check(m_i, o) && check(m_o, i));
-        }
+      vmask(v) = check(m_i, i) && check(m_o, o);
+      if (m_includeReciprocalContacts) {
+        vmask(v) |= (check(m_i, o) && check(m_o, i));
+      }
 
-        // if any vertex isn't in, mask it
-        if(!vmask(v)) {
-          for(int f: v2f[v]) {
-            mask(f) = false;
-          }
+      // if any vertex isn't in, mask it
+      if (!vmask(v)) {
+        for (int f : v2f[v]) {
+          mask(f) = false;
         }
+      }
     }
     break;
   }
@@ -785,9 +782,7 @@ void FingerprintPlot::drawBins(QPainter *painter) {
   int xOffset = xOffsetForCurrentPlotRange();
   int yOffset = yOffsetForCurrentPlotRange();
 
-  auto func = ColorMapFunc(m_colorScheme);
-  func.lower = 0.0;
-  func.upper = maxValue;
+  auto func = ColorMap(m_colorScheme, 0.0, maxValue);
   func.reverse = true;
   qDebug() << "Pixels per bin" << m_settings.pixelsPerBin;
   qDebug() << "Surface area" << m_mesh->surfaceArea();
@@ -952,7 +947,7 @@ void FingerprintPlot::highlightVerticesWithPropertyValues(
 void FingerprintPlot::resetSurfaceFeatures(bool mask) {
   if (m_mesh) {
     m_mesh->resetVertexHighlights();
-    if(mask) {
+    if (mask) {
       m_mesh->resetFaceMask(true);
       m_mesh->resetVertexMask(true);
     }

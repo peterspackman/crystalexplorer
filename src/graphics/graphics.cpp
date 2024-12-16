@@ -138,7 +138,8 @@ LineRenderer *createLineRenderer(const QVector3D &pointA,
 
 void addLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
                            const QVector3D &pointB, float lineWidth,
-                           const QColor &color, const QVector3D &id, bool selected) {
+                           const QColor &color, const QVector3D &id,
+                           bool selected) {
   QVector3D col(color.redF(), color.greenF(), color.blueF());
   r.addLines({
       LineVertex(pointA, pointB, col, col, QVector2D(-1, 1), lineWidth, id),
@@ -146,16 +147,17 @@ void addLineToLineRenderer(LineRenderer &r, const QVector3D &pointA,
       LineVertex(pointA, pointB, col, col, QVector2D(1, 1), lineWidth, id),
       LineVertex(pointA, pointB, col, col, QVector2D(1, -1), lineWidth, id),
   });
-  if(selected) {
-      QColor selectionColor =
-          settings::readSetting(settings::keys::SELECTION_COLOR).toString();
-      QVector3D y(selectionColor.redF(), selectionColor.greenF(), selectionColor.blueF());
-      r.addLines({
-          LineVertex(pointA, pointB, y, y, QVector2D(-1, 1.01), lineWidth*2),
-          LineVertex(pointA, pointB, y, y, QVector2D(-1, -1.01), lineWidth*2),
-          LineVertex(pointA, pointB, y, y, QVector2D(1, 1.01), lineWidth*2),
-          LineVertex(pointA, pointB, y, y, QVector2D(1, -1.01), lineWidth*2),
-      });
+  if (selected) {
+    QColor selectionColor =
+        settings::readSetting(settings::keys::SELECTION_COLOR).toString();
+    QVector3D y(selectionColor.redF(), selectionColor.greenF(),
+                selectionColor.blueF());
+    r.addLines({
+        LineVertex(pointA, pointB, y, y, QVector2D(-1, 1.01), lineWidth * 2),
+        LineVertex(pointA, pointB, y, y, QVector2D(-1, -1.01), lineWidth * 2),
+        LineVertex(pointA, pointB, y, y, QVector2D(1, 1.01), lineWidth * 2),
+        LineVertex(pointA, pointB, y, y, QVector2D(1, -1.01), lineWidth * 2),
+    });
   }
 }
 
@@ -374,6 +376,8 @@ makePointCloudVertices(const Mesh &pointCloud, ColorSettings colorSettings) {
 
   QVector3D vec;
   QVector3D col;
+  ColorMap cmap(colorSettings.colorMap, colorSettings.minValue,
+                colorSettings.maxValue);
   for (auto i = 0; i < numVertices; i++) {
     vec.setX(static_cast<float>(pc_vertices(0, i)));
     vec.setY(static_cast<float>(pc_vertices(1, i)));
@@ -381,9 +385,7 @@ makePointCloudVertices(const Mesh &pointCloud, ColorSettings colorSettings) {
     QColor color = Qt::black;
 
     if (prop.rows() > i) {
-      float x = (static_cast<float>(prop(i)) - colorSettings.minValue) /
-                (colorSettings.maxValue - colorSettings.minValue);
-      color = linearColorMap(x, colorSettings.colorMap);
+      color = cmap(prop(i));
     }
 
     col.setX(color.redF());

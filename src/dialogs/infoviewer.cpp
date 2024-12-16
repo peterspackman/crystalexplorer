@@ -12,6 +12,7 @@ void InfoViewer::setScene(Scene *scene) {
   crystalInfoDocument->updateScene(scene);
   atomInfoDocument->updateScene(scene);
   interactionsInfoDocument->updateScene(scene);
+  surfaceInfoDocument->updateScene(scene);
 }
 
 void InfoViewer::init() {

@@ -1,5 +1,6 @@
 #pragma once
 #include "isosurface_parameters.h"
+#include "colormap.h"
 #include <QMutex>
 #include <QMutexLocker>
 
@@ -12,6 +13,7 @@ private:
       surfacePropertyDescriptions;
   QMap<QString, isosurface::SurfaceDescription> surfaceDescriptions;
   QMap<QString, double> surfaceResolutionLevels;
+  QMap<QString, ColorMapDescription> colorMapDescriptions;
 
 protected:
   GlobalConfiguration() {} // Constructor must be protected or private
@@ -33,4 +35,6 @@ public:
   getSurfaceDescriptions() const;
   const QMap<QString, double> &getSurfaceResolutionLevels() const;
   QString getColorMapNameForProperty(const QString &) const;
+
+  const QMap<QString, ColorMapDescription> getColorMapDescriptions() const;
 };
