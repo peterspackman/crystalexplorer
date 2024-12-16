@@ -262,6 +262,7 @@ bool Mesh::haveFaceProperty(const QString &prop) const {
 }
 
 bool Mesh::isTransparent() const { return m_transparent; }
+float Mesh::getTransparency() const { return m_transparency; }
 
 void Mesh::setTransparent(bool transparent) {
   if (transparent == m_transparent)
@@ -276,6 +277,18 @@ void Mesh::setTransparent(bool transparent) {
   emit transparencyChanged();
 }
 
+void Mesh::setTransparency(float transparency) {
+  if (transparency == m_transparency)
+    return;
+  m_transparency = transparency;
+  for (auto *child : children()) {
+    auto *instance = qobject_cast<MeshInstance *>(child);
+    if (instance)
+      instance->setTransparency(m_transparency);
+  }
+
+  emit transparencyChanged();
+}
 bool Mesh::isVisible() const { return m_visible; }
 
 void Mesh::setVisible(bool visible) {

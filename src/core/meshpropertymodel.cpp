@@ -116,6 +116,8 @@ QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
     return asphericity();
   case TransparentRole:
     return isTransparent();
+  case TransparencyRole:
+    return getTransparency();
   case FingerprintableRole:
     return isFingerprintable();
   default:
@@ -134,6 +136,7 @@ QHash<int, QByteArray> MeshPropertyModel::roleNames() const {
   roles[GlobularityRole] = "globularity";
   roles[AsphericityRole] = "asphericity";
   roles[TransparentRole] = "transparent";
+  roles[TransparencyRole] = "transparency";
   roles[FingerprintableRole] = "fingerprintable";
   return roles;
 }
@@ -250,5 +253,21 @@ void MeshPropertyModel::setTransparent(bool transparent) {
   }
 }
 
+float MeshPropertyModel::getTransparency() const {
+  if (m_meshInstance)
+    return m_meshInstance->getTransparency();
+  if (!m_mesh)
+    return false;
+  return m_mesh->getTransparency();
+}
+void MeshPropertyModel::setTransparency(float transparency) {
+  if (!m_mesh)
+    return;
+  if (m_meshInstance) {
+    m_meshInstance->setTransparency(transparency);
+  } else {
+    m_mesh->setTransparency(transparency);
+  }
+}
 Mesh *MeshPropertyModel::getMesh() { return m_mesh; }
 MeshInstance *MeshPropertyModel::getMeshInstance() { return m_meshInstance; }

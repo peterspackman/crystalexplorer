@@ -40,6 +40,7 @@ public slots:
 
 protected slots:
   void onSurfaceTransparencyChange(bool);
+  void onSurfaceVarTransparecyChange(float);
   void onModelPropertySelectionChanged(QString);
   void onComboBoxPropertySelectionChanged(QString);
   void propertyRangeChanged();
