@@ -63,7 +63,14 @@ enum class Kind {
   ESP,
   ElectronDensity,
   DeformationDensity,
+  Orbital,
   Unknown
+};
+
+struct OrbitalDetails {
+    QString label{"HOMO"};
+    int index{0};
+    bool occupied{true};
 };
 
 struct Parameters {

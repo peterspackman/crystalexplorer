@@ -82,9 +82,21 @@ int MolecularWavefunction::numberOfBasisFunctions() const { return m_nbf; }
 
 void MolecularWavefunction::setNumberOfBasisFunctions(int nbf) { m_nbf = nbf; }
 
+int MolecularWavefunction::numberOfOccupiedOrbitals() const { return m_numOccupied; }
+
+void MolecularWavefunction::setNumberOfOccupiedOrbitals(int n) { m_numOccupied = n; }
+
+int MolecularWavefunction::numberOfVirtualOrbitals() const { return m_numVirtual; }
+
+void MolecularWavefunction::setNumberOfVirtualOrbitals(int n) { m_numVirtual = n; }
+
 double MolecularWavefunction::totalEnergy() const { return m_totalEnergy; }
 
 void MolecularWavefunction::setTotalEnergy(double e) { m_totalEnergy = e; }
+
+void MolecularWavefunction::setOrbitalEnergies(const std::vector<double> &energies) {
+    m_orbitalEnergies = energies;
+}
 
 QString MolecularWavefunction::description() const {
   return QString("%1/%2").arg(m_parameters.method).arg(m_parameters.basis);

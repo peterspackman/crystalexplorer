@@ -34,5 +34,9 @@
         <file>crystalplane.vert</file>
         <file>uniforms.glsl</file>
         <file>flat.glsl</file>
+        <file>final_pass.frag</file>
+        <file>ssao.frag</file>
+        <file>ssao.vert</file>
+        <file>ssao_blur.frag</file>
     </qresource>
 </RCC>

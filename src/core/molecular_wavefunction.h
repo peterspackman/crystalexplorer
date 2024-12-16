@@ -40,6 +40,19 @@ public:
     [[nodiscard]] int numberOfBasisFunctions() const;
     void setNumberOfBasisFunctions(int);
 
+    [[nodiscard]] int numberOfOccupiedOrbitals() const;
+    void setNumberOfOccupiedOrbitals(int);
+
+    [[nodiscard]] int numberOfVirtualOrbitals() const;
+    void setNumberOfVirtualOrbitals(int);
+
+    [[nodiscard]] inline int numberOfOrbitals() const { return m_numOccupied + m_numVirtual; }
+
+    [[nodiscard]] inline bool haveOrbitalEnergies() const { return m_orbitalEnergies.size() > 0; }
+
+    [[nodiscard]] inline const auto& orbitalEnergies() const { return m_orbitalEnergies; }
+    void setOrbitalEnergies(const std::vector<double> &);
+
     [[nodiscard]] double totalEnergy() const;
     void setTotalEnergy(double);
 
@@ -48,7 +61,8 @@ public:
     QString fileSuffix() const;
 
 private:
-    int m_nbf{0};
+    int m_nbf{0}, m_numOccupied{0}, m_numVirtual{0};
+    std::vector<double> m_orbitalEnergies;
     double m_totalEnergy{0.0};
     wfn::FileFormat m_fileFormat{wfn::FileFormat::OccWavefunction};
     QByteArray m_rawContents;

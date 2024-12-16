@@ -39,7 +39,6 @@ private slots:
   void propertyChanged(QString);
   void updateDescriptions();
   void validate();
-  void setSignLabel(int);
 
 signals:
   void surfaceParametersChosenNew(isosurface::Parameters);
@@ -57,7 +56,8 @@ private:
   void updateIsovalue();
   void updatePropertyOptions();
   void updateSurfaceOptions();
-  void updateOrbitalOptions();
+  void updateOrbitalLabels();
+  void setupOrbitalUI();
   void updateWavefunctionComboBox(bool selectLast = false);
   bool havePropertyChoices();
   bool needIsovalueBox();
@@ -74,6 +74,7 @@ private:
   QString m_currentSurfaceType{"hirshfeld"};
 
   std::vector<WavefunctionAndTransform> m_availableWavefunctions;
+  std::vector<isosurface::OrbitalDetails> m_orbitalLabels;
 
   QMap<QString, isosurface::SurfaceDescription> m_surfaceDescriptions;
   QMap<QString, isosurface::SurfacePropertyDescription> m_surfacePropertyDescriptions;

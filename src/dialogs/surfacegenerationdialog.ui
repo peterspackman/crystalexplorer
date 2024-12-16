@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>345</width>
-    <height>613</height>
+    <width>376</width>
+    <height>717</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -225,24 +225,14 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Orbital</string>
+      <string>Orbital Selection</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QComboBox" name="comboBoxHL"/>
+       <widget class="QComboBox" name="orbitalTypeComboBox"/>
       </item>
       <item>
-       <widget class="QLabel" name="signLabel">
-        <property name="text">
-         <string>-</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="spinBoxHL"/>
+       <widget class="QListWidget" name="orbitalSelectionListWidget"/>
       </item>
      </layout>
     </widget>
@@ -309,8 +299,6 @@
   <tabstop>useUnitCellPlusFiveAng</tabstop>
   <tabstop>useUserDefinedCluster</tabstop>
   <tabstop>voidClusterPaddingSpinBox</tabstop>
-  <tabstop>comboBoxHL</tabstop>
-  <tabstop>spinBoxHL</tabstop>
   <tabstop>showDescriptionsCheckBox</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
