@@ -1,10 +1,11 @@
 set(OCC_CRYSTAL_INCLUDE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/asymmetric_unit.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/crystal.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/dimer_mapping_table.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/hkl.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/spacegroup.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/surface.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/symmetryoperation.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/unitcell.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/unit_cell_connectivity.h"
     PARENT_SCOPE)

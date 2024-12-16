@@ -1,5 +1,6 @@
 #include "chemicalstructure.h"
 #include <occ/crystal/hkl.h>
+#include <occ/crystal/crystal.h>
 
 using OccCrystal = occ::crystal::Crystal;
 

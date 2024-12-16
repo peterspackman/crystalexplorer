@@ -1,13 +1,15 @@
 #pragma once
 #include "adp.h"
 #include "atomflags.h"
-#include "contact_settings.h"
+#include "bond_override.h"
 #include "cell_index.h"
 #include "close_contact_criteria.h"
+#include "contact_settings.h"
 #include "fragment.h"
 #include "fragment_index.h"
 #include "generic_atom_index.h"
 #include "hbond_criteria.h"
+#include "json.h"
 #include "molecular_wavefunction.h"
 #include "object_tree_model.h"
 #include "pair_energy_results.h"
@@ -17,12 +19,11 @@
 #include <QStringList>
 #include <QVariant>
 #include <QVector3D>
-#include <optional>
 #include <functional>
 #include <memory>
 #include <occ/core/bondgraph.h>
 #include <occ/core/linear_algebra.h>
-#include "json.h"
+#include <optional>
 
 using Transform = Eigen::Isometry3d;
 
@@ -64,10 +65,7 @@ public:
     Crystal  // 3D periodic
   };
 
-  enum class CoordinateConversion {
-    CartToFrac,
-    FracToCart
-  };
+  enum class CoordinateConversion { CartToFrac, FracToCart };
 
   enum class AtomColoring { Element, Fragment, Index };
 
@@ -106,7 +104,8 @@ public:
   inline void setName(const QString &name) { m_name = name; }
   inline const auto &name() const { return m_name; }
 
-  virtual occ::Mat3N convertCoordinates(const occ::Mat3N &pos, CoordinateConversion) const;
+  virtual occ::Mat3N convertCoordinates(const occ::Mat3N &pos,
+                                        CoordinateConversion) const;
 
   QString getFragmentLabel(const FragmentIndex &);
 
@@ -198,16 +197,17 @@ public:
   virtual bool hasIncompleteFragments() const;
   virtual bool hasIncompleteSelectedFragments() const;
 
-  std::vector<GenericAtomIndex>
-      atomIndicesForFragment(FragmentIndex) const;
+  std::vector<GenericAtomIndex> atomIndicesForFragment(FragmentIndex) const;
   const std::pair<int, int> &atomsForBond(int) const;
-  std::pair<GenericAtomIndex, GenericAtomIndex>
-  atomIndicesForBond(int) const;
-  std::vector<HBondTriple>
-  hydrogenBonds(const HBondCriteria & = {}) const;
+  std::pair<GenericAtomIndex, GenericAtomIndex> atomIndicesForBond(int) const;
+  std::vector<HBondTriple> hydrogenBonds(const HBondCriteria & = {}) const;
   std::vector<CloseContactPair>
   closeContacts(const CloseContactCriteria & = {}) const;
   const std::vector<std::pair<int, int>> &covalentBonds() const;
+
+  virtual void addBondOverride(BondOverride);
+  virtual void addBondOverrides(const std::vector<BondOverride> &);
+  virtual BondMethod getBondOverride(GenericAtomIndex, GenericAtomIndex) const;
 
   virtual CellIndexSet occupiedCells() const;
 
@@ -272,7 +272,8 @@ public:
 
   [[nodiscard]] inline ObjectTreeModel *treeModel() { return m_treeModel; }
 
-  [[nodiscard]] QString getFragmentLabelForAtoms(const std::vector<GenericAtomIndex> &idxs);
+  [[nodiscard]] QString
+  getFragmentLabelForAtoms(const std::vector<GenericAtomIndex> &idxs);
   [[nodiscard]] QString
   formulaSumForAtoms(const std::vector<GenericAtomIndex> &idxs,
                      bool richText) const;
@@ -303,15 +304,20 @@ protected:
   std::vector<QString> m_labels;
 
   FragmentMap m_fragments;
-  ankerl::unordered_dense::map<FragmentIndex, QString, FragmentIndexHash> m_fragmentLabels;
+  ankerl::unordered_dense::map<FragmentIndex, QString, FragmentIndexHash>
+      m_fragmentLabels;
   std::vector<FragmentIndex> m_fragmentForAtom;
   FragmentMap m_symmetryUniqueFragments;
 
   std::vector<std::pair<int, int>> m_covalentBonds;
   std::vector<std::pair<int, int>> m_vdwContacts;
   std::vector<std::pair<int, int>> m_hydrogenBonds;
+  ankerl::unordered_dense::map<BondIndexPair, BondMethod, BondIndexPairHash>
+      m_bondOverrides;
 
-  ankerl::unordered_dense::map<GenericAtomIndex, AtomFlags, GenericAtomIndexHash> m_flags;
+  ankerl::unordered_dense::map<GenericAtomIndex, AtomFlags,
+                               GenericAtomIndexHash>
+      m_flags;
   Eigen::Vector3d m_origin{0.0, 0.0, 0.0};
 
 private:

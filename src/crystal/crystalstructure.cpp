@@ -26,8 +26,9 @@ QString edgeTypeString(Connection conn) {
     return "HB";
   case Connection::CovalentBond:
     return "COV";
+  default:
+    return "?";
   }
-  return "?";
 }
 
 template <typename T, typename Pred>
@@ -138,6 +139,8 @@ void CrystalStructure::updateBondGraph() {
           break;
         case Connection::CloseContact:
           m_vdwContacts.push_back({sourceAtomIndex, targetAtomIdx});
+          break;
+        default:
           break;
         }
       }
@@ -273,10 +276,14 @@ CrystalStructure::getTransformationString(const Eigen::Isometry3d &t) const {
 
 void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   m_crystal = crystal;
+  updateFragments();
+  updateAtomicDisplacementParameters();
+  buildDimerMappingTable();
+  resetAtomsAndBonds();
+}
 
+void CrystalStructure::updateFragments() {
   m_symmetryUniqueFragments.clear();
-
-  const auto &uc_atoms = m_crystal.unit_cell_atoms();
   std::vector<FragmentIndex> asymmetricMoleculeIndices;
 
   for (const auto &mol : m_crystal.symmetry_unique_molecules()) {
@@ -286,13 +293,13 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     m_symmetryUniqueFragments.insert({idx, frag});
   }
 
-  // this needs to be done after symmetry unique fragments is constructed...
   for (auto &[idx, frag] : m_symmetryUniqueFragments) {
     frag.name = getFragmentLabel(idx);
   }
 
   m_unitCellFragments.clear();
   m_unitCellAtomFragments.clear();
+
   for (const auto &mol : m_crystal.unit_cell_molecules()) {
     FragmentIndex idx{mol.unit_cell_molecule_idx(), 0, 0, 0};
     auto frag = makeFragmentFromOccMolecule(mol, idx);
@@ -301,6 +308,7 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
     const auto &asymFrag =
         m_symmetryUniqueFragments[frag.asymmetricFragmentIndex];
     frag.index = idx;
+
     getTransformation(asymFrag.atomIndices, frag.atomIndices,
                       frag.asymmetricFragmentTransform);
 
@@ -310,23 +318,30 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
       frag.name += " " + ts;
 
     m_unitCellFragments.insert({idx, frag});
-    for (const auto &atomIndex : frag.atomIndices) {
-      FragmentIndex thisIndex = idx;
-      thisIndex.h = -atomIndex.x;
-      thisIndex.k = -atomIndex.y;
-      thisIndex.l = -atomIndex.z;
-      m_unitCellAtomFragments[atomIndex.unique] = thisIndex;
-    }
+    updateAtomFragmentMapping(frag);
   }
+}
 
-  auto adps = computeUnitCellAtomAdps(crystal);
+void CrystalStructure::updateAtomFragmentMapping(const Fragment &frag) {
+  const auto &idx = frag.index;
+  for (const auto &atomIndex : frag.atomIndices) {
+    FragmentIndex thisIndex = idx;
+    thisIndex.h = -atomIndex.x;
+    thisIndex.k = -atomIndex.y;
+    thisIndex.l = -atomIndex.z;
+    m_unitCellAtomFragments[atomIndex.unique] = thisIndex;
+    qDebug() << atomIndex.unique << thisIndex;
+  }
+}
+
+void CrystalStructure::updateAtomicDisplacementParameters() {
+  auto adps = computeUnitCellAtomAdps(m_crystal);
+  m_unitCellAdps.clear();
   for (int i = 0; i < adps.cols(); i++) {
     m_unitCellAdps.insert(
         {i, AtomicDisplacementParameters(adps(0, i), adps(1, i), adps(2, i),
                                          adps(3, i), adps(4, i), adps(5, i))});
   }
-  buildDimerMappingTable();
-  resetAtomsAndBonds();
 }
 
 QString CrystalStructure::chemicalFormula(bool richText) const {
@@ -454,6 +469,8 @@ void CrystalStructure::addVanDerWaalsContactAtoms() {
         break;
       case Connection::CloseContact:
         atomsToShow.insert(targetIndex);
+        break;
+      default:
         break;
       }
     }
@@ -1101,7 +1118,8 @@ const FragmentMap &CrystalStructure::symmetryUniqueFragments() const {
 
 FragmentIndex
 CrystalStructure::fragmentIndexForGeneralAtom(GenericAtomIndex index) const {
-  if(m_unitCellAtomFragments.size() == 0) return ChemicalStructure::fragmentIndexForGeneralAtom(index);
+  if (m_unitCellAtomFragments.size() == 0)
+    return ChemicalStructure::fragmentIndexForGeneralAtom(index);
   FragmentIndex fragmentIndex = m_unitCellAtomFragments.at(index.unique);
   fragmentIndex.h += index.x;
   fragmentIndex.k += index.y;
@@ -1562,17 +1580,48 @@ occ::Mat3N CrystalStructure::convertCoordinates(
 
 nlohmann::json CrystalStructure::toJson() const {
   return {
-    {"structureType", "crystal"},
-    {"atomicPositions", m_atomicPositions},
-    {"atomicNumbers", m_atomicNumbers},
-    {"labels", m_labels},
-    {"flags", m_flags},
-    {"unitCell", m_crystal.unit_cell()},
-    {"spaceGroup", m_crystal.space_group()},
+      {"structureType", "crystal"},
+      {"atomicPositions", m_atomicPositions},
+      {"atomicNumbers", m_atomicNumbers},
+      {"labels", m_labels},
+      {"flags", m_flags},
+      {"unitCell", m_crystal.unit_cell()},
+      {"spaceGroup", m_crystal.space_group()},
   };
 }
 
 bool CrystalStructure::fromJson(const nlohmann::json &j) {
   // TODO
   return ChemicalStructure::fromJson(j);
+}
+
+void CrystalStructure::addBondOverride(BondOverride ovrd) {
+  ChemicalStructure::addBondOverride(ovrd);
+  occ::crystal::HKL hkl{ovrd.b.x - ovrd.a.x, ovrd.b.y - ovrd.a.y,
+                        ovrd.b.z - ovrd.a.z};
+  using Conn = occ::core::graph::PeriodicEdge::Connection;
+  m_crystal.add_bond_override(ovrd.a.unique, ovrd.b.unique, hkl,
+                              (ovrd.bond == BondMethod::DontBond)
+                                  ? Conn::DontBond
+                                  : Conn::CovalentBond);
+  updateFragments();
+  buildDimerMappingTable();
+  updateBondGraph();
+}
+
+void CrystalStructure::addBondOverrides(
+    const std::vector<BondOverride> &overrides) {
+  ChemicalStructure::addBondOverrides(overrides);
+  for (const auto &ovrd : overrides) {
+    occ::crystal::HKL hkl{ovrd.b.x - ovrd.a.x, ovrd.b.y - ovrd.a.y,
+                          ovrd.b.z - ovrd.a.z};
+    using Conn = occ::core::graph::PeriodicEdge::Connection;
+    m_crystal.add_bond_override(ovrd.a.unique, ovrd.b.unique, hkl,
+                                (ovrd.bond == BondMethod::DontBond)
+                                    ? Conn::DontBond
+                                    : Conn::CovalentBond);
+  }
+  updateFragments();
+  buildDimerMappingTable();
+  updateBondGraph();
 }

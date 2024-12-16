@@ -1,6 +1,6 @@
+#include <iostream>
 #include <occ/crystal/crystal.h>
 #include <occ/crystal/dimer_mapping_table.h>
-#include <iostream>
 
 namespace occ::crystal {
 
@@ -37,31 +37,30 @@ inline Vec3 wrap_to_unit_cell(const Vec3 &v) {
 inline SiteIndex find_matching_position(const Mat3N &positions,
                                         const Vec3 &point,
                                         double tolerance = 1e-5) {
-    int matching_index = -1;
-    double min_distance = std::numeric_limits<double>::max();
-    Vec3 cell_offset = Vec3::Zero();
+  int matching_index = -1;
+  double min_distance = std::numeric_limits<double>::max();
+  Vec3 cell_offset = Vec3::Zero();
 
-    for (int i = 0; i < positions.cols(); i++) {
-        Vec3 diff = point - positions.col(i);
-        Vec3 wrapped_diff = diff.array() - diff.array().round();
-        Vec3 current_cell_offset = diff - wrapped_diff;
+  for (int i = 0; i < positions.cols(); i++) {
+    Vec3 diff = point - positions.col(i);
+    Vec3 wrapped_diff = diff.array() - diff.array().round();
+    Vec3 current_cell_offset = diff - wrapped_diff;
 
-        double d = wrapped_diff.squaredNorm();
-        if (d < min_distance) {
-            min_distance = d;
-            matching_index = i;
-            cell_offset = current_cell_offset;
-        }
+    double d = wrapped_diff.squaredNorm();
+    if (d < min_distance) {
+      min_distance = d;
+      matching_index = i;
+      cell_offset = current_cell_offset;
     }
+  }
 
-    if (min_distance < tolerance * tolerance) {
-        return SiteIndex{matching_index, HKL{
-            static_cast<int>(std::round(cell_offset(0))),
-            static_cast<int>(std::round(cell_offset(1))),
-            static_cast<int>(std::round(cell_offset(2)))
-        }};
-    }
-    return SiteIndex{-1, HKL{0, 0, 0}};
+  if (min_distance < tolerance * tolerance) {
+    return SiteIndex{matching_index,
+                     HKL{static_cast<int>(std::round(cell_offset(0))),
+                         static_cast<int>(std::round(cell_offset(1))),
+                         static_cast<int>(std::round(cell_offset(2)))}};
+  }
+  return SiteIndex{-1, HKL{0, 0, 0}};
 }
 
 std::pair<Vec3, Vec3>
@@ -103,8 +102,8 @@ DimerMappingTable::canonical_dimer_index(const DimerIndex &idx) const {
 }
 
 DimerMappingTable::DimerMappingTable(const Crystal &crystal,
-                  const CrystalDimers &dimers,
-                  bool consider_inversion) {
+                                     const CrystalDimers &dimers,
+                                     bool consider_inversion) {
   m_consider_inversion = consider_inversion;
   m_cell = crystal.unit_cell();
 
@@ -137,17 +136,14 @@ DimerMappingTable::DimerMappingTable(const Crystal &crystal,
           Vec3 ta = symop.apply(a_pos);
           Vec3 tb = symop.apply(b_pos);
           DimerIndex symmetry_ab = dimer_index(ta, tb);
-          DimerIndex canonical_symmetry_ab =
-              canonical_dimer_index(symmetry_ab);
+          DimerIndex canonical_symmetry_ab = canonical_dimer_index(symmetry_ab);
 
           if (unique_dimers_set.insert(canonical_symmetry_ab).second) {
             m_unique_dimers.push_back(canonical_symmetry_ab);
-            m_symmetry_unique_dimer_map[canonical_symmetry_ab] =
-                canonical_ab;
+            m_symmetry_unique_dimer_map[canonical_symmetry_ab] = canonical_ab;
           }
           related_dimers.push_back(canonical_symmetry_ab);
-          m_unique_dimer_map[canonical_symmetry_ab] =
-              canonical_symmetry_ab;
+          m_unique_dimer_map[canonical_symmetry_ab] = canonical_symmetry_ab;
         }
         m_symmetry_related_dimers[canonical_ab] = related_dimers;
       }
@@ -175,11 +171,86 @@ bool DimerMappingTable::have_dimer(const DimerIndex &dimer) const {
   return m_unique_dimer_map.find(canonical) != m_unique_dimer_map.end();
 }
 
+DimerMappingTable
+DimerMappingTable::create_atomic_pair_table(const Crystal &crystal,
+                                            bool consider_inversion) {
+  DimerMappingTable table;
+  table.m_consider_inversion = consider_inversion;
+  table.m_cell = crystal.unit_cell();
+
+  // Get expanded slab like in unit_cell_connectivity
+  auto s = crystal.slab({-2, -2, -2}, {2, 2, 2});
+  const auto &uc_atoms = crystal.unit_cell_atoms();
+  table.m_centroids = uc_atoms.frac_pos;
+
+  const auto &symops = crystal.symmetry_operations();
+  ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> unique_dimers_set;
+
+  // For each atom in the unit cell
+  for (int i = 0; i < uc_atoms.size(); i++) {
+    Vec3 pos_i = uc_atoms.frac_pos.col(i);
+
+    // Look through expanded slab for possible bonds
+    for (int j = 0; j < s.frac_pos.cols(); j++) {
+      if (j % uc_atoms.size() <= i)
+        continue; // avoid duplicates
+
+      Vec3 pos_j = s.frac_pos.col(j);
+      int uc_idx_j = s.uc_idx(j);
+      HKL cell_offset{s.hkl(0, j), s.hkl(1, j), s.hkl(2, j)};
+
+      DimerIndex ab{{i, {0, 0, 0}}, {uc_idx_j, cell_offset}};
+      DimerIndex canonical_ab = table.canonical_dimer_index(ab);
+
+      if (unique_dimers_set.insert(canonical_ab).second) {
+        table.m_unique_dimers.push_back(canonical_ab);
+        table.m_unique_dimer_map[canonical_ab] = canonical_ab;
+        table.m_symmetry_unique_dimer_map[canonical_ab] = canonical_ab;
+
+        std::vector<DimerIndex> related_dimers;
+        for (const auto &symop : symops) {
+          Vec3 ta = symop.apply(pos_i);
+          Vec3 tb = symop.apply(pos_j);
+          DimerIndex symmetry_ab = table.dimer_index(ta, tb);
+          DimerIndex canonical_symmetry_ab =
+              table.canonical_dimer_index(symmetry_ab);
+
+          if (unique_dimers_set.insert(canonical_symmetry_ab).second) {
+            table.m_unique_dimers.push_back(canonical_symmetry_ab);
+            table.m_symmetry_unique_dimer_map[canonical_symmetry_ab] =
+                canonical_ab;
+          }
+          related_dimers.push_back(canonical_symmetry_ab);
+          table.m_unique_dimer_map[canonical_symmetry_ab] =
+              canonical_symmetry_ab;
+        }
+        table.m_symmetry_related_dimers[canonical_ab] = related_dimers;
+      }
+
+      table.m_unique_dimer_map[ab] = canonical_ab;
+      DimerIndex norm_ab = table.normalized_dimer_index(ab);
+      table.m_unique_dimer_map[norm_ab] = canonical_ab;
+      table.m_symmetry_unique_dimer_map[ab] =
+          table.m_symmetry_unique_dimer_map[canonical_ab];
+      table.m_symmetry_unique_dimer_map[norm_ab] =
+          table.m_symmetry_unique_dimer_map[canonical_ab];
+    }
+  }
+
+  // Populate unique dimers as before
+  for (const auto &dimer : table.m_unique_dimers) {
+    if (table.m_symmetry_unique_dimer_map[dimer] == dimer) {
+      table.m_symmetry_unique_dimers.push_back(dimer);
+    }
+  }
+
+  return table;
+}
 } // namespace occ::crystal
 
 auto fmt::formatter<occ::crystal::DimerIndex>::format(
-    const occ::crystal::DimerIndex &idx,
-    format_context &ctx) const -> decltype(ctx.out()) {
+    const occ::crystal::DimerIndex &idx, format_context &ctx) const
+    -> decltype(ctx.out()) {
   return fmt::format_to(ctx.out(), "DimerIndex [{} {} -> {} {}]", idx.a.offset,
                         idx.a.hkl, idx.b.offset, idx.b.hkl);
 }

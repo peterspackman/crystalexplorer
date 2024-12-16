@@ -4,6 +4,7 @@
 #include <occ/core/linear_algebra.h>
 #include <occ/core/molecule.h>
 #include <occ/crystal/asymmetric_unit.h>
+#include <occ/crystal/dimer_mapping_table.h>
 #include <occ/crystal/hkl.h>
 #include <occ/crystal/spacegroup.h>
 #include <occ/crystal/unitcell.h>
@@ -556,6 +557,12 @@ public:
    */
   static Crystal create_primitive_supercell(const Crystal &c, HKL hkl);
 
+  void add_bond_override(size_t atom_a, size_t atom_b, const HKL &cell_offset,
+                         occ::core::graph::PeriodicEdge::Connection type);
+
+  inline const auto &bond_overrides() const { return m_bond_overrides; }
+  void clear_bond_overrides();
+
 private:
   AsymmetricUnit m_asymmetric_unit;
   SpaceGroup m_space_group;
@@ -566,9 +573,14 @@ private:
   void update_unit_cell_connectivity() const;
   void update_unit_cell_atoms() const;
 
+  ankerl::unordered_dense::map<occ::core::graph::PBCEdge,
+                               occ::core::graph::PeriodicEdge::Connection,
+                               occ::core::graph::PBCEdgeHash>
+      m_bond_overrides;
   mutable std::vector<typename PeriodicBondGraph::VertexDescriptor>
       m_bond_graph_vertices;
   mutable PeriodicBondGraph m_bond_graph;
+  mutable DimerMappingTable m_bond_mapping_table;
   mutable CrystalAtomRegion m_unit_cell_atoms;
   mutable bool m_symmetry_unique_molecules_needs_update{true};
   mutable bool m_unit_cell_atoms_needs_update{true};

@@ -1,5 +1,6 @@
 #pragma once
 #include <ankerl/unordered_dense.h>
+#include <optional>
 #include <vector>
 
 template <typename T, typename IndexT = size_t> class BiMap {
