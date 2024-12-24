@@ -3,6 +3,7 @@
 #include "filedependency.h"
 #include "occinput.h"
 #include <fmt/core.h>
+#include "settings.h"
 #include <occ/core/element.h>
 
 OccWavefunctionTask::OccWavefunctionTask(QObject *parent)
@@ -20,7 +21,7 @@ const wfn::Parameters &OccWavefunctionTask::getParameters() const {
 }
 
 int OccWavefunctionTask::threads() const {
-  return properties().value("threads", 6).toInt();
+  return properties().value("threads", settings::readSetting("occ/numThreads")).toInt();
 }
 void OccWavefunctionTask::start() {
   QString json = m_parameters.userInputContents;
