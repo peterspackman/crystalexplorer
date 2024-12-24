@@ -19,6 +19,9 @@ const wfn::Parameters &OccWavefunctionTask::getParameters() const {
   return m_parameters;
 }
 
+int OccWavefunctionTask::threads() const {
+  return properties().value("threads", 6).toInt();
+}
 void OccWavefunctionTask::start() {
   QString json = m_parameters.userInputContents;
   if (!m_parameters.userEditRequested) {
@@ -30,14 +33,15 @@ void OccWavefunctionTask::start() {
   QString name = baseName();
   QString inputName = name + inputSuffix();
   QString outputName = wavefunctionFilename();
-
+  QStringList args{"scf", inputName};
   if (!io::writeTextFile(inputName, json)) {
     emit errorOccurred("Could not write input file: " + inputName);
     return;
   }
   emit progressText("Wrote input file");
 
-  setArguments({"scf", inputName});
+  args << QString("--threads=%1").arg(threads());
+  setArguments(args);
   setRequirements({FileDependency(inputName)});
   setOutputs({FileDependency(outputName, outputName)});
 

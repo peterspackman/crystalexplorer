@@ -17,6 +17,7 @@ public:
   QString inputSuffix() const;
   QString wavefunctionSuffix() const;
   QString wavefunctionFilename() const;
+  int threads() const;
 
 private:
   wfn::Parameters m_parameters;
