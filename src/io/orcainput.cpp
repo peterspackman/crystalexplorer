@@ -7,7 +7,7 @@ namespace io {
 QString orcaInputString(const wfn::Parameters &params) {
   QByteArray destination;
   QTextStream ts(&destination);
-  int numProcs = settings::readSetting("orca/numProcs").toInt();
+  int numProcs = settings::readSetting(settings::keys::ORCA_NTHREADS).toInt();
   numProcs = numProcs == 0 ? 1 : numProcs;
   ts << "! " << params.method << " " << params.basis << Qt::endl;
   ts << "%PAL NPROCS " << numProcs << " END" << Qt::endl;

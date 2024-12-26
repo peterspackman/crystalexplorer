@@ -21,7 +21,7 @@ const wfn::Parameters &OccWavefunctionTask::getParameters() const {
 }
 
 int OccWavefunctionTask::threads() const {
-  return properties().value("threads", settings::readSetting("occ/numThreads")).toInt();
+  return properties().value("threads", settings::readSetting(settings::keys::OCC_NTHREADS).toInt()).toInt();
 }
 void OccWavefunctionTask::start() {
   QString json = m_parameters.userInputContents;

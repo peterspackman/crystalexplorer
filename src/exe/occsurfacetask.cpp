@@ -89,7 +89,7 @@ QString OccSurfaceTask::kind() const {
 float OccSurfaceTask::separation() const { return m_parameters.separation; }
 
 int OccSurfaceTask::threads() const {
-  return properties().value("threads", settings::readSetting("occ/numThreads").toInt()).toInt();
+  return properties().value("threads", settings::readSetting(settings::keys::OCC_NTHREADS).toInt()).toInt();
 }
 
 float OccSurfaceTask::isovalue() const {
