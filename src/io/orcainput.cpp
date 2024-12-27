@@ -1,14 +1,16 @@
 #include "orcainput.h"
 #include "chemicalstructure.h"
 #include <occ/core/element.h>
-
+#include "settings.h"
 namespace io {
 
 QString orcaInputString(const wfn::Parameters &params) {
   QByteArray destination;
   QTextStream ts(&destination);
-
+  int numProcs = settings::readSetting(settings::keys::ORCA_NTHREADS).toInt();
+  numProcs = numProcs == 0 ? 1 : numProcs;
   ts << "! " << params.method << " " << params.basis << Qt::endl;
+  ts << "%PAL NPROCS " << numProcs << " END" << Qt::endl;
   auto nums = params.structure->atomicNumbersForIndices(params.atoms);
   auto pos = params.structure->atomicPositionsForIndices(params.atoms);
 

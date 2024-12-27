@@ -17,7 +17,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::NWCHEM_EXECUTABLE, ""},
     {keys::PSI4_EXECUTABLE, ""},
     {keys::ORCA_EXECUTABLE, ""},
-    {keys::ORCA_NTHREADS, ""},
+    {keys::ORCA_NTHREADS, 1},
     {keys::XTB_EXECUTABLE, ""},
     {keys::OCC_NTHREADS, 1},
     {keys::OCC_EXECUTABLE, ""},

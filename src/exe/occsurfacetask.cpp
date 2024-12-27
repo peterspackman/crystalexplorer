@@ -1,6 +1,7 @@
 #include "occsurfacetask.h"
 #include "exefileutilities.h"
 #include "filedependency.h"
+#include "settings.h"
 
 OccSurfaceTask::OccSurfaceTask(QObject *parent) : ExternalProgramTask(parent) {
   setExecutable(exe::findProgramInPath("occ"));
@@ -88,7 +89,7 @@ QString OccSurfaceTask::kind() const {
 float OccSurfaceTask::separation() const { return m_parameters.separation; }
 
 int OccSurfaceTask::threads() const {
-  return properties().value("threads", 6).toInt();
+  return properties().value("threads", settings::readSetting(settings::keys::OCC_NTHREADS).toInt()).toInt();
 }
 
 float OccSurfaceTask::isovalue() const {
