@@ -1,12 +1,13 @@
 #include "crystalclear.h"
+#include "eigen_json.h"
+#include "json.h"
 #include "meshinstance.h"
 #include "pair_energy_results.h"
 #include <QDebug>
 #include <fstream>
-#include "json.h"
-#include "eigen_json.h"
 #include <occ/core/units.h>
 #include <occ/crystal/crystal.h>
+#include <string>
 #include <vector>
 
 namespace io {
@@ -62,11 +63,11 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
   QList<QList<DimerAtoms>> atomIndices;
 
   QString modelName = "cg";
-  if(json.contains("model")) {
+  if (json.contains("model")) {
     modelName = QString::fromStdString(json["model"]);
   }
   bool hasPermutationSymmetry{true};
-  if(json.contains("has_permutation_symmetry")) {
+  if (json.contains("has_permutation_symmetry")) {
     hasPermutationSymmetry = json["has_permutation_symmetry"];
   }
 
@@ -91,19 +92,20 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
         double value = 0.0;
         QString key = QString::fromStdString(it.key());
         if (it->is_number()) {
-            value = it->get<double>();
+          value = it->get<double>();
         } else if (it->is_boolean()) {
-            value = it->get<bool>() ? 1.0 : 0.0;
+          value = it->get<bool>() ? 1.0 : 0.0;
         } else if (it->is_string()) {
-            try {
-                value = std::stod(it->get<std::string>());
-            } catch (const std::invalid_argument& e) {
-                qWarning() << "Warning: Could not convert string to double for key " << key;
-                continue;
-            }
-        } else {
-            qWarning() << "Warning: Unsupported type for key " << key;
+          try {
+            value = std::stod(it->get<std::string>());
+          } catch (const std::invalid_argument &e) {
+            qWarning() << "Warning: Could not convert string to double for key "
+                       << key;
             continue;
+          }
+        } else {
+          qWarning() << "Warning: Unsupported type for key " << key;
+          continue;
         }
         pair->addComponent(key, value);
       }
@@ -129,7 +131,8 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
 
   CrystalStructure *result = new CrystalStructure();
   result->setOccCrystal(crystal);
-  result->setPairInteractionsFromDimerAtoms(interactions, atomIndices);
+  result->setPairInteractionsFromDimerAtoms(interactions, atomIndices,
+                                            hasPermutationSymmetry);
   result->setName(QString::fromStdString(title));
   return result;
 }
@@ -148,8 +151,8 @@ void loadCrystalClearSurfaceJson(const QString &filename,
   qDebug() << "A CDS";
   Eigen::VectorXf cdsAreas;
   json["a_cds"].get_to(cdsAreas);
-  cdsAreas.array() *= occ::units::BOHR_TO_ANGSTROM * occ::units::BOHR_TO_ANGSTROM;
-
+  cdsAreas.array() *=
+      occ::units::BOHR_TO_ANGSTROM * occ::units::BOHR_TO_ANGSTROM;
 
   qDebug() << "E CDS";
   Eigen::VectorXf cdsEnergies;
@@ -175,8 +178,8 @@ void loadCrystalClearSurfaceJson(const QString &filename,
   qDebug() << "A Coulomb";
   Eigen::VectorXf coulombAreas;
   json["a_coulomb"].get_to(coulombAreas);
-  coulombAreas.array() *= occ::units::BOHR_TO_ANGSTROM * occ::units::BOHR_TO_ANGSTROM;
-
+  coulombAreas.array() *=
+      occ::units::BOHR_TO_ANGSTROM * occ::units::BOHR_TO_ANGSTROM;
 
   qDebug() << "E coulomb";
   Eigen::VectorXf coulombEnergies;

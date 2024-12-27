@@ -1306,7 +1306,7 @@ GenericAtomIndex CrystalStructure::indexToGenericIndex(int idx) const {
 
 void CrystalStructure::setPairInteractionsFromDimerAtoms(
     const QList<QList<PairInteraction *>> &interactions,
-    const QList<QList<DimerAtoms>> &offsets) {
+    const QList<QList<DimerAtoms>> &offsets, bool has_inversion) {
   GenericAtomIndexSet idxs;
   for (int i = 0; i < offsets.size(); i++) {
     const auto &molOffsets = offsets[i];
@@ -1327,7 +1327,8 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
 
   ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> added;
 
-  const auto &dimerMap = m_dimerMappingTableNoInv;
+  const auto &dimerMap =
+      has_inversion ? m_dimerMappingTable : m_dimerMappingTableNoInv;
 
   auto *p = pairInteractions();
   for (int i = 0; i < interactions.size(); i++) {

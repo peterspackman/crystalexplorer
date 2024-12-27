@@ -37,6 +37,8 @@ void SurfaceInfoDocument::populateDocument() {
     return;
 
   const auto &selection = m_scene->selectedSurface();
+  if (!selection.surface)
+    return;
   auto *mesh = selection.surface->mesh();
 
   QTextCursor cursor = m_contents->textCursor();
