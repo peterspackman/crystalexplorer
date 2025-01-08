@@ -11,11 +11,23 @@ void PairInteraction::addComponent(const QString &component, double value) {
   m_components.insert({component, value});
 }
 
+void PairInteraction::addMetadata(const QString &component,
+                                  const QVariant &value) {
+  m_metadata.insert({component, value});
+}
+
 double PairInteraction::getComponent(const QString &c) const {
   const auto kv = m_components.find(c);
   if (kv != m_components.end())
     return kv->second;
   return 0.0;
+}
+
+QVariant PairInteraction::getMetadata(const QString &c) const {
+  const auto kv = m_metadata.find(c);
+  if (kv != m_metadata.end())
+    return kv->second;
+  return QVariant();
 }
 
 QString PairInteraction::interactionModel() const { return m_interactionModel; }
@@ -73,7 +85,7 @@ void PairInteractions::add(PairInteraction *result) {
   if (!result)
     return;
   QString model = result->interactionModel();
-  if(result->label() == "Not set") {
+  if (result->label() == "Not set") {
     result->setLabel(QString("%1").arg(m_pairInteractions[model].size() + 1));
   }
   m_pairInteractions[model].insert({result->pairIndex(), result});
@@ -153,8 +165,6 @@ PairInteractions::filterByModelAndComponent(const QString &model,
   return filtereds;
 }
 
-
-
 QMap<QString, PairInteractions::PairInteractionList>
 PairInteractions::getInteractionsMatchingFragments(
     const std::vector<FragmentDimer> &dimers) {
@@ -196,8 +206,8 @@ PairInteraction *PairInteractions::getInteraction(const QString &model,
 
 void PairInteractions::resetCounts() {
   const auto models = interactionModels();
-  for (auto &[model, interactions]: m_pairInteractions) {
-    for(auto &[idx, interaction]: interactions) {
+  for (auto &[model, interactions] : m_pairInteractions) {
+    for (auto &[idx, interaction] : interactions) {
       interaction->setCount(0);
     }
   }
@@ -205,8 +215,8 @@ void PairInteractions::resetCounts() {
 
 void PairInteractions::resetColors() {
   const auto models = interactionModels();
-  for (auto &[model, interactions]: m_pairInteractions) {
-    for(auto &[idx, interaction]: interactions) {
+  for (auto &[model, interactions] : m_pairInteractions) {
+    for (auto &[idx, interaction] : interactions) {
       interaction->setColor(Qt::white);
     }
   }
@@ -216,19 +226,20 @@ bool PairInteractions::haveInteractions(const QString &model) const {
   return getCount(model) > 0;
 }
 
-
 bool PairInteractions::hasPermutationSymmetry(const QString &model) const {
   if (model.isEmpty()) {
     for (const auto &[k, v] : m_pairInteractions) {
-      for(const auto &[interaction_key, interaction]: v) {
-        if(!interaction->parameters().hasPermutationSymmetry) return false;
+      for (const auto &[interaction_key, interaction] : v) {
+        if (!interaction->parameters().hasPermutationSymmetry)
+          return false;
       }
     }
   } else {
     const auto kv = m_pairInteractions.find(model);
     if (kv != m_pairInteractions.end()) {
-      for(const auto &[interaction_key, interaction]: kv->second) {
-        if(!interaction->parameters().hasPermutationSymmetry) return false;
+      for (const auto &[interaction_key, interaction] : kv->second) {
+        if (!interaction->parameters().hasPermutationSymmetry)
+          return false;
       }
     }
   }

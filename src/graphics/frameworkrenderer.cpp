@@ -146,10 +146,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
         break;
       case FrameworkOptions::LabelDisplay::Interaction: {
         const auto &params = interaction->parameters();
-        label = interaction->label() +
-                QString("<sub>%1</sub>")
-                    .arg(m_structure->getFragmentLabel(
-                        params.fragmentDimer.a.asymmetricFragmentIndex));
+        label = interaction->label();
         break;
       }
       case FrameworkOptions::LabelDisplay::Fragments: {
@@ -221,8 +218,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb,
                                               lineWidth, color);
         }
-        if(!label.isEmpty())
-            cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m, label);
+        if (!label.isEmpty())
+          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m, label);
       } else {
         QVector3D m2 = va + (m - va) * 0.5;
         if (m_options.display == FrameworkOptions::Display::Tubes) {
@@ -236,8 +233,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, lineWidth,
                                               color);
         }
-        if(!label.isEmpty())
-            cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m2, label);
+        if (!label.isEmpty())
+          cx::graphics::addTextToBillboardRenderer(*m_labelRenderer, m2, label);
       }
     }
   }

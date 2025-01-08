@@ -40,6 +40,7 @@ qt_add_library(cx_dialogs STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/infoviewer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/interactioninfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/packingdialog.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pairinteractiontablemodel.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/periodictabledialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/planegenerationdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/surfacedropdown.cpp"

@@ -1,7 +1,9 @@
 #pragma once
 #include "pair_energy_parameters.h"
 #include <QColor>
+#include <QMap>
 #include <QObject>
+#include <QVariant>
 #include <ankerl/unordered_dense.h>
 #include <occ/crystal/dimer_mapping_table.h>
 
@@ -9,6 +11,7 @@ class PairInteraction : public QObject {
   Q_OBJECT
 public:
   using EnergyComponents = ankerl::unordered_dense::map<QString, double>;
+  using Metadata = ankerl::unordered_dense::map<QString, QVariant>;
 
   explicit PairInteraction(const QString &interactionModel,
                            QObject *parent = nullptr);
@@ -16,6 +19,10 @@ public:
   void addComponent(const QString &component, double value);
   inline const auto &components() const { return m_components; }
   double getComponent(const QString &) const;
+
+  void addMetadata(const QString &label, const QVariant &value);
+  inline const auto &metadata() const { return m_metadata; }
+  QVariant getMetadata(const QString &) const;
 
   inline const QString &symmetry() const { return m_parameters.symmetry; }
   inline double nearestAtomDistance() const {
@@ -35,8 +42,12 @@ public:
 
   void setParameters(const pair_energy::Parameters &);
   const pair_energy::Parameters &parameters() const;
-  inline const auto &pairIndex() const { return m_parameters.fragmentDimer.index; }
-  inline QString dimerDescription() const { return m_parameters.fragmentDimer.getName(); }
+  inline const auto &pairIndex() const {
+    return m_parameters.fragmentDimer.index;
+  }
+  inline QString dimerDescription() const {
+    return m_parameters.fragmentDimer.getName();
+  }
 
 private:
   int m_count{0};
@@ -44,29 +55,34 @@ private:
   QString m_label{"Not set"};
   QString m_interactionModel;
   EnergyComponents m_components;
+  Metadata m_metadata;
   pair_energy::Parameters m_parameters;
 };
 
 namespace impl {
-  struct ValueRange {
-    double minValue{std::numeric_limits<double>::max()};
-    double maxValue{std::numeric_limits<double>::min()};
+struct ValueRange {
+  double minValue{std::numeric_limits<double>::max()};
+  double maxValue{std::numeric_limits<double>::min()};
 
-    inline ValueRange merge(ValueRange rhs) const {
-      return ValueRange{qMin(minValue, rhs.minValue), qMax(maxValue, rhs.maxValue)};
-    }
-    inline ValueRange update(double v) const {
-      return ValueRange{qMin(minValue, v), qMax(maxValue, v)};
-    }
-  };
-}
+  inline ValueRange merge(ValueRange rhs) const {
+    return ValueRange{qMin(minValue, rhs.minValue),
+                      qMax(maxValue, rhs.maxValue)};
+  }
+  inline ValueRange update(double v) const {
+    return ValueRange{qMin(minValue, v), qMax(maxValue, v)};
+  }
+};
+} // namespace impl
 
 class PairInteractions : public QObject {
   Q_OBJECT
 public:
-  using PairInteractionList = QList<PairInteraction*>;
-  using PairInteractionMap = ankerl::unordered_dense::map<FragmentIndexPair, PairInteraction *, FragmentIndexPairHash>;
-  using ModelInteractions = ankerl::unordered_dense::map<QString, PairInteractionMap>; 
+  using PairInteractionList = QList<PairInteraction *>;
+  using PairInteractionMap =
+      ankerl::unordered_dense::map<FragmentIndexPair, PairInteraction *,
+                                   FragmentIndexPairHash>;
+  using ModelInteractions =
+      ankerl::unordered_dense::map<QString, PairInteractionMap>;
 
   explicit PairInteractions(QObject *parent = nullptr);
 
@@ -76,7 +92,8 @@ public:
   void resetCounts();
   void resetColors();
 
-  QMap<QString, PairInteractionList> getInteractionsMatchingFragments(const std::vector<FragmentDimer> &frag);
+  QMap<QString, PairInteractionList>
+  getInteractionsMatchingFragments(const std::vector<FragmentDimer> &frag);
 
   PairInteraction *getInteraction(const QString &model,
                                   const FragmentDimer &frag);
@@ -98,8 +115,6 @@ signals:
   void interactionRemoved();
 
 private:
-
-
   ModelInteractions m_pairInteractions;
   ankerl::unordered_dense::map<QString, impl::ValueRange> m_distanceRange;
   bool m_haveDimerMap{false};

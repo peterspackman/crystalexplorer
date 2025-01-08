@@ -1,12 +1,11 @@
 #pragma once
-
+#include "pairinteractiontablemodel.h"
 #include "scene.h"
 #include <QWidget>
 
 class QTabWidget;
 class QLabel;
-class PairInteractions;
-class QTextCursor;
+class QTableView;
 class QShowEvent;
 
 struct InteractionInfoSettings {
@@ -17,7 +16,6 @@ struct InteractionInfoSettings {
 
 class InteractionInfoDocument : public QWidget {
   Q_OBJECT
-
 public:
   explicit InteractionInfoDocument(QWidget *parent = nullptr);
   void updateScene(Scene *scene);
@@ -37,14 +35,17 @@ private slots:
 private:
   void updateContent();
   void showNoDataMessage();
-  void insertInteractionEnergiesForModel(PairInteractions *results,
-                                         QTextCursor &cursor,
-                                         const QString &model);
-  QList<QString> getOrderedComponents(const QSet<QString> &uniqueComponents);
-  void updateTableColors();
+  void setupTableForModel(const QString &model);
+  void setupCopyAction();
 
+  void showHeaderContextMenu(const QPoint &pos);
+  QMenu *m_headerContextMenu{nullptr};
+
+  QAction *m_copyAction{nullptr};
   Scene *m_scene{nullptr};
-  QTabWidget *m_tabWidget;
-  QLabel *m_noDataLabel;
+  QTabWidget *m_tabWidget{nullptr};
+  QLabel *m_noDataLabel{nullptr};
   InteractionInfoSettings m_settings;
+  QHash<QString, PairInteractionTableModel *> m_models;
+  QHash<QString, QTableView *> m_views;
 };

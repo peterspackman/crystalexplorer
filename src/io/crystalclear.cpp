@@ -1,6 +1,4 @@
 #include "crystalclear.h"
-#include "eigen_json.h"
-#include "json.h"
 #include "meshinstance.h"
 #include "pair_energy_results.h"
 #include <QDebug>
@@ -57,7 +55,6 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
     return nullptr;
 
   occ::crystal::Crystal crystal = loadOccCrystal(json["crystal"]);
-  // TODO check if it's cg and then set symmetry of interactions
 
   QList<PairInteractions::PairInteractionList> interactions;
   QList<QList<DimerAtoms>> atomIndices;
@@ -89,25 +86,22 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
       auto energiesObj = dimerObj["energies"];
       pair->setLabel(QString::number(j + 1));
       for (auto it = energiesObj.begin(); it != energiesObj.end(); ++it) {
-        double value = 0.0;
         QString key = QString::fromStdString(it.key());
         if (it->is_number()) {
-          value = it->get<double>();
+          pair->addComponent(key, it->get<double>());
         } else if (it->is_boolean()) {
-          value = it->get<bool>() ? 1.0 : 0.0;
+          pair->addMetadata(key, it->get<bool>());
         } else if (it->is_string()) {
-          try {
-            value = std::stod(it->get<std::string>());
-          } catch (const std::invalid_argument &e) {
-            qWarning() << "Warning: Could not convert string to double for key "
-                       << key;
-            continue;
+          QString value = QString::fromStdString(it->get<std::string>());
+          if (key == "cg_identifier") {
+            pair->setLabel(value);
+          } else {
+            pair->addMetadata(key, value);
           }
         } else {
           qWarning() << "Warning: Unsupported type for key " << key;
           continue;
         }
-        pair->addComponent(key, value);
       }
       auto offsetsObj = dimerObj["uc_atom_offsets"];
       DimerAtoms d;

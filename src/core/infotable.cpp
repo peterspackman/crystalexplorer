@@ -30,7 +30,8 @@ void InfoTable::insertTableHeader(const QStringList &tableHeader) {
   }
 }
 
-void InfoTable::insertColorBlock(int row, int column, const QColor &color) {
+void InfoTable::insertColorBlock(int row, int column, const QColor &color,
+                                 const QString &text) {
   if (!color.isValid()) {
     return;
   }
@@ -41,7 +42,7 @@ void InfoTable::insertColorBlock(int row, int column, const QColor &color) {
   cell.setFormat(format);
 
   QTextCursor cursor = getCellCursor(row, column);
-  cursor.insertText("     ");
+  cursor.insertText(text);
 }
 
 void InfoTable::setColumnAlignment(int column, Qt::Alignment alignment) {
