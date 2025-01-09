@@ -83,21 +83,31 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
       pair->setParameters(params);
 
       auto dimerObj = siteEnergies[j];
-      auto energiesObj = dimerObj["energies"];
       pair->setLabel(QString::number(j + 1));
-      for (auto it = energiesObj.begin(); it != energiesObj.end(); ++it) {
+      for (auto it = dimerObj.begin(); it != dimerObj.end(); ++it) {
         QString key = QString::fromStdString(it.key());
-        if (it->is_number()) {
-          pair->addComponent(key, it->get<double>());
+        if (key == "energies")
+          continue;
+        if (it->is_number_integer()) {
+          pair->addMetadata(key, it->get<int>());
+        } else if (it->is_number_float()) {
+          pair->addMetadata(key, it->get<double>());
         } else if (it->is_boolean()) {
           pair->addMetadata(key, it->get<bool>());
         } else if (it->is_string()) {
           QString value = QString::fromStdString(it->get<std::string>());
-          if (key == "cg_identifier") {
+          if (key.toLower().contains("id")) {
             pair->setLabel(value);
           } else {
             pair->addMetadata(key, value);
           }
+        }
+      }
+      auto energiesObj = dimerObj["energies"];
+      for (auto it = energiesObj.begin(); it != energiesObj.end(); ++it) {
+        QString key = QString::fromStdString(it.key());
+        if (it->is_number()) {
+          pair->addComponent(key, it->get<double>());
         } else {
           qWarning() << "Warning: Unsupported type for key " << key;
           continue;
