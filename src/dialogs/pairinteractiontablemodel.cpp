@@ -7,6 +7,7 @@
 PairInteractionTableModel::PairInteractionTableModel(QObject *parent)
     : QAbstractTableModel(parent) {
   m_columnVisibility.fill(true, FixedColumnCount);
+  m_collator.setNumericMode(true);
 }
 
 int PairInteractionTableModel::rowCount(const QModelIndex &parent) const {
@@ -140,7 +141,7 @@ void PairInteractionTableModel::sort(int column, Qt::SortOrder order) {
               case ColorColumn:
                 return a->color().name() < b->color().name();
               case LabelColumn:
-                return a->label() < b->label();
+                return m_collator.compare(a->label(), b->label()) < 0;
               case CountColumn:
                 return a->count() < b->count();
               case DistanceColumn:

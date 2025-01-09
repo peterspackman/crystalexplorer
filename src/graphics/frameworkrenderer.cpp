@@ -14,9 +14,18 @@ FrameworkRenderer::FrameworkRenderer(ChemicalStructure *structure,
   m_labelRenderer = new BillboardRenderer();
 
   m_interactionComponentColors = {
-      {"coulomb", QColor("#a40000")},    {"polarization", QColor("#b86092")},
-      {"exchange", QColor("#721b3e")},   {"repulsion", QColor("#ffcd12")},
-      {"dispersion", QColor("#007e2f")}, {"total", QColor("#16317d")}};
+      {"coulomb", QColor("#a40000")},
+      {"polarization", QColor("#b86092")},
+      {"exchange", QColor("#721b3e")},
+      {"repulsion", QColor("#ffcd12")},
+      {"dispersion", QColor("#007e2f")},
+      {"total", QColor("#16317d")},
+      {"crystal total", QColor("#16317d")},
+      {"solvation total", QColor("#16317d")},
+      {"solvation (a->b)", QColor("#008b8b")},
+      {"solvation (b->a)", QColor("#20b2aa")},
+      {"crystal (redistributed)", QColor("#1e90ff")}};
+
   m_defaultInteractionComponentColor = QColor("#00b7a7");
 
   update(structure);
@@ -122,7 +131,7 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   QColor color = m_options.customColor;
   if (m_options.coloring == FrameworkOptions::Coloring::Component) {
     color = m_interactionComponentColors.value(
-        m_options.component, m_defaultInteractionComponentColor);
+        m_options.component.toLower(), m_defaultInteractionComponentColor);
   }
 
   std::vector<std::tuple<QColor, double, QString>> energies;

@@ -22,7 +22,8 @@ public:
 
   void
   setPairInteractionsFromDimerAtoms(const QList<QList<PairInteraction *>> &,
-                                    const QList<QList<DimerAtoms>> &, bool has_inversion = false);
+                                    const QList<QList<DimerAtoms>> &,
+                                    bool has_inversion = false);
 
   inline StructureType structureType() const override {
     return StructureType::Crystal;

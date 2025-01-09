@@ -23,6 +23,7 @@ public:
 public slots:
   void updateInfoViewerForCrystalChange();
   void updateInfoViewerForSurfaceChange();
+  void updateInteractionDisplaySettings();
 
 signals:
   void infoViewerClosed();

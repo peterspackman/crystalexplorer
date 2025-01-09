@@ -1201,7 +1201,8 @@ CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   Eigen::Translation<double, 3> t(m_crystal.to_cartesian(translation_frac));
   result.asymmetricFragmentTransform *= t;
   if (result.index != unitCellIndex) {
-    result.name += QString(" + [%1 %2 %3]").arg(idx.h).arg(idx.k).arg(idx.l);
+    result.name = result.name.left(result.name.lastIndexOf(' ')) +
+                  getTransformationString(result.asymmetricFragmentTransform);
   }
   return result;
 }
@@ -1228,10 +1229,8 @@ Fragment CrystalStructure::makeFragment(
     result.asymmetricFragmentTransform *= t;
     result.name = ucFrag.name;
     if (result.index != ucIndex) {
-      result.name += QString(" + [%1 %2 %3]")
-                         .arg(result.index.h)
-                         .arg(result.index.k)
-                         .arg(result.index.l);
+      result.name = result.name.left(result.name.lastIndexOf(' ')) +
+                    getTransformationString(result.asymmetricFragmentTransform);
     }
   } else {
     const auto &uc_atoms = m_crystal.unit_cell_atoms();

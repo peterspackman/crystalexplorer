@@ -26,6 +26,10 @@ void InfoViewer::initConnections() {
           &InfoViewer::tabChanged);
   connect(buttonBox, &QDialogButtonBox::accepted, this, &InfoViewer::accept);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &InfoViewer::reject);
+  connect(energyPrecisionSpinBox, &QSpinBox::valueChanged, this,
+          &InfoViewer::updateInteractionDisplaySettings);
+  connect(distancePrecisionSpinBox, &QSpinBox::valueChanged, this,
+          &InfoViewer::updateInteractionDisplaySettings);
 }
 
 void InfoViewer::accept() {
@@ -101,4 +105,11 @@ void InfoViewer::updateInfoViewerForSurfaceChange() {
       updateCurrentTab();
     }
   }
+}
+
+void InfoViewer::updateInteractionDisplaySettings() {
+  InteractionInfoSettings settings;
+  settings.distancePrecision = distancePrecisionSpinBox->value();
+  settings.energyPrecision = energyPrecisionSpinBox->value();
+  interactionsInfoDocument->updateSettings(settings);
 }

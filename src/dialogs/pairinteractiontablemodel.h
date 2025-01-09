@@ -1,6 +1,7 @@
 #pragma once
 #include "pair_energy_results.h"
 #include <QAbstractTableModel>
+#include <QCollator>
 #include <QStringList>
 
 class PairInteractionTableModel : public QAbstractTableModel {
@@ -55,4 +56,5 @@ private:
   std::vector<PairInteraction *> m_interactions;
   int m_energyPrecision{1};
   int m_distancePrecision{2};
+  QCollator m_collator;
 };
