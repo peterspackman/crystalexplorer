@@ -1,5 +1,4 @@
 #include <fmt/core.h>
-#include <iostream>
 #include <occ/core/element.h>
 #include <occ/core/kdtree.h>
 #include <occ/core/linear_algebra.h>

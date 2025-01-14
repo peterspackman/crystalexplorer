@@ -22,6 +22,10 @@ struct DimerIndex {
     return a == other.a && b == other.b;
   }
 
+  inline bool operator!=(const DimerIndex &other) const {
+    return !(*this == other);
+  }
+
   inline bool operator<(const DimerIndex &other) const {
     if (a.offset != other.a.offset)
       return a.offset < other.a.offset;

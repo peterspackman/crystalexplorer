@@ -1,4 +1,3 @@
-#include <iostream>
 #include <occ/crystal/crystal.h>
 #include <occ/crystal/dimer_mapping_table.h>
 
@@ -113,8 +112,6 @@ DimerMappingTable::DimerMappingTable(const Crystal &crystal,
     m_centroids.col(i) = crystal.to_fractional(uc_mols[i].centroid());
   }
 
-  std::cout << "Centroids\n" << m_centroids.transpose() << '\n';
-
   const auto &symops = crystal.symmetry_operations();
   ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> unique_dimers_set;
 
@@ -174,6 +171,7 @@ bool DimerMappingTable::have_dimer(const DimerIndex &dimer) const {
 DimerMappingTable
 DimerMappingTable::create_atomic_pair_table(const Crystal &crystal,
                                             bool consider_inversion) {
+
   DimerMappingTable table;
   table.m_consider_inversion = consider_inversion;
   table.m_cell = crystal.unit_cell();
@@ -186,16 +184,28 @@ DimerMappingTable::create_atomic_pair_table(const Crystal &crystal,
   const auto &symops = crystal.symmetry_operations();
   ankerl::unordered_dense::set<DimerIndex, DimerIndexHash> unique_dimers_set;
 
+  // Get max possible bonding distance from vdw radii
+  const auto &vdw_radii = crystal.asymmetric_unit().vdw_radii();
+  double max_vdw = vdw_radii.maxCoeff();
+  double max_dist = (max_vdw * 2 + 0.6) * (max_vdw * 2 + 0.6);
+
   // For each atom in the unit cell
   for (int i = 0; i < uc_atoms.size(); i++) {
     Vec3 pos_i = uc_atoms.frac_pos.col(i);
+    Vec3 cart_pos_i = uc_atoms.cart_pos.col(i);
 
     // Look through expanded slab for possible bonds
     for (int j = 0; j < s.frac_pos.cols(); j++) {
       if (j % uc_atoms.size() <= i)
         continue; // avoid duplicates
+      // Then in the pair loop:
+      Vec3 cart_pos_j = s.cart_pos.col(j);
+      Vec3 pos_diff = cart_pos_j - cart_pos_i;
+      if (pos_diff.squaredNorm() > max_dist)
+        continue; // Skip pairs too far apart
 
       Vec3 pos_j = s.frac_pos.col(j);
+
       int uc_idx_j = s.uc_idx(j);
       HKL cell_offset{s.hkl(0, j), s.hkl(1, j), s.hkl(2, j)};
 

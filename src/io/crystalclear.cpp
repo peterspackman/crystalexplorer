@@ -49,6 +49,32 @@ inline occ::crystal::Crystal loadOccCrystal(const json &json) {
   return occ::crystal::Crystal(asym, sg, uc);
 }
 
+void loadMetadata(PairInteraction *pair, const json &obj) {
+  for (auto it = obj.begin(); it != obj.end(); ++it) {
+    const auto &key = it.key();
+    const auto &value = it.value();
+
+    if (key == "energies" || key == "uc_atom_offsets")
+      continue;
+
+    QString qKey = QString::fromStdString(key);
+    if (value.is_number_integer()) {
+      pair->addMetadata(qKey, value.get<int>());
+    } else if (value.is_number_float()) {
+      pair->addMetadata(qKey, value.get<double>());
+    } else if (value.is_boolean()) {
+      pair->addMetadata(qKey, value.get<bool>());
+    } else if (value.is_string()) {
+      QString qValue = QString::fromStdString(value.get<std::string>());
+      if (qKey.toLower().contains("id")) {
+        pair->setLabel(qValue);
+      } else {
+        pair->addMetadata(qKey, qValue);
+      }
+    }
+  }
+}
+
 CrystalStructure *loadCrystalClearJson(const QString &filename) {
   auto json = loadJsonDocument(filename);
   if (json.is_null())
@@ -76,34 +102,20 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
     auto siteEnergies = pairsArray[i];
     auto &neighbors = interactions[i];
     auto &offsets = atomIndices[i];
+    neighbors.reserve(siteEnergies.size());
+    offsets.reserve(siteEnergies.size());
+
     for (int j = 0; j < siteEnergies.size(); ++j) {
       auto *pair = new PairInteraction(modelName);
       pair_energy::Parameters params;
       params.hasPermutationSymmetry = hasPermutationSymmetry;
       pair->setParameters(params);
 
-      auto dimerObj = siteEnergies[j];
+      const auto &dimerObj = siteEnergies[j];
       pair->setLabel(QString::number(j + 1));
-      for (auto it = dimerObj.begin(); it != dimerObj.end(); ++it) {
-        QString key = QString::fromStdString(it.key());
-        if (key == "energies")
-          continue;
-        if (it->is_number_integer()) {
-          pair->addMetadata(key, it->get<int>());
-        } else if (it->is_number_float()) {
-          pair->addMetadata(key, it->get<double>());
-        } else if (it->is_boolean()) {
-          pair->addMetadata(key, it->get<bool>());
-        } else if (it->is_string()) {
-          QString value = QString::fromStdString(it->get<std::string>());
-          if (key.toLower().contains("id")) {
-            pair->setLabel(value);
-          } else {
-            pair->addMetadata(key, value);
-          }
-        }
-      }
-      auto energiesObj = dimerObj["energies"];
+      loadMetadata(pair, dimerObj);
+
+      const auto &energiesObj = dimerObj["energies"];
       for (auto it = energiesObj.begin(); it != energiesObj.end(); ++it) {
         QString key = QString::fromStdString(it.key());
         if (it->is_number()) {
@@ -113,14 +125,16 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
           continue;
         }
       }
-      auto offsetsObj = dimerObj["uc_atom_offsets"];
+      const auto &offsetsObj = dimerObj["uc_atom_offsets"];
       DimerAtoms d;
-      auto a = offsetsObj[0];
+      const auto &a = offsetsObj[0];
+      d.a.reserve(a.size()); // For DimerAtoms
       for (int i = 0; i < a.size(); i++) {
         auto idx = a[i];
         d.a.push_back(GenericAtomIndex{idx[0], idx[1], idx[2], idx[3]});
       }
-      auto b = offsetsObj[1];
+      const auto &b = offsetsObj[1];
+      d.b.reserve(b.size());
       for (int i = 0; i < b.size(); i++) {
         auto idx = b[i];
         d.b.push_back(GenericAtomIndex{idx[0], idx[1], idx[2], idx[3]});
