@@ -876,6 +876,17 @@ void PreferencesDialog::populateExecutablesFromPath(bool override) {
       }
     }
   }
+  // handle orca_2mkl
+  const auto &key = settings::keys::ORCA_2MKL_EXECUTABLE;
+  QString currentSetting = settings::readSetting(key).toString();
+  QString orcaSetting =
+      settings::readSetting(settings::keys::ORCA_EXECUTABLE).toString();
+  if (override || currentSetting.isEmpty()) {
+    if (!orcaSetting.isEmpty()) {
+      settings::writeSetting(key, orcaSetting + "_2mkl");
+      qDebug() << "Set orca_2mkl to " << orcaSetting + "_2mkl";
+    }
+  }
 }
 
 void PreferencesDialog::onTextFontFamilyChanged(const QFont &font) {

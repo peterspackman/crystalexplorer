@@ -2,13 +2,14 @@
 #include "exefileutilities.h"
 #include "filedependency.h"
 #include "occinput.h"
-#include <fmt/core.h>
 #include "settings.h"
+#include <fmt/core.h>
 #include <occ/core/element.h>
 
 OccWavefunctionTask::OccWavefunctionTask(QObject *parent)
     : ExternalProgramTask(parent) {
-  setExecutable(exe::findProgramInPath("occ"));
+  setExecutable(
+      settings::readSetting(settings::keys::OCC_EXECUTABLE).toString());
   qDebug() << "Executable" << executable();
 }
 
@@ -21,7 +22,10 @@ const wfn::Parameters &OccWavefunctionTask::getParameters() const {
 }
 
 int OccWavefunctionTask::threads() const {
-  return properties().value("threads", settings::readSetting(settings::keys::OCC_NTHREADS).toInt()).toInt();
+  return properties()
+      .value("threads",
+             settings::readSetting(settings::keys::OCC_NTHREADS).toInt())
+      .toInt();
 }
 void OccWavefunctionTask::start() {
   QString json = m_parameters.userInputContents;

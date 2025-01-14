@@ -1,12 +1,14 @@
 #include "xtbtask.h"
 #include "exefileutilities.h"
 #include "filedependency.h"
+#include "settings.h"
 #include "xtb.h"
 #include <fmt/core.h>
 #include <occ/core/element.h>
 
 XtbTask::XtbTask(QObject *parent) : ExternalProgramTask(parent) {
-  setExecutable(exe::findProgramInPath("xtb"));
+  setExecutable(
+      settings::readSetting(settings::keys::XTB_EXECUTABLE).toString());
   qDebug() << "Executable" << executable();
 }
 
@@ -44,14 +46,16 @@ QString XtbTask::propertiesContents() const {
   return property(getOutputFilePropertyName("properties.txt")).toString();
 }
 
-QString XtbTask::coordFilename() const { return hashedBaseName() + inputSuffix(); }
+QString XtbTask::coordFilename() const {
+  return hashedBaseName() + inputSuffix();
+}
 
 void XtbTask::preProcess() {
 
   QString name = hashedBaseName();
 
   QString coord = m_parameters.userInputContents;
-  if(!m_parameters.userEditRequested) {
+  if (!m_parameters.userEditRequested) {
     coord = xtbCoordString(m_parameters);
   }
   emit progressText("Generated coord input");
@@ -64,8 +68,9 @@ void XtbTask::preProcess() {
   emit progressText("Wrote input file");
 
   QStringList arguments{coordFilename()};
-  FileDependencyList outputs{FileDependency("xtbout.json", jsonFilename()),
-                             FileDependency("properties.txt", propertiesFilename())};
+  FileDependencyList outputs{
+      FileDependency("xtbout.json", jsonFilename()),
+      FileDependency("properties.txt", propertiesFilename())};
 
   if (m_parameters.write_molden) {
     arguments.append("--molden");

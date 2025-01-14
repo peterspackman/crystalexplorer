@@ -64,6 +64,7 @@ const QString OCC_NTHREADS = OCC_GROUP + "/numThreads";
 // Orca
 const QString ORCA_GROUP = "orca";
 const QString ORCA_EXECUTABLE = ORCA_GROUP + "/executablePath";
+const QString ORCA_2MKL_EXECUTABLE = ORCA_GROUP + "/orca2MklexecutablePath";
 const QString ORCA_NTHREADS = ORCA_GROUP + "/numProcs";
 
 // XTB

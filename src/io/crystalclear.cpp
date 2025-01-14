@@ -141,65 +141,67 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
   return result;
 }
 
+inline Mesh *getMeshFromJson(const json &j) {
+  Mesh *result = nullptr;
+  occ::Mat3N positions;
+  Eigen::VectorXf areas, energies;
+
+  qDebug() << "Json contains" << j.size();
+  if (!j.contains("positions")) {
+    qDebug() << "No positions";
+    return result;
+  }
+  if (!j.contains("areas")) {
+    qDebug() << "No areas";
+    return result;
+  }
+
+  if (j.contains("electronic_energies")) {
+    j.at("electronic_energies").get_to(energies);
+  }
+
+  j.at("positions").get_to(positions);
+  j.at("areas").get_to(areas);
+
+  positions.array() *= occ::units::BOHR_TO_ANGSTROM;
+  areas.array() *= occ::units::BOHR_TO_ANGSTROM * occ::units::BOHR_TO_ANGSTROM;
+
+  qDebug() << "Loaded " << positions.cols() << " points, " << areas.size()
+           << "areas," << energies.size() << "energy values";
+
+  if (positions.cols() < 1)
+    return result;
+
+  result = new Mesh(positions);
+  result->setVertexProperty("None", Eigen::VectorXf::Zero(positions.cols()));
+
+  if (energies.size() > 0) {
+    result->setVertexProperty("Electronic Energy", energies);
+  }
+
+  result->setVertexProperty("Area", areas);
+  return result;
+}
+
 void loadCrystalClearSurfaceJson(const QString &filename,
                                  CrystalStructure *structure) {
-  auto json = loadJsonDocument(filename);
-  if (json.is_null())
+  auto j = loadJsonDocument(filename);
+  if (j.is_null())
     return;
 
-  qDebug() << "Pos CDS";
-  occ::Mat3N cdsPositions;
-  json["cds_pos"].get_to(cdsPositions);
-  cdsPositions.array() *= occ::units::BOHR_TO_ANGSTROM;
-
-  qDebug() << "A CDS";
-  Eigen::VectorXf cdsAreas;
-  json["a_cds"].get_to(cdsAreas);
-  cdsAreas.array() *=
-      occ::units::BOHR_TO_ANGSTROM * occ::units::BOHR_TO_ANGSTROM;
-
-  qDebug() << "E CDS";
-  Eigen::VectorXf cdsEnergies;
-  json["e_cds"].get_to(cdsEnergies);
-  qDebug() << "Loaded " << cdsEnergies.size() << " energy values";
-
-  Mesh *cdsMesh = new Mesh(cdsPositions);
-  cdsMesh->setVertexProperty("None",
-                             Eigen::VectorXf::Zero(cdsPositions.cols()));
-  cdsMesh->setVertexProperty("Energy", cdsEnergies);
-  cdsMesh->setVertexProperty("Area", cdsAreas);
-
-  cdsMesh->setObjectName("cds");
-  cdsMesh->setParent(structure);
-  MeshInstance *cdsInstance = new MeshInstance(cdsMesh);
-  cdsInstance->setObjectName("+ {x,y,z} [0,0,0]");
-
-  qDebug() << "Pos Coulomb";
-  occ::Mat3N coulombPositions;
-  json["coulomb_pos"].get_to(coulombPositions);
-  coulombPositions.array() *= occ::units::BOHR_TO_ANGSTROM;
-
-  qDebug() << "A Coulomb";
-  Eigen::VectorXf coulombAreas;
-  json["a_coulomb"].get_to(coulombAreas);
-  coulombAreas.array() *=
-      occ::units::BOHR_TO_ANGSTROM * occ::units::BOHR_TO_ANGSTROM;
-
-  qDebug() << "E coulomb";
-  Eigen::VectorXf coulombEnergies;
-  json["e_coulomb"].get_to(coulombEnergies);
-  qDebug() << "Loaded " << coulombEnergies.size() << " energy values";
-
-  Mesh *mesh = new Mesh(coulombPositions);
-  mesh->setVertexProperty("None",
-                          Eigen::VectorXf::Zero(coulombPositions.cols()));
-  mesh->setVertexProperty("Energy", coulombEnergies);
-  mesh->setVertexProperty("Area", coulombAreas);
-
-  mesh->setObjectName("Coulomb");
-  mesh->setParent(structure);
-  MeshInstance *instance = new MeshInstance(mesh);
-  instance->setObjectName("+ {x,y,z} [0,0,0]");
+  for (auto it = j.begin(); it != j.end(); ++it) {
+    auto key = QString::fromStdString(it.key());
+    if (!it->is_object())
+      continue;
+    qDebug() << "Key" << key;
+    Mesh *mesh = getMeshFromJson(it->get<json>());
+    if (!mesh)
+      continue;
+    mesh->setObjectName(key);
+    mesh->setParent(structure);
+    MeshInstance *instance = new MeshInstance(mesh);
+    instance->setObjectName("+ {x,y,z} [0,0,0]");
+  }
 }
 
 } // namespace io

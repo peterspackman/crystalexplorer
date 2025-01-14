@@ -81,13 +81,13 @@ void ChildPropertyController::setup() {
   frameworkColorComboBox->blockSignals(true);
   QStringList colorValues = availableFrameworkColoringOptions();
   frameworkColorComboBox->insertItems(0, colorValues);
-  componentComboBox->setCurrentIndex(0);
+  frameworkColorComboBox->setCurrentIndex(0);
   frameworkColorComboBox->blockSignals(false);
 
   frameworkLabelDisplayComboBox->blockSignals(true);
   QStringList labelDisplayValues = availableFrameworkLabelDisplayOptions();
   frameworkLabelDisplayComboBox->insertItems(0, labelDisplayValues);
-  componentComboBox->setCurrentIndex(0);
+  frameworkLabelDisplayComboBox->setCurrentIndex(0);
   frameworkLabelDisplayComboBox->blockSignals(false);
 
   frameworkConnectionComboBox->blockSignals(true);
@@ -276,6 +276,9 @@ void ChildPropertyController::updatePairInteractionComponents() {
   componentComboBox->clear();
   componentComboBox->insertItems(0, values);
   auto idx = values.indexOf(currentComponent);
+  if (idx < 0) {
+    idx = values.indexOf("Total");
+  }
   componentComboBox->setCurrentIndex((idx >= 0) ? idx : 0);
   componentComboBox->blockSignals(false);
 
@@ -379,7 +382,8 @@ void ChildPropertyController::onSurfaceTransparencyChange(bool transparent) {
   m_meshPropertyModel->setTransparent(transparent);
 }
 
-void ChildPropertyController::onSurfaceVarTransparecyChange(float transparency) {
+void ChildPropertyController::onSurfaceVarTransparecyChange(
+    float transparency) {
   m_meshPropertyModel->setTransparency(transparency);
 }
 

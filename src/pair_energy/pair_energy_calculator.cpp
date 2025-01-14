@@ -155,7 +155,7 @@ void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params,
       qWarning() << "Invalid result from xtb task!";
     }
     double e = wfn->totalEnergy() - params.reference_energy;
-    pair->addComponent("total", e * 2625.5);
+    pair->addComponent("Total", e * 2625.5);
     pair->setParameters(m_parameters[result.name]);
     interactions->add(pair);
 

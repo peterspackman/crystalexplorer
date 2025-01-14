@@ -4,7 +4,8 @@
 #include "settings.h"
 
 OccSurfaceTask::OccSurfaceTask(QObject *parent) : ExternalProgramTask(parent) {
-  setExecutable(exe::findProgramInPath("occ"));
+  setExecutable(
+      settings::readSetting(settings::keys::OCC_EXECUTABLE).toString());
   qDebug() << "Executable" << executable();
 }
 
@@ -89,7 +90,10 @@ QString OccSurfaceTask::kind() const {
 float OccSurfaceTask::separation() const { return m_parameters.separation; }
 
 int OccSurfaceTask::threads() const {
-  return properties().value("threads", settings::readSetting(settings::keys::OCC_NTHREADS).toInt()).toInt();
+  return properties()
+      .value("threads",
+             settings::readSetting(settings::keys::OCC_NTHREADS).toInt())
+      .toInt();
 }
 
 float OccSurfaceTask::isovalue() const {

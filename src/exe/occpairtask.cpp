@@ -1,9 +1,11 @@
 #include "occpairtask.h"
 #include "exefileutilities.h"
 #include "filedependency.h"
+#include "settings.h"
 
 OccPairTask::OccPairTask(QObject *parent) : ExternalProgramTask(parent) {
-  setExecutable(exe::findProgramInPath("occ"));
+  setExecutable(
+      settings::readSetting(settings::keys::ORCA_EXECUTABLE).toString());
 }
 
 void OccPairTask::setParameters(const pair_energy::Parameters &params) {

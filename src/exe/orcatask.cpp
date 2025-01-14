@@ -2,11 +2,13 @@
 #include "exefileutilities.h"
 #include "filedependency.h"
 #include "orcainput.h"
+#include "settings.h"
 #include <fmt/core.h>
 #include <occ/core/element.h>
 
 OrcaSCFTask::OrcaSCFTask(QObject *parent) : ExternalProgramTask(parent) {
-  setExecutable(exe::findProgramInPath("orca"));
+  setExecutable(
+      settings::readSetting(settings::keys::ORCA_EXECUTABLE).toString());
 }
 
 void OrcaSCFTask::setParameters(const wfn::Parameters &params) {
@@ -68,7 +70,8 @@ QString OrcaSCFTask::inputSuffix() const { return inputSuffixDefault; }
 
 OrcaConvertTask::OrcaConvertTask(QObject *parent)
     : ExternalProgramTask(parent) {
-  setExecutable(exe::findProgramInPath("orca_2mkl"));
+  setExecutable(
+      settings::readSetting(settings::keys::ORCA_2MKL_EXECUTABLE).toString());
 }
 
 QString OrcaConvertTask::moldenFilename() const {

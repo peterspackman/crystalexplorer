@@ -4,58 +4,39 @@
 #include <QVector>
 #include <QWidget>
 
-#include "meshinstance.h"
 #include "colormap.h"
+#include "meshinstance.h"
 
-const QString plotTypeLabel = "dᵢ vs. dₑ"; // Used by the fingerprint options widget
+const QString plotTypeLabel =
+    "dᵢ vs. dₑ"; // Used by the fingerprint options widget
 
 // dPlot - plots property 1 on x-axis and property 2 on y-axis i.e. di vs de
 // dnormPlot - plots property 3 on x-axis and property 4 on y-axis i.e. dnormi
 // vs dnorme
 
 struct FingerprintPlotSettings {
-    QString label{"Standard"};
-    double rangeMinimum{0.4};
-    double rangeMaximum{2.6};
-    double binSize{0.01};
-    double gridSize{0.2};
-    int pixelsPerBin{2};
-    int samplesPerEdge{3};
+  QString label{"Standard"};
+  double rangeMinimum{0.4};
+  double rangeMaximum{2.6};
+  double binSize{0.01};
+  double gridSize{0.2};
+  int pixelsPerBin{2};
+  int samplesPerEdge{3};
 };
 
-enum class FingerprintPlotRange { Standard, Translated, Expanded};
-
+enum class FingerprintPlotRange { Standard, Translated, Expanded };
 
 inline FingerprintPlotSettings plotRangeSettings(FingerprintPlotRange r) {
-    switch(r) {
+  switch (r) {
 
-        case FingerprintPlotRange::Translated:
-            return FingerprintPlotSettings{
-                "Translated",
-                0.8,
-                3.0,
-                0.01,
-                0.2
-            };
-        case FingerprintPlotRange::Expanded:
-            return FingerprintPlotSettings{
-                "Expanded",
-                0.4,
-                3.0,
-                0.01,
-                0.2
-            };
-        default:
-        return FingerprintPlotSettings{
-            "Standard",
-            0.4,
-            2.6,
-            0.01,
-            0.2
-        };
-    }
+  case FingerprintPlotRange::Translated:
+    return FingerprintPlotSettings{"Translated", 0.8, 3.0, 0.01, 0.2};
+  case FingerprintPlotRange::Expanded:
+    return FingerprintPlotSettings{"Expanded", 0.4, 3.0, 0.01, 0.2};
+  default:
+    return FingerprintPlotSettings{"Standard", 0.4, 2.6, 0.01, 0.2};
+  }
 }
-
 
 const int UNDEFINED_BIN_INDEX = -1;
 
@@ -73,14 +54,14 @@ const Qt::GlobalColor MESSAGE_COLOR = Qt::red;
 const int AXIS_SCALE_FONT_SIZE = 12;
 const int AXIS_LABEL_FONT_SIZE = 12;
 #if defined(Q_OS_WIN)
-    inline const char * fingerprint_sans_font = "Verdana";
-    inline const char * fingerprint_serif_font = "Times New Roman";
+inline const char *fingerprint_sans_font = "Verdana";
+inline const char *fingerprint_serif_font = "Times New Roman";
 #elif defined(Q_OS_MACOS)
-    inline const char * fingerprint_sans_font = "Helvetica";
-    inline const char * fingerprint_serif_font = "Georgia";
+inline const char *fingerprint_sans_font = "Helvetica";
+inline const char *fingerprint_serif_font = "Georgia";
 #elif defined(Q_OS_LINUX)
-    inline const char * fingerprint_sans_font = "Ubuntu";
-    inline const char * fingerprint_serif_font = "Times New Roman";
+inline const char *fingerprint_sans_font = "Ubuntu";
+inline const char *fingerprint_serif_font = "Times New Roman";
 #endif
 
 const QFont TITLE_FONT = QFont(fingerprint_sans_font, 14, QFont::Bold, true);
@@ -90,8 +71,10 @@ const QFont AXIS_LABEL_FONT =
     QFont(fingerprint_sans_font, AXIS_LABEL_FONT_SIZE, QFont::Bold, true);
 const QFont AXIS_LABEL_FONT_SUBSCRIPT =
     QFont(fingerprint_sans_font, AXIS_LABEL_FONT_SIZE, QFont::Bold, true);
-const QFont UNITS_FONT = QFont(fingerprint_serif_font, 12, QFont::Normal, false);
-const QFont MESSAGE_FONT = QFont(fingerprint_sans_font, 30, QFont::Normal, false);
+const QFont UNITS_FONT =
+    QFont(fingerprint_serif_font, 12, QFont::Normal, false);
+const QFont MESSAGE_FONT =
+    QFont(fingerprint_sans_font, 30, QFont::Normal, false);
 
 // Pen
 const int PEN_WIDTH = 1;
@@ -102,7 +85,7 @@ const int AXIS_SCALE_OFFSET = 30;
 const int AXIS_SCALE_TEXT_OFFSET = 2;
 
 // Fingerprint filtering
-enum class FingerprintFilterMode {None, Element};
+enum class FingerprintFilterMode { None, Element };
 
 inline const QStringList fingerprintFilterLabels{
     "None",
@@ -110,9 +93,7 @@ inline const QStringList fingerprintFilterLabels{
 };
 
 inline const QVector<FingerprintFilterMode> requestableFilters{
-    FingerprintFilterMode::None,
-    FingerprintFilterMode::Element
-};
+    FingerprintFilterMode::None, FingerprintFilterMode::Element};
 
 const QString NO_FINGERPRINT_MESSAGE = "Fingerprint Plot Unavailable";
 
@@ -225,7 +206,7 @@ private:
 
   FingerprintPlotRange m_range{FingerprintPlotRange::Standard};
   QPixmap plotPixmap;
-  Mesh * m_mesh{nullptr};
+  Mesh *m_mesh{nullptr};
   QString m_xAxisLabel{"di"};
   QString m_yAxisLabel{"de"};
 
@@ -243,7 +224,6 @@ private:
   Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> binUsed;
   double m_totalFilteredArea{0.0};
 
-
   FingerprintPlotSettings m_settings;
 
   // Filter options
@@ -254,5 +234,5 @@ private:
   QString m_insideFilterElementSymbol{"H"};
   QString m_outsideFilterElementSymbol{"H"};
 
-  QString m_colorScheme{"CE_RGB"};
+  QString m_colorScheme{"RedGreenBlue"};
 };
