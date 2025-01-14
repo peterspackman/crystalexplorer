@@ -95,8 +95,7 @@ void MeshInstance::setTransparent(bool transparent) {
   emit transparencyChanged();
 }
 
-void MeshInstance::setTransparency(float transparency)
-{
+void MeshInstance::setTransparency(float transparency) {
   if (transparency == m_transparency)
     return;
   m_transparency = transparency;
@@ -156,18 +155,11 @@ MeshInstance *MeshInstance::newInstanceFromSelectedAtoms(
     return nullptr;
   if (mesh->haveChildMatchingTransform(transform))
     return nullptr;
-  Eigen::AngleAxisd aa(transform.rotation());
   auto instance = new MeshInstance(mesh, transform);
-  const auto &axis = aa.axis();
-  float angle = aa.angle();
-  const auto &t = transform.translation();
-  std::string desc{""};
-  if (angle > 1e-3)
-    desc += fmt::format(" Rot {:.3f}° @ [{:.3f},{:.3f},{:.3f}]",
-                       angle * 180 / M_PI, axis(0), axis(1), axis(2));
-  desc += fmt::format(" + [{:.3f},{:.3f},{:.3f}]", t(0), t(1), t(2));
+  auto fragment = structure->makeFragment(atoms);
+  QString fragmentLabel = fragment.name;
 
-  instance->setObjectName(QString::fromStdString(desc));
+  instance->setObjectName(fragmentLabel);
   return instance;
 }
 
@@ -231,13 +223,14 @@ MeshInstance::nearestPoint(const MeshInstance *other) const {
   return result;
 }
 
-
 void MeshInstance::populateSurroundingAtoms() {
   ChemicalStructure *structure =
       qobject_cast<ChemicalStructure *>(m_mesh->parent());
-  if(structure) {
-    m_atomsInside = structure->getAtomIndicesUnderTransformation(m_mesh->atomsInside(), m_transform);
-    m_atomsOutside = structure->getAtomIndicesUnderTransformation(m_mesh->atomsOutside(), m_transform);
+  if (structure) {
+    m_atomsInside = structure->getAtomIndicesUnderTransformation(
+        m_mesh->atomsInside(), m_transform);
+    m_atomsOutside = structure->getAtomIndicesUnderTransformation(
+        m_mesh->atomsOutside(), m_transform);
     qDebug() << "m_atomsOutside" << m_atomsOutside.size();
   }
 }

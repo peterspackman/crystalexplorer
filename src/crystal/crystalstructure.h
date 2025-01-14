@@ -127,7 +127,7 @@ public:
       atomicDisplacementParameters(GenericAtomIndex) const override;
 
   [[nodiscard]] QString
-  getTransformationString(const Eigen::Isometry3d &result) const;
+  getTransformationString(const Eigen::Isometry3d &) const override;
 
   [[nodiscard]] nlohmann::json toJson() const override;
   bool fromJson(const nlohmann::json &) override;

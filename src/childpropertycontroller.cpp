@@ -117,7 +117,7 @@ void ChildPropertyController::setup() {
   connect(modelComboBox, &QComboBox::currentIndexChanged,
           [this]() { updatePairInteractionComponents(); });
 
-  connect(frameworkTubeSizeSpinBox, &QSpinBox::valueChanged,
+  connect(frameworkTubeSizeSpinBox, &QDoubleSpinBox::valueChanged,
           [this]() { emitFrameworkOptions(); });
 
   connect(frameworkCutoffSpinBox, &QDoubleSpinBox::valueChanged,

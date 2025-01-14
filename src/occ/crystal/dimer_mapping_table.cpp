@@ -1,3 +1,4 @@
+#include <occ/core/kdtree.h>
 #include <occ/crystal/crystal.h>
 #include <occ/crystal/dimer_mapping_table.h>
 
@@ -188,24 +189,19 @@ DimerMappingTable::create_atomic_pair_table(const Crystal &crystal,
   const auto &vdw_radii = crystal.asymmetric_unit().vdw_radii();
   double max_vdw = vdw_radii.maxCoeff();
   double max_dist = (max_vdw * 2 + 0.6) * (max_vdw * 2 + 0.6);
+  occ::core::KDTree<double> tree(s.cart_pos.rows(), s.cart_pos,
+                                 occ::core::max_leaf);
+  tree.index->buildIndex();
 
-  // For each atom in the unit cell
+  core::KdResultSet idxs_dists;
+  core::KdRadiusResultSet results(max_dist, idxs_dists);
+
   for (int i = 0; i < uc_atoms.size(); i++) {
     Vec3 pos_i = uc_atoms.frac_pos.col(i);
-    Vec3 cart_pos_i = uc_atoms.cart_pos.col(i);
-
-    // Look through expanded slab for possible bonds
-    for (int j = 0; j < s.frac_pos.cols(); j++) {
-      if (j % uc_atoms.size() <= i)
-        continue; // avoid duplicates
-      // Then in the pair loop:
-      Vec3 cart_pos_j = s.cart_pos.col(j);
-      Vec3 pos_diff = cart_pos_j - cart_pos_i;
-      if (pos_diff.squaredNorm() > max_dist)
-        continue; // Skip pairs too far apart
-
+    const double *q = s.cart_pos.col(i).data();
+    tree.index->findNeighbors(results, q, nanoflann::SearchParams());
+    for (const auto &[j, dist2] : results.m_indices_dists) {
       Vec3 pos_j = s.frac_pos.col(j);
-
       int uc_idx_j = s.uc_idx(j);
       HKL cell_offset{s.hkl(0, j), s.hkl(1, j), s.hkl(2, j)};
 
@@ -245,9 +241,10 @@ DimerMappingTable::create_atomic_pair_table(const Crystal &crystal,
       table.m_symmetry_unique_dimer_map[norm_ab] =
           table.m_symmetry_unique_dimer_map[canonical_ab];
     }
+
+    results.clear();
   }
 
-  // Populate unique dimers as before
   for (const auto &dimer : table.m_unique_dimers) {
     if (table.m_symmetry_unique_dimer_map[dimer] == dimer) {
       table.m_symmetry_unique_dimers.push_back(dimer);

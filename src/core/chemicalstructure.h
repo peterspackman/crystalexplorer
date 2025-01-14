@@ -136,6 +136,9 @@ public:
                                  const std::vector<GenericAtomIndex> &to,
                                  Eigen::Isometry3d &result) const;
 
+  virtual QString
+  getTransformationString(const Eigen::Isometry3d &) const;
+
   virtual std::vector<GenericAtomIndex>
   getAtomIndicesUnderTransformation(const std::vector<GenericAtomIndex> &idxs,
                                     const Eigen::Isometry3d &result) const;

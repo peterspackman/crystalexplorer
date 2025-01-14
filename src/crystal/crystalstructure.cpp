@@ -1229,7 +1229,7 @@ Fragment CrystalStructure::makeFragment(
     result.asymmetricFragmentTransform *= t;
     result.name = ucFrag.name;
     if (result.index != ucIndex) {
-      result.name = result.name.left(result.name.lastIndexOf(' ')) +
+      result.name = result.name.left(result.name.lastIndexOf(' ')) + " " +
                     getTransformationString(result.asymmetricFragmentTransform);
     }
   } else {

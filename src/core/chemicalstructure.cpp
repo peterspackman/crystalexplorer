@@ -114,7 +114,8 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
   };
 
   for (const auto &[k, v] : m_bondOverrides) {
-    if(v != BondMethod::Bond) continue;
+    if (v != BondMethod::Bond)
+      continue;
     size_t l = genericIndexToIndex(k.a);
     size_t r = genericIndexToIndex(k.b);
     double d = (m_atomicPositions.col(r) - m_atomicPositions.col(l)).norm();
@@ -149,8 +150,6 @@ void ChemicalStructure::guessBondsBasedOnDistances() {
     }
     results.clear();
   }
-
-
 
   m_bondsNeedUpdate = false;
   m_fragments.clear();
@@ -907,6 +906,23 @@ ChemicalStructure::getAtomIndicesUnderTransformation(
       result.push_back({static_cast<int>(idx)});
   }
   return result;
+}
+
+QString ChemicalStructure::getTransformationString(
+    const Eigen::Isometry3d &transform) const {
+
+  Eigen::AngleAxisd aa(transform.rotation());
+  const auto &axis = aa.axis();
+  float angle = aa.angle();
+  const auto &t = transform.translation();
+
+  std::string desc{""};
+  if (angle > 1e-3)
+    desc += fmt::format(" Rot {:.3f}° @ [{:.3f},{:.3f},{:.3f}]",
+                        angle * 180 / M_PI, axis(0), axis(1), axis(2));
+  desc += fmt::format(" + [{:.3f},{:.3f},{:.3f}]", t(0), t(1), t(2));
+
+  return QString::fromStdString(desc);
 }
 
 bool ChemicalStructure::getTransformation(
