@@ -1361,7 +1361,9 @@ void Scene::colorFragmentsByEnergyPair(FragmentPairSettings pairSettings) {
         FragmentColorSettings::Method::Constant, Qt::gray});
     pairSettings.keyFragment = selectedFragments[0];
     auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
-    ColorMap colorMap("Austria", 0, fragmentPairs.uniquePairs.size() - 1);
+    auto cmapName =
+        settings::readSetting(settings::keys::ENERGY_COLOR_SCHEME).toString();
+    ColorMap colorMap(cmapName, 0, fragmentPairs.uniquePairs.size() - 1);
     std::vector<int> counts(fragmentPairs.uniquePairs.size(), 0);
     for (const auto &[fragmentPair, idx] :
          fragmentPairs.pairs[selectedFragments[0]]) {

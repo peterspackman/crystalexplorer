@@ -59,17 +59,17 @@ static const QMap<QString, QVariant> defaults{
     {keys::LIGHT_POSITION_2, QVector3D(-10.0f, 10.0f, 10.0f)},
     {keys::LIGHT_POSITION_3, QVector3D(10.0f, -10.0f, 10.0f)},
     {keys::LIGHT_POSITION_4, QVector3D(-10.0f, -10.0f, 10.0f)},
-    {keys::LIGHT_AMBIENT, QColor::fromRgbF(0.3f, 0.3f, 0.3f).name()},
-    {keys::LIGHT_SPECULAR_1, QColor::fromRgbF(0.5f, 0.5f, 0.5f).name()},
-    {keys::LIGHT_SPECULAR_2, QColor::fromRgbF(0.5f, 0.5f, 0.5f).name()},
-    {keys::LIGHT_SPECULAR_3, QColor::fromRgbF(0.5f, 0.5f, 0.5f).name()},
-    {keys::LIGHT_SPECULAR_4, QColor::fromRgbF(0.5f, 0.5f, 0.5f).name()},
-    {keys::LIGHT_AMBIENT_INTENSITY, 2.0f},
+    {keys::LIGHT_AMBIENT, QVariant::fromValue(Qt::white)},
+    {keys::LIGHT_SPECULAR_1, QVariant::fromValue(Qt::white)},
+    {keys::LIGHT_SPECULAR_2, QVariant::fromValue(Qt::white)},
+    {keys::LIGHT_SPECULAR_3, QVariant::fromValue(Qt::white)},
+    {keys::LIGHT_SPECULAR_4, QVariant::fromValue(Qt::white)},
+    {keys::LIGHT_AMBIENT_INTENSITY, 0.1f},
     {keys::LIGHT_INTENSITY_1, 10.0f},
     {keys::LIGHT_INTENSITY_2, 10.0f},
     {keys::LIGHT_INTENSITY_3, 10.0f},
     {keys::LIGHT_INTENSITY_4, 10.0f},
-    {keys::LIGHT_ATTENUATION_MINIMUM, 0.15f},
+    {keys::LIGHT_ATTENUATION_MINIMUM, 0.2f},
     {keys::LIGHT_ATTENUATION_MAXIMUM, 40.0f},
     {keys::LIGHTING_EXPOSURE, 1.0f},
     {keys::LIGHTING_TONEMAP, 1},
@@ -98,7 +98,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::ENERGY_TABLE_PRECISION, 1},
     // Energy Structure
     {keys::ENERGY_FRAMEWORK_SCALE, 0.001f}, // pm per kJ/mol;
-    {keys::ENERGY_COLOR_SCHEME, "rainbow"},
+    {keys::ENERGY_COLOR_SCHEME, "Austria"},
     {keys::ENERGY_FRAMEWORK_CUTOFF_COULOMB, 0.0},    // kJ/mol
     {keys::ENERGY_FRAMEWORK_CUTOFF_DISPERSION, 0.0}, // kJ/mol
     {keys::ENERGY_FRAMEWORK_CUTOFF_TOTAL, 0.0},      // kJ/mol

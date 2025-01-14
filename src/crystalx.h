@@ -3,30 +3,30 @@
 #include <QDockWidget>
 #include <QFutureWatcher>
 #include <QMainWindow>
+#include <QMessageBox>
 #include <QTextEdit>
 #include <QtConcurrent>
-#include <QMessageBox>
 
+#include "childpropertycontroller.h"
 #include "crystalcontroller.h"
 #include "fingerprintwindow.h"
 #include "glwindow.h"
 #include "project.h"
-#include "childpropertycontroller.h"
 #include "viewtoolbar.h"
 
 #include "animationsettingsdialog.h"
 #include "celllimitsdialog.h"
-#include "exportdialog.h"
-#include "fragmentstatedialog.h"
 #include "closecontactsdialog.h"
 #include "depthfadingandclippingdialog.h"
 #include "energycalculationdialog.h"
+#include "exportdialog.h"
+#include "fragmentstatedialog.h"
 #include "infoviewer.h"
+#include "pair_energy_parameters.h"
 #include "planegenerationdialog.h"
 #include "preferencesdialog.h"
 #include "surfacegenerationdialog.h"
 #include "wavefunctioncalculationdialog.h"
-#include "pair_energy_parameters.h"
 
 // background tasks
 #include "taskmanager.h"
@@ -63,8 +63,11 @@ public slots:
   void togglePairInteractionHighlighting(bool);
   void handleBusyStateChange(bool);
   void generateSurface(isosurface::Parameters);
-  void generateSurfaceRequiringWavefunction(isosurface::Parameters, wfn::Parameters);
-  wfn::Parameters getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex>&, int, int);
+  void generateSurfaceRequiringWavefunction(isosurface::Parameters,
+                                            wfn::Parameters);
+  wfn::Parameters
+  getWavefunctionParametersFromUser(const std::vector<GenericAtomIndex> &, int,
+                                    int);
   void generateWavefunction(wfn::Parameters);
   void jobRunning();
   void jobCancelled(QString);
@@ -73,7 +76,8 @@ public slots:
   void passCurrentCrystalToFingerprintWindow();
 
   void calculatePairEnergies(pair_energy::EnergyModelParameters);
-  void calculatePairEnergiesWithExistingWavefunctions(pair_energy::EnergyModelParameters);
+  void calculatePairEnergiesWithExistingWavefunctions(
+      pair_energy::EnergyModelParameters);
 
   void showInfo(InfoType);
   void showTaskManagerWidget();
@@ -86,6 +90,7 @@ public slots:
   void handleExportCurrentGeometry();
   void handleAtomLabelActions();
   void handleMeshSelectionChanged();
+  void handleEnergyColorSchemeChanged();
 
 protected slots:
   void closeEvent(QCloseEvent *);
@@ -252,10 +257,9 @@ private:
 
   SlabGenerationOptions m_savedSlabGenerationOptions;
   QMap<QString, DrawingStyle> m_drawingStyleLabelToDrawingStyle;
-  ExportDialog * m_exportDialog{nullptr};
+  ExportDialog *m_exportDialog{nullptr};
   int m_exportCounter{0};
 
-  TaskManager * m_taskManager{nullptr};
-  TaskManagerWidget * m_taskManagerWidget{nullptr};
-
+  TaskManager *m_taskManager{nullptr};
+  TaskManagerWidget *m_taskManagerWidget{nullptr};
 };

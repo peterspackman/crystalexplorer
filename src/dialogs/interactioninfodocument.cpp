@@ -34,6 +34,8 @@ InteractionInfoDocument::InteractionInfoDocument(QWidget *parent)
           &InteractionInfoDocument::onTabChanged);
 }
 
+void InteractionInfoDocument::forceUpdate() { updateContent(); }
+
 void InteractionInfoDocument::updateScene(Scene *scene) {
   m_scene = scene;
   updateContent();

@@ -1,4 +1,5 @@
 #include "infoviewer.h"
+#include "colormap.h"
 
 #include <QtDebug>
 
@@ -19,6 +20,12 @@ void InfoViewer::init() {
   Qt::WindowFlags flags = windowFlags();
   setWindowFlags(flags | Qt::WindowStaysOnTopHint);
   setModal(false);
+  auto colorMaps = availableColorMaps();
+  energyColorComboBox->clear();
+  energyColorComboBox->insertItems(0, colorMaps);
+  QString currentColorMap =
+      settings::readSetting(settings::keys::ENERGY_COLOR_SCHEME).toString();
+  energyColorComboBox->setCurrentIndex(colorMaps.indexOf(currentColorMap));
 }
 
 void InfoViewer::initConnections() {
@@ -28,6 +35,8 @@ void InfoViewer::initConnections() {
   connect(buttonBox, &QDialogButtonBox::rejected, this, &InfoViewer::reject);
   connect(energyPrecisionSpinBox, &QSpinBox::valueChanged, this,
           &InfoViewer::updateInteractionDisplaySettings);
+  connect(energyColorComboBox, &QComboBox::currentIndexChanged, this,
+          &InfoViewer::updateEnergyColorSettings);
   connect(distancePrecisionSpinBox, &QSpinBox::valueChanged, this,
           &InfoViewer::updateInteractionDisplaySettings);
 }
@@ -112,4 +121,11 @@ void InfoViewer::updateInteractionDisplaySettings() {
   settings.distancePrecision = distancePrecisionSpinBox->value();
   settings.energyPrecision = energyPrecisionSpinBox->value();
   interactionsInfoDocument->updateSettings(settings);
+}
+
+void InfoViewer::updateEnergyColorSettings() {
+  auto colorScheme = energyColorComboBox->currentText();
+  settings::writeSetting(settings::keys::ENERGY_COLOR_SCHEME, colorScheme);
+  interactionsInfoDocument->forceUpdate();
+  emit energyColorSchemeChanged();
 }

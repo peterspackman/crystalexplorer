@@ -24,9 +24,11 @@ public slots:
   void updateInfoViewerForCrystalChange();
   void updateInfoViewerForSurfaceChange();
   void updateInteractionDisplaySettings();
+  void updateEnergyColorSettings();
 
 signals:
   void infoViewerClosed();
+  void energyColorSchemeChanged();
   void tabChangedTo(InfoType);
 
 private slots:

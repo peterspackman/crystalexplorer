@@ -196,6 +196,9 @@ void Crystalx::initInfoViewer() {
   connect(infoViewer, &InfoViewer::tabChangedTo, this, &Crystalx::updateInfo);
   connect(infoViewer, &InfoViewer::infoViewerClosed, this,
           &Crystalx::tidyUpAfterInfoViewerClosed);
+
+  connect(infoViewer, &InfoViewer::energyColorSchemeChanged, this,
+          &Crystalx::handleEnergyColorSchemeChanged);
 }
 
 void Crystalx::createDockWidgets() {
@@ -2005,6 +2008,10 @@ void Crystalx::updateInfo(InfoType infoType) {
     setInfoTabSpecificViewOptions(infoType);
     infoViewer->setScene(scene);
   }
+}
+
+void Crystalx::handleEnergyColorSchemeChanged() {
+  togglePairInteractionHighlighting(true);
 }
 
 void Crystalx::togglePairInteractionHighlighting(bool state) {

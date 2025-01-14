@@ -91,15 +91,6 @@ void PreferencesDialog::init() {
   showLightPositionsCheckBox->setChecked(
       settings::readSetting(settings::keys::SHOW_LIGHT_POSITIONS).toBool());
 
-  QString currentScheme =
-      settings::readSetting(settings::keys::ENERGY_COLOR_SCHEME).toString();
-  int idx = 0;
-  for (const auto &scheme : availableColorMaps()) {
-    energyColorSchemeComboBox->addItem(scheme);
-    if (scheme == currentScheme)
-      energyColorSchemeComboBox->setCurrentIndex(idx);
-    idx++;
-  }
   textFontComboBox->setCurrentFont(
       QFont(settings::readSetting(settings::keys::TEXT_FONT_FAMILY).toString(),
             settings::readSetting(settings::keys::TEXT_FONT_SIZE).toInt()));
@@ -244,13 +235,6 @@ void PreferencesDialog::initConnections() {
 
   connect(restoreExpertSettingsButton, &QPushButton::clicked, this,
           &PreferencesDialog::restoreExpertSettings);
-  connect(energyPrecisionSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-          this, &PreferencesDialog::setEnergiesTableDecimalPlaces);
-  connect(energyColorSchemeComboBox,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          &PreferencesDialog::setEnergiesColorScheme);
-  connect(glDepthTestEnabledCheckBox, QOverload<bool>::of(&QCheckBox::toggled),
-          this, &PreferencesDialog::setGLDepthTestEnabled);
 
   // Dialog connections
   connect(buttonOk, &QPushButton::clicked, this, &PreferencesDialog::accept);
@@ -571,8 +555,6 @@ void PreferencesDialog::updateDialogFromSettings() {
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool());
   writeGaussianCPFilesCheckBox->setChecked(
       settings::readSetting(settings::keys::WRITE_GAUSSIAN_CP_FILES).toBool());
-  energyPrecisionSpinBox->setValue(
-      settings::readSetting(settings::keys::ENERGY_TABLE_PRECISION).toInt());
 
   _updateDialogFromSettingsDone = true;
 }
@@ -688,14 +670,6 @@ void PreferencesDialog::setBondThickness(int value) {
   }
 }
 
-void PreferencesDialog::setEnergiesTableDecimalPlaces(int value) {
-  settings::writeSetting(settings::keys::ENERGY_TABLE_PRECISION, value);
-}
-
-void PreferencesDialog::setEnergiesColorScheme(int index) {
-  settings::writeSetting(settings::keys::ENERGY_COLOR_SCHEME,
-                         energyColorSchemeComboBox->itemText(index));
-}
 
 void PreferencesDialog::setScreenGamma(int value) {
   settings::writeSetting(settings::keys::SCREEN_GAMMA, value / 100.0f);

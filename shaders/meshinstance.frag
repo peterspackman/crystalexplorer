@@ -33,7 +33,7 @@ void main()
        colorLinear = flatWithNormalOutline(u_cameraPosVec, v_position, v_normal, colorLinear);
        colorLinear = applyMaskEffect(colorLinear, v_mask);
 
-       alpha = mix(alpha, 0.2, v_mask);
+       alpha = mix(alpha, 0.1, v_mask);
        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), alpha);
        f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
    }
@@ -50,7 +50,7 @@ void main()
        // since we're passing things through in camera space, the camera is located at the origin
        material.color = applyMaskEffect(material.color, v_mask);
        vec3 colorLinear = PBRLighting(u_cameraPosVec, v_position, v_normal, lights, material);
-       alpha = mix(alpha, 0.2, v_mask);
+       alpha = mix(alpha, 0.1, v_mask);
        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), alpha);
        f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
    }

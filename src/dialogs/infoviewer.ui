@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>770</width>
-    <height>790</height>
+    <height>821</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -72,6 +72,20 @@
               </property>
              </widget>
             </item>
+            <item row="3" column="1">
+             <widget class="QSpinBox" name="distancePrecisionSpinBox">
+              <property name="value">
+               <number>2</number>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="distancePrecisionLabel">
+              <property name="text">
+               <string>Distance precision</string>
+              </property>
+             </widget>
+            </item>
             <item row="1" column="1">
              <widget class="QSpinBox" name="energyPrecisionSpinBox">
               <property name="value">
@@ -80,18 +94,14 @@
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QLabel" name="distancePrecisionLabel">
+             <widget class="QLabel" name="energyColorLabel">
               <property name="text">
-               <string>Distance precision</string>
+               <string>Color scheme</string>
               </property>
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QSpinBox" name="distancePrecisionSpinBox">
-              <property name="value">
-               <number>2</number>
-              </property>
-             </widget>
+             <widget class="QComboBox" name="energyColorComboBox"/>
             </item>
            </layout>
           </item>

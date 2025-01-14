@@ -22,6 +22,7 @@ public:
 
 public slots:
   void updateSettings(InteractionInfoSettings);
+  void forceUpdate();
 
 signals:
   void currentModelChanged(const QString &modelName);

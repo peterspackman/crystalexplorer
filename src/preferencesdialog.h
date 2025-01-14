@@ -29,7 +29,6 @@ signals:
   void redrawCloseContactsForPreferencesChange();
   void nonePropertyColorChanged();
   void selectionColorChanged();
-  void energyColorSchemeChanged();
   void screenGammaChanged();
   void materialChanged();
   void lightSettingsChanged();
@@ -56,8 +55,6 @@ private slots:
   void updateSliderPerspective();
   void contextualGlwindowBackgroundColor();
   void restoreExpertSettings();
-  void setEnergiesTableDecimalPlaces(int);
-  void setEnergiesColorScheme(int);
   void setJmolColors(bool);
   void setScreenGamma(int);
   void setMaterialFactors();
