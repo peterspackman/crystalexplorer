@@ -2,62 +2,64 @@
 #include "isosurface_parameters.h"
 #include <QComboBox>
 
-
-using SurfaceDescriptionMap = QMap<QString, isosurface::SurfaceDescription>;
-using SurfacePropertyDescriptionMap = QMap<QString, isosurface::SurfacePropertyDescription>;
-
 class SurfaceTypeDropdown : public QComboBox {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    SurfaceTypeDropdown(QWidget *parent = nullptr);
-    QString current() const;
-    void setCurrent(QString);
+  SurfaceTypeDropdown(QWidget *parent = nullptr);
+  QString current() const;
+  void setCurrent(QString);
 
-    void setDescriptions(const SurfaceDescriptionMap &surfaceDescriptions);
-    isosurface::SurfaceDescription currentSurfaceDescription() const;
+  void
+  setDescriptions(const isosurface::SurfaceDescriptions &surfaceDescriptions);
+  isosurface::SurfaceDescription currentSurfaceDescription() const;
 signals:
-    void selectionChanged(QString);
-    void descriptionChanged(QString);
+  void selectionChanged(QString);
+  void descriptionChanged(QString);
 private slots:
-    void onCurrentIndexChanged(int);
-private:
-    SurfaceDescriptionMap m_surfaceDescriptions;
-};
+  void onCurrentIndexChanged(int);
 
+private:
+  isosurface::SurfaceDescriptions m_surfaceDescriptions;
+};
 
 class SurfacePropertyTypeDropdown : public QComboBox {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    SurfacePropertyTypeDropdown(QWidget *parent = nullptr);
-    QString current() const;
-    void setDescriptions(const SurfaceDescriptionMap &surfaceDescriptions,
-                         const SurfacePropertyDescriptionMap &surfacePropertyDescriptions);
-    isosurface::SurfacePropertyDescription currentSurfacePropertyDescription() const;
+  SurfacePropertyTypeDropdown(QWidget *parent = nullptr);
+  QString current() const;
+  void
+  setDescriptions(const isosurface::SurfaceDescriptions &surfaceDescriptions,
+                  const isosurface::SurfacePropertyDescriptions
+                      &surfacePropertyDescriptions);
+  isosurface::SurfacePropertyDescription
+  currentSurfacePropertyDescription() const;
 signals:
-    void selectionChanged(QString);
+  void selectionChanged(QString);
 private slots:
-    void onCurrentIndexChanged(int);
+  void onCurrentIndexChanged(int);
 public slots:
-    void onSurfaceSelectionChanged(QString);
+  void onSurfaceSelectionChanged(QString);
+
 private:
-    SurfaceDescriptionMap m_surfaceDescriptions;
-    SurfacePropertyDescriptionMap m_surfacePropertyDescriptions;
-    isosurface::SurfaceDescription getSurfaceDescription(const QString &surfaceKey) const;
-    isosurface::SurfacePropertyDescription getSurfacePropertyDescription(const QString &propertyKey) const;
+  isosurface::SurfaceDescriptions m_surfaceDescriptions;
+  isosurface::SurfacePropertyDescriptions m_surfacePropertyDescriptions;
+  isosurface::SurfaceDescription
+  getSurfaceDescription(const QString &surfaceKey) const;
+  isosurface::SurfacePropertyDescription
+  getSurfacePropertyDescription(const QString &propertyKey) const;
 };
 
-
 class ResolutionDropdown : public QComboBox {
-    Q_OBJECT
-  public:
-    ResolutionDropdown(QWidget *parent = nullptr);
-    isosurface::Resolution currentLevel() const;
-    float currentResolutionValue() const;
+  Q_OBJECT
+public:
+  ResolutionDropdown(QWidget *parent = nullptr);
+  isosurface::Resolution currentLevel() const;
+  float currentResolutionValue() const;
 
-  private slots:
-    void onCurrentIndexChanged(int);
+private slots:
+  void onCurrentIndexChanged(int);
 
-  private:
-    void populateDropdown();
-    isosurface::Resolution m_resolutionLevel{isosurface::Resolution::High};
+private:
+  void populateDropdown();
+  isosurface::Resolution m_resolutionLevel{isosurface::Resolution::High};
 };

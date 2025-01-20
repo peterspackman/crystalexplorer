@@ -21,16 +21,16 @@ void SurfaceTypeDropdown::setCurrent(QString val) {
 
 isosurface::SurfaceDescription
 SurfaceTypeDropdown::currentSurfaceDescription() const {
-  return m_surfaceDescriptions.value(current());
+  return m_surfaceDescriptions.get(current());
 }
 
 void SurfaceTypeDropdown::setDescriptions(
-    const SurfaceDescriptionMap &surfaceDescriptions) {
+    const isosurface::SurfaceDescriptions &surfaceDescriptions) {
   m_surfaceDescriptions = surfaceDescriptions;
 
   clear();
-  for (auto it = m_surfaceDescriptions.constBegin();
-       it != m_surfaceDescriptions.constEnd(); ++it) {
+  for (auto it = m_surfaceDescriptions.descriptions.constBegin();
+       it != m_surfaceDescriptions.descriptions.constEnd(); ++it) {
     addItem(it.value().displayName, it.key());
   }
 }
@@ -53,12 +53,13 @@ QString SurfacePropertyTypeDropdown::current() const {
 
 isosurface::SurfacePropertyDescription
 SurfacePropertyTypeDropdown::currentSurfacePropertyDescription() const {
-  return m_surfacePropertyDescriptions.value(current());
+  return m_surfacePropertyDescriptions.descriptions.value(current());
 }
 
 void SurfacePropertyTypeDropdown::setDescriptions(
-    const SurfaceDescriptionMap &surfaceDescriptions,
-    const SurfacePropertyDescriptionMap &surfacePropertyDescriptions) {
+    const isosurface::SurfaceDescriptions &surfaceDescriptions,
+    const isosurface::SurfacePropertyDescriptions
+        &surfacePropertyDescriptions) {
   m_surfaceDescriptions = surfaceDescriptions;
   m_surfacePropertyDescriptions = surfacePropertyDescriptions;
 }
@@ -85,13 +86,13 @@ void SurfacePropertyTypeDropdown::onSurfaceSelectionChanged(
 isosurface::SurfaceDescription
 SurfacePropertyTypeDropdown::getSurfaceDescription(
     const QString &surfaceKey) const {
-  return m_surfaceDescriptions.value(surfaceKey);
+  return m_surfaceDescriptions.get(surfaceKey);
 }
 
 isosurface::SurfacePropertyDescription
 SurfacePropertyTypeDropdown::getSurfacePropertyDescription(
     const QString &propertyKey) const {
-  return m_surfacePropertyDescriptions.value(propertyKey);
+  return m_surfacePropertyDescriptions.get(propertyKey);
 }
 
 /// Resolution Combo box

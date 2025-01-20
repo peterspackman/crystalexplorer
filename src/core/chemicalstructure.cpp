@@ -1296,38 +1296,38 @@ QString ChemicalStructure::getFragmentLabelForAtoms(
 QString ChemicalStructure::getFragmentLabel(const FragmentIndex &index) {
   const auto &fragments = symmetryUniqueFragments();
   if (m_fragmentLabels.size() != fragments.size()) {
-    ankerl::unordered_dense::map<QString, std::pair<QString, int>>
-        formulaToIndex;
-    char currentLabel = 'A';
-    int labelCount = 0;
+    struct LabelInfo {
+      int formula_id;
+      QString current_letter;
+    };
+    ankerl::unordered_dense::map<QString, LabelInfo> formulaToLabel;
+    int next_id = 1;
 
     for (const auto &[fragmentIndex, fragment] : fragments) {
       QString formula = formulaSumForAtoms(fragment.atomIndices, false);
-      auto it = formulaToIndex.find(formula);
+      auto it = formulaToLabel.find(formula);
 
-      if (it == formulaToIndex.end()) {
-        QString label = QString(1, currentLabel);
-        formulaToIndex[formula] = {label, 1};
-        m_fragmentLabels[fragmentIndex] = "1" + label;
-
-        labelCount++;
-        if (labelCount == 26) {
-          currentLabel = 'A';
-          labelCount = 0;
-        } else {
-          currentLabel++;
-        }
+      if (it == formulaToLabel.end()) {
+        formulaToLabel[formula] = {next_id++, "A"};
+        m_fragmentLabels[fragmentIndex] =
+            QString::number(formulaToLabel[formula].formula_id) +
+            formulaToLabel[formula].current_letter;
       } else {
-        auto &[label, count] = it->second;
-        count++;
-        m_fragmentLabels[fragmentIndex] = QString::number(count) + label;
+        auto &labelInfo = it->second;
+        char nextChar =
+            static_cast<char>(labelInfo.current_letter[0].toLatin1() + 1);
+        labelInfo.current_letter = QString(QChar(nextChar));
+
+        m_fragmentLabels[fragmentIndex] =
+            QString::number(labelInfo.formula_id) + labelInfo.current_letter;
       }
     }
   }
 
   const auto kv = m_fragmentLabels.find(index);
-  if (kv != m_fragmentLabels.end())
+  if (kv != m_fragmentLabels.end()) {
     return kv->second;
+  }
   return "??";
 }
 

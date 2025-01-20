@@ -1,6 +1,6 @@
 #pragma once
-#include "isosurface_parameters.h"
 #include "colormap.h"
+#include "isosurface_parameters.h"
 #include <QMutex>
 #include <QMutexLocker>
 
@@ -9,11 +9,11 @@ private:
   static GlobalConfiguration *instance;
   static QMutex mutex;
 
-  QMap<QString, isosurface::SurfacePropertyDescription>
-      surfacePropertyDescriptions;
-  QMap<QString, isosurface::SurfaceDescription> surfaceDescriptions;
+  isosurface::SurfacePropertyDescriptions surfacePropertyDescriptions;
+  isosurface::SurfaceDescriptions surfaceDescriptions;
   QMap<QString, double> surfaceResolutionLevels;
   QMap<QString, ColorMapDescription> colorMapDescriptions;
+  bool m_haveData{false};
 
 protected:
   GlobalConfiguration() {} // Constructor must be protected or private
@@ -29,10 +29,9 @@ public:
 
   bool load();
 
-  const QMap<QString, isosurface::SurfacePropertyDescription> &
+  const isosurface::SurfacePropertyDescriptions &
   getPropertyDescriptions() const;
-  const QMap<QString, isosurface::SurfaceDescription> &
-  getSurfaceDescriptions() const;
+  const isosurface::SurfaceDescriptions &getSurfaceDescriptions() const;
   const QMap<QString, double> &getSurfaceResolutionLevels() const;
   QString getColorMapNameForProperty(const QString &) const;
 

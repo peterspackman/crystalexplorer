@@ -1,6 +1,5 @@
 #include "globalconfiguration.h"
 
-// Initialize static membes
 GlobalConfiguration *GlobalConfiguration::instance = nullptr;
 QMutex GlobalConfiguration::mutex;
 
@@ -13,6 +12,9 @@ GlobalConfiguration *GlobalConfiguration::getInstance() {
 }
 
 bool GlobalConfiguration::load() {
+  if (m_haveData)
+    return m_haveData;
+  qDebug() << "Loading surface descriptions";
   bool surfaceSuccess = isosurface::loadSurfaceDescriptionConfiguration(
       surfacePropertyDescriptions, surfaceDescriptions,
       surfaceResolutionLevels);
@@ -24,15 +26,16 @@ bool GlobalConfiguration::load() {
   if (!colorMapSuccess) {
     qWarning() << "Unable to load surface descriptions from file";
   }
-  return surfaceSuccess && colorMapSuccess;
+  m_haveData = surfaceSuccess && colorMapSuccess;
+  return m_haveData;
 }
 
-const QMap<QString, isosurface::SurfacePropertyDescription> &
+const isosurface::SurfacePropertyDescriptions &
 GlobalConfiguration::getPropertyDescriptions() const {
   return surfacePropertyDescriptions;
 }
 
-const QMap<QString, isosurface::SurfaceDescription> &
+const isosurface::SurfaceDescriptions &
 GlobalConfiguration::getSurfaceDescriptions() const {
   return surfaceDescriptions;
 }
@@ -42,16 +45,12 @@ GlobalConfiguration::getSurfaceResolutionLevels() const {
   return surfaceResolutionLevels;
 }
 
-
-const QMap<QString, ColorMapDescription> GlobalConfiguration::getColorMapDescriptions() const {
+const QMap<QString, ColorMapDescription>
+GlobalConfiguration::getColorMapDescriptions() const {
   return colorMapDescriptions;
 }
 
 QString GlobalConfiguration::getColorMapNameForProperty(
     const QString &propertyName) const {
-  auto it = surfacePropertyDescriptions.find(propertyName);
-  if (it != surfacePropertyDescriptions.end()) {
-    return it->cmap;
-  }
-  return "Viridis";
+  return surfacePropertyDescriptions.get(propertyName).cmap;
 }

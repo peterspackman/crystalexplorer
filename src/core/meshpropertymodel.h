@@ -73,7 +73,7 @@ private:
   Mesh *m_mesh{nullptr};
   bool m_blockedWhileResetting{false};
 
-  QMap<QString, isosurface::SurfacePropertyDescription> m_propertyDescriptions;
-  QMap<QString, isosurface::SurfaceDescription> m_surfaceDescriptions;
+  isosurface::SurfacePropertyDescriptions m_propertyDescriptions;
+  isosurface::SurfaceDescriptions m_surfaceDescriptions;
   QMap<QString, double> m_defaultIsovalues;
 };

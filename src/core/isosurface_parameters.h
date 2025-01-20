@@ -47,13 +47,19 @@ inline const char *resolutionToString(Resolution res) {
 }
 
 inline Resolution stringToResolution(const QString &res) {
-    if (res.compare("Very Low", Qt::CaseInsensitive) == 0) return Resolution::VeryLow;
-    if (res.compare("Low", Qt::CaseInsensitive) == 0) return Resolution::Low;
-    if (res.compare("Medium", Qt::CaseInsensitive) == 0) return Resolution::Medium;
-    if (res.compare("High", Qt::CaseInsensitive) == 0) return Resolution::High;
-    if (res.compare("Very High", Qt::CaseInsensitive) == 0) return Resolution::VeryHigh;
-    if (res.compare("Absurd", Qt::CaseInsensitive) == 0) return Resolution::Absurd;
-    return Resolution::Custom; // Default case
+  if (res.compare("Very Low", Qt::CaseInsensitive) == 0)
+    return Resolution::VeryLow;
+  if (res.compare("Low", Qt::CaseInsensitive) == 0)
+    return Resolution::Low;
+  if (res.compare("Medium", Qt::CaseInsensitive) == 0)
+    return Resolution::Medium;
+  if (res.compare("High", Qt::CaseInsensitive) == 0)
+    return Resolution::High;
+  if (res.compare("Very High", Qt::CaseInsensitive) == 0)
+    return Resolution::VeryHigh;
+  if (res.compare("Absurd", Qt::CaseInsensitive) == 0)
+    return Resolution::Absurd;
+  return Resolution::Custom; // Default case
 }
 
 enum class Kind {
@@ -68,9 +74,9 @@ enum class Kind {
 };
 
 struct OrbitalDetails {
-    QString label{"HOMO"};
-    int index{0};
-    bool occupied{true};
+  QString label{"HOMO"};
+  int index{0};
+  bool occupied{true};
 };
 
 struct Parameters {
@@ -82,7 +88,6 @@ struct Parameters {
   MolecularWavefunction *wfn{nullptr};
   Eigen::Isometry3d wfn_transform{Eigen::Isometry3d::Identity()};
   QStringList additionalProperties;
-  
 };
 
 struct Result {
@@ -122,18 +127,29 @@ struct SurfaceDescription {
 
 SurfaceDescription getSurfaceDescription(Kind);
 
+struct SurfaceDescriptions {
+  QMap<QString, SurfaceDescription> descriptions;
+  QMap<QString, QString> displayNameLookup;
+  SurfaceDescription get(const QString &) const;
+};
+
+struct SurfacePropertyDescriptions {
+  QMap<QString, SurfacePropertyDescription> descriptions;
+  QMap<QString, QString> displayNameLookup;
+  SurfacePropertyDescription get(const QString &) const;
+};
+
 QString getSurfaceDisplayName(QString);
 QString getSurfacePropertyDisplayName(QString);
 
-bool loadSurfaceDescriptionConfiguration(
-    QMap<QString, SurfacePropertyDescription> &,
-    QMap<QString, SurfaceDescription> &, QMap<QString, double> &);
+bool loadSurfaceDescriptionConfiguration(SurfacePropertyDescriptions &,
+                                         SurfaceDescriptions &,
+                                         QMap<QString, double> &);
 
 } // namespace isosurface
 
-void to_json(nlohmann::json& j, const isosurface::SurfacePropertyDescription&);
-void from_json(const nlohmann::json& j, isosurface::SurfacePropertyDescription&);
-void to_json(nlohmann::json& j, const isosurface::SurfaceDescription&);
-void from_json(const nlohmann::json& j, isosurface::SurfaceDescription&);
-
-
+void to_json(nlohmann::json &j, const isosurface::SurfacePropertyDescription &);
+void from_json(const nlohmann::json &j,
+               isosurface::SurfacePropertyDescription &);
+void to_json(nlohmann::json &j, const isosurface::SurfaceDescription &);
+void from_json(const nlohmann::json &j, isosurface::SurfaceDescription &);

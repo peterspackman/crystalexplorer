@@ -1,10 +1,14 @@
 #include "meshpropertymodel.h"
+#include "globalconfiguration.h"
 #include <QIcon>
 
 MeshPropertyModel::MeshPropertyModel(QObject *parent)
     : QAbstractListModel(parent), m_mesh(nullptr) {
-  loadSurfaceDescriptionConfiguration(
-      m_propertyDescriptions, m_surfaceDescriptions, m_defaultIsovalues);
+  auto *g = GlobalConfiguration::getInstance();
+
+  m_propertyDescriptions = g->getPropertyDescriptions();
+  m_surfaceDescriptions = g->getSurfaceDescriptions();
+  m_defaultIsovalues = g->getSurfaceResolutionLevels();
 }
 
 bool MeshPropertyModel::isValid() const {
@@ -69,16 +73,17 @@ QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
   switch (role) {
   case Qt::DisplayRole: {
     // Use display name from property description if available
-    auto it = m_propertyDescriptions.find(propertyName);
-    if (it != m_propertyDescriptions.end()) {
+    auto it = m_propertyDescriptions.descriptions.find(propertyName);
+    if (it != m_propertyDescriptions.descriptions.end()) {
       return it->displayName;
     }
     return propertyName;
   }
   case Qt::DecorationRole: {
     // Load icon if specified in the property description
-    auto it = m_propertyDescriptions.find(propertyName);
-    if (it != m_propertyDescriptions.end() && !it->iconName.isEmpty()) {
+    auto it = m_propertyDescriptions.descriptions.find(propertyName);
+    if (it != m_propertyDescriptions.descriptions.end() &&
+        !it->iconName.isEmpty()) {
       return QIcon(QString(":/images/%1").arg(it->iconName));
     }
     return QVariant();
@@ -86,22 +91,22 @@ QVariant MeshPropertyModel::data(const QModelIndex &index, int role) const {
   case PropertyNameRole:
     return propertyName;
   case PropertyUnitsRole: {
-    auto it = m_propertyDescriptions.find(propertyName);
-    if (it != m_propertyDescriptions.end()) {
+    auto it = m_propertyDescriptions.descriptions.find(propertyName);
+    if (it != m_propertyDescriptions.descriptions.end()) {
       return it->units;
     }
     return "";
   }
   case PropertyDescriptionRole: {
-    auto it = m_propertyDescriptions.find(propertyName);
-    if (it != m_propertyDescriptions.end()) {
+    auto it = m_propertyDescriptions.descriptions.find(propertyName);
+    if (it != m_propertyDescriptions.descriptions.end()) {
       return it->description;
     }
     return "";
   }
   case PropertyColorMapRole: {
-    auto it = m_propertyDescriptions.find(propertyName);
-    if (it != m_propertyDescriptions.end()) {
+    auto it = m_propertyDescriptions.descriptions.find(propertyName);
+    if (it != m_propertyDescriptions.descriptions.end()) {
       return it->cmap;
     }
     return "Viridis"; // default colormap
@@ -192,8 +197,8 @@ QString MeshPropertyModel::getSelectedPropertyColorMap() const {
   if (!m_mesh)
     return "Viridis";
   QString propertyName = getSelectedProperty();
-  auto it = m_propertyDescriptions.find(propertyName);
-  if (it != m_propertyDescriptions.end()) {
+  auto it = m_propertyDescriptions.descriptions.find(propertyName);
+  if (it != m_propertyDescriptions.descriptions.end()) {
     return it->cmap;
   }
   return "Viridis";

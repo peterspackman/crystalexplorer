@@ -6,9 +6,9 @@
 #include <vector>
 
 #include "generic_atom_index.h"
+#include "isosurface_parameters.h"
 #include "molecular_wavefunction.h"
 #include "ui_surfacegenerationdialog.h"
-#include "isosurface_parameters.h"
 #include "wavefunction_parameters.h"
 
 static const char *densityUnits = "e au<sup>-3</sup>";
@@ -42,7 +42,8 @@ private slots:
 
 signals:
   void surfaceParametersChosenNew(isosurface::Parameters);
-  void surfaceParametersChosenNeedWavefunction(isosurface::Parameters, wfn::Parameters);
+  void surfaceParametersChosenNeedWavefunction(isosurface::Parameters,
+                                               wfn::Parameters);
 
 private:
   isosurface::Kind currentKind() const;
@@ -71,13 +72,13 @@ private:
   wfn::Parameters getCurrentWavefunctionParameters();
 
   std::vector<GenericAtomIndex> m_atomIndices;
-  QString m_currentSurfaceType{"hirshfeld"};
+  QString m_currentSurfaceType{"Hirshfeld"};
 
   std::vector<WavefunctionAndTransform> m_availableWavefunctions;
   std::vector<isosurface::OrbitalDetails> m_orbitalLabels;
 
-  QMap<QString, isosurface::SurfaceDescription> m_surfaceDescriptions;
-  QMap<QString, isosurface::SurfacePropertyDescription> m_surfacePropertyDescriptions;
+  isosurface::SurfaceDescriptions m_surfaceDescriptions;
+  isosurface::SurfacePropertyDescriptions m_surfacePropertyDescriptions;
   int m_charge{0}, m_multiplicity{1};
 
   Ui::SurfaceGenerationDialog *ui;

@@ -99,7 +99,7 @@
     "orbital": {
       "cmap": "RedWhiteBlue",
       "displayName": "Orbital",
-      "occName": "mo",
+      "occName": "orbital",
       "needsWavefunction": true,
       "needsOrbital": true,
       "units": "au",
@@ -249,7 +249,7 @@
     },
     "orbital": {
       "displayName": "Orbital",
-      "occName": "mo",
+      "occName": "orbital",
       "needsWavefunction": true,
       "needsOrbital": true,
       "needsIsovalue": true,

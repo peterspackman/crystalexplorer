@@ -101,6 +101,8 @@ QString kindToString(Kind kind) {
     return "electron_density";
   case Kind::DeformationDensity:
     return "deformation_density";
+  case Kind::Orbital:
+    return "orbital";
   default:
     return "unknown";
   };
@@ -120,6 +122,8 @@ QString defaultPropertyForKind(Kind kind) {
     return "dnorm";
   case Kind::DeformationDensity:
     return "None";
+  case Kind::Orbital:
+    return "Isovalue";
   default:
     return "unknown";
   };
@@ -142,13 +146,15 @@ Kind stringToKind(const QString &s) {
   else if (s == "def" || s == "deformation_density" ||
            s == "Deformation Density")
     return Kind::DeformationDensity;
+  else if (s == "mo" || s == "orbital" || s == "Orbital")
+    return Kind::Orbital;
   else
     return Kind::Unknown;
 }
 
-QMap<QString, SurfacePropertyDescription>
+inline SurfacePropertyDescriptions
 loadPropertyDescriptions(const nlohmann::json &json) {
-  QMap<QString, SurfacePropertyDescription> properties;
+  SurfacePropertyDescriptions properties;
   auto s = [](const std::string &str) { return QString::fromStdString(str); };
   qDebug() << "Load property descriptions";
 
@@ -161,10 +167,11 @@ loadPropertyDescriptions(const nlohmann::json &json) {
     try {
       SurfacePropertyDescription spd;
       from_json(item.value(), spd);
-      properties.insert(s(item.key()), spd);
+      properties.descriptions.insert(spd.displayName, spd);
       // allow referring by the occName or displayName as well
-      properties.insert(spd.occName, spd);
-      properties.insert(spd.displayName, spd);
+      properties.displayNameLookup.insert(s(item.key()), spd.displayName);
+      properties.displayNameLookup.insert(spd.occName, spd.displayName);
+      properties.displayNameLookup.insert(spd.displayName, spd.displayName);
     } catch (nlohmann::json::exception &e) {
       qWarning() << "Failed to parse property" << s(item.key()) << ":"
                  << e.what();
@@ -173,9 +180,8 @@ loadPropertyDescriptions(const nlohmann::json &json) {
   return properties;
 }
 
-QMap<QString, SurfaceDescription>
-loadSurfaceDescriptions(const nlohmann::json &json) {
-  QMap<QString, SurfaceDescription> surfaces;
+inline SurfaceDescriptions loadSurfaceDescriptions(const nlohmann::json &json) {
+  SurfaceDescriptions surfaces;
 
   if (!json.contains("surfaces") || !json["surfaces"].is_object()) {
     qWarning() << "JSON does not contain a 'surfaces' object";
@@ -188,9 +194,11 @@ loadSurfaceDescriptions(const nlohmann::json &json) {
     try {
       SurfaceDescription sd;
       from_json(item.value(), sd);
-      surfaces.insert(s(item.key()), sd);
-      surfaces.insert(sd.occName, sd);
-      surfaces.insert(sd.displayName, sd);
+      surfaces.descriptions.insert(sd.displayName, sd);
+
+      surfaces.displayNameLookup.insert(s(item.key()), sd.displayName);
+      surfaces.displayNameLookup.insert(sd.occName, sd.displayName);
+      surfaces.displayNameLookup.insert(sd.displayName, sd.displayName);
     } catch (nlohmann::json::exception &e) {
       qWarning() << "Failed to parse surface" << s(item.key()) << ":"
                  << e.what();
@@ -222,9 +230,8 @@ QMap<QString, double> loadResolutionLevels(const nlohmann::json &json) {
 }
 
 bool loadSurfaceDescriptionConfiguration(
-    QMap<QString, SurfacePropertyDescription> &propertyDescriptions,
-    QMap<QString, SurfaceDescription> &descriptions,
-    QMap<QString, double> &resolutions) {
+    SurfacePropertyDescriptions &propertyDescriptions,
+    SurfaceDescriptions &descriptions, QMap<QString, double> &resolutions) {
   QFile file(":/resources/surface_description.json");
   if (!file.open(QIODevice::ReadOnly)) {
     qWarning("Couldn't open config file.");
@@ -247,32 +254,38 @@ bool loadSurfaceDescriptionConfiguration(
   return true;
 }
 
+SurfaceDescription SurfaceDescriptions::get(const QString &s) const {
+  auto loc = displayNameLookup.find(s);
+  if (loc != displayNameLookup.end())
+    return descriptions.value(*loc);
+  return {};
+}
+
+SurfacePropertyDescription
+SurfacePropertyDescriptions::get(const QString &s) const {
+  auto loc = displayNameLookup.find(s);
+  if (loc != displayNameLookup.end())
+    return descriptions.value(*loc);
+  return {};
+}
+
 SurfaceDescription getSurfaceDescription(Kind kind) {
   QString s = kindToString(kind);
   const auto &descriptions =
       GlobalConfiguration::getInstance()->getSurfaceDescriptions();
-  auto loc = descriptions.find(s);
-  if (loc != descriptions.end())
-    return *loc;
-  return {};
+  return descriptions.get(s);
 }
 
 QString getSurfaceDisplayName(QString s) {
   const auto &descriptions =
       GlobalConfiguration::getInstance()->getSurfaceDescriptions();
-  auto loc = descriptions.find(s);
-  if (loc != descriptions.end())
-    return (*loc).displayName;
-  return s;
+  return descriptions.get(s).displayName;
 }
 
 QString getSurfacePropertyDisplayName(QString s) {
   const auto &descriptions =
       GlobalConfiguration::getInstance()->getPropertyDescriptions();
-  auto loc = descriptions.find(s);
-  if (loc != descriptions.end())
-    return (*loc).displayName;
-  return s;
+  return descriptions.get(s).displayName;
 }
 
 } // namespace isosurface
