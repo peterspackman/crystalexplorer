@@ -139,9 +139,10 @@ Kind stringToKind(const QString &s) {
   else if (s == "void" || s == "Void" || s == "Crystal Voids" ||
            s == "crystal_void" || s == "Crystal Void")
     return Kind::Void;
-  else if (s == "esp" || s == "electric_potential")
+  else if (s == "esp" || s == "electric_potential" ||
+           s == "Electric Potential" || s == "Electrostatic Potential")
     return Kind::ESP;
-  else if (s == "rho" || s == "electron_density")
+  else if (s == "rho" || s == "electron_density" || s == "Electron Density")
     return Kind::ElectronDensity;
   else if (s == "def" || s == "deformation_density" ||
            s == "Deformation Density")

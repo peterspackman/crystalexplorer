@@ -792,7 +792,7 @@ void Crystalx::openFile() {
   const QString FILTER = "CIF, CIF2, Project File, XYZ file (*." +
                          CIF_EXTENSION + " *." + PROJECT_EXTENSION + " *." +
                          CIF2_EXTENSION + " *." + XYZ_FILE_EXTENSION +
-                         " *.pdb" + " *.json" + ")";
+                         " *.pdb" + " *.json" + " *.gin" + ")";
   QStringList filenames = QFileDialog::getOpenFileNames(
       0, tr("Open File"), QDir::currentPath(), FILTER);
 
@@ -904,6 +904,10 @@ void Crystalx::loadExternalFileData(QString filename) {
     loadProject(filename);
   } else if (extension == XYZ_FILE_EXTENSION) {
     loadXyzFile(filename);
+  } else if (extension == "gin") {
+    qDebug() << "Loading gulp input file: " << filename;
+    showStatusMessage(QString("Loading gulp input file from %1").arg(filename));
+    project->loadGulpInputFile(filename);
   }
 }
 
@@ -1084,6 +1088,7 @@ void Crystalx::generateSurfaceRequiringWavefunction(
           [parameters, this, wavefunctionCalc]() {
             auto params_tmp = parameters;
             params_tmp.wfn = wavefunctionCalc->getWavefunction();
+            qDebug() << "Wavefunction set to: " << params_tmp.wfn;
 
             generateSurface(params_tmp);
             wavefunctionCalc->deleteLater();

@@ -2,10 +2,10 @@
 #include "exefileutilities.h"
 #include "load_wavefunction.h"
 #include "molecular_wavefunction.h"
-#include "occwavefunctiontask.h"
-#include "orcatask.h"
 #include "occinput.h"
+#include "occwavefunctiontask.h"
 #include "orcainput.h"
+#include "orcatask.h"
 #include "settings.h"
 #include <QFile>
 #include <QTextStream>
@@ -93,10 +93,12 @@ Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
 
   QString wavefunctionName = generateWavefunctionName(params);
 
-  if(params.userEditRequested) {
-    params.userInputContents = io::requestUserTextEdit("OCC input", io::getOccWavefunctionJson(params));
+  if (params.userEditRequested) {
+    params.userInputContents = io::requestUserTextEdit(
+        "OCC input", io::getOccWavefunctionJson(params));
     // TODO report to user that the job will be canceled
-    if(params.userInputContents.isEmpty()) return nullptr;
+    if (params.userInputContents.isEmpty())
+      return nullptr;
   }
   auto *task = new OccWavefunctionTask();
   task->setParameters(params);
@@ -119,10 +121,12 @@ Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
 Task *WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
   QString wavefunctionName = generateWavefunctionName(params);
 
-  if(params.userEditRequested) {
-    params.userInputContents = io::requestUserTextEdit("OCC input", io::orcaInputString(params));
+  if (params.userEditRequested) {
+    params.userInputContents =
+        io::requestUserTextEdit("OCC input", io::orcaInputString(params));
     // TODO report to user that the job will be canceled
-    if(params.userInputContents.isEmpty()) return nullptr;
+    if (params.userInputContents.isEmpty())
+      return nullptr;
   }
 
   auto *task = new OrcaWavefunctionTask();
@@ -245,7 +249,6 @@ void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
                                                 QString name) {
   qDebug() << "Task" << name << "finished in WavefunctionCalculator";
   auto wfn = io::loadWavefunction(filename);
-  wfn->setParameters(params);
   qDebug() << "Loaded wavefunction from" << filename << wfn
            << params.atoms.size();
   m_wavefunction = wfn;
@@ -280,6 +283,7 @@ void WavefunctionCalculator::handleXtbTaskComplete(xtb::Parameters params,
   wfn->setRawContents(result.moldenContents);
   wfn->setParameters(xtb2wfn(params));
   wfn->setFileFormat(wfn::FileFormat::Molden);
+  m_wavefunction = wfn;
 
   qDebug() << m_completedTaskCount << m_totalTasks;
   m_completedTaskCount++;

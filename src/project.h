@@ -1,14 +1,14 @@
 #pragma once
+#include <QAbstractItemModel>
 #include <QAction>
 #include <QDebug>
 #include <QObject>
 #include <QVector>
-#include <QAbstractItemModel>
 
+#include "frameworkoptions.h"
+#include "json.h"
 #include "packingdialog.h" // access to enum UnitCellPackingCriteria
 #include "scene.h"
-#include "json.h"
-#include "frameworkoptions.h"
 
 /*!
  \class Project
@@ -41,6 +41,7 @@ public:
   bool loadCrystalStructuresFromPdbFile(const QString &);
   bool loadCrystalClearJson(const QString &);
   bool loadCrystalClearSurfaceJson(const QString &);
+  bool loadGulpInputFile(const QString &);
 
   bool hasFrames();
   int nextFrame(bool forward);
@@ -55,17 +56,21 @@ public:
   // Abstract Item Model methods
   int rowCount(const QModelIndex &parent = QModelIndex()) const override;
   int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QVariant data(const QModelIndex &index,
+                int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column,
+                    const QModelIndex &parent = QModelIndex()) const override;
   QModelIndex parent(const QModelIndex &index) const override;
-  QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+  QVariant headerData(int section, Qt::Orientation orientation,
+                      int role) const override;
 
   [[nodiscard]] nlohmann::json toJson() const;
   bool fromJson(const nlohmann::json &);
 
 public slots:
   void frameworkOptionsChanged(FrameworkOptions);
-  void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+  void onSelectionChanged(const QItemSelection &selected,
+                          const QItemSelection &deselected);
   void setCurrentCrystal(int);
   void setCurrentCrystal(int, bool);
   void updateCurrentCrystalContents();

@@ -8,6 +8,7 @@
 #include "dynamicstructure.h"
 #include "elementdata.h"
 #include "globals.h"
+#include "gulp.h"
 #include "pdbfile.h"
 #include "project.h"
 #include "version.h"
@@ -306,6 +307,42 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
     setCurrentCrystal(position);
   }
   return true;
+}
+
+bool Project::loadGulpInputFile(const QString &filename) {
+  io::GulpInputFile gin(filename);
+
+  switch (gin.periodicity()) {
+  case 3: {
+    CrystalStructure *tmp = gin.toCrystalStructure();
+    if(!tmp) return false;
+    Scene *scene = new Scene(tmp);
+    scene->setTitle(QFileInfo(filename).baseName());
+    int position = m_scenes.size();
+    beginInsertRows(QModelIndex(), position, position);
+    m_scenes.append(scene);
+    endInsertRows();
+    setUnsavedChangesExists();
+    setCurrentCrystal(position);
+    return true;
+    break;
+  }
+  default: {
+    ChemicalStructure *tmp = gin.toChemicalStructure();
+    if(!tmp) return false;
+    Scene *scene = new Scene(tmp);
+    scene->setTitle(QFileInfo(filename).baseName());
+    int position = m_scenes.size();
+    beginInsertRows(QModelIndex(), position, position);
+    m_scenes.append(scene);
+    endInsertRows();
+    setUnsavedChangesExists();
+    setCurrentCrystal(position);
+    return true;
+    break;
+  }
+  }
+  return false;
 }
 
 bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
@@ -874,8 +911,10 @@ bool Project::exportCurrentGeometryToFile(const QString &filename) {
 
   auto nums = structure->atomicNumbers();
   auto pos = structure->atomicPositions();
-  if(nums.rows() < 1) return false;
-  if(pos.cols() < 1) return false;
+  if (nums.rows() < 1)
+    return false;
+  if (pos.cols() < 1)
+    return false;
   XYZFile xyz(nums, pos);
   return xyz.writeToFile(filename);
 }

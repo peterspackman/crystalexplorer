@@ -3,6 +3,7 @@ add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/crystalclear.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_eps.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/genericxyzfile.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/gulp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/io_utilities.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_wavefunction.cpp"
