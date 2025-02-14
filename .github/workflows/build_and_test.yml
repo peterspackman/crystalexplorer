@@ -32,8 +32,8 @@ jobs:
           - os: windows-latest
             name: "windows-x86_64"
             qtarch: "win64_msvc2019_64"
-          - os: ubuntu-latest
-            name: "ubuntu-latest-x86_64"
+          - os: ubuntu-20.04
+            name: "linux-x86_64"
             qtarch: "linux_gcc_64"
 
     steps:
@@ -54,22 +54,28 @@ jobs:
         cache: true
         arch: ${{ matrix.qtarch }}
 
-    - name: Install Linux Dependencies
+    - name: Build AppImage (Linux)
       if: runner.os == 'Linux'
-      run: ./scripts/linux-dependencies.sh
+      run: |
+        ./scripts/build-appimage.sh
+        echo "PACKAGE_NAME=$(ls CrystalExplorer*.AppImage)" >> $GITHUB_ENV
 
     - uses: TheMrMilchmann/setup-msvc-dev@v3
       if: runner.os == 'Windows'
       with:
         arch: x64
 
-    - name: Configure CMake (Windows)
+
+    - name: Configure CMake (Windows & MacOS)
+      if: runner.os != 'Linux'
       run: cmake --preset ${{ matrix.name }}
 
     - name: Build
+      if: runner.os != 'Linux'
       run: cmake --build --preset ${{ matrix.name }}
 
     - name: Package with CPack
+      if: runner.os != 'Linux'
       working-directory: ${{github.workspace}}/build
       shell: bash
       run: |

@@ -1,7 +1,7 @@
 [Desktop Entry]
-Version=3.3
 Type=Application
-Name=Crystal Explorer
+Name=CrystalExplorer
 Comment=Crystal structure analysis using Hirshfeld surfaces
 Exec=CrystalExplorer
 Icon=crystalexplorer
+Categories=Science;Chemistry;

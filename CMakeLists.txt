@@ -22,7 +22,7 @@ endif()
 message(STATUS "Using CPACK_SYSTEM_NAME=${CPACK_SYSTEM_NAME}")
 
 option(ENABLE_CX_TESTS "Enable testing" OFF)
-set(OCC_VERSION "0.6.8" CACHE STRING "OCC version number for download")
+set(OCC_VERSION "0.7.3" CACHE STRING "OCC version number for download")
 set(OCC_PLATFORM "${CPACK_SYSTEM_NAME}" CACHE STRING "OCC platform string for download")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
