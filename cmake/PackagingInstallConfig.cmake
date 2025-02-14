@@ -1,7 +1,9 @@
 if(APPLE)
-    include(PackageMacOS)
+include(PackageMacOS)
 elseif(WIN32)
-    include(PackageWindows)
+include(PackageWindows)
+elseif(UNIX)
+include(PackageLinux)
 endif(APPLE)
 
 include(CPack)

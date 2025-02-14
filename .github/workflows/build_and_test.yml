@@ -1,15 +1,14 @@
-name: CMake
+name: Build and Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+    - main
     tags: "v*"
   pull_request:
-    branches: [ "main" ]
-    tags: "v*"
+    branches:
+    - main
   workflow_dispatch:
-    branches: [ "main" ]
-    tags: "v*"
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -33,6 +32,9 @@ jobs:
           - os: windows-latest
             name: "windows-x86_64"
             qtarch: "win64_msvc2019_64"
+          - os: ubuntu-latest
+            name: "ubuntu-latest-x86_64"
+            qtarch: "linux_gcc_64"
 
     steps:
     - uses: actions/checkout@v3
@@ -46,11 +48,15 @@ jobs:
         key: crystalexplorer-cache-${{ matrix.name }}
     
     - name: Install Qt
-      uses: jurplel/install-qt-action@v4.0.0
+      uses: jurplel/install-qt-action@v4.1.1
       with:
         version: 6.7.2
         cache: true
         arch: ${{ matrix.qtarch }}
+
+    - name: Install Linux Dependencies
+      if: runner.os == 'Linux'
+      run: ./scripts/linux-dependencies.sh
 
     - uses: TheMrMilchmann/setup-msvc-dev@v3
       if: runner.os == 'Windows'
