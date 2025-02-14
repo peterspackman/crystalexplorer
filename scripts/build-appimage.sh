@@ -9,13 +9,13 @@ wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/cont
 chmod +x linuxdeploy*.AppImage
 
 cmake . -B"${BUILD_DIR}" -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_HOST_OPT=OFF -GNinja \
+    -GNinja \
     -DCMAKE_CXX_FLAGS="-O2 -static-libgcc -static-libstdc++" \
-    -DCMAKE_C_FLAGS="-O2 -static-libgcc" -DBUILD_DOCS=ON \
+    -DCMAKE_C_FLAGS="-O2 -static-libgcc" \
     -DCPACK_SYSTEM_NAME="${NAME}" -DCMAKE_INSTALL_PREFIX="/usr"
 
 cmake --build "${BUILD_DIR}"
-cmake --install "${BUILD_DIR}" --prefix /usr -DDESTDIR=AppDir
+DESTDIR=AppDir cmake --install "${BUILD_DIR}" --prefix /usr
 
 # Create AppImage
 export QMAKE="$(which qmake)"

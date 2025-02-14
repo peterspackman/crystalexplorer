@@ -14,6 +14,10 @@ struct FragmentIndex {
     return std::tie(u, h, k, l) == std::tie(rhs.u, rhs.h, rhs.k, rhs.l);
   }
 
+  inline bool operator!=(const FragmentIndex &rhs) const {
+    return std::tie(u, h, k, l) != std::tie(rhs.u, rhs.h, rhs.k, rhs.l);
+  }
+
   inline bool operator<(const FragmentIndex &rhs) const {
     return std::tie(u, h, k, l) < std::tie(rhs.u, rhs.h, rhs.k, rhs.l);
   }
