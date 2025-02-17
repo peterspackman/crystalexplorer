@@ -26,46 +26,33 @@ void FingerprintPlot::init() {
   resetFilter();
 }
 
-void FingerprintPlot::resetFilter() {
-  setFilter(FingerprintFilterMode::None, false, false, false, QString(),
-            QString());
-}
+void FingerprintPlot::resetFilter() { setFilter({}); }
 
-void FingerprintPlot::setFilter(FingerprintFilterMode filterMode,
-                                bool includeReciprocalContacts,
-                                bool filterInsideElement,
-                                bool filterOutsideElement,
-                                QString insideFilterElementSymbol,
-                                QString outsideFilterElementSymbol) {
-  m_filterMode = filterMode;
-  m_includeReciprocalContacts = includeReciprocalContacts;
-  m_insideFilterElementSymbol = insideFilterElementSymbol;
-  m_outsideFilterElementSymbol = outsideFilterElementSymbol;
+void FingerprintPlot::setFilter(FingerprintFilterOptions opts) {
+  m_filterMode = opts.filterMode;
+  m_includeReciprocalContacts = opts.includeReciprocalContacts;
+  m_insideFilterElementSymbol = opts.insideFilterElementSymbol;
+  m_outsideFilterElementSymbol = opts.outsideFilterElementSymbol;
   m_filterInsideElement = -1;
   m_filterOutsideElement = -1;
+  m_filterLower = opts.filterLower;
+  m_filterUpper = opts.filterUpper;
 
-  if (filterInsideElement) {
+  if (opts.filterInsideElement) {
     auto *el = ElementData::elementFromSymbol(m_insideFilterElementSymbol);
     if (el)
       m_filterInsideElement = el->number();
   }
 
-  if (filterOutsideElement) {
+  if (opts.filterOutsideElement) {
     auto *el = ElementData::elementFromSymbol(m_outsideFilterElementSymbol);
     if (el)
       m_filterOutsideElement = el->number();
   }
 }
 
-void FingerprintPlot::updateFilter(FingerprintFilterMode filterMode,
-                                   bool includeReciprocalContacts,
-                                   bool filterInsideElement,
-                                   bool filterOutsideElement,
-                                   QString insideFilterElementSymbol,
-                                   QString outsideFilterElementSymbol) {
-  setFilter(filterMode, includeReciprocalContacts, filterInsideElement,
-            filterOutsideElement, insideFilterElementSymbol,
-            outsideFilterElementSymbol);
+void FingerprintPlot::updateFilter(FingerprintFilterOptions opts) {
+  setFilter(opts);
   updateFingerprintPlot();
 }
 
@@ -598,6 +585,7 @@ int FingerprintPlot::tolerant_yBinIndex(double value) {
   return binIndex(value, usedyPlotMin(), usedyPlotMax(), numUsedyBins());
 }
 
+// Update computeFaceMask method
 void FingerprintPlot::computeFaceMask() {
   if (!m_mesh)
     return;
@@ -610,6 +598,7 @@ void FingerprintPlot::computeFaceMask() {
   case FingerprintFilterMode::None:
     break;
   case FingerprintFilterMode::Element: {
+    // Existing element filtering code remains the same
     auto *structure = qobject_cast<ChemicalStructure *>(m_mesh->parent());
     if (!structure)
       break;
@@ -627,7 +616,7 @@ void FingerprintPlot::computeFaceMask() {
     const auto &v2f = m_mesh->vertexToFace();
 
     if (di_idx.rows() == 0 || de_idx.rows() == 0) {
-      qDebug() << "Have no interior/exterior atom infor";
+      qDebug() << "Have no interior/exterior atom info";
       break;
     }
 
@@ -647,8 +636,35 @@ void FingerprintPlot::computeFaceMask() {
         vmask(v) |= (check(m_i, o) && check(m_o, i));
       }
 
-      // if any vertex isn't in, mask it
       if (!vmask(v)) {
+        for (int f : v2f[v]) {
+          mask(f) = false;
+        }
+      }
+    }
+    break;
+  }
+  case FingerprintFilterMode::Di: {
+    // Filter based on di values
+    for (int v = 0; v < m_x.rows(); v++) {
+      vmask(v) = m_x(v) >= m_filterLower && m_x(v) <= m_filterUpper;
+
+      if (!vmask(v)) {
+        const auto &v2f = m_mesh->vertexToFace();
+        for (int f : v2f[v]) {
+          mask(f) = false;
+        }
+      }
+    }
+    break;
+  }
+  case FingerprintFilterMode::De: {
+    // Filter based on de values
+    for (int v = 0; v < m_y.rows(); v++) {
+      vmask(v) = m_y(v) >= m_filterLower && m_y(v) <= m_filterUpper;
+
+      if (!vmask(v)) {
+        const auto &v2f = m_mesh->vertexToFace();
         for (int f : v2f[v]) {
           mask(f) = false;
         }

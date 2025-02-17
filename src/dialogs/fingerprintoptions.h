@@ -18,7 +18,7 @@ public:
 
 signals:
   void plotRangeChanged(FingerprintPlotRange);
-  void filterChanged(FingerprintFilterMode, bool, bool, bool, QString, QString);
+  void filterChanged(FingerprintFilterOptions);
   void saveFingerprint(QString);
   void closeClicked();
 
@@ -43,6 +43,7 @@ private:
   void setVisibleElementFilteringWidgets(bool);
   void setVisibleSelectionFilteringWidgets(bool);
   void setVisibleCommonFilteringWidgets(bool);
+  void setVisibleRangeFilteringWidgets(bool);
   QColor getButtonColor(QToolButton *);
   void setButtonColor(QToolButton *, QColor);
   FingerprintFilterMode getFilterMode();

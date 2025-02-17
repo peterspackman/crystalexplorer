@@ -85,15 +85,32 @@ const int AXIS_SCALE_OFFSET = 30;
 const int AXIS_SCALE_TEXT_OFFSET = 2;
 
 // Fingerprint filtering
-enum class FingerprintFilterMode { None, Element };
+enum class FingerprintFilterMode { None, Element, Di, De };
 
 inline const QStringList fingerprintFilterLabels{
     "None",
     "By Element",
+    "Distance Internal",
+    "Distance External",
+};
+
+struct FingerprintFilterOptions {
+  FingerprintFilterMode filterMode{FingerprintFilterMode::None};
+  bool includeReciprocalContacts{false};
+  bool filterInsideElement{false};
+  bool filterOutsideElement{false};
+  QString insideFilterElementSymbol{"H"};
+  QString outsideFilterElementSymbol{"H"};
+  double filterLower{0.0};
+  double filterUpper{100.0};
 };
 
 inline const QVector<FingerprintFilterMode> requestableFilters{
-    FingerprintFilterMode::None, FingerprintFilterMode::Element};
+    FingerprintFilterMode::None,
+    FingerprintFilterMode::Element,
+    FingerprintFilterMode::Di,
+    FingerprintFilterMode::De,
+};
 
 const QString NO_FINGERPRINT_MESSAGE = "Fingerprint Plot Unavailable";
 
@@ -107,7 +124,7 @@ public:
   QVector<double> filteredAreas(QString, QStringList);
 
 public slots:
-  void updateFilter(FingerprintFilterMode, bool, bool, bool, QString, QString);
+  void updateFilter(FingerprintFilterOptions);
   void updatePlotRange(FingerprintPlotRange);
   void saveFingerprint(QString);
   void resetSurfaceFeatures(bool);
@@ -123,7 +140,7 @@ protected:
 private:
   void init();
   void resetFilter();
-  void setFilter(FingerprintFilterMode, bool, bool, bool, QString, QString);
+  void setFilter(FingerprintFilterOptions);
   void setRange(FingerprintPlotRange);
   void setPropertiesToPlot();
   void setAxisLabels();
@@ -233,6 +250,8 @@ private:
   int m_filterOutsideElement{-1};
   QString m_insideFilterElementSymbol{"H"};
   QString m_outsideFilterElementSymbol{"H"};
+  double m_filterLower{0.0};
+  double m_filterUpper{100.0};
 
   QString m_colorScheme{"RedGreenBlue"};
 };
