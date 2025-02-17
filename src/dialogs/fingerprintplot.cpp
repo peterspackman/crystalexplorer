@@ -245,54 +245,6 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
   return m_mesh->surfaceArea();
 }
 
-/*
-double FingerprintPlot::calculateBinnedAreasNoFilter() {
-  qDebug() << "Mesh" << m_mesh;
-  // unmask all faces if any
-  m_mesh->resetVertexMask(false);
-  qDebug() << "resetVertexMask";
-
-  double nx = numUsedxBins();
-  double ny = numUsedyBins();
-  double xmax = usedxPlotMax();
-  double xmin = usedxPlotMin();
-  double normx = nx / (xmax - xmin);
-  double ymin = usedyPlotMin();
-  double ymax = usedyPlotMax();
-  double normy = ny / (ymax - ymin);
-
-  qDebug() << "Vertex areas";
-  const auto &vertexAreas = m_mesh->vertexAreas();
-  qDebug() << "Vertex areas calc" << vertexAreas.rows();
-  double totalArea = 0.0;
-  for (int i = 0; i < vertexAreas.rows(); i++) {
-    double x = m_x(i);
-    double y = m_y(i);
-
-    if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
-      int xIndex = static_cast<int>((x - xmin) * normx);
-      int yIndex = static_cast<int>((y - ymin) * normy);
-      double area = vertexAreas(i);
-      totalArea += area;
-      if (area > 0.0) {
-        binUsed(xIndex, yIndex) = true;
-        binnedAreas(xIndex, yIndex) += area;
-      }
-    }
-  }
-  qDebug() << "Bin size" << binSize();
-  qDebug() << "x" << m_xmin << m_xmax;
-  qDebug() << "x" << m_xFaceMin << m_xFaceMax;
-  qDebug() << "y" << m_ymin << m_ymax;
-  qDebug() << "y" << m_yFaceMin << m_yFaceMax;
-  qDebug() << nx << ny << xmax << xmin << normx << ymin << ymax << normy;
-  qDebug() << "Face areas done";
-  qDebug() << "Total surface area" << totalArea << binnedAreas.sum();
-  qDebug() << "Total surface area" << m_mesh->surfaceArea();
-  return m_mesh->surfaceArea();
-}
-*/
-
 double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double totalFilteredArea = 0.0;
 

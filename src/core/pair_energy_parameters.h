@@ -16,6 +16,9 @@ struct EnergyModelParameters {
   std::vector<wfn::Parameters> wavefunctions;
   std::vector<FragmentDimer> pairs;
   bool operator==(const EnergyModelParameters &rhs) const;
+  inline bool operator!=(const EnergyModelParameters &rhs) const {
+    return !(*this == rhs);
+  }
   bool isXtbModel() const;
 };
 
@@ -42,6 +45,11 @@ struct Parameters {
   int multiplicity() const;
   int charge() const;
   bool operator==(const Parameters &rhs) const;
+
+  inline bool operator!=(const Parameters &rhs) const {
+    return !(*this == rhs);
+  }
+
   bool isXtbModel() const;
   bool hasPermutationSymmetry{true};
 };

@@ -22,5 +22,5 @@ export QMAKE="$(which qmake)"
 ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
     --plugin qt \
     --output appimage \
-    --icon-file=icons/crystalexplorer.png \
+    --icon-file=icons/CrystalExplorer512x512.png \
     --desktop-file=resources/crystalexplorer.desktop

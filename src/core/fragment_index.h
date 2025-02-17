@@ -15,7 +15,7 @@ struct FragmentIndex {
   }
 
   inline bool operator!=(const FragmentIndex &rhs) const {
-    return std::tie(u, h, k, l) != std::tie(rhs.u, rhs.h, rhs.k, rhs.l);
+    return !(*this == rhs);
   }
 
   inline bool operator<(const FragmentIndex &rhs) const {
@@ -60,6 +60,10 @@ struct FragmentIndexPair {
 
   inline bool operator==(const FragmentIndexPair &rhs) const {
     return std::tie(a, b) == std::tie(rhs.a, rhs.b);
+  }
+  
+  inline bool operator!=(const FragmentIndexPair &rhs) const {
+    return !(*this == rhs);
   }
 
   inline bool operator<(const FragmentIndexPair &rhs) const {

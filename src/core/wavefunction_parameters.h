@@ -8,7 +8,7 @@ class ChemicalStructure;
 namespace wfn {
 
 enum class FileFormat { OccWavefunction, Fchk, Molden, XtbJson };
-enum class Program {Occ, Orca, Gaussian, NWChem, Psi4, Xtb};
+enum class Program { Occ, Orca, Gaussian, NWChem, Psi4, Xtb };
 
 struct Parameters {
   int charge{0};
@@ -42,6 +42,10 @@ struct Parameters {
     if (atoms != rhs.atoms)
       return false;
     return true;
+  }
+
+  inline bool operator!=(const Parameters &rhs) const {
+    return !(*this == rhs);
   }
 
   bool isXtbMethod() const;

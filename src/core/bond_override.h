@@ -14,6 +14,10 @@ struct BondIndexPair {
   inline bool operator==(const BondIndexPair &rhs) const {
     return std::tie(a, b) == std::tie(rhs.a, rhs.b);
   }
+
+  inline bool operator!=(const BondIndexPair &rhs) const {
+    return !(*this == rhs);
+  }
 };
 
 struct BondIndexPairHash {
@@ -31,7 +35,6 @@ struct BondOverride {
   BondMethod bond{BondMethod::Detect};
 };
 
-inline BondIndexPair makeBondPair(GenericAtomIndex a,
-                                  GenericAtomIndex b) {
+inline BondIndexPair makeBondPair(GenericAtomIndex a, GenericAtomIndex b) {
   return (a < b) ? BondIndexPair{a, b} : BondIndexPair{b, a};
 }

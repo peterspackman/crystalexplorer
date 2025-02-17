@@ -8,4 +8,9 @@ struct AtomLabelOptions {
     return std::tie(showAtoms, showFragment) ==
            std::tie(rhs.showAtoms, rhs.showFragment);
   }
+
+  inline bool operator!=(const AtomLabelOptions &rhs) const {
+    return !(*this == rhs);
+  }
+
 };

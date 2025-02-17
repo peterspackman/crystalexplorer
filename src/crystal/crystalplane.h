@@ -10,6 +10,9 @@ struct MillerIndex {
   inline bool operator==(const MillerIndex &other) const {
     return h == other.h && k == other.k && l == other.l;
   }
+  inline bool operator!=(const MillerIndex &other) const {
+    return !(*this == other);
+  }
 
   inline bool isZero() const { return h == 0 && k == 0 && l == 0; }
 };
@@ -20,6 +23,10 @@ struct CrystalPlane {
   QColor color;
   inline bool operator==(const CrystalPlane &other) const {
     return hkl == other.hkl && qFuzzyCompare(offset, other.offset);
+  }
+
+  inline bool operator!=(const CrystalPlane &other) const {
+    return !(*this == other);
   }
 };
 

@@ -3,5 +3,5 @@ Type=Application
 Name=CrystalExplorer
 Comment=Crystal structure analysis using Hirshfeld surfaces
 Exec=CrystalExplorer
-Icon=crystalexplorer
+Icon=CrystalExplorer
 Categories=Science;Chemistry;

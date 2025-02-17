@@ -1,6 +1,6 @@
 #pragma once
-#include <numeric>
 #include <cstdint>
+#include <numeric>
 #include <string>
 
 namespace occ::core {
@@ -50,7 +50,13 @@ public:
   /// operator overload for Fraction::divide
   const Fraction operator/(const Fraction &) const;
   auto operator==(const Fraction &) const -> bool;
+
+  inline auto operator!=(const Fraction &rhs) const -> bool {
+    return !(*this == rhs);
+  }
+
   auto operator==(int64_t) const -> bool;
+  inline auto operator!=(int64_t rhs) const -> bool { return !(*this == rhs); }
   auto operator<(const Fraction &) const -> bool;
   auto operator<=(const Fraction &) const -> bool;
 

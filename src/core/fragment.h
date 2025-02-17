@@ -1,12 +1,12 @@
 #pragma once
+#include "eigen_json.h"
 #include "fragment_index.h"
 #include "generic_atom_index.h"
+#include "json.h"
 #include <QColor>
 #include <QDebug>
 #include <QVector3D>
 #include <occ/core/linear_algebra.h>
-#include "json.h"
-#include "eigen_json.h"
 
 using Transform = Eigen::Isometry3d;
 
@@ -16,11 +16,7 @@ struct DimerAtoms {
 };
 
 struct FragmentColorSettings {
-  enum class Method {
-    UnitCellFragment,
-    SymmetryUniqueFragment,
-    Constant
-  };
+  enum class Method { UnitCellFragment, SymmetryUniqueFragment, Constant };
 
   Method method{Method::SymmetryUniqueFragment};
   QColor color{Qt::gray};
@@ -86,17 +82,22 @@ struct FragmentDimer {
 
   bool sameAsymmetricFragmentIndices(const FragmentDimer &) const;
   bool operator==(const FragmentDimer &) const;
+
+  inline bool operator!=(const FragmentDimer &rhs) const {
+    return !(*this == rhs);
+  }
 };
 
 QDebug operator<<(QDebug debug, const Fragment &fragment);
 QDebug operator<<(QDebug debug, const FragmentDimer &dimer);
-void to_json(nlohmann::json& j, const FragmentColorSettings::Method& method);
-void from_json(const nlohmann::json& j, FragmentColorSettings::Method& method);
+void to_json(nlohmann::json &j, const FragmentColorSettings::Method &method);
+void from_json(const nlohmann::json &j, FragmentColorSettings::Method &method);
 
-void to_json(nlohmann::json& j, const Fragment&);
-void from_json(const nlohmann::json& j, Fragment&);
+void to_json(nlohmann::json &j, const Fragment &);
+void from_json(const nlohmann::json &j, Fragment &);
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DimerAtoms, a, b)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FragmentColorSettings, method, color)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Fragment::State, charge, multiplicity)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Fragment::NearestAtomResult, idx_this, idx_other, distance)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Fragment::NearestAtomResult, idx_this,
+                                   idx_other, distance)

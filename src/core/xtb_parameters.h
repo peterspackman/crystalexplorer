@@ -8,12 +8,7 @@ class ChemicalStructure;
 
 namespace xtb {
 
-enum class Method {
-  GFN0_xTB,
-  GFN1_xTB,
-  GFN2_xTB,
-  GFN_FF
-};
+enum class Method { GFN0_xTB, GFN1_xTB, GFN2_xTB, GFN_FF };
 
 struct Parameters {
   int charge{0};
@@ -45,6 +40,10 @@ struct Parameters {
       return false;
     return true;
   }
+
+  inline bool operator!=(const Parameters &rhs) const {
+    return !(*this == rhs);
+  }
 };
 
 struct Result {
@@ -59,27 +58,38 @@ struct Result {
 };
 
 inline QString methodToString(Method method) {
-    switch(method) {
-    default: return "GFN2-xTB";
-    case Method::GFN0_xTB: return "GFN0-xTB";
-    case Method::GFN1_xTB: return "GFN1-xTB";
-    case Method::GFN_FF: return "GFN-FF";
-    }
+  switch (method) {
+  default:
+    return "GFN2-xTB";
+  case Method::GFN0_xTB:
+    return "GFN0-xTB";
+  case Method::GFN1_xTB:
+    return "GFN1-xTB";
+  case Method::GFN_FF:
+    return "GFN-FF";
+  }
 }
 
 inline Method stringToMethod(const QString &s) {
-    if (s.compare("GFN0-xTB", Qt::CaseInsensitive) == 0) return Method::GFN0_xTB;
-    if (s.compare("GFN1-xTB", Qt::CaseInsensitive) == 0) return Method::GFN1_xTB;
-    if (s.compare("GFN-FF", Qt::CaseInsensitive) == 0) return Method::GFN_FF;
-    return Method::GFN2_xTB; // Default case
+  if (s.compare("GFN0-xTB", Qt::CaseInsensitive) == 0)
+    return Method::GFN0_xTB;
+  if (s.compare("GFN1-xTB", Qt::CaseInsensitive) == 0)
+    return Method::GFN1_xTB;
+  if (s.compare("GFN-FF", Qt::CaseInsensitive) == 0)
+    return Method::GFN_FF;
+  return Method::GFN2_xTB; // Default case
 }
 
 inline bool isXtbMethod(const QString &s) {
-    if (s.compare("GFN0-xTB", Qt::CaseInsensitive) == 0) return true;
-    if (s.compare("GFN1-xTB", Qt::CaseInsensitive) == 0) return true;
-    if (s.compare("GFN2-xTB", Qt::CaseInsensitive) == 0) return true;
-    if (s.compare("GFN-FF", Qt::CaseInsensitive) == 0) return true;
-    return false; // Default case
+  if (s.compare("GFN0-xTB", Qt::CaseInsensitive) == 0)
+    return true;
+  if (s.compare("GFN1-xTB", Qt::CaseInsensitive) == 0)
+    return true;
+  if (s.compare("GFN2-xTB", Qt::CaseInsensitive) == 0)
+    return true;
+  if (s.compare("GFN-FF", Qt::CaseInsensitive) == 0)
+    return true;
+  return false; // Default case
 }
 
-} // namespace wfn
+} // namespace xtb
