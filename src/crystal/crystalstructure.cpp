@@ -1578,23 +1578,6 @@ occ::Mat3N CrystalStructure::convertCoordinates(
   return m_crystal.to_fractional(pos);
 }
 
-nlohmann::json CrystalStructure::toJson() const {
-  return {
-      {"structureType", "crystal"},
-      {"atomicPositions", m_atomicPositions},
-      {"atomicNumbers", m_atomicNumbers},
-      {"labels", m_labels},
-      {"flags", m_flags},
-      {"unitCell", m_crystal.unit_cell()},
-      {"spaceGroup", m_crystal.space_group()},
-  };
-}
-
-bool CrystalStructure::fromJson(const nlohmann::json &j) {
-  // TODO
-  return ChemicalStructure::fromJson(j);
-}
-
 void CrystalStructure::addBondOverride(BondOverride ovrd) {
   ChemicalStructure::addBondOverride(ovrd);
   occ::crystal::HKL hkl{ovrd.b.x - ovrd.a.x, ovrd.b.y - ovrd.a.y,
@@ -1624,4 +1607,68 @@ void CrystalStructure::addBondOverrides(
   updateFragments();
   buildDimerMappingTable();
   updateBondGraph();
+}
+
+nlohmann::json CrystalStructure::toJson() const {
+  // Start with base class data
+  auto j = ChemicalStructure::toJson();
+  j["structureType"] = "crystal";
+  j["atomIndices"] = m_unitCellOffsets;
+  // Crystal will automatically serialize using the ADL serializer
+  j["crystal"] = m_crystal;
+
+  return j;
+}
+
+bool CrystalStructure::fromJson(const nlohmann::json &j) {
+  if (!j.contains("structureType") || j.at("structureType") != "crystal") {
+    qDebug() << "CrystalStructure loading failed: incorrect structureType";
+    return false;
+  }
+
+  if (!j.contains("crystal")) {
+    qDebug() << "CrystalStructure loading failed: missing crystal data";
+    return false;
+  }
+
+  if (!j.contains("atomIndices")) {
+    qDebug() << "CrystalStructure loading failed: missing atom index data";
+    return false;
+  }
+
+  try {
+    qDebug() << "Loading crystal data";
+    OccCrystal crystal = j.at("crystal").get<OccCrystal>();
+
+    qDebug() << "Loading base class data";
+    if (!fromJsonBase(j)) {
+      qDebug() << "CrystalStructure loading failed: base class loading failed";
+      return false;
+    }
+
+    j.at("atomIndices").get_to(m_unitCellOffsets);
+    m_atomMap.clear();
+    for (int i = 0; i < m_unitCellOffsets.size(); i++) {
+      m_atomMap.insert({m_unitCellOffsets[i], i});
+    }
+
+    qDebug() << "CrystalStructure loaded successfully";
+    qDebug() << "Setting up crystal structure";
+    m_crystal = crystal;
+    updateFragments();
+    updateAtomicDisplacementParameters();
+    buildDimerMappingTable();
+    updateBondGraph();
+    return true;
+
+  } catch (const nlohmann::json::exception &e) {
+    qDebug() << "CrystalStructure loading failed: JSON exception:" << e.what();
+    clearAtoms();
+    return false;
+  } catch (const std::exception &e) {
+    qDebug() << "CrystalStructure loading failed: unexpected exception:"
+             << e.what();
+    clearAtoms();
+    return false;
+  }
 }

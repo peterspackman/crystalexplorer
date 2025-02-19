@@ -1629,20 +1629,66 @@ nlohmann::json Scene::toJson() const {
 }
 
 bool Scene::fromJson(const nlohmann::json &j) {
-  if (!j.contains("structure"))
+  if (!j.contains("structure")) {
+    qDebug() << "Scene loading failed: missing 'structure' field";
     return false;
-  if (!j.contains("title"))
+  }
+  if (!j.contains("title")) {
+    qDebug() << "Scene loading failed: missing 'title' field";
     return false;
-  if (!j.contains("orientation"))
+  }
+  if (!j.contains("orientation")) {
+    qDebug() << "Scene loading failed: missing 'orientation' field";
     return false;
+  }
 
-  // TODO handle crystal structure
-  auto structure = new ChemicalStructure();
-  if (!structure->fromJson(j.at("structure")))
+  const auto &structure_json = j.at("structure");
+
+  if (!structure_json.contains("structureType")) {
+    qDebug() << "Scene loading failed: structure missing 'structureType' field";
     return false;
-  m_structure = structure;
-  j.at("orientation").get_to(m_orientation);
-  j.at("title").get_to(m_name);
-  setNeedsUpdate();
-  return true;
+  }
+
+  std::string structureType =
+      structure_json.at("structureType").get<std::string>();
+  qDebug() << "Loading structure of type:"
+           << QString::fromStdString(structureType);
+
+  ChemicalStructure *structure = nullptr;
+  if (structureType == "crystal") {
+    qDebug() << "Creating new CrystalStructure";
+    structure = new CrystalStructure();
+  } else if (structureType == "cluster") {
+    qDebug() << "Creating new ChemicalStructure";
+    structure = new ChemicalStructure();
+  } else {
+    qDebug() << "Scene loading failed: unknown structureType"
+             << QString::fromStdString(structureType);
+    return false;
+  }
+
+  try {
+    if (!structure->fromJson(structure_json)) {
+      qDebug() << "Scene loading failed: structure->fromJson returned false";
+      delete structure;
+      return false;
+    }
+
+    qDebug() << "Structure loaded successfully, setting Scene properties";
+    m_structure = structure;
+    j.at("orientation").get_to(m_orientation);
+    j.at("title").get_to(m_name);
+    setNeedsUpdate();
+    qDebug() << "Scene loaded successfully with title:" << m_name;
+    return true;
+
+  } catch (const nlohmann::json::exception &e) {
+    qDebug() << "Scene loading failed: JSON exception:" << e.what();
+    delete structure;
+    return false;
+  } catch (const std::exception &e) {
+    qDebug() << "Scene loading failed: unexpected exception:" << e.what();
+    delete structure;
+    return false;
+  }
 }

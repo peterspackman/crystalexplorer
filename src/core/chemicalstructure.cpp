@@ -1358,38 +1358,83 @@ nlohmann::json ChemicalStructure::toJson() const {
           {"flags", m_flags}};
 }
 
-bool ChemicalStructure::fromJson(const nlohmann::json &j) {
-  if (j.contains("structureType") && j.at("structureType") != "cluster")
-    return false;
+bool ChemicalStructure::fromJsonBase(const nlohmann::json &j) {
+    if (j.contains("structureType")) {
+        std::string type = j.at("structureType").get<std::string>();
+        qDebug() << "Loading structure of type:" << QString::fromStdString(type);
+        if (type != "cluster" && type != "crystal") {
+            qDebug() << "ChemicalStructure loading failed: unknown structureType";
+            return false;
+        }
+    }
 
-  if (!j.contains("atomicPositions"))
-    return false;
-  if (!j.contains("atomicNumbers"))
-    return false;
-  if (!j.contains("labels"))
-    return false;
-  if (!j.contains("flags"))
-    return false;
+    if (!j.contains("atomicPositions")) {
+        qDebug() << "ChemicalStructure loading failed: missing atomicPositions";
+        return false;
+    }
+    if (!j.contains("atomicNumbers")) {
+        qDebug() << "ChemicalStructure loading failed: missing atomicNumbers";
+        return false;
+    }
+    if (!j.contains("labels")) {
+        qDebug() << "ChemicalStructure loading failed: missing labels";
+        return false;
+    }
+    if (!j.contains("flags")) {
+        qDebug() << "ChemicalStructure loading failed: missing flags";
+        return false;
+    }
 
-  clearAtoms();
+    try {
+        qDebug() << "Clearing existing atoms";
+        clearAtoms();
 
-  j.at("atomicPositions").get_to(m_atomicPositions);
-  j.at("atomicNumbers").get_to(m_atomicNumbers);
-  j.at("labels").get_to(m_labels);
+        qDebug() << "Loading atomic positions";
+        j.at("atomicPositions").get_to(m_atomicPositions);
+        qDebug() << "Loading atomic numbers";
+        j.at("atomicNumbers").get_to(m_atomicNumbers);
+        qDebug() << "Loading labels";
+        j.at("labels").get_to(m_labels);
 
-  std::vector<std::pair<GenericAtomIndex, AtomFlags>> flags;
-  j.at("flags").get_to(flags);
-  for (const auto &kv : flags) {
-    qDebug() << kv.first << "flags" << kv.second;
-    m_flags.insert(kv);
-  }
-  qDebug() << "Atom positions: " << m_atomicPositions.cols();
-  qDebug() << "Atomic numbers: " << m_atomicNumbers.rows();
-  qDebug() << "Have" << m_flags.size() << "flags";
-  m_origin = m_atomicPositions.rowwise().mean();
-  m_fragmentForAtom.resize(m_atomicNumbers.rows(), FragmentIndex{-1});
-  m_bondsNeedUpdate = true;
-  updateBondGraph();
-  emit atomsChanged();
-  return true;
+        qDebug() << "Loading atom flags";
+        std::vector<std::pair<GenericAtomIndex, AtomFlags>> flags;
+        j.at("flags").get_to(flags);
+        for (const auto &kv : flags) {
+            qDebug() << "Setting flags for atom" << kv.first << ":" << kv.second;
+            m_flags.insert(kv);
+        }
+
+        qDebug() << "Structure stats:";
+        qDebug() << "  Atom positions:" << m_atomicPositions.cols();
+        qDebug() << "  Atomic numbers:" << m_atomicNumbers.rows();
+        qDebug() << "  Flags count:" << m_flags.size();
+
+        qDebug() << "Calculating origin";
+        m_origin = m_atomicPositions.rowwise().mean();
+        
+        qDebug() << "Initializing fragment indices";
+        m_fragmentForAtom.resize(m_atomicNumbers.rows(), FragmentIndex{-1});
+        
+        m_bondsNeedUpdate = true;
+        emit atomsChanged();
+        
+        qDebug() << "ChemicalStructure base loading completed successfully";
+        return true;
+
+    } catch (const nlohmann::json::exception& e) {
+        qDebug() << "ChemicalStructure loading failed: JSON exception:" << e.what();
+        clearAtoms();
+        return false;
+    } catch (const std::exception& e) {
+        qDebug() << "ChemicalStructure loading failed: unexpected exception:" << e.what();
+        clearAtoms();
+        return false;
+    }
 }
+
+bool ChemicalStructure::fromJson(const nlohmann::json &j) {
+    if (!fromJsonBase(j)) return false;
+    updateBondGraph();
+    return true;
+}
+

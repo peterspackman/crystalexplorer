@@ -299,6 +299,8 @@ signals:
   void childRemoved(QObject *);
 
 protected:
+  virtual bool fromJsonBase(const nlohmann::json &j);
+
   void connectChildSignals(QObject *child);
   bool eventFilter(QObject *obj, QEvent *event) override;
 

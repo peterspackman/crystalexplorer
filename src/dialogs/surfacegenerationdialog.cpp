@@ -45,7 +45,7 @@ void SurfaceGenerationDialog::init() {
 }
 
 void SurfaceGenerationDialog::initConnections() {
-  connect(ui->showDescriptionsCheckBox, &QCheckBox::stateChanged,
+  connect(ui->showDescriptionsCheckBox, &QCheckBox::checkStateChanged,
           [&](int state) { this->updateDescriptions(); });
 
   connect(ui->surfaceComboBox, &SurfaceTypeDropdown::selectionChanged,

@@ -131,6 +131,7 @@ void ChemicalStructureRenderer::toggleShowSuppressedAtoms() {
 bool ChemicalStructureRenderer::shouldSkipAtom(int index) const {
   const auto &numbers = m_structure->atomicNumbers();
   auto atomIndex = m_structure->indexToGenericIndex(index);
+  if(atomIndex.unique < 0) qDebug() << "Atom with index " << index << "returned" << atomIndex;
 
   if (!showHydrogenAtoms() && (numbers(index) == 1)) {
     return true;

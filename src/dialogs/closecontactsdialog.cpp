@@ -36,7 +36,7 @@ void CloseContactDialog::initConnections() {
           QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           reportSettings);
 
-  connect(vdwCriteriaCheckBox, &QCheckBox::stateChanged, this,
+  connect(vdwCriteriaCheckBox, &QCheckBox::checkStateChanged, this,
           &CloseContactDialog::useVdwBasedCriteria);
 
   connect(hbondDonorComboBox,
