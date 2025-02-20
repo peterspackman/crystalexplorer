@@ -286,7 +286,10 @@ public:
   bool equivalent_under_rotation(const Dimer &b, const occ::Mat3 &rot) const;
 
 private:
+  void init_distances();
+
   Molecule m_a, m_b;
+  double m_nearest_distance{0.0}, m_centroid_distance{0.0}, m_com_distance{0.0};
   size_t m_uc_idx_a{0}, m_uc_idx_b{0};
   size_t m_interaction_id{0};
   double m_interaction_energy{0};

@@ -1678,11 +1678,13 @@ bool Scene::fromJson(const nlohmann::json &j) {
   }
 
   try {
+    qDebug() << "Loading structure...";
     if (!structure->fromJson(structure_json)) {
       qDebug() << "Scene loading failed: structure->fromJson returned false";
       delete structure;
       return false;
     }
+    qDebug() << "Done";
 
     qDebug() << "Structure loaded successfully, setting Scene properties";
     m_structure = structure;
@@ -1716,7 +1718,7 @@ bool Scene::fromJson(const nlohmann::json &j) {
       }
     }
 
-    if(m_structureRenderer != nullptr) {
+    if (m_structureRenderer != nullptr) {
       qDebug() << "Purge structure renderer";
       delete m_structureRenderer;
       m_structureRenderer = nullptr;

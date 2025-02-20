@@ -1,6 +1,7 @@
 #include "crystalstructure.h"
 #include "colormap.h"
 #include "crystal_json.h"
+#include <QElapsedTimer>
 #include <iostream>
 #include <occ/core/kabsch.h>
 
@@ -330,7 +331,6 @@ void CrystalStructure::updateAtomFragmentMapping(const Fragment &frag) {
     thisIndex.k = -atomIndex.y;
     thisIndex.l = -atomIndex.z;
     m_unitCellAtomFragments[atomIndex.unique] = thisIndex;
-    qDebug() << atomIndex.unique << thisIndex;
   }
 }
 
@@ -1467,8 +1467,13 @@ CrystalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
 void CrystalStructure::buildDimerMappingTable(double maxRadius) {
   // TODO extend dimer calculationg on the fly when people have dimers with
   // higher than current max radius
+  qDebug() << "Evaluating unit cell dimers: " << maxRadius;
+  qDebug() << "Evaluating unit cell molecules: "
+           << m_crystal.unit_cell_molecules().size();
+  QElapsedTimer timer;
+  timer.start();
   m_unitCellDimers = m_crystal.unit_cell_dimers(maxRadius);
-  qDebug() << "Building dimer mapping table";
+  qDebug() << "Done with unit cell dimers, took " << timer.elapsed() << "ms";
   qDebug() << "Unit cell molecules" << m_unitCellFragments.size();
   qDebug() << "Unique dimers:" << m_unitCellDimers.unique_dimers.size();
 
@@ -1616,6 +1621,8 @@ nlohmann::json CrystalStructure::toJson() const {
   j["atomIndices"] = m_unitCellOffsets;
   // Crystal will automatically serialize using the ADL serializer
   j["crystal"] = m_crystal;
+  qDebug() << "scrystal has" << m_crystal.asymmetric_unit().size()
+           << "atoms in the asymmetric unit";
 
   return j;
 }
@@ -1639,6 +1646,8 @@ bool CrystalStructure::fromJson(const nlohmann::json &j) {
   try {
     qDebug() << "Loading crystal data";
     OccCrystal crystal = j.at("crystal").get<OccCrystal>();
+    qDebug() << "crystal has" << crystal.asymmetric_unit().size()
+             << "atoms in the asymmetric unit";
 
     qDebug() << "Loading base class data";
     if (!fromJsonBase(j)) {
@@ -1656,8 +1665,11 @@ bool CrystalStructure::fromJson(const nlohmann::json &j) {
     qDebug() << "CrystalStructure loaded successfully";
     qDebug() << "Setting up crystal structure";
     m_crystal = crystal;
+    qDebug() << "Updating fragments";
     updateFragments();
+    qDebug() << "Updating ADPs";
     updateAtomicDisplacementParameters();
+    qDebug() << "Building dimer mapping table";
     buildDimerMappingTable();
     updateBondGraph();
     return true;
