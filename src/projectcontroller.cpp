@@ -1,6 +1,7 @@
 #include "projectcontroller.h"
 #include "object_tree_model.h"
 #include <QKeyEvent>
+#include <QMenu>
 
 ProjectController::ProjectController(Project *project, QWidget *parent)
     : QWidget(parent), m_project(project) {
@@ -13,6 +14,7 @@ void ProjectController::initConnections() {
   structureListView->installEventFilter(this);
   structureTreeView->installEventFilter(this);
 
+  setupContextMenus();
   connect(structureTreeView, &QTreeView::clicked, this,
           &ProjectController::structureViewClicked);
 
@@ -21,17 +23,37 @@ void ProjectController::initConnections() {
             &ProjectController::handleSceneSelectionChange);
     connect(m_project, &Project::projectModified, this,
             &ProjectController::handleProjectModified);
-
-    connect(structureListView->selectionModel(),
-            &QItemSelectionModel::selectionChanged, m_project,
-            &Project::onSelectionChanged, Qt::UniqueConnection);
   }
 }
 
 void ProjectController::updateProjectView() {
   if (m_project) {
+    if (structureListView->selectionModel()) {
+      disconnect(structureListView->selectionModel(),
+                 &QItemSelectionModel::selectionChanged, m_project,
+                 &Project::onSelectionChanged);
+    }
+
+    if (structureTreeView->selectionModel()) {
+      disconnect(structureTreeView->selectionModel(),
+                 &QItemSelectionModel::selectionChanged, this,
+                 &ProjectController::onStructureViewSelectionChanged);
+    }
+
     structureListView->setModel(m_project);
     updateSurfaceInfo(m_project->currentScene());
+
+    if (structureListView->selectionModel()) {
+      connect(structureListView->selectionModel(),
+              &QItemSelectionModel::selectionChanged, m_project,
+              &Project::onSelectionChanged);
+    }
+
+    if (structureTreeView->selectionModel()) {
+      connect(structureTreeView->selectionModel(),
+              &QItemSelectionModel::selectionChanged, this,
+              &ProjectController::onStructureViewSelectionChanged);
+    }
   } else {
     structureListView->setModel(nullptr);
     structureTreeView->setModel(nullptr);
@@ -112,10 +134,6 @@ void ProjectController::updateSurfaceInfo(Scene *scene) {
     return;
   }
   structureTreeView->setModel(scene->chemicalStructure()->treeModel());
-  connect(structureTreeView->selectionModel(),
-          &QItemSelectionModel::selectionChanged, this,
-          &ProjectController::onStructureViewSelectionChanged,
-          Qt::UniqueConnection);
 }
 
 void ProjectController::onStructureViewSelectionChanged(
@@ -136,16 +154,44 @@ bool ProjectController::eventFilter(QObject *obj, QEvent *event) {
       if (keyEvent->key() == Qt::Key_Delete ||
           keyEvent->key() == Qt::Key_Backspace) {
         if (obj == structureListView && m_project) {
-          m_project->removeCurrentCrystal();
+          // Get the currently selected index
+          QModelIndex currentIndex = structureListView->currentIndex();
+          if (currentIndex.isValid()) {
+            // Use the model's removeScene method
+            m_project->removeScene(currentIndex.row());
+            return true;
+          }
         } else if (obj == structureTreeView && m_project &&
                    m_project->currentScene()) {
           // Let the project handle surface deletion through the tree model
           m_project->currentScene()->setNeedsUpdate();
           emit m_project->sceneContentChanged();
+          return true;
         }
-        return true;
       }
     }
   }
   return QWidget::eventFilter(obj, event);
+}
+
+void ProjectController::setupContextMenus() {
+  structureListView->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(structureListView, &QWidget::customContextMenuRequested, this,
+          &ProjectController::showStructureListContextMenu);
+}
+
+void ProjectController::showStructureListContextMenu(const QPoint &pos) {
+  QModelIndex index = structureListView->indexAt(pos);
+  if (!index.isValid() || !m_project)
+    return;
+
+  QMenu contextMenu(tr("Structure Menu"), this);
+
+  QAction *deleteAction = contextMenu.addAction(tr("Delete Structure"));
+  connect(deleteAction, &QAction::triggered, this,
+          [this, index]() { m_project->removeScene(index.row()); });
+
+  // Add other context menu actions as needed
+
+  contextMenu.exec(structureListView->mapToGlobal(pos));
 }

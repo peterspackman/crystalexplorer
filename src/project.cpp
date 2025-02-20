@@ -877,6 +877,7 @@ QModelIndex Project::parent(const QModelIndex &index) const {
 void Project::onSelectionChanged(const QItemSelection &selected,
                                  const QItemSelection &deselected) {
   Q_UNUSED(deselected); // If not used
+  qDebug() << "Selection changed in project" << this;
 
   QModelIndexList indexes = selected.indexes();
   if (!indexes.isEmpty()) {
@@ -966,43 +967,6 @@ void Project::removeAllCrystals() {
   emit sceneSelectionChanged(-1);
 }
 
-void Project::removeCurrentCrystal() {
-  if (m_scenes.isEmpty()) {
-    return;
-  }
-
-  const int currentIdx = m_currentSceneIndex;
-
-  beginRemoveRows(QModelIndex(), currentIdx, currentIdx);
-
-  // Clean up current scene connections
-  tidyUpOutgoingScene();
-
-  // Remove and delete the current scene
-  Scene *sceneToDelete = m_scenes.takeAt(currentIdx);
-  delete sceneToDelete;
-
-  // Update indices
-  if (m_scenes.isEmpty()) {
-    resetModelState();
-  } else {
-    if (m_previousSceneIndex > currentIdx) {
-      --m_previousSceneIndex;
-    }
-    m_currentSceneIndex = qMin(currentIdx, m_scenes.size() - 1);
-  }
-
-  endRemoveRows();
-
-  // Set up connections for the new current scene
-  connectUpCurrentScene();
-
-  m_haveUnsavedChanges = true;
-  emit projectModified();
-  emit sceneSelectionChanged(m_currentSceneIndex);
-}
-
-// Update signal emissions throughout the class
 void Project::setCurrentCrystal(int crystalIndex, bool refresh) {
   if (crystalIndex == -1 || (!refresh && crystalIndex == m_currentSceneIndex)) {
     return;
@@ -1022,4 +986,98 @@ void Project::setCurrentCrystal(int crystalIndex, bool refresh) {
 void Project::setUnsavedChangesExists() {
   m_haveUnsavedChanges = true;
   emit projectModified();
+}
+
+bool Project::removeScene(int index) {
+  if (m_scenes.isEmpty() || index < 0 || index >= m_scenes.size()) {
+    return false;
+  }
+
+  // If this is the last scene, use similar logic to deleteAllStructures
+  if (m_scenes.size() == 1) {
+    beginResetModel(); // Use reset rather than row removal for last item
+
+    // Clean up current scene connections
+    tidyUpOutgoingScene();
+
+    // Delete the last scene
+    delete m_scenes.first();
+    m_scenes.clear();
+
+    // Reset indices
+    m_currentSceneIndex = -1;
+    m_previousSceneIndex = -1;
+
+    endResetModel();
+
+    m_haveUnsavedChanges = true;
+    emit projectModified();
+    emit sceneContentChanged();
+    emit sceneSelectionChanged(-1); // Signal that no scene is selected
+
+    return true;
+  }
+
+  // For non-last scene, use the original implementation
+  beginRemoveRows(QModelIndex(), index, index);
+
+  // Clean up current scene connections if removing the current scene
+  if (index == m_currentSceneIndex) {
+    tidyUpOutgoingScene();
+  }
+
+  // Remove and delete the scene
+  Scene *sceneToDelete = m_scenes.takeAt(index);
+  delete sceneToDelete;
+
+  // Update indices
+  if (m_previousSceneIndex > index) {
+    --m_previousSceneIndex;
+  } else if (m_previousSceneIndex == index) {
+    m_previousSceneIndex = -1;
+  }
+
+  // Update current scene index
+  if (m_currentSceneIndex == index) {
+    m_currentSceneIndex = qMin(index, m_scenes.size() - 1);
+    // Set up connections for the new current scene
+    connectUpCurrentScene();
+  } else if (m_currentSceneIndex > index) {
+    --m_currentSceneIndex;
+  }
+
+  endRemoveRows();
+
+  m_haveUnsavedChanges = true;
+  emit projectModified();
+
+  // Emit selection changed only if the current scene was removed
+  if (index == m_currentSceneIndex) {
+    emit sceneSelectionChanged(m_currentSceneIndex);
+  }
+
+  return true;
+}
+
+Qt::ItemFlags Project::flags(const QModelIndex &index) const {
+  if (!index.isValid())
+    return Qt::NoItemFlags;
+
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
+}
+
+bool Project::removeRows(int row, int count, const QModelIndex &parent) {
+  if (parent.isValid() || row < 0 || (row + count) > m_scenes.size())
+    return false;
+
+  bool success = true;
+
+  // Remove rows one by one from the end to avoid index shifting issues
+  for (int i = count - 1; i >= 0; --i) {
+    if (!removeScene(row + i)) {
+      success = false;
+    }
+  }
+
+  return success;
 }

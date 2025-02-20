@@ -67,6 +67,13 @@ public:
   [[nodiscard]] nlohmann::json toJson() const;
   bool fromJson(const nlohmann::json &);
 
+  // Add model editing capabilities
+  bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
+  Qt::ItemFlags flags(const QModelIndex &index) const override;
+    
+  // Helper method to remove a specific scene
+  bool removeScene(int index);
+
 public slots:
   void frameworkOptionsChanged(FrameworkOptions);
   void onSelectionChanged(const QItemSelection &selected,
@@ -78,7 +85,6 @@ public slots:
   void updateCurrentCrystalContents();
   void generateSlab(SlabGenerationOptions);
   void removeAllCrystals();
-  void removeCurrentCrystal();
   void completeFragmentsForCurrentCrystal();
   void toggleUnitCellAxes(bool);
   void toggleMultipleUnitCellBoxes(bool);

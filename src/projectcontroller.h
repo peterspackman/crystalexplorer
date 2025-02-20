@@ -40,6 +40,8 @@ private slots:
   void structureViewClicked(const QModelIndex &);
   void onStructureViewSelectionChanged(const QItemSelection &selected,
                                        const QItemSelection &deselected);
+  void setupContextMenus();
+  void showStructureListContextMenu(const QPoint &pos);
 
 private:
   void initConnections();
