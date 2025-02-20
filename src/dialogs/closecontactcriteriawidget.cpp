@@ -181,7 +181,7 @@ void CloseContactCriteriaWidget::addRow() {
   donorDropdown->addItems(m_elements);
   acceptorDropdown->addItems(m_elements);
 
-  connect(checkbox, &QCheckBox::stateChanged,
+  connect(checkbox, &QCheckBox::checkStateChanged,
           [this, row]() { criteriaChanged(row); });
 
   connect(donorDropdown, &QComboBox::currentTextChanged,

@@ -1,51 +1,40 @@
 #pragma once
-#include <QWidget>
-
 #include "meshinstance.h"
 #include "molecular_wavefunction.h"
 #include "pair_energy_results.h"
 #include "project.h"
+#include "ui_projectcontroller.h"
+#include <QWidget>
 
-#include "ui_crystalcontroller.h"
-
-class CrystalController : public QWidget, public Ui::CrystalController {
+class ProjectController : public QWidget, public Ui::ProjectController {
   Q_OBJECT
-
 public:
-  CrystalController(QWidget *parent = 0);
+  explicit ProjectController(Project *project, QWidget *parent = nullptr);
+  ~ProjectController() = default;
 
   template <typename T> T *getChild(const QModelIndex &index) {
     if (!index.isValid())
       return nullptr;
-
     ObjectTreeModel *tree =
         qobject_cast<ObjectTreeModel *>(structureTreeView->model());
     if (!tree)
       return nullptr;
-
     QObject *item = static_cast<QObject *>(index.internalPointer());
     return qobject_cast<T *>(item);
   }
 
 public slots:
-  void update(Project *);
   void handleSceneSelectionChange(int);
   void handleChildSelectionChange(QModelIndex);
-
-  void setSurfaceInfo(Project *);
-  void deleteCurrentCrystal() { verifyDeleteCurrentCrystal(); }
-  void deleteAllCrystals();
-  void reset();
+  void handleProjectModified();
 
 signals:
   void structureSelectionChanged(int);
   void childSelectionChanged(QModelIndex);
-  void currentCrystalDeleted();
-  void currentSurfaceDeleted();
-  void allCrystalsDeleted();
+  void projectStateChanged();
 
 protected:
-  bool eventFilter(QObject *, QEvent *);
+  bool eventFilter(QObject *, QEvent *) override;
 
 private slots:
   void structureViewClicked(const QModelIndex &);
@@ -53,9 +42,8 @@ private slots:
                                        const QItemSelection &deselected);
 
 private:
-  void resetViewModel();
   void initConnections();
   void updateSurfaceInfo(Scene *);
-  void verifyDeleteCurrentCrystal();
-  void verifyDeleteCurrentSurface();
+  void updateProjectView();
+  Project *m_project;
 };

@@ -20,17 +20,17 @@ void subscribe(Project *project) {
   if (!scene)
     return;
   QObject::connect(scene, &Scene::contactAtomExpanded, project,
-                   &Project::currentSceneChanged);
+                   &Project::sceneContentChanged);
   QObject::connect(scene, &Scene::viewChanged, project,
                    &Project::currentCrystalViewChanged);
   QObject::connect(scene, &Scene::sceneContentsChanged, project,
-                   &Project::currentSceneChanged);
+                   &Project::sceneContentChanged);
   QObject::connect(scene, &Scene::atomSelectionChanged, project,
                    &Project::atomSelectionChanged);
   QObject::connect(scene, &Scene::structureChanged, project,
                    &Project::structureChanged);
   QObject::connect(scene, &Scene::clickedSurface, project,
-                   &Project::clickedSurface);
+                   &Project::surfaceSelectionChanged);
   QObject::connect(scene, &Scene::clickedSurfacePropertyValue, project,
                    &Project::clickedSurfacePropertyValue);
 }
@@ -40,28 +40,25 @@ void unsubscribe(Project *project) {
   if (!scene)
     return;
   QObject::disconnect(scene, &Scene::contactAtomExpanded, project,
-                      &Project::currentSceneChanged);
+                      &Project::sceneContentChanged);
   QObject::disconnect(scene, &Scene::viewChanged, project,
                       &Project::currentCrystalViewChanged);
   QObject::disconnect(scene, &Scene::sceneContentsChanged, project,
-                      &Project::currentSceneChanged);
+                      &Project::sceneContentChanged);
   QObject::disconnect(scene, &Scene::atomSelectionChanged, project,
                       &Project::atomSelectionChanged);
   QObject::disconnect(scene, &Scene::structureChanged, project,
                       &Project::structureChanged);
   QObject::disconnect(scene, &Scene::clickedSurface, project,
-                      &Project::clickedSurface);
+                      &Project::surfaceSelectionChanged);
   QObject::disconnect(scene, &Scene::clickedSurfacePropertyValue, project,
                       &Project::clickedSurfacePropertyValue);
 }
 } // namespace SceneNotification
 
-Project::Project(QObject *parent) : QAbstractItemModel(parent) {
-  init();
-  initConnections();
-}
+Project::Project(QObject *parent) : QAbstractItemModel(parent) { init(); }
 
-Project::~Project() { deleteAllCrystals(); }
+Project::~Project() { deleteAllStructures(); }
 
 void Project::init() {
   m_sceneKindIcons[ScenePeriodicity::ZeroDimensions] =
@@ -73,29 +70,6 @@ void Project::init() {
   m_previousSceneIndex = -1;
   _saveFilename = "";
   m_haveUnsavedChanges = false;
-}
-
-void Project::initConnections() {}
-
-void Project::reset() { removeAllCrystals(); }
-
-void Project::removeAllCrystals() {
-  init();
-  deleteAllCrystals();
-  emit projectChanged(this);
-  emit selectedSceneChanged(m_currentSceneIndex);
-}
-
-void Project::removeCurrentCrystal() {
-  if (m_scenes.size() == 1) {
-    removeAllCrystals();
-  } else {
-    tidyUpOutgoingScene();
-    deleteCurrentCrystal();
-    connectUpCurrentScene();
-    setUnsavedChangesExists();
-    emit selectedSceneChanged(m_currentSceneIndex);
-  }
 }
 
 ChemicalStructure *Project::currentStructure() {
@@ -133,18 +107,6 @@ void Project::setCurrentCrystal(int crystalIndex) {
   setCurrentCrystal(crystalIndex, false);
 }
 
-void Project::setCurrentCrystal(int crystalIndex, bool refresh) {
-  if (crystalIndex == -1) {
-    return;
-  }
-  if (!refresh && crystalIndex == m_currentSceneIndex) {
-    return;
-  }
-  setCurrentCrystalUnconditionally(crystalIndex);
-  setUnsavedChangesExists();
-  emit selectedSceneChanged(m_currentSceneIndex);
-}
-
 void Project::setCurrentCrystalUnconditionally(int crystalIndex) {
   tidyUpOutgoingScene();
 
@@ -175,7 +137,7 @@ QStringList Project::sceneTitles() {
 void Project::cycleDisorderHighlighting() {
   if (currentScene()) {
     currentScene()->cycleDisorderHighlighting();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -184,7 +146,7 @@ void Project::updateCurrentCrystalContents() {
     return;
   currentScene()->updateForPreferencesChange();
   setUnsavedChangesExists();
-  emit currentSceneChanged();
+  emit sceneContentChanged();
 }
 
 void Project::updateAllCrystalsForChangeInElementData() {
@@ -195,7 +157,7 @@ void Project::updateAllCrystalsForChangeInElementData() {
   }
   if (shouldEmit) {
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -204,17 +166,26 @@ void Project::generateSlab(SlabGenerationOptions options) {
 
   currentScene()->generateSlab(options);
   setUnsavedChangesExists();
-  emit currentSceneChanged();
+  emit sceneContentChanged();
 }
 
-void Project::deleteAllCrystals() {
+void Project::deleteAllStructures() {
+  if (m_scenes.size() < 1)
+    return;
+
+  beginResetModel();
   for (Scene *scene : m_scenes) {
     delete scene;
   }
   m_scenes.clear();
+  m_currentSceneIndex = -1;  // Reset current scene index
+  m_previousSceneIndex = -1; // Reset previous scene index
+  endResetModel();
+  emit sceneContentChanged();
+  emit sceneSelectionChanged(-1);
 }
 
-void Project::deleteCurrentCrystal() {
+void Project::deleteCurrentStructure() {
   Scene *scene = m_scenes.takeAt(m_currentSceneIndex);
   delete scene;
   if (m_scenes.size() == 0) {
@@ -396,7 +367,7 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
   if (position > -1) {
     setUnsavedChangesExists();
     setCurrentCrystal(position);
-    emit selectedSceneChanged(position);
+    emit sceneSelectionChanged(position);
   }
 
   return true;
@@ -426,7 +397,7 @@ bool Project::loadCrystalClearJson(const QString &filename) {
   if (position > -1) {
     setUnsavedChangesExists();
     setCurrentCrystal(position);
-    emit selectedSceneChanged(position);
+    emit sceneSelectionChanged(position);
   }
   return true;
 }
@@ -457,7 +428,7 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
   if (position > -1) {
     setUnsavedChangesExists();
     setCurrentCrystal(position);
-    emit selectedSceneChanged(position);
+    emit sceneSelectionChanged(position);
   }
 
   return true;
@@ -509,9 +480,9 @@ bool Project::loadFromFile(QString filename) {
   if (structure) {
     structure->setFilename(filename);
   }
-  emit selectedSceneChanged(m_currentSceneIndex);
+  emit sceneSelectionChanged(m_currentSceneIndex);
   m_haveUnsavedChanges = false;
-  emit projectChanged(this);
+  emit projectModified();
   return true;
 }
 
@@ -522,7 +493,7 @@ void Project::completeFragmentsForCurrentCrystal() {
 
   currentScene()->completeAllFragments();
   setUnsavedChangesExists();
-  emit currentSceneChanged();
+  emit sceneContentChanged();
   emit showMessage("Complete all fragments");
 }
 
@@ -530,7 +501,7 @@ void Project::toggleUnitCellAxes(bool state) {
   if (currentScene()) {
     currentScene()->setShowCells(state);
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
     emit showMessage(state ? "Show unit cell axes" : "Hide unit cell axes");
   }
 }
@@ -539,7 +510,7 @@ void Project::toggleMultipleUnitCellBoxes(bool state) {
   if (currentScene()) {
     currentScene()->setShowMultipleCells(state);
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -548,14 +519,14 @@ void Project::atomLabelOptionsChanged(AtomLabelOptions options) {
   if (scene) {
     scene->setAtomLabelOptions(options);
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
 void Project::toggleHydrogenAtoms(bool state) {
   if (currentScene()) {
     currentScene()->setShowHydrogenAtoms(state);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
     emit showMessage(state ? "Show hydrogen atoms" : "Hide hydrogen atoms");
   }
 }
@@ -563,7 +534,7 @@ void Project::toggleHydrogenAtoms(bool state) {
 void Project::toggleSuppressedAtoms(bool state) {
   if (currentScene()) {
     currentScene()->setShowSuppressedAtoms(state);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -577,7 +548,7 @@ bool Project::currentHasSelectedAtoms() const {
 void Project::toggleCloseContacts(bool state) {
   if (currentScene()) {
     currentScene()->setShowCloseContacts(state);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
     emit showMessage(state ? "Show close contacts" : "Hide close contacts");
   }
 }
@@ -585,7 +556,7 @@ void Project::toggleCloseContacts(bool state) {
 void Project::toggleHydrogenBonds(bool state) {
   if (currentScene()) {
     currentScene()->setHydrogenBondsVisible(state);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
     emit showMessage(state ? "Show hydrogen bonds" : "Hide hydrogen bonds");
   }
 }
@@ -599,7 +570,7 @@ void Project::updateHydrogenBondCriteria(HBondCriteria criteria) {
   auto *scene = currentScene();
   if (scene) {
     scene->updateHydrogenBondCriteria(criteria);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -609,7 +580,7 @@ void Project::updateCloseContactsCriteria(int contactIndex,
   auto *scene = currentScene();
   if (scene) {
     scene->updateCloseContactsCriteria(contactIndex, criteria);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -618,7 +589,7 @@ void Project::frameworkOptionsChanged(FrameworkOptions options) {
   qDebug() << "Project::frameworkOptionsChanged";
   if (scene) {
     scene->setFrameworkOptions(options);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -626,7 +597,7 @@ void Project::removeIncompleteFragmentsForCurrentCrystal() {
   if (currentScene()) {
     currentScene()->deleteIncompleteFragments();
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -634,7 +605,7 @@ void Project::filterAtomsForCurrentScene(AtomFlag flag, bool state) {
   if (currentScene()) {
     currentScene()->filterAtoms(flag, state);
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -651,11 +622,6 @@ QString Project::projectFileVersion() const { return CX_VERSION; }
 
 QString Project::projectFileCompatibilityVersion() const { return CX_VERSION; }
 
-void Project::setUnsavedChangesExists() {
-  m_haveUnsavedChanges = true;
-  emit projectChanged(this);
-}
-
 void Project::showAtomsWithinRadius(float radius,
                                     bool generateClusterForSelection) {
   if (!currentScene()) {
@@ -663,14 +629,14 @@ void Project::showAtomsWithinRadius(float radius,
   }
 
   currentScene()->expandAtomsWithinRadius(radius, generateClusterForSelection);
-  emit currentSceneChanged();
+  emit sceneContentChanged();
 }
 
 void Project::suppressSelectedAtoms() {
   if (currentScene()) {
     currentScene()->suppressSelectedAtoms();
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -678,28 +644,28 @@ void Project::unsuppressSelectedAtoms() {
   if (currentScene()) {
     currentScene()->unsuppressSelectedAtoms();
     setUnsavedChangesExists();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
 void Project::selectAllAtoms() {
   if (currentScene()) {
     currentScene()->setSelectStatusForAllAtoms(true);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
 void Project::selectSuppressedAtoms() {
   if (currentScene()) {
     currentScene()->setSelectStatusForSuppressedAtoms(true);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
 void Project::selectAtomsOutsideRadiusOfSelectedAtoms(float radius) {
   if (currentScene()) {
     currentScene()->selectAtomsOutsideRadiusOfSelectedAtoms(radius);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -708,7 +674,7 @@ void Project::selectAtomsInsideCurrentSurface() {
   /*
   if (currentScene() && currentScene()->currentSurface()) {
     currentScene()->selectAtomsSeparatedBySurface(true);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
   */
 }
@@ -718,7 +684,7 @@ void Project::selectAtomsOutsideCurrentSurface() {
   /*
   if (currentScene() && currentScene()->currentSurface()) {
     currentScene()->selectAtomsSeparatedBySurface(false);
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
   */
 }
@@ -726,7 +692,7 @@ void Project::selectAtomsOutsideCurrentSurface() {
 void Project::invertSelection() {
   if (currentScene()) {
     currentScene()->invertSelection();
-    emit currentSceneChanged();
+    emit sceneContentChanged();
   }
 }
 
@@ -769,7 +735,10 @@ bool Project::fromJson(const nlohmann::json &j) {
       qWarning() << "Unable to read scene";
       return false;
     }
+
+    beginInsertRows(QModelIndex(), m_scenes.size(), m_scenes.size());
     m_scenes.push_back(s);
+    endInsertRows();
   }
   j.at("currentSceneIndex").get_to(m_currentSceneIndex);
   j.at("previousSceneIndex").get_to(m_previousSceneIndex);
@@ -949,7 +918,7 @@ int Project::setCurrentFrame(int current) {
   int count = structure->frameCount();
   current = std::clamp(current, 0, count - 1);
   structure->setCurrentFrameIndex(current);
-  emit currentSceneChanged();
+  emit sceneContentChanged();
   emit showMessage(QString("Show frame %1").arg(current));
   return current;
 }
@@ -967,4 +936,90 @@ bool Project::exportCurrentGeometryToFile(const QString &filename) {
     return false;
   XYZFile xyz(nums, pos);
   return xyz.writeToFile(filename);
+}
+
+void Project::clearScenes() {
+  beginResetModel();
+  for (Scene *scene : m_scenes) {
+    delete scene;
+  }
+  m_scenes.clear();
+  resetModelState();
+  endResetModel();
+}
+
+void Project::resetModelState() {
+  m_currentSceneIndex = -1;
+  m_previousSceneIndex = -1;
+  m_haveUnsavedChanges = false;
+}
+
+void Project::reset() {
+  clearScenes();
+  emit projectModified();
+  emit sceneSelectionChanged(-1);
+}
+
+void Project::removeAllCrystals() {
+  clearScenes();
+  emit projectModified();
+  emit sceneSelectionChanged(-1);
+}
+
+void Project::removeCurrentCrystal() {
+  if (m_scenes.isEmpty()) {
+    return;
+  }
+
+  const int currentIdx = m_currentSceneIndex;
+
+  beginRemoveRows(QModelIndex(), currentIdx, currentIdx);
+
+  // Clean up current scene connections
+  tidyUpOutgoingScene();
+
+  // Remove and delete the current scene
+  Scene *sceneToDelete = m_scenes.takeAt(currentIdx);
+  delete sceneToDelete;
+
+  // Update indices
+  if (m_scenes.isEmpty()) {
+    resetModelState();
+  } else {
+    if (m_previousSceneIndex > currentIdx) {
+      --m_previousSceneIndex;
+    }
+    m_currentSceneIndex = qMin(currentIdx, m_scenes.size() - 1);
+  }
+
+  endRemoveRows();
+
+  // Set up connections for the new current scene
+  connectUpCurrentScene();
+
+  m_haveUnsavedChanges = true;
+  emit projectModified();
+  emit sceneSelectionChanged(m_currentSceneIndex);
+}
+
+// Update signal emissions throughout the class
+void Project::setCurrentCrystal(int crystalIndex, bool refresh) {
+  if (crystalIndex == -1 || (!refresh && crystalIndex == m_currentSceneIndex)) {
+    return;
+  }
+
+  if (crystalIndex >= m_scenes.size()) {
+    qWarning() << "Invalid crystal index:" << crystalIndex;
+    return;
+  }
+
+  setCurrentCrystalUnconditionally(crystalIndex);
+  m_haveUnsavedChanges = true;
+  emit sceneSelectionChanged(m_currentSceneIndex);
+}
+
+// Update other methods to use new signals
+void Project::setUnsavedChangesExists() {
+  m_haveUnsavedChanges = true;
+  emit projectModified();
 }

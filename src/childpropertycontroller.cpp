@@ -19,6 +19,7 @@ ChildPropertyController::ChildPropertyController(QWidget *parent)
 }
 
 void ChildPropertyController::reset() {
+  qDebug() << "Reset called on childPropertyController";
   // Clear each type without affecting enabled state
   m_meshPropertyModel->setMesh(nullptr);
   m_pairInteractions = nullptr;

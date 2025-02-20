@@ -8,7 +8,7 @@
 #include <QtConcurrent>
 
 #include "childpropertycontroller.h"
-#include "crystalcontroller.h"
+#include "projectcontroller.h"
 #include "fingerprintwindow.h"
 #include "glwindow.h"
 #include "project.h"
@@ -179,7 +179,7 @@ private:
   void createToolbars();
   void createDockWidgets();
   void createChildPropertyControllerDockWidget();
-  void createCrystalControllerDockWidget();
+  void createProjectControllerDockWidget();
   void initConnections();
   void initMenuConnections();
   void initActionGroups();
@@ -225,7 +225,7 @@ private:
   GLWindow *glWindow{nullptr};
   ViewToolbar *viewToolbar{nullptr};
   ChildPropertyController *childPropertyController{nullptr};
-  CrystalController *crystalController{nullptr};
+  ProjectController *projectController{nullptr};
   SurfaceGenerationDialog *m_surfaceGenerationDialog{nullptr};
   WavefunctionCalculationDialog *wavefunctionCalculationDialog{nullptr};
   EnergyCalculationDialog *m_energyCalculationDialog{nullptr};
@@ -238,7 +238,7 @@ private:
   PlaneGenerationDialog *m_planeGenerationDialog{nullptr};
 
   QDockWidget *childPropertyControllerDockWidget{nullptr};
-  QDockWidget *crystalControllerDockWidget{nullptr};
+  QDockWidget *projectControllerDockWidget{nullptr};
   QAction *quitAction{nullptr};
   QAction *recentFileActions[MAXHISTORYSIZE];
   QVector<QAction *> moleculeStyleActions;

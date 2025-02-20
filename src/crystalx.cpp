@@ -202,7 +202,7 @@ void Crystalx::initInfoViewer() {
 }
 
 void Crystalx::createDockWidgets() {
-  createCrystalControllerDockWidget();
+  createProjectControllerDockWidget();
   createChildPropertyControllerDockWidget();
 }
 
@@ -230,9 +230,9 @@ void Crystalx::createChildPropertyControllerDockWidget() {
           &ChildPropertyController::frameworkOptionsChanged, project,
           &Project::frameworkOptionsChanged);
 
-  connect(crystalController, &CrystalController::childSelectionChanged,
+  connect(projectController, &ProjectController::childSelectionChanged,
           [&](QModelIndex index) {
-            auto *obj = crystalController->getChild<QObject>(index);
+            auto *obj = projectController->getChild<QObject>(index);
             childPropertyController->setCurrentObject(obj);
 
             // Handle frame setting separately since it's project-specific
@@ -249,28 +249,28 @@ void Crystalx::createChildPropertyControllerDockWidget() {
           &Crystalx::handleMeshSelectionChanged);
 }
 
-void Crystalx::createCrystalControllerDockWidget() {
-  crystalController = new CrystalController();
-  crystalControllerDockWidget = new QDockWidget(tr("Structures"));
-  crystalControllerDockWidget->setObjectName("crystalControllerDockWidget");
-  crystalControllerDockWidget->setWidget(crystalController);
-  crystalControllerDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
-  crystalControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
-  crystalControllerDockWidget->adjustSize();
-  // crystalControllerDockWidget->setFocus();
+void Crystalx::createProjectControllerDockWidget() {
+  projectController = new ProjectController(project, this);
+  projectControllerDockWidget = new QDockWidget(tr("Structures"));
+  projectControllerDockWidget->setObjectName("projectControllerDockWidget");
+  projectControllerDockWidget->setWidget(projectController);
+  projectControllerDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
+  projectControllerDockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
+  projectControllerDockWidget->adjustSize();
+  // projectControllerDockWidget->setFocus();
 
-  connect(project, &Project::clickedSurface, crystalController,
-          &CrystalController::handleChildSelectionChange);
+  connect(project, &Project::surfaceSelectionChanged, projectController,
+          &ProjectController::handleChildSelectionChange);
 
-  addDockWidget(Qt::RightDockWidgetArea, crystalControllerDockWidget);
+  addDockWidget(Qt::RightDockWidgetArea, projectControllerDockWidget);
 }
 
 void Crystalx::initConnections() {
   initMenuConnections();
 
   // Project connections - project changed in some way
-  connect(project, &Project::projectChanged, crystalController,
-          &CrystalController::update);
+  connect(project, &Project::projectModified, projectController,
+          &ProjectController::handleProjectModified);
 
   connect(project, &Project::structureChanged, this,
           &Crystalx::handleStructureChange);
@@ -279,31 +279,34 @@ void Crystalx::initConnections() {
           &Crystalx::handleBusyStateChange);
 
   // Project connections - current crystal changed in some way
-  connect(project, &Project::selectedSceneChanged, crystalController,
-          &CrystalController::handleSceneSelectionChange);
-  connect(project, &Project::selectedSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, projectController,
+          &ProjectController::handleSceneSelectionChange);
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::handleSceneSelectionChange);
-  connect(project, &Project::selectedSceneChanged,
+  connect(project, &Project::sceneSelectionChanged,
           [&](int) { glWindow->setCurrentCrystal(project); });
   connect(project, &Project::projectSaved, this, &Crystalx::updateWindowTitle);
-  connect(project, &Project::projectChanged, this,
+  connect(project, &Project::projectModified, this,
           &Crystalx::updateWindowTitle);
-  connect(project, &Project::selectedSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::updateWindowTitle);
-  connect(project, &Project::selectedSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::handleAtomSelectionChanged);
-  connect(project, &Project::selectedSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::updateMenuOptionsForScene);
-  connect(project, &Project::selectedSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::updateCloseContactOptions);
-  connect(project, &Project::selectedSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::allowCloneSurfaceAction);
-  connect(project, &Project::selectedSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::updateCrystalActions);
-  connect(project, &Project::selectedSceneChanged, infoViewer,
+  connect(project, &Project::sceneSelectionChanged, infoViewer,
           &InfoViewer::updateInfoViewerForCrystalChange);
-  connect(project, &Project::currentSceneChanged, glWindow, &GLWindow::redraw);
-  connect(project, &Project::currentSceneChanged, this,
+  connect(project, &Project::sceneSelectionChanged, glWindow,
+          &GLWindow::redraw);
+  connect(project, &Project::sceneContentChanged, glWindow, &GLWindow::redraw);
+  connect(project, &Project::projectModified, glWindow, &GLWindow::redraw);
+  connect(project, &Project::sceneSelectionChanged, this,
           &Crystalx::allowCloneSurfaceAction);
   connect(project, &Project::currentCrystalReset, glWindow,
           &GLWindow::resetViewAndRedraw);
@@ -315,12 +318,8 @@ void Crystalx::initConnections() {
           &Crystalx::uncheckContactAtomsAction);
 
   // Crystal controller connections
-  connect(crystalController, &CrystalController::structureSelectionChanged,
+  connect(projectController, &ProjectController::structureSelectionChanged,
           project, QOverload<int>::of(&Project::setCurrentCrystal));
-  connect(crystalController, &CrystalController::deleteCurrentCrystal, project,
-          &Project::removeCurrentCrystal);
-  connect(crystalController, &CrystalController::deleteAllCrystals, project,
-          &Project::removeAllCrystals);
 
   // Fingerprint window connections
   connect(fingerprintWindow, &FingerprintWindow::surfaceFeatureChanged,
@@ -615,13 +614,9 @@ void Crystalx::toggleAnimation(bool animate) {
   animateAction->setChecked(animate);
 }
 
-void Crystalx::clearCurrent() { crystalController->deleteCurrentCrystal(); }
+void Crystalx::clearCurrent() { project->deleteCurrentStructure(); }
 
-void Crystalx::clearAll() {
-  crystalController->deleteAllCrystals();
-  if (childPropertyController)
-    childPropertyController->reset();
-}
+void Crystalx::clearAll() { project->deleteAllStructures(); }
 
 void Crystalx::generateSlab() {
   Q_ASSERT(project->currentScene());
@@ -969,7 +964,7 @@ void Crystalx::jobCancelled(QString message) {
 void Crystalx::setBusy(bool busy) {
   setBusyIcon(busy);
   disableActionsWhenBusy(busy);
-  crystalController->setEnabled(!busy);
+  projectController->setEnabled(!busy);
   viewToolbar->showCalculationRunning(busy);
   _jobCancel->setVisible(busy);
   if (!busy) {
@@ -1448,12 +1443,10 @@ void Crystalx::newProject() {
   if (closeProjectConfirmed()) {
     glWindow->pauseRendering();
     project->reset();
-    crystalController->reset();
     if (childPropertyController)
       childPropertyController->reset();
     glWindow->setCurrentCrystal(project);
     glWindow->resumeRendering();
-    crystalController->update(project);
   }
 }
 
@@ -1751,7 +1744,6 @@ void Crystalx::cloneSurface() {
       qDebug() << "Cloned surface: " << instance;
     }
   }
-  crystalController->setSurfaceInfo(project);
 }
 
 void Crystalx::showEnergyCalculationDialog() {
@@ -1982,11 +1974,13 @@ void Crystalx::handleSceneSelectionChange() { handleStructureChange(); }
 void Crystalx::handleStructureChange() {
   auto *scene = project->currentScene();
   if (!scene) {
+    childPropertyController->reset();
     clearAll();
     return;
   }
   auto *structure = scene->chemicalStructure();
   if (!structure) {
+    childPropertyController->reset();
     clearAll();
     return;
   }

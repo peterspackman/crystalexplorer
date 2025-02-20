@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CrystalController</class>
- <widget class="QWidget" name="CrystalController">
+ <class>ProjectController</class>
+ <widget class="QWidget" name="ProjectController">
   <property name="geometry">
    <rect>
     <x>0</x>

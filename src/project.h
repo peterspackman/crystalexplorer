@@ -73,6 +73,8 @@ public slots:
                           const QItemSelection &deselected);
   void setCurrentCrystal(int);
   void setCurrentCrystal(int, bool);
+  void deleteCurrentStructure();
+  void deleteAllStructures();
   void updateCurrentCrystalContents();
   void generateSlab(SlabGenerationOptions);
   void removeAllCrystals();
@@ -112,30 +114,31 @@ public slots:
 
 signals:
   void showMessage(QString);
-  void projectChanged(Project *);
+  void projectModified(); // Instead of projectChanged(Project*)
   void projectSaved();
-  void selectedSceneChanged(int);
-  void currentSceneChanged();
+  void
+  sceneSelectionChanged(int index); // More specific than selectedSceneChanged
+  void sceneContentChanged();       // Instead of currentSceneChanged
   void atomSelectionChanged();
   void contactAtomsTurnedOff();
   void surfaceVisibilitiesChanged(Project *);
   void currentCrystalReset();
   void currentCrystalViewChanged();
   void structureChanged();
-  void clickedSurface(QModelIndex);
+  void surfaceSelectionChanged(
+      const QModelIndex &index); // Instead of clickedSurface
   void clickedSurfacePropertyValue(float);
 
 private:
   void init();
-  void initConnections();
   void tidyUpOutgoingScene();
   void connectUpCurrentScene();
-  void deleteAllCrystals();
-  void deleteCurrentCrystal();
   void setCurrentCrystalUnconditionally(int);
   QString projectFileVersion() const;
   QString projectFileCompatibilityVersion() const;
   void setUnsavedChangesExists();
+  void clearScenes();     // New private helper method
+  void resetModelState(); // New private helper method
 
   QVector<Scene *> m_scenes;
   int m_currentSceneIndex{-1};
