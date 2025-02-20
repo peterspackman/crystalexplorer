@@ -1621,11 +1621,21 @@ void Scene::completeFragmentContainingAtom(int atomIndex) {
 }
 
 nlohmann::json Scene::toJson() const {
-  return {
+  nlohmann::json j = {
       {"title", m_name},
       {"structure", m_structure->toJson()},
       {"orientation", m_orientation},
   };
+
+  j["meshes"] = nlohmann::json::array();
+  for (auto *obj : m_structure->children()) {
+    if (auto *mesh = qobject_cast<Mesh *>(obj)) {
+      nlohmann::json meshJson = mesh->toJson();
+      j["meshes"].push_back(meshJson);
+    }
+  }
+
+  return j;
 }
 
 bool Scene::fromJson(const nlohmann::json &j) {
@@ -1678,10 +1688,42 @@ bool Scene::fromJson(const nlohmann::json &j) {
     m_structure = structure;
     j.at("orientation").get_to(m_orientation);
     j.at("title").get_to(m_name);
+
+    // Load meshes if present
+    if (j.contains("meshes")) {
+      qDebug() << "Loading" << j["meshes"].size() << "meshes";
+      for (const auto &meshJson : j["meshes"]) {
+        Mesh *mesh = new Mesh();
+        if (!mesh->fromJson(meshJson)) {
+          qDebug() << "Failed to load mesh";
+          delete mesh;
+          continue;
+        }
+        mesh->setParent(m_structure);
+
+        // Create MeshInstance children if they exist in the mesh JSON
+        if (meshJson.contains("instances")) {
+          for (const auto &instanceJson : meshJson["instances"]) {
+            Eigen::Matrix4d transform;
+            instanceJson["transform"].get_to(transform);
+
+            MeshInstance *instance =
+                new MeshInstance(mesh, Eigen::Isometry3d(transform));
+            instance->setObjectName(QString::fromStdString(
+                instanceJson["name"].get<std::string>()));
+          }
+        }
+      }
+    }
+
+    if(m_structureRenderer != nullptr) {
+      qDebug() << "Purge structure renderer";
+      delete m_structureRenderer;
+      m_structureRenderer = nullptr;
+    }
     setNeedsUpdate();
     qDebug() << "Scene loaded successfully with title:" << m_name;
     return true;
-
   } catch (const nlohmann::json::exception &e) {
     qDebug() << "Scene loading failed: JSON exception:" << e.what();
     delete structure;

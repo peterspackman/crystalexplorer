@@ -153,3 +153,12 @@ void from_json(const nlohmann::json &j,
                isosurface::SurfacePropertyDescription &);
 void to_json(nlohmann::json &j, const isosurface::SurfaceDescription &);
 void from_json(const nlohmann::json &j, isosurface::SurfaceDescription &);
+
+void to_json(nlohmann::json &j, const isosurface::Resolution &res);
+void from_json(const nlohmann::json &j, isosurface::Resolution &res);
+
+void to_json(nlohmann::json &j, const isosurface::Kind &kind);
+void from_json(const nlohmann::json &j, isosurface::Kind &kind);
+
+void to_json(nlohmann::json &j, const isosurface::OrbitalDetails &details);
+void from_json(const nlohmann::json &j, isosurface::OrbitalDetails &details);

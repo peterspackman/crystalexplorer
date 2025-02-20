@@ -93,6 +93,8 @@ public slots:
   void lightSettingsChanged();
   void textSettingsChanged();
   void handleAtomLabelOptionsChanged(AtomLabelOptions);
+  void pauseRendering();
+  void resumeRendering();
 
 signals:
   void scaleChanged(float);
@@ -203,6 +205,7 @@ private:
   void showSuppressedAtoms(bool);
   void showMessage(const QString &);
 
+  bool m_renderingEnabled{true};
   Scene *scene{nullptr};
   QMatrix4x4 m_projection, m_view, m_model;
 

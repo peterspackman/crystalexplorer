@@ -615,10 +615,10 @@ void Crystalx::toggleAnimation(bool animate) {
   animateAction->setChecked(animate);
 }
 
-void Crystalx::clearCurrent() { crystalController->clearCurrentCrystal(); }
+void Crystalx::clearCurrent() { crystalController->deleteCurrentCrystal(); }
 
 void Crystalx::clearAll() {
-  crystalController->clearAllCrystals();
+  crystalController->deleteAllCrystals();
   if (childPropertyController)
     childPropertyController->reset();
 }
@@ -1446,8 +1446,14 @@ void Crystalx::handleAtomLabelActions() {
 
 void Crystalx::newProject() {
   if (closeProjectConfirmed()) {
+    glWindow->pauseRendering();
     project->reset();
-    clearAll();
+    crystalController->reset();
+    if (childPropertyController)
+      childPropertyController->reset();
+    glWindow->setCurrentCrystal(project);
+    glWindow->resumeRendering();
+    crystalController->update(project);
   }
 }
 

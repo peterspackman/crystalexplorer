@@ -110,6 +110,7 @@ public slots:
   void updateThermalEllipsoidProbability(double);
 
 private:
+  void connectMeshSignals(Mesh* mesh);
   bool needsUpdate();
   void initStructureChildren();
 

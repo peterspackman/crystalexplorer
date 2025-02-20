@@ -1,31 +1,30 @@
 #pragma once
 #include <QWidget>
 
-#include "project.h"
 #include "meshinstance.h"
-#include "pair_energy_results.h"
 #include "molecular_wavefunction.h"
+#include "pair_energy_results.h"
+#include "project.h"
 
 #include "ui_crystalcontroller.h"
 
-/*!
- \brief A simpler replacement for the masterlist
- */
 class CrystalController : public QWidget, public Ui::CrystalController {
   Q_OBJECT
 
 public:
   CrystalController(QWidget *parent = 0);
 
-  template<typename T>
-  T* getChild(const QModelIndex &index) {
-      if (!index.isValid()) return nullptr;
+  template <typename T> T *getChild(const QModelIndex &index) {
+    if (!index.isValid())
+      return nullptr;
 
-      ObjectTreeModel * tree = qobject_cast<ObjectTreeModel*>(structureTreeView->model());
-      if (!tree) return nullptr;
+    ObjectTreeModel *tree =
+        qobject_cast<ObjectTreeModel *>(structureTreeView->model());
+    if (!tree)
+      return nullptr;
 
-      QObject* item = static_cast<QObject*>(index.internalPointer());
-      return qobject_cast<T*>(item);
+    QObject *item = static_cast<QObject *>(index.internalPointer());
+    return qobject_cast<T *>(item);
   }
 
 public slots:
@@ -34,25 +33,27 @@ public slots:
   void handleChildSelectionChange(QModelIndex);
 
   void setSurfaceInfo(Project *);
-  void clearCurrentCrystal() { verifyDeleteCurrentCrystal(); }
-  void clearAllCrystals();
-  void updateVisibilityIconsForSurfaces(Project *);
+  void deleteCurrentCrystal() { verifyDeleteCurrentCrystal(); }
+  void deleteAllCrystals();
+  void reset();
 
 signals:
   void structureSelectionChanged(int);
   void childSelectionChanged(QModelIndex);
-  void deleteCurrentCrystal();
-  void deleteCurrentSurface();
-  void deleteAllCrystals();
+  void currentCrystalDeleted();
+  void currentSurfaceDeleted();
+  void allCrystalsDeleted();
 
 protected:
   bool eventFilter(QObject *, QEvent *);
 
 private slots:
   void structureViewClicked(const QModelIndex &);
-  void onStructureViewSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+  void onStructureViewSelectionChanged(const QItemSelection &selected,
+                                       const QItemSelection &deselected);
 
 private:
+  void resetViewModel();
   void initConnections();
   void updateSurfaceInfo(Scene *);
   void verifyDeleteCurrentCrystal();

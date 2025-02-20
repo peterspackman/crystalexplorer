@@ -313,6 +313,8 @@ void GLWindow::updateFrontClippingPlane(float clippingPlane) {
 }
 
 void GLWindow::paintGL() {
+  if (!m_renderingEnabled)
+    return;
 
   m_framebuffer->bind();
   if (enableDepthTest) {
@@ -982,15 +984,17 @@ void GLWindow::showGeneralContextMenu(const QPoint &pos) {
 }
 
 void GLWindow::handleAtomLabelOptionsChanged(AtomLabelOptions options) {
-  if(!scene) return;
+  if (!scene)
+    return;
   auto currentOptions = scene->atomLabelOptions();
-  if(options != currentOptions) {
+  if (options != currentOptions) {
     emit atomLabelOptionsChanged(options);
   }
 }
 
 void GLWindow::updateAtomLabelContextMenu(QMenu *contextMenu) {
-  if(!scene) return;
+  if (!scene)
+    return;
   auto current = scene->atomLabelOptions();
 
   if (current.showAtoms) {
@@ -999,8 +1003,7 @@ void GLWindow::updateAtomLabelContextMenu(QMenu *contextMenu) {
       opts.showAtoms = false;
       handleAtomLabelOptionsChanged(opts);
     });
-  }
-  else {
+  } else {
     contextMenu->addAction("Show Atom Labels", this, [current, this]() {
       auto opts = current;
       opts.showAtoms = true;
@@ -1014,8 +1017,7 @@ void GLWindow::updateAtomLabelContextMenu(QMenu *contextMenu) {
       opts.showFragment = false;
       handleAtomLabelOptionsChanged(opts);
     });
-  }
-  else {
+  } else {
     contextMenu->addAction("Show Fragment Labels", this, [current, this]() {
       auto opts = current;
       opts.showFragment = true;
@@ -1551,6 +1553,13 @@ void GLWindow::updateScale(GLfloat scale, bool doEmit) {
   if (doEmit) {
     emit scaleChanged(scale);
   }
+}
+
+void GLWindow::pauseRendering() { m_renderingEnabled = false; }
+
+void GLWindow::resumeRendering() {
+  m_renderingEnabled = true;
+  redraw();
 }
 
 void GLWindow::setCurrentCrystal(Project *project) {

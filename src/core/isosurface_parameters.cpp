@@ -85,6 +85,36 @@ void from_json(const nlohmann::json &j, isosurface::SurfaceDescription &s) {
   }
 }
 
+void to_json(nlohmann::json& j, const isosurface::Resolution& res) {
+    j = isosurface::resolutionToString(res);
+}
+
+void from_json(const nlohmann::json& j, isosurface::Resolution& res) {
+    res = isosurface::stringToResolution(QString::fromStdString(j.get<std::string>()));
+}
+
+void to_json(nlohmann::json& j, const isosurface::Kind& kind) {
+    j = isosurface::kindToString(kind).toStdString();
+}
+
+void from_json(const nlohmann::json& j, isosurface::Kind& kind) {
+    kind = isosurface::stringToKind(QString::fromStdString(j.get<std::string>()));
+}
+
+void to_json(nlohmann::json& j, const isosurface::OrbitalDetails& details) {
+    j = {
+        {"label", details.label.toStdString()},
+        {"index", details.index},
+        {"occupied", details.occupied}
+    };
+}
+
+void from_json(const nlohmann::json& j, isosurface::OrbitalDetails& details) {
+    details.label = QString::fromStdString(j.at("label").get<std::string>());
+    details.index = j.at("index").get<int>();
+    details.occupied = j.at("occupied").get<bool>();
+}
+
 namespace isosurface {
 
 QString kindToString(Kind kind) {

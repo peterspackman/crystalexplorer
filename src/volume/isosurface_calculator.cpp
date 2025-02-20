@@ -10,6 +10,14 @@
 
 namespace volume {
 
+inline Mesh::Attributes makeAttributes(const isosurface::Parameters &params) {
+  Mesh::Attributes attr;
+  attr.kind = params.kind;
+  attr.isovalue = params.isovalue;
+  attr.separation = params.separation;
+  return attr;
+}
+
 IsosurfaceCalculator::IsosurfaceCalculator(QObject *parent) : QObject(parent) {
   // TODO streamline this
   m_occExecutable =
@@ -180,7 +188,7 @@ void IsosurfaceCalculator::surfaceComplete() {
     if (idx > 0)
       params.isovalue = -params.isovalue;
     mesh->setObjectName(m_name);
-    mesh->setParameters(params);
+    mesh->setAttributes(makeAttributes(params));
     mesh->setAtomsInside(m_atomsInside);
     mesh->setAtomsOutside(m_atomsOutside);
     setFragmentPatchForMesh(mesh, params.structure);

@@ -1647,6 +1647,7 @@ bool CrystalStructure::fromJson(const nlohmann::json &j) {
     }
 
     j.at("atomIndices").get_to(m_unitCellOffsets);
+    // rebuild atom map after unit cell offsets
     m_atomMap.clear();
     for (int i = 0; i < m_unitCellOffsets.size(); i++) {
       m_atomMap.insert({m_unitCellOffsets[i], i});

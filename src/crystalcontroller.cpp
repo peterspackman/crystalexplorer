@@ -89,7 +89,8 @@ void CrystalController::structureViewClicked(const QModelIndex &index) {
   if (item) {
     // Toggle the visibility);
     auto prop = item->property("visible");
-    if(prop.isNull()) return;
+    if (prop.isNull())
+      return;
     bool currentVisibility = prop.toBool();
     item->setProperty("visible", !currentVisibility);
     qDebug() << "Setting object visibility";
@@ -153,54 +154,75 @@ bool CrystalController::eventFilter(QObject *obj, QEvent *event) {
   return false;
 }
 
-void CrystalController::clearAllCrystals() {
-  qDebug() << "Clear all crystals";
-  /*
-if (structureListWidget->count() > 0 &&
-    ConfirmationBox::confirmCrystalDeletion(true)) {
-  emit deleteAllCrystals();
+void CrystalController::resetViewModel() {
+  if (structureTreeView->model()) {
+    disconnect(structureTreeView->model(), nullptr, this, nullptr);
+    structureTreeView->setModel(nullptr);
+  }
+  if (structureListView->model()) {
+    disconnect(structureListView->model(), nullptr, this, nullptr);
+    structureListView->setModel(nullptr);
+  }
 }
-*/
+
+void CrystalController::reset() {
+  resetViewModel();
+  structureListView->setModel(nullptr);
+  structureTreeView->setModel(nullptr);
 }
 
 void CrystalController::verifyDeleteCurrentCrystal() {
-  qDebug() << "Delete current crystal";
-  /*
-if (structureListWidget->currentItem() &&
-    ConfirmationBox::confirmCrystalDeletion(
-        false, structureListWidget->currentItem()->text())) {
-  emit deleteCurrentCrystal();
-}
-*/
+  auto *project = qobject_cast<Project *>(structureListView->model());
+  if (!project)
+    return;
+
+  QModelIndex currentIndex = structureListView->currentIndex();
+  if (!currentIndex.isValid())
+    return;
+
+  QString crystalName = project->data(currentIndex, Qt::DisplayRole).toString();
+  if (ConfirmationBox::confirmCrystalDeletion(false, crystalName)) {
+    emit currentCrystalDeleted();
+    reset();
+  }
 }
 
 void CrystalController::verifyDeleteCurrentSurface() {
-  qDebug() << "Delete current surface";
-  /*
-QTreeWidgetItem *currentItem = structureTreeView->currentItem();
-bool isParent = itemOfParentSurface(currentItem);
-QString surfaceDescription = currentItem->text(1);
+  auto *model = qobject_cast<ObjectTreeModel *>(structureTreeView->model());
+  if (!model)
+    return;
 
-if (currentItem &&
-    ConfirmationBox::confirmSurfaceDeletion(isParent, surfaceDescription)) {
-  emit deleteCurrentSurface();
-}
-*/
-}
+  QModelIndex currentIndex = structureTreeView->currentIndex();
+  if (!currentIndex.isValid())
+    return;
 
-void CrystalController::updateVisibilityIconsForSurfaces(Project *project) {
-  /*
-auto surfaceVisibilities =
-    project->currentScene()->listOfSurfaceVisibilities();
+  QObject *item = static_cast<QObject *>(currentIndex.internalPointer());
+  if (!item)
+    return;
 
-//QTreeWidgetItem *root = structureTreeView->invisibleRootItem();
+  // Check if it's a parent surface (Mesh) or child surface (MeshInstance)
+  bool isParent = qobject_cast<Mesh *>(item) != nullptr;
+  QString surfaceDescription =
+      model->data(currentIndex, Qt::DisplayRole).toString();
 
-for (int i = 0; i < root->childCount(); ++i) {
-  if (surfaceVisibilities[i]) {
-    root->child(i)->setIcon(0, tickIcon);
-  } else {
-    root->child(i)->setIcon(0, crossIcon);
+  if (ConfirmationBox::confirmSurfaceDeletion(isParent, surfaceDescription)) {
+    emit currentSurfaceDeleted();
+
+    // Reset the view if we're deleting a parent surface
+    if (isParent) {
+      reset();
+    }
   }
 }
-*/
+
+// Replace clearAllCrystals with deleteAllCrystals
+void CrystalController::deleteAllCrystals() {
+  auto *project = qobject_cast<Project *>(structureListView->model());
+  if (!project)
+    return;
+
+  if (ConfirmationBox::confirmCrystalDeletion(true, "")) {
+    emit allCrystalsDeleted();
+    reset();
+  }
 }

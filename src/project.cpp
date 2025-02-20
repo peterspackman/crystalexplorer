@@ -208,15 +208,15 @@ void Project::generateSlab(SlabGenerationOptions options) {
 }
 
 void Project::deleteAllCrystals() {
-  foreach (Scene *crystal, m_scenes) {
-    delete crystal;
+  for (Scene *scene : m_scenes) {
+    delete scene;
   }
   m_scenes.clear();
 }
 
 void Project::deleteCurrentCrystal() {
-  Scene *crystal = m_scenes.takeAt(m_currentSceneIndex);
-  delete crystal;
+  Scene *scene = m_scenes.takeAt(m_currentSceneIndex);
+  delete scene;
   if (m_scenes.size() == 0) {
     m_currentSceneIndex = -1;
     m_previousSceneIndex = -1;
@@ -235,22 +235,43 @@ bool Project::saveToFile(QString filename) {
     // Convert to JSON
     nlohmann::json j = toJson();
 
-    // Open file for writing
-    std::ofstream file(filename.toStdString());
+    // Open file for writing in binary mode
+    std::ofstream file(filename.toStdString(), std::ios::binary);
     if (!file.is_open()) {
       qWarning() << "Failed to open file for writing:" << filename;
       return false;
     }
 
-    // Write JSON to file
-    file << j.dump(2); // '2' for pretty-print with indent of 2 spaces
+    // Choose format based on file extension
+    QString ext = QFileInfo(filename).suffix().toLower();
+    if (ext == "bson") {
+      // BSON (Binary JSON)
+      std::vector<std::uint8_t> bson = nlohmann::json::to_bson(j);
+      file.write(reinterpret_cast<const char *>(bson.data()), bson.size());
+    } else if (ext == "cbor") {
+      // CBOR (Concise Binary Object Representation)
+      std::vector<std::uint8_t> cbor = nlohmann::json::to_cbor(j);
+      file.write(reinterpret_cast<const char *>(cbor.data()), cbor.size());
+    } else if (ext == "msgpack") {
+      // MessagePack
+      std::vector<std::uint8_t> msgpack = nlohmann::json::to_msgpack(j);
+      file.write(reinterpret_cast<const char *>(msgpack.data()),
+                 msgpack.size());
+    } else if (ext == "ubjson") {
+      // UBJSON (Universal Binary JSON)
+      std::vector<std::uint8_t> ubjson = nlohmann::json::to_ubjson(j);
+      file.write(reinterpret_cast<const char *>(ubjson.data()), ubjson.size());
+    } else {
+      // Default to JSON
+      file << j.dump(2); // '2' for pretty-print with indent of 2 spaces
+    }
+
     file.close();
 
     // Update project state
     _saveFilename = filename;
     m_haveUnsavedChanges = false;
     emit projectSaved();
-
     return true;
   } catch (const std::exception &e) {
     qWarning() << "Error saving project to file:" << e.what();
@@ -277,6 +298,7 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
     structure->setObjectName(xyzReader.getComment());
     structure->setAtoms(xyzReader.getAtomSymbols(),
                         xyzReader.getAtomPositions());
+    structure->setFilename(filename);
     structure->updateBondGraph();
     Scene *scene = new Scene(structure);
     scene->setTitle(QFileInfo(filename).baseName());
@@ -293,6 +315,7 @@ bool Project::loadChemicalStructureFromXyzFile(const QString &filename) {
       auto *s = new ChemicalStructure();
       s->setObjectName(frame.getComment());
       s->setAtoms(frame.getAtomSymbols(), frame.getAtomPositions());
+      s->setFilename(filename);
       s->setProperty("frame", frameNumber++);
       s->updateBondGraph();
       structure->addFrame(s);
@@ -315,7 +338,8 @@ bool Project::loadGulpInputFile(const QString &filename) {
   switch (gin.periodicity()) {
   case 3: {
     CrystalStructure *tmp = gin.toCrystalStructure();
-    if(!tmp) return false;
+    if (!tmp)
+      return false;
     Scene *scene = new Scene(tmp);
     scene->setTitle(QFileInfo(filename).baseName());
     int position = m_scenes.size();
@@ -329,7 +353,8 @@ bool Project::loadGulpInputFile(const QString &filename) {
   }
   default: {
     ChemicalStructure *tmp = gin.toChemicalStructure();
-    if(!tmp) return false;
+    if (!tmp)
+      return false;
     Scene *scene = new Scene(tmp);
     scene->setTitle(QFileInfo(filename).baseName());
     int position = m_scenes.size();
@@ -355,6 +380,7 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
   for (int i = 0; i < pdbReader.numberOfCrystals(); i++) {
     CrystalStructure *tmp = new CrystalStructure();
     tmp->setOccCrystal(pdbReader.getCrystalStructure(i));
+    tmp->setFilename(filename);
     // tmp->setFileContents(pdbReader.getCrystalCifContents(i));
     // tmp->setName(pdbReader.getCrystalName(i));
     Scene *scene = new Scene(tmp);
@@ -389,6 +415,7 @@ bool Project::loadCrystalClearSurfaceJson(const QString &filename) {
 
 bool Project::loadCrystalClearJson(const QString &filename) {
   CrystalStructure *crystal = io::loadCrystalClearJson(filename);
+  crystal->setFilename(filename);
   Scene *scene = new Scene(crystal);
   scene->setTitle(QFileInfo(filename).baseName());
   int position = m_scenes.size();
@@ -415,6 +442,7 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
     CrystalStructure *tmp = new CrystalStructure();
     tmp->setOccCrystal(cifReader.getCrystalStructure(i));
     tmp->setFileContents(cifReader.getCrystalCifContents(i));
+    tmp->setFilename(filename);
     tmp->setName(cifReader.getCrystalName(i));
     Scene *scene = new Scene(tmp);
     scene->setTitle(QFileInfo(filename).baseName());
@@ -436,21 +464,38 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
 }
 
 bool Project::loadFromFile(QString filename) {
-  bool success = false;
   qDebug() << "Load project from" << filename;
-
   QFile file(filename);
   if (!file.open(QIODevice::ReadOnly)) {
     qWarning("Couldn't open project file.");
     return false;
   }
-  QByteArray data = file.readAll();
 
+  QByteArray data = file.readAll();
   nlohmann::json doc;
+
   try {
-    doc = nlohmann::json::parse(data.constData());
-  } catch (nlohmann::json::parse_error &e) {
-    qWarning() << "JSON parse error:" << e.what();
+    QString ext = QFileInfo(filename).suffix().toLower();
+    if (ext == "bson") {
+      doc = nlohmann::json::from_bson(
+          reinterpret_cast<const std::uint8_t *>(data.constData()),
+          reinterpret_cast<const std::uint8_t *>(data.constData() +
+                                                 data.size()));
+    } else if (ext == "cbor") {
+      doc = nlohmann::json::from_cbor(
+          reinterpret_cast<const std::uint8_t *>(data.constData()),
+          reinterpret_cast<const std::uint8_t *>(data.constData() +
+                                                 data.size()));
+    } else if (ext == "msgpack") {
+      doc = nlohmann::json::from_msgpack(
+          reinterpret_cast<const std::uint8_t *>(data.constData()),
+          reinterpret_cast<const std::uint8_t *>(data.constData() +
+                                                 data.size()));
+    } else {
+      doc = nlohmann::json::parse(data.constData());
+    }
+  } catch (const std::exception &e) {
+    qWarning() << "Parse error:" << e.what();
     return false;
   }
 
@@ -458,7 +503,12 @@ bool Project::loadFromFile(QString filename) {
   if (!fromJson(doc)) {
     return false;
   }
+
   setCurrentCrystal(m_currentSceneIndex, true);
+  auto *structure = currentStructure();
+  if (structure) {
+    structure->setFilename(filename);
+  }
   emit selectedSceneChanged(m_currentSceneIndex);
   m_haveUnsavedChanges = false;
   emit projectChanged(this);

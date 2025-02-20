@@ -47,9 +47,11 @@ void MeshPropertyModel::setMesh(Mesh *mesh) {
   beginResetModel();
   m_mesh = mesh;
   m_meshInstance = nullptr;
-  QString prop = mesh->getSelectedProperty();
   endResetModel();
-  setSelectedProperty(prop);
+  if (mesh) {
+    QString prop = mesh->getSelectedProperty();
+    setSelectedProperty(prop);
+  }
   m_blockedWhileResetting = false;
 }
 
@@ -173,8 +175,8 @@ double MeshPropertyModel::asphericity() const {
 bool MeshPropertyModel::isFingerprintable() const {
   if (!m_mesh)
     return false;
-  const auto &params = m_mesh->parameters();
-  return params.kind == isosurface::Kind::Hirshfeld && params.separation < 0.21;
+  const auto &attr = m_mesh->attributes();
+  return attr.kind == isosurface::Kind::Hirshfeld && attr.separation < 0.21;
 }
 
 MeshPropertyModel::PropertyStatistics

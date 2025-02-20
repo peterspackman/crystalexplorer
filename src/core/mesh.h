@@ -1,8 +1,8 @@
 #pragma once
 #include "generic_atom_index.h"
 #include "isosurface_parameters.h"
-#include <Eigen/Dense>
 #include "json.h"
+#include <Eigen/Dense>
 #include <QMap>
 #include <QObject>
 #include <ankerl/unordered_dense.h>
@@ -12,14 +12,20 @@ class Mesh : public QObject {
   Q_PROPERTY(
       bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
 
-  Q_PROPERTY(float transparency READ getTransparency WRITE setTransparency NOTIFY
-                 transparencyChanged)
+  Q_PROPERTY(float transparency READ getTransparency WRITE setTransparency
+                 NOTIFY transparencyChanged)
   Q_PROPERTY(bool transparent READ isTransparent WRITE setTransparent NOTIFY
                  transparencyChanged)
   Q_PROPERTY(QString selectedProperty READ getSelectedProperty WRITE
                  setSelectedProperty NOTIFY selectedPropertyChanged)
 
 public:
+  struct Attributes {
+    float isovalue{0.0};
+    isosurface::Kind kind;
+    float separation{0.2};
+  };
+
   struct ScalarPropertyRange {
     float lower{0.0};
     float upper{1.0};
@@ -46,7 +52,9 @@ public:
   [[nodiscard]] QString description() const;
   void setDescription(const QString &);
 
-  [[nodiscard]] inline Eigen::Vector3d vertex(int index) const { return m_vertices.col(index); }
+  [[nodiscard]] inline Eigen::Vector3d vertex(int index) const {
+    return m_vertices.col(index);
+  }
   [[nodiscard]] inline const auto &vertices() const { return m_vertices; }
   [[nodiscard]] inline auto numberOfVertices() const {
     return m_vertices.cols();
@@ -57,7 +65,9 @@ public:
   [[nodiscard]] const auto &faces() const { return m_faces; }
   [[nodiscard]] inline auto numberOfFaces() const { return m_faces.cols(); }
 
-  [[nodiscard]] inline const auto &vertexToFace() const { return m_facesUsingVertex;}
+  [[nodiscard]] inline const auto &vertexToFace() const {
+    return m_facesUsingVertex;
+  }
   // normals
   [[nodiscard]] inline bool haveVertexNormals() const {
     return m_vertexNormals.cols() == m_vertices.cols();
@@ -67,7 +77,9 @@ public:
   [[nodiscard]] inline const auto &vertexNormals() const {
     return m_vertexNormals;
   }
-  [[nodiscard]] inline Eigen::Vector3d vertexNormal(int index) const { return m_vertexNormals.col(index); }
+  [[nodiscard]] inline Eigen::Vector3d vertexNormal(int index) const {
+    return m_vertexNormals.col(index);
+  }
 
   [[nodiscard]] VertexList computeFaceNormals() const;
   [[nodiscard]] VertexList
@@ -95,12 +107,13 @@ public:
   void setFaceProperty(const QString &name, const ScalarPropertyValues &values);
   [[nodiscard]] const ScalarPropertyValues &faceProperty(const QString &) const;
 
-  [[nodiscard]] inline const auto &kind() const { return m_params.kind; }
+  [[nodiscard]] inline const auto &kind() const { return m_attr.kind; }
+  [[nodiscard]] inline float isovalue() const { return m_attr.isovalue; }
+  [[nodiscard]] inline const auto &attributes() const { return m_attr; }
 
-  [[nodiscard]] inline const auto &parameters() const { return m_params; }
-  void setParameters(isosurface::Parameters params);
+  void setAttributes(Attributes attr);
 
-  static Mesh *newFromJson(const nlohmann::json&, QObject *parent = nullptr);
+  static Mesh *newFromJson(const nlohmann::json &, QObject *parent = nullptr);
   static Mesh *newFromJsonFile(const QString &, QObject *parent = nullptr);
 
   [[nodiscard]] bool isVisible() const;
@@ -142,9 +155,14 @@ public:
 
   inline void resetVertexHighlights() { m_vertexHighlights.clear(); }
   inline void highlightVertex(int v) { m_vertexHighlights.insert(v); }
-  [[nodiscard]] const auto &vertexHighlights() const { return m_vertexHighlights; }
+  [[nodiscard]] const auto &vertexHighlights() const {
+    return m_vertexHighlights;
+  }
 
-  static Mesh * combine(const QList<Mesh*> &meshes);
+  static Mesh *combine(const QList<Mesh *> &meshes);
+
+  nlohmann::json toJson() const;
+  bool fromJson(const nlohmann::json &);
 
 signals:
   void visibilityChanged();
@@ -159,6 +177,8 @@ private:
 
   double m_volume{0.0}, m_surfaceArea{0.0}, m_asphericity{0.0},
       m_globularity{0.0};
+
+  Attributes m_attr;
 
   bool m_visible{true};
   QString m_description{"Mesh"};
@@ -194,4 +214,3 @@ private:
   ScalarPropertyValues m_emptyProperty;
   isosurface::Parameters m_params;
 };
-

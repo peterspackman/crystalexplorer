@@ -1,5 +1,6 @@
 #include "mesh.h"
 #include "eigen_json.h"
+#include "isosurface_parameters.h"
 #include "json.h"
 #include "meshinstance.h"
 #include <QFile>
@@ -10,6 +11,20 @@ using VertexList = Mesh::VertexList;
 using FaceList = Mesh::FaceList;
 using ScalarPropertyValues = Mesh::ScalarPropertyValues;
 using ScalarProperties = Mesh::ScalarProperties;
+
+void to_json(nlohmann::json &j, const Mesh::Attributes &attr) {
+  j = {
+      {"kind", attr.kind},
+      {"isovalue", attr.isovalue},
+      {"separation", attr.separation},
+  };
+}
+
+void from_json(const nlohmann::json &j, Mesh::Attributes &attr) {
+  j.at("kind").get_to(attr.kind);
+  j.at("isovalue").get_to(attr.isovalue);
+  j.at("separation").get_to(attr.separation);
+}
 
 Mesh::Mesh(QObject *parent) : QObject(parent) {}
 
@@ -367,13 +382,12 @@ size_t Mesh::rendererIndex() const { return m_rendererIndex; }
 
 void Mesh::setRendererIndex(size_t idx) { m_rendererIndex = idx; }
 
+void Mesh::setAttributes(Mesh::Attributes attr) {
+  m_attr = attr;
 
-void Mesh::setParameters(isosurface::Parameters params) { 
-  m_params = params; 
-
-  if(m_vertices.size() > 0) {
+  if (m_vertices.size() > 0) {
     ScalarPropertyValues isovalues(numberOfVertices());
-    isovalues.setConstant(params.isovalue);
+    isovalues.setConstant(attr.isovalue);
     setVertexProperty("Isovalue", isovalues);
   }
 }
@@ -489,8 +503,7 @@ Mesh *Mesh::combine(const QList<Mesh *> &meshes) {
     combinedFaces.block(0, faceOffset, 3, nFaces) = faces;
 
     // Set isovalues for this mesh's vertices
-    isovalues.segment(vertexOffset, nVerts).array() =
-        mesh->parameters().isovalue;
+    isovalues.segment(vertexOffset, nVerts).array() = mesh->isovalue();
 
     vertexOffset += nVerts;
     faceOffset += nFaces;
@@ -500,7 +513,7 @@ Mesh *Mesh::combine(const QList<Mesh *> &meshes) {
   auto *combinedMesh = new Mesh(combinedVertices, combinedFaces);
 
   // Copy parameters from first mesh
-  combinedMesh->setParameters(first->parameters());
+  combinedMesh->setAttributes(first->attributes());
 
   // Set the isovalue property
   combinedMesh->setVertexProperty("Isovalue", isovalues);
@@ -510,4 +523,191 @@ Mesh *Mesh::combine(const QList<Mesh *> &meshes) {
       QString("Combined mesh from %1 isosurfaces").arg(meshes.size()));
 
   return combinedMesh;
+}
+
+void to_json(nlohmann::json &j, const Mesh::ScalarPropertyRange &range) {
+  j = {
+      {"lower", range.lower}, {"upper", range.upper}, {"middle", range.middle}};
+}
+
+void from_json(const nlohmann::json &j, Mesh::ScalarPropertyRange &range) {
+  j.at("lower").get_to(range.lower);
+  j.at("upper").get_to(range.upper);
+  j.at("middle").get_to(range.middle);
+}
+
+void to_json(nlohmann::json &j, const Mesh::ScalarProperties &props) {
+  j = nlohmann::json::object();
+  for (const auto &[key, values] : props) {
+    j[key.toStdString()] = values;
+  }
+}
+
+void from_json(const nlohmann::json &j, Mesh::ScalarProperties &props) {
+  props.clear();
+  for (const auto &[key, values] : j.items()) {
+    props[QString::fromStdString(key)] =
+        values.get<Mesh::ScalarPropertyValues>();
+  }
+}
+
+void to_json(nlohmann::json &j, const Mesh::ScalarPropertyRanges &ranges) {
+  j = nlohmann::json::object();
+  for (const auto &[key, range] : ranges) {
+    j[key.toStdString()] = range;
+  }
+}
+
+void from_json(const nlohmann::json &j, Mesh::ScalarPropertyRanges &ranges) {
+  ranges.clear();
+  for (const auto &[key, range] : j.items()) {
+    ranges[QString::fromStdString(key)] =
+        range.get<Mesh::ScalarPropertyRange>();
+  }
+}
+
+nlohmann::json Mesh::toJson() const {
+  nlohmann::json j = {{"vertices", m_vertices},
+                      {"faces", m_faces},
+                      {"description", m_description.toStdString()},
+                      {"visible", m_visible},
+                      {"transparent", m_transparent},
+                      {"transparency", m_transparency},
+                      {"rendererIndex", m_rendererIndex}};
+
+  j["name"] = objectName();
+  // Existing properties
+  if (!m_vertexProperties.empty()) {
+    j["vertexProperties"] = m_vertexProperties;
+    j["vertexPropertyRanges"] = m_vertexPropertyRanges;
+  }
+  if (!m_faceProperties.empty()) {
+    j["faceProperties"] = m_faceProperties;
+  }
+
+  // Normals
+  if (m_vertexNormals.cols() > 0) {
+    j["vertexNormals"] = m_vertexNormals;
+  }
+  if (m_faceNormals.cols() > 0) {
+    j["faceNormals"] = m_faceNormals;
+  }
+
+  // Areas and other calculated properties
+  if (m_faceAreas.size() > 0)
+    j["faceAreas"] = m_faceAreas;
+  if (m_vertexAreas.size() > 0)
+    j["vertexAreas"] = m_vertexAreas;
+  if (m_faceVolumeContributions.size() > 0)
+    j["faceVolumeContributions"] = m_faceVolumeContributions;
+
+  // Masks
+  if (m_faceMask.size() > 0)
+    j["faceMask"] = m_faceMask;
+  if (m_vertexMask.size() > 0)
+    j["vertexMask"] = m_vertexMask;
+  if (!m_vertexHighlights.empty()) {
+    std::vector<int> highlights(m_vertexHighlights.begin(),
+                                m_vertexHighlights.end());
+    j["vertexHighlights"] = highlights;
+  }
+
+  // Parameters and atoms
+  if (!m_atomsInside.empty())
+    j["atomsInside"] = m_atomsInside;
+  if (!m_atomsOutside.empty())
+    j["atomsOutside"] = m_atomsOutside;
+
+  j["attributes"] = m_attr;
+
+  // Selected property
+  if (!m_selectedProperty.isEmpty()) {
+    j["selectedProperty"] = m_selectedProperty.toStdString();
+  }
+
+  // Instance transforms
+  j["instances"] = nlohmann::json::array();
+  for (const auto *child : children()) {
+    if (const auto *instance = qobject_cast<const MeshInstance *>(child)) {
+      nlohmann::json instanceJson;
+      instanceJson["name"] = instance->objectName().toStdString();
+      instanceJson["transform"] = instance->transform().matrix();
+      j["instances"].push_back(instanceJson);
+    }
+  }
+
+  return j;
+}
+
+bool Mesh::fromJson(const nlohmann::json &j) {
+  try {
+    if (j.contains("name")) {
+      setObjectName(j.at("name").get<QString>());
+    }
+    // Core mesh data
+    j.at("vertices").get_to(m_vertices);
+    j.at("faces").get_to(m_faces);
+    m_description = j.at("description").get<QString>();
+    m_visible = j.at("visible").get<bool>();
+    m_transparent = j.at("transparent").get<bool>();
+    m_transparency = j.at("transparency").get<float>();
+    m_rendererIndex = j.at("rendererIndex").get<size_t>();
+
+    // Properties
+    if (j.contains("vertexProperties")) {
+      j.at("vertexProperties").get_to(m_vertexProperties);
+      j.at("vertexPropertyRanges").get_to(m_vertexPropertyRanges);
+    }
+    if (j.contains("faceProperties")) {
+      j.at("faceProperties").get_to(m_faceProperties);
+    }
+
+    // Normals
+    if (j.contains("vertexNormals"))
+      j.at("vertexNormals").get_to(m_vertexNormals);
+    if (j.contains("faceNormals"))
+      j.at("faceNormals").get_to(m_faceNormals);
+
+    // Areas and volumes
+    if (j.contains("faceAreas"))
+      j.at("faceAreas").get_to(m_faceAreas);
+    if (j.contains("vertexAreas"))
+      j.at("vertexAreas").get_to(m_vertexAreas);
+    if (j.contains("faceVolumeContributions"))
+      j.at("faceVolumeContributions").get_to(m_faceVolumeContributions);
+
+    // Masks and highlights
+    if (j.contains("faceMask"))
+      j.at("faceMask").get_to(m_faceMask);
+    if (j.contains("vertexMask"))
+      j.at("vertexMask").get_to(m_vertexMask);
+    if (j.contains("vertexHighlights")) {
+      std::vector<int> highlights;
+      j.at("vertexHighlights").get_to(highlights);
+      m_vertexHighlights.clear();
+      m_vertexHighlights.insert(highlights.begin(), highlights.end());
+    }
+
+    // Parameters and atoms
+    if (j.contains("atomsInside"))
+      j.at("atomsInside").get_to(m_atomsInside);
+    if (j.contains("atomsOutside"))
+      j.at("atomsOutside").get_to(m_atomsOutside);
+
+    j.at("attributes").get_to(m_attr);
+
+    if (j.contains("selectedProperty")) {
+      m_selectedProperty =
+          QString::fromStdString(j.at("selectedProperty").get<std::string>());
+    }
+
+    updateVertexFaceMapping();
+    updateFaceProperties();
+    updateAsphericity();
+
+    return true;
+  } catch (const std::exception &e) {
+    qDebug() << "Mesh loading failed:" << e.what();
+    return false;
+  }
 }

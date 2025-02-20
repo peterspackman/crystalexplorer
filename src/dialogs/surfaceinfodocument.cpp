@@ -73,12 +73,12 @@ void SurfaceInfoDocument::insertGeneralInformation(QTextCursor &cursor,
   cursor.insertText(TITLE + "\n");
   cursor.insertText(INFO_HORIZONTAL_RULE);
   cursor.insertText("\n");
-  const auto &params = mesh->parameters();
+  const auto &attr = mesh->attributes();
   cursor.insertText(
-      QString("Type\t%1\n").arg(isosurface::kindToString(params.kind)));
+      QString("Type\t%1\n").arg(isosurface::kindToString(attr.kind)));
   cursor.insertText(
-      QString("Resolution\t%1\n").arg(params.separation, 3, 'f', 2));
-  cursor.insertText(QString("Isovalue\t%1\n").arg(params.isovalue));
+      QString("Resolution\t%1\n").arg(attr.separation, 3, 'f', 2));
+  cursor.insertText(QString("Isovalue\t%1\n").arg(attr.isovalue));
   cursor.insertText("\n");
   cursor.insertText(QString("Volume\t%1 Å³\n").arg(mesh->volume(), 3, 'f', 2));
   cursor.insertText(
