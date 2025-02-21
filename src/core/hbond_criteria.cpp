@@ -1,6 +1,26 @@
 #include "hbond_criteria.h"
 #include "elementdata.h"
 #include <occ/core/element.h>
+#include <tuple>
+
+bool HBondCriteria::operator==(const HBondCriteria &rhs) const {
+  if (std::tie(minAngle, maxAngle, minDistance, maxDistance) !=
+      std::tie(rhs.minAngle, rhs.maxAngle, rhs.minDistance, rhs.maxDistance)) {
+    return false;
+  }
+
+  if (std::tie(includeIntra, vdwOffset, vdwCriteria) !=
+      std::tie(rhs.includeIntra, rhs.vdwOffset, rhs.vdwCriteria)) {
+    return false;
+  }
+  if (color != rhs.color)
+    return false;
+  if (rhs.donors != donors)
+    return false;
+  if (rhs.acceptors != acceptors)
+    return false;
+  return true;
+}
 
 inline double calculateAngle(const occ::Vec3 &a, const occ::Vec3 &b,
                              const occ::Vec3 &c) {
@@ -72,11 +92,11 @@ std::vector<HBondTriple> HBondCriteria::filter(
 
     double distance = (positions.col(hbond.a) - positions.col(hbond.h)).norm();
 
-    if(vdwCriteria) {
+    if (vdwCriteria) {
       double radiusA = getVdw(atomicNumbers(hbond.a));
-      if(distance > (radiusH + radiusA - vdwOffset)) continue;
-    }
-    else if (distance < minDistance || distance > maxDistance) {
+      if (distance > (radiusH + radiusA - vdwOffset))
+        continue;
+    } else if (distance < minDistance || distance > maxDistance) {
       continue;
     }
 

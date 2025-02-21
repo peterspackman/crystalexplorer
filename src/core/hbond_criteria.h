@@ -28,6 +28,11 @@ struct HBondCriteria {
   [[nodiscard]] bool isDonor(int atomicNumber) const;
   [[nodiscard]] bool isAcceptor(int atomicNumber) const;
 
+  [[nodiscard]] bool operator==(const HBondCriteria &rhs) const;
+  [[nodiscard]] inline bool operator!=(const HBondCriteria &rhs) const {
+    return !(*this == rhs);
+  }
+
   [[nodiscard]] std::vector<HBondTriple>
   filter(const occ::Mat3N &positions,
          const occ::IVec &atomicNumbers,

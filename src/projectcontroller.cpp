@@ -34,12 +34,6 @@ void ProjectController::updateProjectView() {
                  &Project::onSelectionChanged);
     }
 
-    if (structureTreeView->selectionModel()) {
-      disconnect(structureTreeView->selectionModel(),
-                 &QItemSelectionModel::selectionChanged, this,
-                 &ProjectController::onStructureViewSelectionChanged);
-    }
-
     structureListView->setModel(m_project);
     updateSurfaceInfo(m_project->currentScene());
 
@@ -47,12 +41,6 @@ void ProjectController::updateProjectView() {
       connect(structureListView->selectionModel(),
               &QItemSelectionModel::selectionChanged, m_project,
               &Project::onSelectionChanged);
-    }
-
-    if (structureTreeView->selectionModel()) {
-      connect(structureTreeView->selectionModel(),
-              &QItemSelectionModel::selectionChanged, this,
-              &ProjectController::onStructureViewSelectionChanged);
     }
   } else {
     structureListView->setModel(nullptr);
@@ -128,12 +116,25 @@ void ProjectController::structureViewClicked(const QModelIndex &index) {
 }
 
 void ProjectController::updateSurfaceInfo(Scene *scene) {
+
+  if (structureTreeView->selectionModel()) {
+    disconnect(structureTreeView->selectionModel(),
+               &QItemSelectionModel::selectionChanged, this,
+               &ProjectController::onStructureViewSelectionChanged);
+  }
+
   if (!scene) {
     qDebug() << "Scene is null!";
     structureTreeView->setModel(nullptr);
     return;
   }
   structureTreeView->setModel(scene->chemicalStructure()->treeModel());
+
+  if (structureTreeView->selectionModel()) {
+    connect(structureTreeView->selectionModel(),
+            &QItemSelectionModel::selectionChanged, this,
+            &ProjectController::onStructureViewSelectionChanged);
+  }
 }
 
 void ProjectController::onStructureViewSelectionChanged(
@@ -143,6 +144,7 @@ void ProjectController::onStructureViewSelectionChanged(
   QModelIndex currentIndex =
       structureTreeView->selectionModel()->currentIndex();
   if (currentIndex.isValid()) {
+    qDebug() << "Child selection: " << currentIndex;
     emit childSelectionChanged(currentIndex);
   }
 }

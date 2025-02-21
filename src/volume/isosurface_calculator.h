@@ -2,8 +2,8 @@
 #include "chemicalstructure.h"
 #include "isosurface_parameters.h"
 #include "taskmanager.h"
-#include <QProcessEnvironment>
 #include <QObject>
+#include <QProcessEnvironment>
 
 namespace volume {
 
@@ -14,7 +14,6 @@ public:
 
   void setTaskManager(TaskManager *);
   void start(isosurface::Parameters);
-  QString surfaceName();
 
 signals:
   void calculationComplete(isosurface::Result);

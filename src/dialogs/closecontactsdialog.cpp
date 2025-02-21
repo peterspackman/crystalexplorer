@@ -11,6 +11,7 @@ CloseContactDialog::CloseContactDialog(QWidget *parent) : QDialog(parent) {
   setupUi(this);
   init();
   initConnections();
+  reportHBondSettingsChanges();
 }
 
 void CloseContactDialog::init() {
@@ -63,7 +64,7 @@ void CloseContactDialog::initConnections() {
   connect(includeIntraHBondsCheckBox, &QAbstractButton::toggled, this,
           &CloseContactDialog::reportHBondSettingsChanges);
   connect(hbondColorButton, &QAbstractButton::clicked, this,
-          &CloseContactDialog::reportHBondColorChange);
+          &CloseContactDialog::handleHBondColorSelection);
 
   connect(addContactPushButton, &QPushButton::clicked, closeContactsWidget,
           &CloseContactCriteriaWidget::addRow);
@@ -111,18 +112,24 @@ QColor CloseContactDialog::getButtonColor(QToolButton *colorButton) {
   return colorButton->icon().pixmap(1, 1).toImage().pixel(0, 0);
 }
 
-void CloseContactDialog::reportHBondColorChange() {
+void CloseContactDialog::handleHBondColorSelection() {
   QColor color = QColorDialog::getColor(getButtonColor(hbondColorButton), this);
   if (color.isValid()) {
     setButtonColor(hbondColorButton, color);
-    settings::writeSetting(settings::keys::HBOND_COLOR, color.name());
-    emit hbondCriteriaChanged(currentHBondCriteria());
+    reportHBondSettingsChanges();
   }
 }
 
 void CloseContactDialog::reportHBondSettingsChanges() {
-
-  emit hbondCriteriaChanged(currentHBondCriteria());
+  auto current = currentHBondCriteria();
+  if (current != m_prevCriteria) {
+    if (m_prevCriteria.color != current.color) {
+      settings::writeSetting(settings::keys::HBOND_COLOR, current.color.name());
+    }
+    m_prevCriteria = current;
+    qDebug() << "Emit with color" << m_prevCriteria.color;
+    emit hbondCriteriaChanged(m_prevCriteria);
+  }
 }
 
 void setLayoutHidden(QHBoxLayout *layout, bool enabled) {

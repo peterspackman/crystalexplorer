@@ -10,6 +10,15 @@
 
 namespace volume {
 
+inline QString surfaceName(const isosurface::Parameters &parameters) {
+  isosurface::SurfaceDescription desc =
+      isosurface::getSurfaceDescription(parameters.kind);
+  return QString("%1 (%2) [isovalue = %3]")
+      .arg(desc.displayName)
+      .arg(parameters.separation)
+      .arg(parameters.isovalue);
+}
+
 inline Mesh::Attributes makeAttributes(const isosurface::Parameters &params) {
   Mesh::Attributes attr;
   attr.kind = params.kind;
@@ -107,7 +116,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
     }
   }
   m_parameters = params;
-  m_name = surfaceName();
+  m_name = surfaceName(params);
 
   OccSurfaceTask *surfaceTask = new OccSurfaceTask();
   surfaceTask->setExecutable(m_occExecutable);
@@ -130,15 +139,6 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
 
   connect(surfaceTask, &Task::completed, this,
           &IsosurfaceCalculator::surfaceComplete);
-}
-
-QString IsosurfaceCalculator::surfaceName() {
-  isosurface::SurfaceDescription desc =
-      isosurface::getSurfaceDescription(m_parameters.kind);
-  return QString("%1 (%2) [isovalue = %3]")
-      .arg(desc.displayName)
-      .arg(m_parameters.separation)
-      .arg(m_parameters.isovalue);
 }
 
 void setFragmentPatchForMesh(Mesh *mesh, ChemicalStructure *structure) {
@@ -187,7 +187,7 @@ void IsosurfaceCalculator::surfaceComplete() {
     auto params = m_parameters;
     if (idx > 0)
       params.isovalue = -params.isovalue;
-    mesh->setObjectName(m_name);
+    mesh->setObjectName(surfaceName(params));
     mesh->setAttributes(makeAttributes(params));
     mesh->setAtomsInside(m_atomsInside);
     mesh->setAtomsOutside(m_atomsOutside);

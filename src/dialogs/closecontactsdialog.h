@@ -23,13 +23,12 @@ public slots:
   void showDialogWithCloseContactsTab();
 
 signals:
-  void hbondColorChanged();
   void hbondCriteriaChanged(HBondCriteria);
   void hbondsToggled(bool);
   void closeContactsSettingsChanged(int, CloseContactCriteria);
 
 private slots:
-  void reportHBondColorChange();
+  void handleHBondColorSelection();
   void reportHBondSettingsChanges();
   void useVdwBasedCriteria(bool);
 
@@ -43,6 +42,8 @@ private:
   void updateContactDistanceCriteria(QComboBox *, QComboBox *,
                                      QDoubleSpinBox *);
   QColor getButtonColor(QToolButton *);
+
+  HBondCriteria m_prevCriteria;
 
   QMap<QString, CloseContactCriteria> m_closeContactSettings;
 };
