@@ -39,15 +39,13 @@ void FingerprintPlot::setFilter(FingerprintFilterOptions opts) {
   m_filterUpper = opts.filterUpper;
 
   if (opts.filterInsideElement) {
-    auto *el = ElementData::elementFromSymbol(m_insideFilterElementSymbol);
-    if (el)
-      m_filterInsideElement = el->number();
+    m_filterInsideElement =
+        ElementData::atomicNumberFromElementSymbol(m_insideFilterElementSymbol);
   }
 
   if (opts.filterOutsideElement) {
-    auto *el = ElementData::elementFromSymbol(m_outsideFilterElementSymbol);
-    if (el)
-      m_filterOutsideElement = el->number();
+    m_filterOutsideElement = ElementData::atomicNumberFromElementSymbol(
+        m_outsideFilterElementSymbol);
   }
 }
 

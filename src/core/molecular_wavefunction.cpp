@@ -82,20 +82,29 @@ int MolecularWavefunction::numberOfBasisFunctions() const { return m_nbf; }
 
 void MolecularWavefunction::setNumberOfBasisFunctions(int nbf) { m_nbf = nbf; }
 
-int MolecularWavefunction::numberOfOccupiedOrbitals() const { return m_numOccupied; }
+int MolecularWavefunction::numberOfOccupiedOrbitals() const {
+  return m_numOccupied;
+}
 
-void MolecularWavefunction::setNumberOfOccupiedOrbitals(int n) { m_numOccupied = n; }
+void MolecularWavefunction::setNumberOfOccupiedOrbitals(int n) {
+  m_numOccupied = n;
+}
 
-int MolecularWavefunction::numberOfVirtualOrbitals() const { return m_numVirtual; }
+int MolecularWavefunction::numberOfVirtualOrbitals() const {
+  return m_numVirtual;
+}
 
-void MolecularWavefunction::setNumberOfVirtualOrbitals(int n) { m_numVirtual = n; }
+void MolecularWavefunction::setNumberOfVirtualOrbitals(int n) {
+  m_numVirtual = n;
+}
 
 double MolecularWavefunction::totalEnergy() const { return m_totalEnergy; }
 
 void MolecularWavefunction::setTotalEnergy(double e) { m_totalEnergy = e; }
 
-void MolecularWavefunction::setOrbitalEnergies(const std::vector<double> &energies) {
-    m_orbitalEnergies = energies;
+void MolecularWavefunction::setOrbitalEnergies(
+    const std::vector<double> &energies) {
+  m_orbitalEnergies = energies;
 }
 
 QString MolecularWavefunction::description() const {
@@ -113,4 +122,66 @@ QString MolecularWavefunction::fileSuffix() const {
   default:
     return ".owf.json";
   }
+}
+
+void to_json(nlohmann::json &j, const wfn::Parameters &params) {
+  j["charge"] = params.charge;
+  j["multiplicity"] = params.multiplicity;
+  j["method"] = params.method;
+  j["basis"] = params.basis;
+
+  j["program"] = wfn::programName(params.program);
+  j["atoms"] = params.atoms;
+  j["accepted"] = params.accepted;
+  j["userEditRequested"] = params.userEditRequested;
+  j["name"] = params.name;
+  j["userInputContents"] = params.userInputContents;
+}
+
+void from_json(const nlohmann::json &j, wfn::Parameters &params) {
+  j.at("charge").get_to(params.charge);
+  j.at("multiplicity").get_to(params.multiplicity);
+  j.at("method").get_to(params.method);
+  j.at("basis").get_to(params.basis);
+
+  params.program = wfn::programFromName(j["program"].get<QString>());
+  j.at("atoms").get_to(params.atoms);
+  j.at("accepted").get_to(params.accepted);
+  j.at("userEditRequested").get_to(params.userEditRequested);
+  j.at("name").get_to(params.name);
+  j.at("userInputContents").get_to(params.userInputContents);
+}
+
+nlohmann::json MolecularWavefunction::toJson() const {
+  nlohmann::json j;
+  j["nbf"] = m_nbf;
+  j["numOccupied"] = m_numOccupied;
+  j["numVirtual"] = m_numVirtual;
+  j["orbitalEnergies"] = m_orbitalEnergies;
+  j["totalEnergy"] = m_totalEnergy;
+  j["fileFormat"] = wfn::fileFormatString(m_fileFormat);
+  j["fileContents"] = m_rawContents;
+  j["name"] = objectName();
+  to_json(j["parameters"], m_parameters);
+  return j;
+}
+
+bool MolecularWavefunction::fromJson(const nlohmann::json &j) {
+  try {
+    from_json(j["parameters"], m_parameters);
+    if (j.contains("name")) {
+      setObjectName(j.at("name").get<QString>());
+    }
+    j.at("nbf").get_to(m_nbf);
+    j.at("numOccupied").get_to(m_numOccupied);
+    j.at("numVirtual").get_to(m_numVirtual);
+    j.at("orbitalEnergies").get_to(m_orbitalEnergies);
+    j.at("totalEnergy").get_to(m_totalEnergy);
+    m_fileFormat = wfn::fileFormatFromString(j["fileFormat"]);
+    j.at("fileContents").get_to(m_rawContents);
+  } catch (nlohmann::json::parse_error &e) {
+    qWarning() << "JSON parse error loading MolecularWavefunction:" << e.what();
+    return false;
+  }
+  return true;
 }

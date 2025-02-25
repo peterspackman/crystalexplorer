@@ -1628,10 +1628,14 @@ nlohmann::json Scene::toJson() const {
   };
 
   j["meshes"] = nlohmann::json::array();
+  j["wavefunctions"] = nlohmann::json::array();
   for (auto *obj : m_structure->children()) {
     if (auto *mesh = qobject_cast<Mesh *>(obj)) {
       nlohmann::json meshJson = mesh->toJson();
       j["meshes"].push_back(meshJson);
+    } else if (auto *wfn = qobject_cast<MolecularWavefunction *>(obj)) {
+      nlohmann::json wfnJson = wfn->toJson();
+      j["wavefunctions"].push_back(wfnJson);
     }
   }
 
@@ -1715,6 +1719,20 @@ bool Scene::fromJson(const nlohmann::json &j) {
                 instanceJson["name"].get<std::string>()));
           }
         }
+      }
+    }
+
+    // Load meshes if present
+    if (j.contains("wavefunctions")) {
+      qDebug() << "Loading" << j["wavefunctions"].size() << "wavefunction";
+      for (const auto &wfnJson : j["wavefunctions"]) {
+        auto *wfn = new MolecularWavefunction();
+        if (!wfn->fromJson(wfnJson)) {
+          qDebug() << "Failed to load wavefunction";
+          delete wfn;
+          continue;
+        }
+        wfn->setParent(m_structure);
       }
     }
 

@@ -178,3 +178,11 @@ void ElementData::clear() {
   }
   g_elementData.clear();
 }
+
+int ElementData::atomicNumberFromElementSymbol(const QString &symbol) {
+  Element* element = elementFromSymbol(symbol);
+  if (element) {
+    return element->number();
+  }
+  return 0;
+}

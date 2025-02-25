@@ -60,6 +60,7 @@ struct Result {
 
 QString fileFormatString(FileFormat);
 QString fileFormatSuffix(FileFormat);
+FileFormat fileFormatFromString(const QString &);
 FileFormat fileFormatFromFilename(const QString &filename);
 
 QString programName(Program);

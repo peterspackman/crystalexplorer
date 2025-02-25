@@ -18,6 +18,15 @@ QString fileFormatString(FileFormat fmt) {
   }
 }
 
+FileFormat fileFormatFromString(const QString &fmtString) {
+  // Iterate through all FileFormat values
+  for (const auto &fmt : availableFileFormats) {
+    if (fmtString.compare(fileFormatString(fmt), Qt::CaseInsensitive))
+      return fmt;
+  }
+  return FileFormat::OccWavefunction;
+}
+
 QString fileFormatSuffix(FileFormat fmt) {
   switch (fmt) {
   case FileFormat::Fchk:
@@ -68,9 +77,10 @@ QString programName(Program prog) {
 
 Program programFromName(const QString &name) {
   QString lowercaseName = name.toLower();
-  for (const auto &prog: availablePrograms) {
+  for (const auto &prog : availablePrograms) {
     QString candidate = programName(prog).toLower();
-    if (lowercaseName == candidate) return prog;
+    if (lowercaseName == candidate)
+      return prog;
   }
   return Program::Occ;
 }
