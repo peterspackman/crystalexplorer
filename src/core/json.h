@@ -1,7 +1,8 @@
 #pragma once
+#include <QByteArray>
 #include <QColor>
 #include <QStringList>
-#include <QByteArray>
+#include <QVariant>
 #include <nlohmann/json.hpp>
 
 inline void to_json(nlohmann::json &j, const QString &s) {
@@ -42,6 +43,44 @@ template <> struct adl_serializer<QByteArray> {
 
   static void to_json(json &j, const QByteArray &qba) {
     j = qba.toBase64().toStdString();
+  }
+};
+
+template <> struct adl_serializer<QVariant> {
+  static void to_json(json &j, const QVariant &v) {
+    switch (v.typeId()) {
+    case QMetaType::Bool:
+      j = v.toBool();
+      break;
+    case QMetaType::Int:
+      j = v.toInt();
+      break;
+    case QMetaType::Double:
+      j = v.toDouble();
+      break;
+    case QMetaType::QString:
+      j = v.toString();
+      break;
+    default:
+      // For other types, store as string
+      j = v.toString();
+      break;
+    }
+  }
+
+  static void from_json(const json &j, QVariant &v) {
+    if (j.is_boolean()) {
+      v = QVariant(j.get<bool>());
+    } else if (j.is_number_integer()) {
+      v = QVariant(j.get<int>());
+    } else if (j.is_number_float()) {
+      v = QVariant(j.get<double>());
+    } else if (j.is_string()) {
+      v = QVariant(j.get<QString>());
+    } else {
+      // Default case
+      v = QVariant();
+    }
   }
 };
 } // namespace nlohmann

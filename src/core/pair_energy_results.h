@@ -1,4 +1,5 @@
 #pragma once
+#include "json.h"
 #include "pair_energy_parameters.h"
 #include <QColor>
 #include <QMap>
@@ -24,12 +25,14 @@ public:
   inline const auto &metadata() const { return m_metadata; }
   QVariant getMetadata(const QString &) const;
 
-  inline const QString &symmetry() const { return m_parameters.symmetry; }
+  inline const QString &symmetry() const {
+    return m_parameters.fragmentDimer.symmetry;
+  }
   inline double nearestAtomDistance() const {
-    return m_parameters.nearestAtomDistance;
+    return m_parameters.fragmentDimer.nearestAtomDistance;
   }
   inline double centroidDistance() const {
-    return m_parameters.centroidDistance;
+    return m_parameters.fragmentDimer.centroidDistance;
   }
 
   inline const auto &label() const { return m_label; }
@@ -48,6 +51,10 @@ public:
   inline QString dimerDescription() const {
     return m_parameters.fragmentDimer.getName();
   }
+
+  nlohmann::json toJson() const;
+  static PairInteraction *fromJson(const nlohmann::json &j,
+                                   QObject *parent = nullptr);
 
 private:
   int m_count{0};
@@ -109,6 +116,9 @@ public:
   int getCount(const QString &model = "") const;
   bool haveInteractions(const QString &model = "") const;
   bool hasPermutationSymmetry(const QString &model = "") const;
+
+  nlohmann::json toJson() const;
+  bool fromJson(const nlohmann::json &j);
 
 signals:
   void interactionAdded();

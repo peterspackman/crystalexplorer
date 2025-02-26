@@ -86,6 +86,30 @@ void from_json(const nlohmann::json &j, Fragment &f) {
   }
 }
 
+void to_json(nlohmann::json &j, const FragmentDimer &f) {
+  j["a"] = f.a;
+  j["b"] = f.b;
+  j["centroidDistance"] = f.centroidDistance;
+  j["nearestAtomDistance"] = f.nearestAtomDistance;
+  j["centerOfMassDistance"] = f.centerOfMassDistance;
+  j["nearestAtomIndexA"] = f.nearestAtomIndexA;
+  j["nearestAtomIndexB"] = f.nearestAtomIndexB;
+  j["symmetry"] = f.symmetry;
+  j["index"] = f.index;
+}
+
+void from_json(const nlohmann::json &j, FragmentDimer &f) {
+  j.at("a").get_to(f.a);
+  j.at("b").get_to(f.b);
+  j.at("centroidDistance").get_to(f.centroidDistance);
+  j.at("nearestAtomDistance").get_to(f.nearestAtomDistance);
+  j.at("centerOfMassDistance").get_to(f.centerOfMassDistance);
+  j.at("nearestAtomIndexA").get_to(f.nearestAtomIndexA);
+  j.at("nearestAtomIndexB").get_to(f.nearestAtomIndexB);
+  j.at("symmetry").get_to(f.symmetry);
+  j.at("index").get_to(f.index);
+}
+
 occ::Vec Fragment::interatomicDistances() const {
   // upper triangle of distance matrix
   size_t N = atomIndices.size();

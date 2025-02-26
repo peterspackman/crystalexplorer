@@ -1358,8 +1358,6 @@ void CrystalStructure::setPairInteractionsFromDimerAtoms(
 
       pair_energy::Parameters params = pair->parameters();
       params.fragmentDimer = ud;
-      params.nearestAtomDistance = d.nearestAtomDistance;
-      params.centroidDistance = d.centroidDistance;
       pair->setParameters(params);
       p->add(pair);
     }

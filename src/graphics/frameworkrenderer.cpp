@@ -120,7 +120,6 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
   std::vector<FragmentDimer> uniquePairs = fragmentPairs.uniquePairs;
 
-  qDebug() << "Number of unique pairs:" << uniquePairs.size();
   auto interactionMap =
       m_interactions->getInteractionsMatchingFragments(uniquePairs);
 

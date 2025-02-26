@@ -1,6 +1,7 @@
 #pragma once
 #include "fragment.h"
 #include "generic_atom_index.h"
+#include "json.h"
 #include "wavefunction_parameters.h"
 #include <Eigen/Geometry>
 #include <QString>
@@ -32,10 +33,6 @@ struct Parameters {
 
   FragmentDimer fragmentDimer;
 
-  QString symmetry{"-"};
-  double centroidDistance{0.0};
-  double nearestAtomDistance{0.0};
-
   MolecularWavefunction *wfnA{nullptr};
   MolecularWavefunction *wfnB{nullptr};
   ChemicalStructure *structure{nullptr};
@@ -62,3 +59,6 @@ struct Result {
 };
 
 } // namespace pair_energy
+
+void to_json(nlohmann::json &j, const pair_energy::Parameters &);
+void from_json(const nlohmann::json &j, pair_energy::Parameters &);

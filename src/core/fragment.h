@@ -96,6 +96,9 @@ void from_json(const nlohmann::json &j, FragmentColorSettings::Method &method);
 void to_json(nlohmann::json &j, const Fragment &);
 void from_json(const nlohmann::json &j, Fragment &);
 
+void to_json(nlohmann::json &j, const FragmentDimer &);
+void from_json(const nlohmann::json &j, FragmentDimer &);
+
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DimerAtoms, a, b)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FragmentColorSettings, method, color)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Fragment::State, charge, multiplicity)

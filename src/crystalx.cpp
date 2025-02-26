@@ -1858,9 +1858,6 @@ void Crystalx::calculatePairEnergiesWithExistingWavefunctions(
     p.atomsA = pair.a.atomIndices;
     p.atomsB = pair.b.atomIndices;
     p.model = modelParameters.model;
-    p.centroidDistance = pair.centroidDistance;
-    p.nearestAtomDistance = pair.nearestAtomDistance;
-    p.symmetry = pair.symmetry;
 
     bool foundA = false;
     bool foundB = false;

@@ -1,4 +1,5 @@
 #include "pair_energy_results.h"
+#include "chemicalstructure.h"
 #include <QDebug>
 
 PairInteraction::PairInteraction(const QString &interactionModel,
@@ -97,6 +98,7 @@ void PairInteractions::add(PairInteraction *result) {
     }
   }
   double d = result->nearestAtomDistance();
+  qDebug() << "Nearest atomdistance" << d;
   m_distanceRange[model] = currentRange.update(d);
   emit interactionAdded();
 }
@@ -244,4 +246,156 @@ bool PairInteractions::hasPermutationSymmetry(const QString &model) const {
     }
   }
   return true;
+}
+
+nlohmann::json PairInteraction::toJson() const {
+  nlohmann::json j;
+
+  // Basic properties
+  j["interactionModel"] = m_interactionModel;
+  j["label"] = m_label;
+  j["color"] = m_color;
+  j["count"] = m_count;
+
+  // Energy components
+  nlohmann::json componentsJson = nlohmann::json::object();
+  for (const auto &[component, value] : m_components) {
+    componentsJson[component.toStdString()] = value;
+  }
+  j["components"] = componentsJson;
+
+  // Metadata
+  nlohmann::json metadataJson = nlohmann::json::object();
+  for (const auto &[key, value] : m_metadata) {
+    metadataJson[key.toStdString()] = value;
+  }
+  j["metadata"] = metadataJson;
+
+  nlohmann::json paramsJson;
+  to_json(paramsJson, m_parameters);
+  // Parameters
+  j["parameters"] = paramsJson;
+
+  return j;
+}
+
+PairInteraction *PairInteraction::fromJson(const nlohmann::json &j,
+                                           QObject *parent) {
+  try {
+    QString model = j.at("interactionModel").get<QString>();
+
+    // Create the interaction
+    PairInteraction *interaction = new PairInteraction(model, parent);
+
+    if (j.contains("label")) {
+      interaction->setLabel(j.at("label").get<QString>());
+    }
+
+    if (j.contains("color")) {
+      QColor color = j.at("color").get<QColor>();
+      interaction->setColor(color);
+    }
+
+    if (j.contains("count")) {
+      interaction->setCount(j.at("count").get<int>());
+    }
+
+    // Set components
+    if (j.contains("components")) {
+      const auto &componentsJson = j.at("components");
+      for (auto it = componentsJson.begin(); it != componentsJson.end(); ++it) {
+        QString key = QString::fromStdString(it.key());
+        double value = it.value().get<double>();
+        interaction->addComponent(key, value);
+      }
+    }
+
+    // Set metadata
+    if (j.contains("metadata")) {
+      const auto &metadataJson = j.at("metadata");
+      for (auto it = metadataJson.begin(); it != metadataJson.end(); ++it) {
+        QString key = QString::fromStdString(it.key());
+        QVariant value;
+
+        if (it.value().is_number_float()) {
+          value = QVariant(it.value().get<double>());
+        } else if (it.value().is_number_integer()) {
+          value = QVariant(it.value().get<int>());
+        } else if (it.value().is_boolean()) {
+          value = QVariant(it.value().get<bool>());
+        } else if (it.value().is_string()) {
+          value = QVariant(it.value().get<QString>());
+        }
+        interaction->addMetadata(key, value);
+      }
+    }
+
+    // Set parameters
+    if (j.contains("parameters")) {
+      const auto &paramsJson = j.at("parameters");
+      pair_energy::Parameters params;
+      from_json(j.at("parameters"), params);
+      interaction->setParameters(params);
+    }
+
+    return interaction;
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to deserialize PairInteraction: " << e.what();
+    return nullptr;
+  }
+}
+
+nlohmann::json PairInteractions::toJson() const {
+  nlohmann::json j;
+
+  // Serialize interactions by model
+  nlohmann::json interactionsJson = nlohmann::json::object();
+  for (const auto &[model, interactions] : m_pairInteractions) {
+    nlohmann::json modelInteractionsJson = nlohmann::json::array();
+    for (const auto &[index, interaction] : interactions) {
+      modelInteractionsJson.push_back(interaction->toJson());
+    }
+    interactionsJson[model.toStdString()] = modelInteractionsJson;
+  }
+  j["interactions"] = interactionsJson;
+
+  return j;
+}
+
+bool PairInteractions::fromJson(const nlohmann::json &j) {
+  ChemicalStructure *p = qobject_cast<ChemicalStructure *>(parent());
+  try {
+    // Clear existing data first
+    for (auto &[model, interactions] : m_pairInteractions) {
+      for (auto &[index, interaction] : interactions) {
+        delete interaction;
+      }
+    }
+    m_pairInteractions.clear();
+    m_distanceRange.clear();
+
+    // Deserialize interactions
+    if (j.contains("interactions")) {
+      const auto &interactionsJson = j.at("interactions");
+      for (auto it = interactionsJson.begin(); it != interactionsJson.end();
+           ++it) {
+        QString model = QString::fromStdString(it.key());
+        const auto &modelInteractionsJson = it.value();
+
+        for (const auto &interactionJson : modelInteractionsJson) {
+          PairInteraction *interaction =
+              PairInteraction::fromJson(interactionJson, this);
+          if (interaction) {
+            // Add to map - use standard add method to maintain internal state
+            add(interaction);
+          }
+        }
+      }
+    }
+
+    return true;
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to deserialize PairInteractions: " << e.what();
+    return false;
+  }
 }

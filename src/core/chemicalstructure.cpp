@@ -1351,90 +1351,109 @@ occ::Mat3N ChemicalStructure::convertCoordinates(
 }
 
 nlohmann::json ChemicalStructure::toJson() const {
-  return {{"structureType", "cluster"},
-          {"atomicPositions", m_atomicPositions},
-          {"atomicNumbers", m_atomicNumbers},
-          {"labels", m_labels},
-          {"flags", m_flags}};
+  nlohmann::json j{{"structureType", "cluster"},
+                   {"atomicPositions", m_atomicPositions},
+                   {"atomicNumbers", m_atomicNumbers},
+                   {"labels", m_labels},
+                   {"flags", m_flags}};
+
+  if (m_interactions && m_interactions->getCount() > 0) {
+    j["pairInteractions"] = m_interactions->toJson();
+  }
+  return j;
 }
 
 bool ChemicalStructure::fromJsonBase(const nlohmann::json &j) {
-    if (j.contains("structureType")) {
-        std::string type = j.at("structureType").get<std::string>();
-        qDebug() << "Loading structure of type:" << QString::fromStdString(type);
-        if (type != "cluster" && type != "crystal") {
-            qDebug() << "ChemicalStructure loading failed: unknown structureType";
-            return false;
+  if (j.contains("structureType")) {
+    std::string type = j.at("structureType").get<std::string>();
+    qDebug() << "Loading structure of type:" << QString::fromStdString(type);
+    if (type != "cluster" && type != "crystal") {
+      qDebug() << "ChemicalStructure loading failed: unknown structureType";
+      return false;
+    }
+  }
+
+  if (!j.contains("atomicPositions")) {
+    qDebug() << "ChemicalStructure loading failed: missing atomicPositions";
+    return false;
+  }
+  if (!j.contains("atomicNumbers")) {
+    qDebug() << "ChemicalStructure loading failed: missing atomicNumbers";
+    return false;
+  }
+  if (!j.contains("labels")) {
+    qDebug() << "ChemicalStructure loading failed: missing labels";
+    return false;
+  }
+  if (!j.contains("flags")) {
+    qDebug() << "ChemicalStructure loading failed: missing flags";
+    return false;
+  }
+
+  try {
+    qDebug() << "Clearing existing atoms";
+    clearAtoms();
+
+    qDebug() << "Loading atomic positions";
+    j.at("atomicPositions").get_to(m_atomicPositions);
+    qDebug() << "Loading atomic numbers";
+    j.at("atomicNumbers").get_to(m_atomicNumbers);
+    qDebug() << "Loading labels";
+    j.at("labels").get_to(m_labels);
+
+    qDebug() << "Loading atom flags";
+    std::vector<std::pair<GenericAtomIndex, AtomFlags>> flags;
+    j.at("flags").get_to(flags);
+    for (const auto &kv : flags) {
+      qDebug() << "Setting flags for atom" << kv.first << ":" << kv.second;
+      m_flags.insert(kv);
+    }
+
+    qDebug() << "Structure stats:";
+    qDebug() << "  Atom positions:" << m_atomicPositions.cols();
+    qDebug() << "  Atomic numbers:" << m_atomicNumbers.rows();
+    qDebug() << "  Flags count:" << m_flags.size();
+
+    qDebug() << "Calculating origin";
+    m_origin = m_atomicPositions.rowwise().mean();
+
+    qDebug() << "Initializing fragment indices";
+    m_fragmentForAtom.resize(m_atomicNumbers.rows(), FragmentIndex{-1});
+
+    m_bondsNeedUpdate = true;
+
+    // Process pair interactions if present
+    if (j.contains("pairInteractions") && m_interactions) {
+      try {
+        bool success = m_interactions->fromJson(j.at("pairInteractions"));
+        if (!success) {
+          qDebug() << "Warning: Failed to load pair interactions";
         }
+      } catch (const std::exception &e) {
+        qDebug() << "Exception loading pair interactions:" << e.what();
+      }
     }
+    emit atomsChanged();
 
-    if (!j.contains("atomicPositions")) {
-        qDebug() << "ChemicalStructure loading failed: missing atomicPositions";
-        return false;
-    }
-    if (!j.contains("atomicNumbers")) {
-        qDebug() << "ChemicalStructure loading failed: missing atomicNumbers";
-        return false;
-    }
-    if (!j.contains("labels")) {
-        qDebug() << "ChemicalStructure loading failed: missing labels";
-        return false;
-    }
-    if (!j.contains("flags")) {
-        qDebug() << "ChemicalStructure loading failed: missing flags";
-        return false;
-    }
+    qDebug() << "ChemicalStructure base loading completed successfully";
 
-    try {
-        qDebug() << "Clearing existing atoms";
-        clearAtoms();
+    return true;
 
-        qDebug() << "Loading atomic positions";
-        j.at("atomicPositions").get_to(m_atomicPositions);
-        qDebug() << "Loading atomic numbers";
-        j.at("atomicNumbers").get_to(m_atomicNumbers);
-        qDebug() << "Loading labels";
-        j.at("labels").get_to(m_labels);
-
-        qDebug() << "Loading atom flags";
-        std::vector<std::pair<GenericAtomIndex, AtomFlags>> flags;
-        j.at("flags").get_to(flags);
-        for (const auto &kv : flags) {
-            qDebug() << "Setting flags for atom" << kv.first << ":" << kv.second;
-            m_flags.insert(kv);
-        }
-
-        qDebug() << "Structure stats:";
-        qDebug() << "  Atom positions:" << m_atomicPositions.cols();
-        qDebug() << "  Atomic numbers:" << m_atomicNumbers.rows();
-        qDebug() << "  Flags count:" << m_flags.size();
-
-        qDebug() << "Calculating origin";
-        m_origin = m_atomicPositions.rowwise().mean();
-        
-        qDebug() << "Initializing fragment indices";
-        m_fragmentForAtom.resize(m_atomicNumbers.rows(), FragmentIndex{-1});
-        
-        m_bondsNeedUpdate = true;
-        emit atomsChanged();
-        
-        qDebug() << "ChemicalStructure base loading completed successfully";
-        return true;
-
-    } catch (const nlohmann::json::exception& e) {
-        qDebug() << "ChemicalStructure loading failed: JSON exception:" << e.what();
-        clearAtoms();
-        return false;
-    } catch (const std::exception& e) {
-        qDebug() << "ChemicalStructure loading failed: unexpected exception:" << e.what();
-        clearAtoms();
-        return false;
-    }
+  } catch (const nlohmann::json::exception &e) {
+    qDebug() << "ChemicalStructure loading failed: JSON exception:" << e.what();
+    clearAtoms();
+    return false;
+  } catch (const std::exception &e) {
+    qDebug() << "ChemicalStructure loading failed: unexpected exception:"
+             << e.what();
+    clearAtoms();
+    return false;
+  }
 }
 
 bool ChemicalStructure::fromJson(const nlohmann::json &j) {
-    if (!fromJsonBase(j)) return false;
-    updateBondGraph();
-    return true;
+  if (!fromJsonBase(j))
+    return false;
+  updateBondGraph();
+  return true;
 }
-
