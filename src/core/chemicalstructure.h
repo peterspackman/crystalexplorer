@@ -293,6 +293,8 @@ public:
   [[nodiscard]] virtual nlohmann::json toJson() const;
   virtual bool fromJson(const nlohmann::json &);
 
+  std::vector<BondOverride> getBondOverrides() const;
+
 signals:
   void atomsChanged();
   void childAdded(QObject *);

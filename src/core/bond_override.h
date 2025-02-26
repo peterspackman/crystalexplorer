@@ -1,5 +1,6 @@
 #pragma once
 #include "generic_atom_index.h"
+#include "json.h"
 
 enum class BondMethod {
   Bond,     // Force bond to exist
@@ -38,3 +39,11 @@ struct BondOverride {
 inline BondIndexPair makeBondPair(GenericAtomIndex a, GenericAtomIndex b) {
   return (a < b) ? BondIndexPair{a, b} : BondIndexPair{b, a};
 }
+
+NLOHMANN_JSON_SERIALIZE_ENUM(BondMethod, {
+                                             {BondMethod::Bond, "-"},
+                                             {BondMethod::DontBond, "x"},
+                                             {BondMethod::Detect, "?"},
+                                         })
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(BondIndexPair, a, b)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(BondOverride, a, b, bond)

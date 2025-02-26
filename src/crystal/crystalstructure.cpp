@@ -1663,6 +1663,13 @@ bool CrystalStructure::fromJson(const nlohmann::json &j) {
     qDebug() << "CrystalStructure loaded successfully";
     qDebug() << "Setting up crystal structure";
     m_crystal = crystal;
+
+    if (j.contains("bondOverrides")) {
+      std::vector<BondOverride> overrides;
+      j.at("bondOverrides").get_to(overrides);
+      addBondOverrides(overrides);
+    }
+
     qDebug() << "Updating fragments";
     updateFragments();
     qDebug() << "Updating ADPs";

@@ -245,6 +245,15 @@ BondMethod ChemicalStructure::getBondOverride(GenericAtomIndex a,
   return it != m_bondOverrides.end() ? it->second : BondMethod::Detect;
 }
 
+std::vector<BondOverride> ChemicalStructure::getBondOverrides() const {
+  std::vector<BondOverride> result;
+  result.reserve(m_bondOverrides.size());
+  for (const auto &[idx, m] : m_bondOverrides) {
+    result.push_back(BondOverride{idx.a, idx.b, m});
+  }
+  return result;
+}
+
 const AtomFlags &ChemicalStructure::atomFlags(GenericAtomIndex index) const {
   return m_flags.at(index);
 }
@@ -1360,6 +1369,10 @@ nlohmann::json ChemicalStructure::toJson() const {
   if (m_interactions && m_interactions->getCount() > 0) {
     j["pairInteractions"] = m_interactions->toJson();
   }
+  if (m_bondOverrides.size() > 0) {
+    std::vector<BondOverride> overrides = getBondOverrides();
+    j["bondOverrides"] = overrides;
+  }
   return j;
 }
 
@@ -1391,6 +1404,7 @@ bool ChemicalStructure::fromJsonBase(const nlohmann::json &j) {
   }
 
   try {
+    m_bondsNeedUpdate = false;
     qDebug() << "Clearing existing atoms";
     clearAtoms();
 
@@ -1454,6 +1468,12 @@ bool ChemicalStructure::fromJsonBase(const nlohmann::json &j) {
 bool ChemicalStructure::fromJson(const nlohmann::json &j) {
   if (!fromJsonBase(j))
     return false;
+
+  if (j.contains("bondOverrides")) {
+    std::vector<BondOverride> overrides;
+    j.at("bondOverrides").get_to(overrides);
+    addBondOverrides(overrides);
+  }
   updateBondGraph();
   return true;
 }
