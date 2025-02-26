@@ -1,58 +1,90 @@
-# CrystalExplorer
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="icons/ce_header_dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="icons/ce_header.png">
+    <img src="icons/ce_header.png" alt="CrystalExplorer" width="500">
+  </picture>
+  <p>
+    <a href="https://github.com/peterspackman/crystalexplorer/actions/workflows/build_and_test.yml"><img src="https://github.com/peterspackman/crystalexplorer/actions/workflows/build_and_test.yml/badge.svg" alt="Build Status"></a>
+    <a href="https://github.com/peterspackman/crystalexplorer/releases/latest"><img src="https://img.shields.io/github/v/release/peterspackman/crystalexplorer" alt="Latest Release"></a>
+    <a href="https://github.com/peterspackman/crystalexplorer/blob/main/COPYING.LESSER"><img src="https://img.shields.io/github/license/peterspackman/crystalexplorer" alt="License"></a>
+    <a href="https://doi.org/10.1107/S1600576721002910"><img src="https://img.shields.io/badge/DOI-10.1107%2FS1600576721002910-blue" alt="DOI"></a>
+  </p>
+</div>
 
-CrystalExplorer is now open source, available under a LGPLv3 license terms. See COPYING.LESSER for more details.
+CrystalExplorer is now open source, available under LGPLv3 license terms. See [COPYING.LESSER](COPYING.LESSER) for more details.
 
-## Status
+## Features
 
-CrystalExplorer is currently undergoing an overhaul, migrating away from using Tonto as
-a backend after rewriting the rendering code.
+CrystalExplorer has undergone significant improvements with several major updates:
 
-The new features are effectively locked behind the 'Enable experimental features' flag in preferences.
-So having that flag disabled *should* largely use the old code and logic.
+- **Modern OpenGL Renderer**: The rendering engine has been completely rewritten using modern OpenGL, providing improved performance and visual quality
+- **OCC Integration**: Migrated from Tonto to Open Chemistry Crystallography (OCC) backend for more efficient crystallographic calculations
+- **Parallel Task Execution**: Computational tasks can now run concurrently, significantly improving performance for complex calculations
+- **XTB Support**: Added integration with extended tight-binding method for faster quantum mechanical calculations
 
-The current state of the software should be considered unstable: many things are not working
-and need fixes, and many areas of the newer implementation are not yet implemented.
+The software is under active development, with ongoing work to stabilize the new features and implementations.
+Project file serialization has been improved with better support for interaction energies, wavefunctions, and bond overrides.
 
-In particular, saving and loading project files is quite broken at the moment due to several internal
-changes and the previous reliance on binary compatibility in the internal data structures.
+## Build Instructions
 
-# Build
-
-Building CE should be a matter of the typical CMake workflow, assuming the major dependency (Qt6) is
-already installed and available.
+Building CrystalExplorer requires:
+- CMake 3.15+
+- Qt 6.5+
+- A C++17 compatible compiler
 
 ```bash
-# Assuming you're in the source directory
-mkdir build && cd build
-
-# Configure the program and library
-cmake .. -GNinja
+# Configure the project
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 
 # Build the program
-ninja
+cmake --build build
 
-# Build the package (e.g. dmg file on MacOS)
-ninja package
+# Run tests (optional)
+ctest --test-dir build
+
+# Build the package (e.g. dmg on macOS, AppImage on Linux, exe installer on Windows)
+cmake --build build --target package
 ```
 
-By default this will build the Release version. 
+You can also use presets for platform-specific configurations:
 
+```bash
+# List available presets
+cmake --list-presets
+
+# Configure using a preset
+cmake --preset macos-arm64
+
+# Build using a preset
+cmake --build --preset macos-arm64
+```
+
+
+## Documentation
+
+Visit the [CrystalExplorer website](https://crystalexplorer.net) for full documentation and tutorials.
+
+## Download
+
+Pre-built packages for Windows, macOS, and Linux are available in the [Releases](https://github.com/peterspackman/crystalexplorer/releases) section.
 
 ## Citation
 
-See the [documentation](https://crystalexplorer.net/docs/how-to-cite), but for basic functionality please cite the following:
+If you use CrystalExplorer in your research, please cite:
 
 ```bibtex
 @article{Spackman:oc5008,
-author = "Spackman, Peter R. and Turner, Michael J. and McKinnon, Joshua J. and Wolff, Stephen K. and Grimwood, Daniel J. and Jayatilaka, Dylan and Spackman, Mark A.",
-title = "{{\it CrystalExplorer}: a program for Hirshfeld surface analysis, visualization and quantitative analysis of molecular crystals}",
-journal = "Journal of Applied Crystallography",
-year = "2021",
-volume = "54",
-number = "3",
-pages = "",
-month = "Jun",
-doi = {10.1107/S1600576721002910},
-url = {https://doi.org/10.1107/S1600576721002910},
+  author  = "Spackman, Peter R. and Turner, Michael J. and McKinnon, Joshua J. and Wolff, Stephen K. and Grimwood, Daniel J. and Jayatilaka, Dylan and Spackman, Mark A.",
+  title   = "{{\it CrystalExplorer}: a program for Hirshfeld surface analysis, visualization and quantitative analysis of molecular crystals}",
+  journal = "Journal of Applied Crystallography",
+  year    = "2021",
+  volume  = "54",
+  number  = "3",
+  month   = "Jun",
+  doi     = {10.1107/S1600576721002910},
+  url     = {https://doi.org/10.1107/S1600576721002910}
 }
 ```
+
+For specific features or modules, please see the [citation guide](https://crystalexplorer.net/docs/how-to-cite).
