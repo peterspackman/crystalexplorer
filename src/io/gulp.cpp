@@ -46,8 +46,13 @@ double GulpAtomPosition::parseFractional(const QString &value) {
 bool GulpInputFile::load(const QString &filename) {
   QFile file(filename);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    m_errorMessage = "Failed to open file: " + filename;
     return false;
   }
+
+  QTextStream contentStream(&file);
+  m_fileContents = contentStream.readAll();
+  file.seek(0);
 
   QTextStream in(&file);
   QString line;
@@ -57,8 +62,12 @@ bool GulpInputFile::load(const QString &filename) {
     ExpectingCell,
     ExpectingSpace,
     ExpectingAtomLine,
+    SkipPotentials,
     Error
   } state = ParseState::Initial;
+
+  int atomCount = -1;  // Expected number of atoms
+  int atomsParsed = 0; // Number of atoms parsed so far
 
   while (!in.atEnd()) {
     line = in.readLine().trimmed();
@@ -79,21 +88,41 @@ bool GulpInputFile::load(const QString &filename) {
       break;
     } else if (line.startsWith("cart", Qt::CaseInsensitive)) {
       state = ParseState::ExpectingAtomLine;
+      m_fractional = false;
+
+      QStringList tokens = tokenize(line);
+      if (tokens.size() > 1) {
+        bool ok;
+        atomCount = tokens[1].toInt(&ok);
+        if (!ok)
+          atomCount = -1;
+      }
+
       continue;
     } else if (line.startsWith("frac", Qt::CaseInsensitive)) {
       state = ParseState::ExpectingAtomLine;
       m_fractional = true;
+
+      QStringList tokens = tokenize(line);
+      if (tokens.size() > 1) {
+        bool ok;
+        atomCount = tokens[1].toInt(&ok);
+        if (!ok)
+          atomCount = -1;
+      }
+
       continue;
     } else if (line.startsWith("space", Qt::CaseInsensitive)) {
       state = ParseState::ExpectingSpace;
       continue;
+    } else if (isKeywordLine(line)) {
+      state = ParseState::SkipPotentials;
+      continue;
     }
 
-    // Handle the different states
     switch (state) {
     case ParseState::Error:
       return false;
-      break;
     case ParseState::ExpectingCell:
       parseCell(line);
       state = ParseState::Initial;
@@ -103,50 +132,86 @@ bool GulpInputFile::load(const QString &filename) {
       state = ParseState::Initial;
       break;
     case ParseState::ExpectingAtomLine:
-      parseCoords(line);
+      if (parseCoords(line)) {
+        atomsParsed++;
+        // If we've parsed all expected atoms, move to initial state
+        if (atomCount > 0 && atomsParsed >= atomCount) {
+          state = ParseState::Initial;
+        }
+      } else {
+        // If coordinate parsing fails, it might be a potential line or other
+        // keyword
+        if (isKeywordLine(line)) {
+          state = ParseState::SkipPotentials;
+        } else {
+          // Otherwise add it to the keywords (could be a new section)
+          m_keywords += line;
+          state = ParseState::Initial;
+        }
+      }
+      break;
+    case ParseState::SkipPotentials:
       break;
     case ParseState::Initial:
       m_keywords += line;
       break;
     }
   }
+
   return true;
 }
 
-void GulpInputFile::parseCell(const QString &line) {
-  QStringList tokens = tokenize(line);
-  m_cellParams = {1.0, 1.0, 1.0, 90.0, 90.0, 90.0};
+bool GulpInputFile::isKeywordLine(const QString &line) {
+  const QStringList keywords = {
+      "morse",  "lennard",   "buckingham",  "three",     "torsion", "bond",
+      "angle",  "shell",     "spring",      "species",   "shrink",  "kpoint",
+      "output", "potential", "temperature", "pressure",  "cutp",    "dump",
+      "reaxff", "library",   "uff",         "gasteiger", "fix",     "conp",
+      "conv",   "opti",      "gradient",    "hessian"};
 
-  for (int i = 0; i < tokens.size() && i < 6; ++i) {
-    bool ok;
-    double value = tokens[i].toDouble(&ok);
-    if (ok) {
-      m_cellParams[i] = value;
+  QString lowerLine = line.toLower();
+  foreach (const QString &keyword, keywords) {
+    if (lowerLine.startsWith(keyword)) {
+      return true;
     }
   }
-  m_periodicity = 3;
+  return false;
 }
 
-void GulpInputFile::parseCoords(const QString &line) {
+bool GulpInputFile::parseCoords(const QString &line) {
   QStringList tokens = tokenize(line);
   if (tokens.size() < 3)
-    return; // Need at least element and x,y coordinates
+    return false; // Need at least element and x,y coordinates
+
+  if (tokens[0].toLower() == "end" || tokens[0].toLower() == "title" ||
+      tokens[0].toLower() == "#") {
+    return false;
+  }
+
+  QString element = tokens[0];
+  if (element.length() > 4) {
+    return false; // Not likely an element symbol
+  }
 
   GulpAtomPosition atom;
   int idx = 0;
 
-  // Parse element and core/shell
   atom.element = tokens[idx++];
   if (idx < tokens.size() &&
       (tokens[idx].toLower() == "core" || tokens[idx].toLower() == "shel")) {
     atom.core_shell = tokens[idx++].toLower();
+  } else {
+    return false;
   }
 
-  if (idx + 2 < tokens.size()) {
-    atom.x = GulpAtomPosition::parseFractional(tokens[idx++]);
-    atom.y = GulpAtomPosition::parseFractional(tokens[idx++]);
-    atom.z = GulpAtomPosition::parseFractional(tokens[idx++]);
+  if (idx + 2 >= tokens.size()) {
+    return false;
   }
+
+  bool xOk, yOk, zOk;
+  atom.x = GulpAtomPosition::parseFractional(tokens[idx++]);
+  atom.y = GulpAtomPosition::parseFractional(tokens[idx++]);
+  atom.z = GulpAtomPosition::parseFractional(tokens[idx++]);
 
   if (idx < tokens.size()) {
     bool ok;
@@ -167,6 +232,21 @@ void GulpInputFile::parseCoords(const QString &line) {
   }
 
   m_atoms.push_back(atom);
+  return true;
+}
+
+void GulpInputFile::parseCell(const QString &line) {
+  QStringList tokens = tokenize(line);
+  m_cellParams = {1.0, 1.0, 1.0, 90.0, 90.0, 90.0};
+
+  for (int i = 0; i < tokens.size() && i < 6; ++i) {
+    bool ok;
+    double value = tokens[i].toDouble(&ok);
+    if (ok) {
+      m_cellParams[i] = value;
+    }
+  }
+  m_periodicity = 3;
 }
 
 QStringList GulpInputFile::tokenize(const QString &line) {
@@ -282,7 +362,7 @@ GulpInputFile::fromChemicalStructure(const ChemicalStructure *structure) {
   for (int i = 0; i < symbols.size(); ++i) {
     GulpAtomPosition atom;
     atom.element = symbols[i];
-    atom.core_shell = "core"; // Default to core for chemical structures
+    atom.core_shell = "core";
 
     const auto &pos = positions.col(i);
     atom.x = pos.x();
@@ -320,7 +400,7 @@ GulpInputFile::fromCrystalStructure(const CrystalStructure *structure) {
   for (int i = 0; i < asym.size(); ++i) {
     GulpAtomPosition atom;
     atom.element = QString::fromStdString(asym.labels[i]);
-    atom.core_shell = "core"; // Default to core unless specified otherwise
+    atom.core_shell = "core";
 
     const auto &pos = asym.positions.col(i);
     atom.x = pos.x();

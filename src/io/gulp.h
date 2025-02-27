@@ -74,9 +74,9 @@ private:
   bool m_success{false};
   QString m_errorMessage{"Unknown Error"};
 
-  void parseKeywords(const QString &line);
+  bool isKeywordLine(const QString &line);
+  bool parseCoords(const QString &line);
   void parseCell(const QString &line);
-  void parseCoords(const QString &line);
   static QStringList tokenize(const QString &line);
 };
 
