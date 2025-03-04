@@ -53,7 +53,7 @@ QString SurfacePropertyTypeDropdown::current() const {
 
 isosurface::SurfacePropertyDescription
 SurfacePropertyTypeDropdown::currentSurfacePropertyDescription() const {
-  return m_surfacePropertyDescriptions.descriptions.value(current());
+  return m_surfacePropertyDescriptions.get(current());
 }
 
 void SurfacePropertyTypeDropdown::setDescriptions(
