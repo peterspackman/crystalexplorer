@@ -1,110 +1,89 @@
 #include "ply_reader.h"
+#include "io_utilities.h"
 #include "isosurface_parameters.h"
 #include <QDebug>
 #include <fstream>
+#include <sstream>
+#include <vector>
 
-namespace {
-class MemoryBuffer : public std::streambuf {
-public:
-  MemoryBuffer(char const *first_elem, size_t size) {
-    if (!first_elem || size == 0) {
-      throw std::runtime_error("Invalid buffer parameters");
-    }
-    p_start = const_cast<char *>(first_elem);
-    p_end = p_start + size;
-    setg(p_start, p_start, p_end);
-  }
-
-private:
-  pos_type seekoff(off_type off, std::ios_base::seekdir dir,
-                   std::ios_base::openmode) override {
-    if (dir == std::ios_base::cur)
-      gbump(static_cast<int>(off));
-    else
-      setg(p_start, (dir == std::ios_base::beg ? p_start : p_end) + off, p_end);
-    return gptr() - p_start;
-  }
-
-  pos_type seekpos(pos_type pos, std::ios_base::openmode which) override {
-    return seekoff(pos, std::ios_base::beg, which);
-  }
-
-  char *p_start{nullptr};
-  char *p_end{nullptr};
-};
-
-class MemoryStream : virtual MemoryBuffer, public std::istream {
-public:
-  MemoryStream(char const *first_elem, size_t size)
-      : MemoryBuffer(first_elem, size),
-        std::istream(static_cast<std::streambuf *>(this)) {}
-};
-} // namespace
-
-PlyReader::PlyReader(std::unique_ptr<std::istream> stream)
-    : m_stream(std::move(stream)),
+PlyReader::PlyReader(const QString &filepath, bool preloadIntoMemory)
+    : m_filepath(filepath), m_preloadIntoMemory(preloadIntoMemory),
       m_plyFile(std::make_unique<tinyply::PlyFile>()) {}
 
-PlyReader::PlyReader(const QString &filepath) {
-  m_fileBuffer = readFileBinary(filepath);
-  m_stream = std::make_unique<MemoryStream>(
-      reinterpret_cast<char *>(m_fileBuffer.data()), m_fileBuffer.size());
-  m_plyFile = std::make_unique<tinyply::PlyFile>();
+PlyReader::~PlyReader() = default;
 
-  m_stream->clear();
-  m_stream->seekg(0, std::ios::beg);
+bool PlyReader::parseFile() {
+  if (m_preloadIntoMemory) {
+    qDebug() << "Reading PLY file into memory:" << m_filepath;
+    return parseFileFromBuffer(
+        io::readFileBytes(m_filepath, QIODevice::ReadOnly));
+  } else {
+    qDebug() << "Reading PLY file directly from disk:" << m_filepath;
+    return parseFileFromDisk();
+  }
 }
 
-std::vector<uint8_t> PlyReader::readFileBinary(const QString &filepath) {
-  std::ifstream file(filepath.toStdString(), std::ios::binary);
-  if (!file.is_open()) {
-    throw std::runtime_error("Could not open file: " + filepath.toStdString());
+bool PlyReader::parseFileFromBuffer(const QByteArray &buffer) {
+  if (buffer.isEmpty()) {
+    qDebug() << "Could not read file or file is empty:" << m_filepath;
+    return false;
   }
-
-  file.seekg(0, std::ios::end);
-  if (file.fail()) {
-    throw std::runtime_error("Failed to seek to end of file");
-  }
-
-  size_t sizeBytes = file.tellg();
-  if (sizeBytes == 0) {
-    throw std::runtime_error("File is empty");
-  }
-
-  file.seekg(0, std::ios::beg);
-  if (file.fail()) {
-    throw std::runtime_error("Failed to seek to beginning of file");
-  }
-
-  std::vector<uint8_t> buffer(sizeBytes);
-  if (!file.read(reinterpret_cast<char *>(buffer.data()), sizeBytes)) {
-    throw std::runtime_error("Failed to read file: " + filepath.toStdString() +
-                             " (read " + std::to_string(file.gcount()) +
-                             " of " + std::to_string(sizeBytes) + " bytes)");
-  }
-
-  return buffer;
-}
-
-void PlyReader::parseHeader() {
-  if (!m_stream || m_stream->fail()) {
-    throw std::runtime_error("Invalid stream");
-  }
-
-  qDebug() << "Stream position:" << m_stream->tellg()
-           << "Stream good:" << m_stream->good()
-           << "Stream eof:" << m_stream->eof();
 
   try {
-    m_plyFile->parse_header(*m_stream);
+    // Create string stream from buffer
+    std::istringstream data_stream(
+        std::string(buffer.constData(), buffer.size()));
+
+    // Parse the header
+    m_plyFile->parse_header(data_stream);
+
     // Debug parsed elements
     for (const auto &element : m_plyFile->get_elements()) {
       qDebug() << "Found element:" << QString::fromStdString(element.name)
                << "count:" << element.size;
     }
+
+    // Request properties
+    requestProperties();
+
+    // Read the file data
+    m_plyFile->read(data_stream);
+
+    return true;
   } catch (const std::exception &e) {
-    qDebug() << "Parse header failed:" << e.what();
-    throw;
+    qDebug() << "Error parsing PLY file from buffer:" << e.what();
+    return false;
+  }
+}
+
+bool PlyReader::parseFileFromDisk() {
+  try {
+    // Open file directly with standard I/O
+    std::ifstream file(m_filepath.toStdString(), std::ios::binary);
+    if (!file.is_open()) {
+      qDebug() << "Could not open file:" << m_filepath;
+      return false;
+    }
+
+    // Parse the header
+    m_plyFile->parse_header(file);
+
+    // Debug parsed elements
+    for (const auto &element : m_plyFile->get_elements()) {
+      qDebug() << "Found element:" << QString::fromStdString(element.name)
+               << "count:" << element.size;
+    }
+
+    // Request properties
+    requestProperties();
+
+    // Read the file data
+    m_plyFile->read(file);
+
+    return true;
+  } catch (const std::exception &e) {
+    qDebug() << "Error parsing PLY file from disk:" << e.what();
+    return false;
   }
 }
 
@@ -153,8 +132,6 @@ void PlyReader::processVertexProperties() {
   }
 }
 
-void PlyReader::readFileData() { m_plyFile->read(*m_stream); }
-
 void PlyReader::setMeshProperty(Mesh *mesh, const QString &displayName,
                                 const std::shared_ptr<tinyply::PlyData> &prop) {
   if (!prop || !prop->buffer.get())
@@ -200,9 +177,10 @@ void PlyReader::setMeshProperty(Mesh *mesh, const QString &displayName,
   }
 }
 
-std::unique_ptr<Mesh> PlyReader::constructMesh() {
+Mesh *PlyReader::constructMesh() {
   if (!m_vertices || !m_faces) {
-    throw std::runtime_error("Required mesh data not loaded");
+    qDebug() << "Required mesh data not loaded";
+    return nullptr;
   }
 
   Mesh::VertexList vertexMatrix(3, m_vertices->count);
@@ -218,7 +196,7 @@ std::unique_ptr<Mesh> PlyReader::constructMesh() {
                    m_faces->count)
                    .cast<int>();
 
-  auto mesh = std::make_unique<Mesh>(vertexMatrix, faceMatrix);
+  Mesh *mesh = new Mesh(vertexMatrix, faceMatrix);
 
   // Set normals if available
   if (m_normals && m_normals->count == m_vertices->count) {
@@ -237,25 +215,21 @@ std::unique_ptr<Mesh> PlyReader::constructMesh() {
   for (const auto &[prop_name, prop] : m_properties) {
     QString displayName = isosurface::getSurfacePropertyDisplayName(
         QString::fromStdString(prop_name));
-    setMeshProperty(mesh.get(), displayName, prop);
+    setMeshProperty(mesh, displayName, prop);
   }
 
   return mesh;
 }
 
-std::unique_ptr<Mesh> PlyReader::read() {
-  try {
-    parseHeader();
-    requestProperties();
-    readFileData();
-    return constructMesh();
-  } catch (const std::exception &e) {
-    qDebug() << "Error reading PLY file:" << e.what();
+Mesh *PlyReader::read() {
+  if (!parseFile()) {
     return nullptr;
   }
+
+  return constructMesh();
 }
 
-std::unique_ptr<Mesh> PlyReader::loadFromFile(const QString &filepath) {
-  PlyReader reader(filepath);
+Mesh *PlyReader::loadFromFile(const QString &filepath, bool preloadIntoMemory) {
+  PlyReader reader(filepath, preloadIntoMemory);
   return reader.read();
 }

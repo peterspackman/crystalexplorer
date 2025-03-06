@@ -3,17 +3,16 @@
 
 namespace io {
 
-Mesh* loadMesh(const QString& filename) {
-    auto mesh = PlyReader::loadFromFile(filename);
-    return mesh ? mesh.release() : nullptr;
+Mesh *loadMesh(const QString &filename, bool preload) {
+  return PlyReader::loadFromFile(filename, preload);
 }
 
-QList<Mesh*> loadMeshes(QStringList& filenames) {
-    QList<Mesh*> result;
-    for(const auto &filename: filenames) {
-        result.append(loadMesh(filename));
-    }
-    return result;
+QList<Mesh *> loadMeshes(QStringList &filenames, bool preload) {
+  QList<Mesh *> result;
+  for (const auto &filename : filenames) {
+    result.append(loadMesh(filename, preload));
+  }
+  return result;
 }
 
 } // namespace io

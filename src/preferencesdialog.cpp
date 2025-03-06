@@ -553,8 +553,8 @@ void PreferencesDialog::updateDialogFromSettings() {
       settings::readSetting(settings::keys::XH_NORMALIZATION).toBool());
   deleteWorkingFilesCheckBox->setChecked(
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool());
-  writeGaussianCPFilesCheckBox->setChecked(
-      settings::readSetting(settings::keys::WRITE_GAUSSIAN_CP_FILES).toBool());
+  preloadMeshCheckBox->setChecked(
+      settings::readSetting(settings::keys::PRELOAD_MESH_FILES).toBool());
 
   _updateDialogFromSettingsDone = true;
 }
@@ -590,8 +590,7 @@ void PreferencesDialog::updateSettingsFromDialog() {
         deleteWorkingFilesCheckBox->isChecked()},
        {settings::keys::XH_NORMALIZATION,
         enableXHNormalisationCheckBox->isChecked()},
-       {settings::keys::WRITE_GAUSSIAN_CP_FILES,
-        writeGaussianCPFilesCheckBox->isChecked()},
+       {settings::keys::PRELOAD_MESH_FILES, preloadMeshCheckBox->isChecked()},
        {settings::keys::PREFERRED_WAVEFUNCTION_SOURCE,
         preferredWavefunctionSourceComboBox->currentText()}});
   updateExternalProgramSettings();
@@ -669,7 +668,6 @@ void PreferencesDialog::setBondThickness(int value) {
     emit redrawCrystalForPreferencesChange();
   }
 }
-
 
 void PreferencesDialog::setScreenGamma(int value) {
   settings::writeSetting(settings::keys::SCREEN_GAMMA, value / 100.0f);

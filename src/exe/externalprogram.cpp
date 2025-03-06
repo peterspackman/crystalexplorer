@@ -37,11 +37,19 @@ QString errorString(const QProcess::ProcessError &errorType) {
 ExternalProgramTask::ExternalProgramTask(QObject *parent)
     : Task(parent), m_environment(QProcessEnvironment::systemEnvironment()) {}
 
-ExternalProgramTask::~ExternalProgramTask() {
+void ExternalProgramTask::cleanupResources() {
+  // Delete the temporary directory if it exists
   if (m_tempDir) {
     delete m_tempDir;
+    m_tempDir = nullptr;
   }
+
+  // Clear any other resources if needed
+  m_requirements.clear();
+  m_outputs.clear();
 }
+
+ExternalProgramTask::~ExternalProgramTask() { cleanupResources(); }
 
 QString ExternalProgramTask::getInputFilePropertyName(QString filename) {
   return "inp: " + filename;
@@ -165,71 +173,89 @@ void ExternalProgramTask::postProcess() {
 bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
   QString exe = m_executable;
   QStringList args = m_arguments;
-  QProcess process;
-  qDebug() << "In task logic";
+  {
+    QProcess process;
+    qDebug() << "In task logic";
 
-  if (m_tempDir) {
-    delete m_tempDir; // Clean up any previous instance
-  }
+    if (m_tempDir) {
+      delete m_tempDir; // Clean up any previous instance
+    }
 
-  m_tempDir = new QTemporaryDir();
+    m_tempDir = new QTemporaryDir();
 
-  if (!m_tempDir->isValid()) {
-    setErrorMessage("Cannot create temporary directory");
-    promise.finish();
-    return false;
-  }
-  promise.setProgressValueAndText(1, "Temporary directory created");
-
-  process.setProcessEnvironment(m_environment);
-  process.setWorkingDirectory(m_tempDir->path());
-  promise.setProgressValueAndText(2, "Process environment set");
-
-  setupProcessConnectionsPrivate(process);
-
-  if (!copyRequirements(m_tempDir->path())) {
-    setErrorMessage("Could not copy necessary files into temporary directory");
-    return false;
-  }
-  promise.setProgressValueAndText(3, "Copied files to temporary directory");
-  process.start(exe, args);
-  promise.setProgressValueAndText(4, "Starting background process");
-  process.waitForStarted();
-  promise.setProgressValueAndText(5, "Background process started");
-
-  int timeTaken = 0;
-
-  while (!process.waitForFinished(m_timeIncrement)) {
-    timeTaken += m_timeIncrement;
-    updateStdoutStderr(process);
-    promise.setProgressValueAndText(timeTaken / m_timeIncrement,
-                                    QString("Running %1").arg(m_executable));
-    if (promise.isCanceled()) {
-      setErrorMessage("Promise was canceled");
-      process.kill();
-      promise.setProgressValueAndText(100, "Promise canceled");
+    if (!m_tempDir->isValid()) {
+      setErrorMessage("Cannot create temporary directory");
+      promise.finish();
       return false;
     }
-    if (m_timeout > 0) {
-      if (timeTaken > m_timeout) {
-        setErrorMessage("Process timeout");
-        promise.setProgressValueAndText(
-            100, "Background process canceled due to timeout");
+    promise.setProgressValueAndText(1, "Temporary directory created");
+
+    process.setProcessEnvironment(m_environment);
+    process.setWorkingDirectory(m_tempDir->path());
+    promise.setProgressValueAndText(2, "Process environment set");
+
+    setupProcessConnectionsPrivate(process);
+
+    if (!copyRequirements(m_tempDir->path())) {
+      setErrorMessage(
+          "Could not copy necessary files into temporary directory");
+      return false;
+    }
+    promise.setProgressValueAndText(3, "Copied files to temporary directory");
+    process.start(exe, args);
+    promise.setProgressValueAndText(4, "Starting background process");
+    process.waitForStarted();
+    promise.setProgressValueAndText(5, "Background process started");
+
+    int timeTaken = 0;
+
+    while (!process.waitForFinished(m_timeIncrement)) {
+      timeTaken += m_timeIncrement;
+      updateStdoutStderr(process);
+      promise.setProgressValueAndText(timeTaken / m_timeIncrement,
+                                      QString("Running %1").arg(m_executable));
+      if (promise.isCanceled()) {
+        setErrorMessage("Promise was canceled");
+        process.kill();
+        promise.setProgressValueAndText(100, "Promise canceled");
+        return false;
+      }
+      if (m_timeout > 0) {
+        if (timeTaken > m_timeout) {
+          setErrorMessage("Process timeout");
+          promise.setProgressValueAndText(
+              100, "Background process canceled due to timeout");
+          process.kill();
+          return false;
+        }
+      }
+
+      if (process.error() != QProcess::Timedout) {
+        promise.setProgressValueAndText(100,
+                                        "Background process failed: " +
+                                            exe::errorString(process.error()));
         process.kill();
         return false;
       }
     }
+    promise.setProgressValueAndText(90, "Background process complete");
+    updateStdoutStderr(process);
 
-    if (process.error() != QProcess::Timedout) {
-      promise.setProgressValueAndText(100,
-                                      "Background process failed: " +
-                                          exe::errorString(process.error()));
-      process.kill();
-      return false;
+    // Explicitly close all channels before process object is destroyed
+    process.closeReadChannel(QProcess::StandardOutput);
+    process.closeReadChannel(QProcess::StandardError);
+    process.closeWriteChannel();
+
+    // Make sure the process has terminated
+    if (process.state() != QProcess::NotRunning) {
+      process.terminate();
+      if (!process.waitForFinished(3000)) { // 3 second timeout
+        process.kill();
+        process.waitForFinished(1000);
+      }
     }
   }
-  promise.setProgressValueAndText(90, "Background process complete");
-  updateStdoutStderr(process);
+
   // SUCCESS
   if (m_exitCode == 0) {
     if (!copyResults(m_tempDir->path())) {

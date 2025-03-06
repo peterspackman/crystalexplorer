@@ -67,6 +67,7 @@ private:
     bool copyResults(const QString &path);
     bool deleteRequirements();
     void setupProcessConnectionsPrivate(QProcess&);
+    void cleanupResources();
 
     int m_exitCode{-1};
     int m_timeout{0};

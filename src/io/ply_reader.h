@@ -1,39 +1,42 @@
 #pragma once
 
 #include "mesh.h"
-#include "tinyply.h"
+#include <QObject>
 #include <QString>
-#include <istream>
+#include <QByteArray>
 #include <memory>
-#include <optional>
 #include <vector>
+#include <fstream>
+#include "tinyply.h"
+#include <ankerl/unordered_dense.h>
 
 class PlyReader {
 public:
-  explicit PlyReader(std::unique_ptr<std::istream> stream);
-  explicit PlyReader(const QString &filepath);
+    explicit PlyReader(const QString &filepath, bool preloadIntoMemory = true);
+    ~PlyReader();
 
-  std::unique_ptr<Mesh> read();
-  static std::unique_ptr<Mesh> loadFromFile(const QString &filepath);
+    Mesh* read();
+    
+    // Static helper method
+    static Mesh* loadFromFile(const QString &filepath, bool preloadIntoMemory = true);
 
 private:
-  virtual void parseHeader();
-  virtual void requestProperties();
-  virtual void readFileData();
-  virtual std::unique_ptr<Mesh> constructMesh();
+    bool parseFile();
+    bool parseFileFromBuffer(const QByteArray& buffer);
+    bool parseFileFromDisk();
+    void requestProperties();
+    void processVertexProperties();
+    Mesh* constructMesh();
+    void setMeshProperty(Mesh *mesh, const QString &displayName, 
+                         const std::shared_ptr<tinyply::PlyData> &prop);
 
-  void processVertexProperties();
-  void setMeshProperty(Mesh *mesh, const QString &displayName,
-                       const std::shared_ptr<tinyply::PlyData> &prop);
-
-  static std::vector<uint8_t> readFileBinary(const QString &filepath);
-
-  std::unique_ptr<std::istream> m_stream;
-  std::unique_ptr<tinyply::PlyFile> m_plyFile;
-
-  std::shared_ptr<tinyply::PlyData> m_vertices;
-  std::shared_ptr<tinyply::PlyData> m_faces;
-  std::shared_ptr<tinyply::PlyData> m_normals;
-  std::map<std::string, std::shared_ptr<tinyply::PlyData>> m_properties;
-  std::vector<uint8_t> m_fileBuffer;
+    QString m_filepath;
+    bool m_preloadIntoMemory;
+    std::unique_ptr<tinyply::PlyFile> m_plyFile;
+    
+    // PLY data components
+    std::shared_ptr<tinyply::PlyData> m_vertices;
+    std::shared_ptr<tinyply::PlyData> m_faces;
+    std::shared_ptr<tinyply::PlyData> m_normals;
+    ankerl::unordered_dense::map<std::string, std::shared_ptr<tinyply::PlyData>> m_properties;
 };

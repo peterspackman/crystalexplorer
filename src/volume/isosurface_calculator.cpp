@@ -176,7 +176,8 @@ void setFragmentPatchForMesh(Mesh *mesh, ChemicalStructure *structure) {
 
 void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
-  QList<Mesh *> meshes = io::loadMeshes(m_fileNames);
+  bool preload = settings::readSetting(settings::keys::PRELOAD_MESH_FILES).toBool();
+  QList<Mesh *> meshes = io::loadMeshes(m_fileNames, preload);
   if (m_deleteWorkingFiles) {
     io::deleteFiles(m_fileNames);
   }

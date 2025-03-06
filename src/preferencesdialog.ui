@@ -1303,12 +1303,12 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="0" column="0">
-           <widget class="QCheckBox" name="writeGaussianCPFilesCheckBox">
+           <widget class="QCheckBox" name="preloadMeshCheckBox">
             <property name="toolTip">
              <string>If checked, for each energy calculation in energy frameworks a corresponding counterpoise energy job file for gaussian will also be written to the working directory.</string>
             </property>
             <property name="text">
-             <string>Write gaussian counterpoise energy inputs</string>
+             <string>Preload mesh files into memory</string>
             </property>
            </widget>
           </item>

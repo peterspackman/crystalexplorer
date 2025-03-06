@@ -5,7 +5,7 @@
 
 namespace io {
 
-Mesh * loadMesh(const QString &filename);
-QList<Mesh*> loadMeshes(QStringList& filenames);
+Mesh *loadMesh(const QString &filename, bool preload = true);
+QList<Mesh *> loadMeshes(QStringList &filenames, bool preload = true);
 
-}
+} // namespace io

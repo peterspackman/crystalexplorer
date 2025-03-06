@@ -47,6 +47,8 @@ const QString GAUSSIAN_EXECUTABLE_NAMES = GAUSSIAN_GROUP + "/executableNames";
 const QString GAUSSIAN_MDEF = GAUSSIAN_GROUP + "/memoryEnvironmentVariable";
 const QString GAUSSIAN_PDEF = GAUSSIAN_GROUP + "/nprocsEnvironmentVariable";
 
+const QString PRELOAD_MESH_FILES = "preloadMeshFilesIntoMemory";
+
 // NWChem
 const QString NWCHEM_GROUP = "nwchem";
 const QString NWCHEM_EXECUTABLE = NWCHEM_GROUP + "/executablePath";
