@@ -27,6 +27,8 @@ QString getOccWavefunctionJson(const wfn::Parameters &params) {
 
   root["molecule"]["geometry"] = positions;
   root["molecule"]["symbols"] = symbols;
+  root["molecule"]["molecular_charge"] = params.charge;
+  root["molecule"]["molecular_multiplicity"] = params.multiplicity;
   root["driver"] = "energy";
 
   root["model"]["method"] = params.method;
