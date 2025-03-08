@@ -31,22 +31,31 @@ void copySelectSettingsFromPreviousToCurrent() {
 }
 
 void addDefaultPathsIfNotSet() {
-  // Check and set OCC executable path
-  if (settings::readSetting(settings::keys::OCC_EXECUTABLE)
-          .toString()
-          .isEmpty()) {
-    QString occExecutablePath = cx::paths::determineOCCExecutablePath();
-    settings::writeSetting(settings::keys::OCC_EXECUTABLE, occExecutablePath);
+  // Handle OCC executable path
+  QString occExecutablePath =
+      settings::readSetting(settings::keys::OCC_EXECUTABLE).toString();
+  QFileInfo occExecutableInfo(occExecutablePath);
+
+  if (occExecutablePath.isEmpty() || !occExecutableInfo.exists() ||
+      !occExecutableInfo.isExecutable()) {
+    // Path is either not set, doesn't exist, or isn't executable
+    QString defaultOccExecutablePath = cx::paths::determineOCCExecutablePath();
+    settings::writeSetting(settings::keys::OCC_EXECUTABLE,
+                           defaultOccExecutablePath);
   }
 
-  // Check and set OCC data directory path
-  if (settings::readSetting(settings::keys::OCC_DATA_DIRECTORY)
-          .toString()
-          .isEmpty()) {
-    QString occDataDirectoryPath =
+  // Handle OCC data directory path
+  QString occDataDirectoryPath =
+      settings::readSetting(settings::keys::OCC_DATA_DIRECTORY).toString();
+  QFileInfo occDataDirectoryInfo(occDataDirectoryPath);
+
+  if (occDataDirectoryPath.isEmpty() || !occDataDirectoryInfo.exists() ||
+      !occDataDirectoryInfo.isDir()) {
+    // Path is either not set, doesn't exist, or isn't a directory
+    QString defaultOccDataDirectoryPath =
         cx::paths::determineOCCDataDirectoryPath();
     settings::writeSetting(settings::keys::OCC_DATA_DIRECTORY,
-                           occDataDirectoryPath);
+                           defaultOccDataDirectoryPath);
   }
 }
 
