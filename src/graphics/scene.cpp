@@ -1276,6 +1276,11 @@ void Scene::selectAtomsOutsideRadiusOfSelectedAtoms(float radius) {
 void Scene::reset() {
   m_structure->resetAtomsAndBonds();
   m_structure->resetAtomColorOverrides();
+  for (auto *obj : m_structure->children()) {
+    if (auto *mesh = qobject_cast<Mesh *>(obj)) {
+      mesh->setVisible(false);
+    }
+  }
   clearFragmentColors();
   resetViewAndSelections();
 }
