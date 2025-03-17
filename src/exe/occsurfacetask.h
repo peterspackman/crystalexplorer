@@ -20,6 +20,8 @@ public:
     QString wavefunctionFilename() const;
     QString outputFileNameTemplate() const;
     QStringList outputFileNames() const;
+    QStringList orbitalLabels() const;
+    QStringList getMeshLabels() const;
 
     float separation() const;
     float isovalue() const;
@@ -27,6 +29,7 @@ public:
 
 private:
     void appendWavefunctionTransformArguments(QStringList &args);
+    void appendOrbitalLabels(QStringList &args);
     QString kind() const;
     isosurface::Parameters m_parameters;
     QString m_wavefunctionSuffix{".json"};

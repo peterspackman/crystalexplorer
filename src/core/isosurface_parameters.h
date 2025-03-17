@@ -88,6 +88,7 @@ struct Parameters {
   MolecularWavefunction *wfn{nullptr};
   Eigen::Isometry3d wfn_transform{Eigen::Isometry3d::Identity()};
   QStringList additionalProperties;
+  QStringList orbitalLabels;
 };
 
 struct Result {

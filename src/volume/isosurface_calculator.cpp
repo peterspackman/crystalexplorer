@@ -10,7 +10,7 @@
 
 namespace volume {
 
-inline QString surfaceName(const isosurface::Parameters &parameters) {
+inline QString surfaceName(const isosurface::Parameters &parameters, int index) {
   isosurface::SurfaceDescription desc =
       isosurface::getSurfaceDescription(parameters.kind);
   return QString("%1 (%2) [isovalue = %3]")
@@ -116,7 +116,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
     }
   }
   m_parameters = params;
-  m_name = surfaceName(params);
+  m_name = surfaceName(params, 0);
 
   OccSurfaceTask *surfaceTask = new OccSurfaceTask();
   surfaceTask->setExecutable(m_occExecutable);
@@ -126,6 +126,7 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   surfaceTask->setProperty("inputFile", interiorFilename);
   surfaceTask->setProperty("environmentFile", exteriorFilename);
   surfaceTask->setProperty("wavefunctionFile", wavefunctionFilename);
+  surfaceTask->setProperty("orbitalLabels", params.orbitalLabels);
   surfaceTask->setDeleteWorkingFiles(m_deleteWorkingFiles);
   qDebug() << "Generating " << isosurface::kindToString(params.kind)
            << "surface with isovalue: " << params.isovalue;
@@ -177,6 +178,7 @@ void setFragmentPatchForMesh(Mesh *mesh, ChemicalStructure *structure) {
 void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
   bool preload = settings::readSetting(settings::keys::PRELOAD_MESH_FILES).toBool();
+  qDebug() << "Raeding" << m_fileNames;
   QList<Mesh *> meshes = io::loadMeshes(m_fileNames, preload);
   if (m_deleteWorkingFiles) {
     io::deleteFiles(m_fileNames);
@@ -188,8 +190,6 @@ void IsosurfaceCalculator::surfaceComplete() {
     auto params = m_parameters;
     if (idx > 0)
       params.isovalue = -params.isovalue;
-    mesh->setObjectName(surfaceName(params));
-    mesh->setAttributes(makeAttributes(params));
     mesh->setAtomsInside(m_atomsInside);
     mesh->setAtomsOutside(m_atomsOutside);
     setFragmentPatchForMesh(mesh, params.structure);

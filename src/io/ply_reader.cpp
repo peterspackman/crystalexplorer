@@ -1,6 +1,7 @@
 #include "ply_reader.h"
 #include "io_utilities.h"
 #include "isosurface_parameters.h"
+#include <fmt/core.h>
 #include <QDebug>
 #include <fstream>
 #include <sstream>
@@ -30,24 +31,14 @@ bool PlyReader::parseFileFromBuffer(const QByteArray &buffer) {
   }
 
   try {
-    // Create string stream from buffer
     std::istringstream data_stream(
         std::string(buffer.constData(), buffer.size()));
 
-    // Parse the header
     m_plyFile->parse_header(data_stream);
 
-    // Debug parsed elements
-    for (const auto &element : m_plyFile->get_elements()) {
-      qDebug() << "Found element:" << QString::fromStdString(element.name)
-               << "count:" << element.size;
-    }
-
-    // Request properties
     requestProperties();
-
-    // Read the file data
     m_plyFile->read(data_stream);
+    maybeReadMetaData();
 
     return true;
   } catch (const std::exception &e) {
@@ -58,27 +49,17 @@ bool PlyReader::parseFileFromBuffer(const QByteArray &buffer) {
 
 bool PlyReader::parseFileFromDisk() {
   try {
-    // Open file directly with standard I/O
     std::ifstream file(m_filepath.toStdString(), std::ios::binary);
     if (!file.is_open()) {
       qDebug() << "Could not open file:" << m_filepath;
       return false;
     }
 
-    // Parse the header
     m_plyFile->parse_header(file);
 
-    // Debug parsed elements
-    for (const auto &element : m_plyFile->get_elements()) {
-      qDebug() << "Found element:" << QString::fromStdString(element.name)
-               << "count:" << element.size;
-    }
-
-    // Request properties
     requestProperties();
-
-    // Read the file data
     m_plyFile->read(file);
+    maybeReadMetaData();
 
     return true;
   } catch (const std::exception &e) {
@@ -88,7 +69,6 @@ bool PlyReader::parseFileFromDisk() {
 }
 
 void PlyReader::requestProperties() {
-  // Request core geometric properties
   m_vertices =
       m_plyFile->request_properties_from_element("vertex", {"x", "y", "z"});
   m_faces =
@@ -129,6 +109,26 @@ void PlyReader::processVertexProperties() {
       }
     }
     break;
+  }
+}
+
+void PlyReader::maybeReadMetaData() {
+  const auto &comments = m_plyFile->get_comments();
+  qDebug() << "Found num comments:" << comments.size();
+  for (const auto &comment : m_plyFile->get_comments()) {
+    qDebug() << "Comment" << QString::fromStdString(comment);
+    auto loc = comment.rfind("metajson", 0);
+    if (loc == 0) {
+      std::string jsonStr =
+          comment.substr(loc + 8); // 8 is length of "metajson"
+      try {
+        m_metaData = nlohmann::json::parse(jsonStr);
+      } catch (const nlohmann::json::parse_error &e) {
+        qWarning() << "JSON parsing error: "
+                   << QString::fromStdString(e.what());
+      }
+      break;
+    }
   }
 }
 
@@ -177,6 +177,35 @@ void PlyReader::setMeshProperty(Mesh *mesh, const QString &displayName,
   }
 }
 
+void PlyReader::processMetaData(Mesh * mesh) {
+  if(!mesh) return;
+
+  Mesh::Attributes attr;
+
+  const auto &j = metaData();
+  qDebug() << j.size();
+
+  if(j.contains("kind")) {
+    attr.kind = isosurface::stringToKind(j.at("kind").get<QString>());
+  }
+
+  if(j.contains("isovalue")) {
+    attr.isovalue = j.at("isovalue").get<float>();
+  }
+
+  if(j.contains("separation")) {
+    attr.separation = j.at("separation").get<float>() * occ::units::BOHR_TO_ANGSTROM;
+  }
+
+  if(j.contains("description")) {
+    QString name = j.at("description").get<QString>();
+    mesh->setObjectName(QString("%1 [sep=%2,iso=%3]").arg(name).arg(attr.separation).arg(attr.isovalue));
+  }
+
+
+  mesh->setAttributes(attr);
+}
+
 Mesh *PlyReader::constructMesh() {
   if (!m_vertices || !m_faces) {
     qDebug() << "Required mesh data not loaded";
@@ -198,7 +227,6 @@ Mesh *PlyReader::constructMesh() {
 
   Mesh *mesh = new Mesh(vertexMatrix, faceMatrix);
 
-  // Set normals if available
   if (m_normals && m_normals->count == m_vertices->count) {
     Mesh::VertexList normalMatrix(3, m_normals->count);
     normalMatrix = Eigen::Map<const Eigen::Matrix3Xf>(
@@ -208,15 +236,15 @@ Mesh *PlyReader::constructMesh() {
     mesh->setVertexNormals(normalMatrix);
   }
 
-  // Set default property
   mesh->setVertexProperty("None", Eigen::VectorXf::Zero(vertexMatrix.cols()));
 
-  // Process additional properties
   for (const auto &[prop_name, prop] : m_properties) {
     QString displayName = isosurface::getSurfacePropertyDisplayName(
         QString::fromStdString(prop_name));
     setMeshProperty(mesh, displayName, prop);
   }
+
+  processMetaData(mesh);
 
   return mesh;
 }

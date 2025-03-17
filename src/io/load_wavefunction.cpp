@@ -1,5 +1,6 @@
 #include "load_wavefunction.h"
 #include "json.h"
+#include "eigen_json.h"
 #include <QByteArray>
 #include <QFile>
 #include <QRegularExpression>
@@ -50,11 +51,30 @@ void setJsonProperties(MolecularWavefunction *wfn, const nlohmann::json &doc) {
     setXTBJsonProperties(wfn, doc);
     return;
   }
-
+  int nbf = 0;
   if (doc.contains("basis functions")) {
-    wfn->setNumberOfBasisFunctions(doc.at("basis functions").get<int>());
+    nbf = doc.at("basis functions").get<int>();
+    wfn->setNumberOfBasisFunctions(nbf);
   } else {
     qWarning() << "Expected a numeric 'basis functions' value";
+  }
+
+  if (doc.contains("molecular orbitals")) {
+    const auto &mo = doc.at("molecular orbitals");
+    bool isRestricted{true};
+    if(mo.contains("orbital energies")) {
+      Eigen::VectorXd energies = mo.at("orbital energies");
+      wfn->setOrbitalEnergies(std::vector<double>(energies.data(), energies.data() + energies.size()));
+    }
+    if(mo.contains("alpha electrons")) {
+      wfn->setNumberOfOccupiedOrbitals(mo.at("alpha electrons").get<int>());
+    }
+    if(mo.contains("atomic orbitals")) {
+      wfn->setNumberOfVirtualOrbitals(mo.at("atomic orbitals").get<int>() - wfn->numberOfOccupiedOrbitals());
+    }
+
+  } else {
+    qWarning() << "No molecular orbitals information found";
   }
 
   if (doc.contains("energy")) {

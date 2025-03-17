@@ -8,6 +8,7 @@
 #include "generic_atom_index.h"
 #include "isosurface_parameters.h"
 #include "molecular_wavefunction.h"
+#include "molecular_orbital_selector.h"
 #include "ui_surfacegenerationdialog.h"
 #include "wavefunction_parameters.h"
 
@@ -29,6 +30,7 @@ public:
   SurfaceGenerationDialog(QWidget *parent = 0);
   void setChargeForCalculation(int charge);
   void setMultiplicityForCalculation(int multiplicity);
+  void setNumberOfElectronsForCalculation(int numberOfElectrons);
   void setSuitableWavefunctions(const std::vector<WavefunctionAndTransform> &);
 
   void setAtomIndices(const std::vector<GenericAtomIndex> &atoms);
@@ -75,11 +77,10 @@ private:
   QString m_currentSurfaceType{"Hirshfeld"};
 
   std::vector<WavefunctionAndTransform> m_availableWavefunctions;
-  std::vector<isosurface::OrbitalDetails> m_orbitalLabels;
 
   isosurface::SurfaceDescriptions m_surfaceDescriptions;
   isosurface::SurfacePropertyDescriptions m_surfacePropertyDescriptions;
-  int m_charge{0}, m_multiplicity{1};
+  int m_charge{0}, m_multiplicity{1}, m_numElectrons{0};
 
   Ui::SurfaceGenerationDialog *ui;
 };

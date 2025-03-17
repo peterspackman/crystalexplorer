@@ -40,6 +40,7 @@ void Crystalx::init() {
   initStatusBar();
   initMenus();
   initGlWindow();
+  setupDragAndDrop();
   initFingerprintWindow();
   initInfoViewer();
   createToolbars();
@@ -1038,6 +1039,8 @@ void Crystalx::getSurfaceParametersFromUser() {
   }
   auto atomIndices = structure->atomsWithFlags(AtomFlag::Selected);
   m_surfaceGenerationDialog->setAtomIndices(atomIndices);
+
+  m_surfaceGenerationDialog->setNumberOfElectronsForCalculation(structure->atomicNumbersForIndices(atomIndices).sum());
   auto candidates = structure->wavefunctionsAndTransformsForAtoms(atomIndices);
   m_surfaceGenerationDialog->setSuitableWavefunctions(candidates);
   m_surfaceGenerationDialog->show();
@@ -2190,3 +2193,64 @@ void Crystalx::taskManagerTaskRemoved(TaskID id) {
 }
 
 void Crystalx::showTaskManagerWidget() { m_taskManagerWidget->show(); }
+
+void Crystalx::setupDragAndDrop() {
+  setAcceptDrops(true);
+
+  m_acceptedFileTypes << CIF_EXTENSION << CIF2_EXTENSION << PROJECT_EXTENSION
+                      << XYZ_FILE_EXTENSION << "pdb" << "json" << "gin";
+}
+
+bool Crystalx::isFileAccepted(const QString &filePath) const {
+  if (m_acceptedFileTypes.isEmpty()) {
+    return true;
+  }
+
+  QFileInfo fileInfo(filePath);
+  return m_acceptedFileTypes.contains(fileInfo.suffix().toLower());
+}
+
+void Crystalx::dragEnterEvent(QDragEnterEvent *event) {
+  if (event->mimeData()->hasUrls()) {
+    bool hasValidFile = false;
+
+    for (const QUrl &url : event->mimeData()->urls()) {
+      if (url.isLocalFile() && isFileAccepted(url.toLocalFile())) {
+        hasValidFile = true;
+        break;
+      }
+    }
+
+    if (hasValidFile) {
+      event->acceptProposedAction();
+    }
+  }
+}
+
+void Crystalx::dragMoveEvent(QDragMoveEvent *event) {
+  if (event->mimeData()->hasUrls()) {
+    event->acceptProposedAction();
+  }
+}
+
+void Crystalx::dropEvent(QDropEvent *event) {
+  if (event->mimeData()->hasUrls()) {
+    QStringList filePaths;
+
+    for (const QUrl &url : event->mimeData()->urls()) {
+      if (url.isLocalFile()) {
+        QString filePath = url.toLocalFile();
+
+        if (isFileAccepted(filePath)) {
+          filePaths << filePath;
+        }
+      }
+    }
+
+    for (const QString &filePath : filePaths) {
+      openFilename(filePath);
+    }
+
+    event->acceptProposedAction();
+  }
+}

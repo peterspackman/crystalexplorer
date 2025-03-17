@@ -12,25 +12,25 @@ add_subdirectory(dialogs)
 set(CRYSTALEXPLORER_SOURCE_FILES
     childpropertycontroller.cpp
     confirmationbox.cpp
-    projectcontroller.cpp
     crystalx.cpp
     dialoghtml.cpp
     glwindow.cpp
     preferencesdialog.cpp
     project.cpp
+    projectcontroller.cpp
     viewtoolbar.cpp
 )
 
 set(CRYSTALEXPLORER_HEADER_FILES
     childpropertycontroller.h
     confirmationbox.h
-    projectcontroller.h
     default_paths.h
     crystalx.h
     dialoghtml.h
     glwindow.h
     preferencesdialog.h
     project.h
+    projectcontroller.h
     viewtoolbar.h
 )
 

@@ -63,6 +63,7 @@ void SurfaceGenerationDialog::initConnections() {
           &SurfaceGenerationDialog::validate);
   connect(ui->useUserDefinedCluster, &QCheckBox::toggled,
           ui->voidClusterPaddingSpinBox, &QDoubleSpinBox::setEnabled);
+  connect(ui->wavefunctionCombobox, &QComboBox::currentIndexChanged, this, &SurfaceGenerationDialog::updateOrbitalLabels);
 }
 
 void SurfaceGenerationDialog::setAtomIndices(
@@ -83,6 +84,11 @@ void SurfaceGenerationDialog::setSuitableWavefunctions(
   m_availableWavefunctions = wfns;
   updateWavefunctionComboBox(true);
   updateOrbitalLabels();
+}
+
+void SurfaceGenerationDialog::setNumberOfElectronsForCalculation(
+    int numberOfElectrons) {
+  m_numElectrons = numberOfElectrons;
 }
 
 QString SurfaceGenerationDialog::currentKindName() const {
@@ -131,6 +137,10 @@ void SurfaceGenerationDialog::validate() {
       wfn_params.accepted = true;
       parameters.wfn = wfn;
       parameters.wfn_transform = transform;
+    }
+
+    if(needOrbitalBox()) {
+      parameters.orbitalLabels = ui->orbitalSelectionWidget->getSelectedOrbitalLabels();
     }
     emit surfaceParametersChosenNeedWavefunction(parameters, wfn_params);
   } else {
@@ -203,8 +213,6 @@ void SurfaceGenerationDialog::updateSurfaceOptions() {
 }
 
 void SurfaceGenerationDialog::updateOrbitalLabels() {
-  ui->orbitalSelectionListWidget->clear();
-  m_orbitalLabels.clear();
   bool needsOrbital = needOrbitalBox();
 
   if (!needsOrbital) {
@@ -216,108 +224,63 @@ void SurfaceGenerationDialog::updateOrbitalLabels() {
   const bool haveExistingWfn = !m_availableWavefunctions.empty() &&
                                ui->wavefunctionCombobox->currentIndex() > 0;
 
+  std::vector<MolecularOrbitalSelector::OrbitalInfo> orbs;
+  int nOcc{0};
+  int nOrb{0};
   if (haveExistingWfn) {
     // Get current wavefunction
     const auto &[wfn, _] =
         m_availableWavefunctions[ui->wavefunctionCombobox->currentIndex() - 1];
-    const int nOcc = wfn->numberOfOccupiedOrbitals();
-    const int nOrb = wfn->numberOfOrbitals();
+    nOcc = wfn->numberOfOccupiedOrbitals();
+    nOrb = wfn->numberOfOrbitals();
     const auto &energies = wfn->orbitalEnergies();
+    qDebug() << "nOcc nOrb" << nOcc << nOrb;
 
     // Generate labels based on actual wavefunction
     for (int i = 0; i < nOrb; ++i) {
-      isosurface::OrbitalDetails info;
-      info.occupied = i < nOcc;
+      MolecularOrbitalSelector::OrbitalInfo info;
+      info.isOccupied = i < nOcc;
+      // Create some example data
+      info.index = i;
+      info.energy = 0.0;
+      if(energies.size() > i) {
+        info.energy = energies[i];
+      }
+      info.label = QString("%1 (HOMO)").arg(i);
 
-      if (info.occupied) {
+      if (info.isOccupied) {
         info.index = i;
         if (i == nOcc - 1) {
-          info.label = QString("%1 (HOMO)").arg(i);
+          info.label = QString("HOMO");
         } else {
-          info.label = QString("%1 (HOMO-%2)").arg(i).arg(nOcc - 1 - i);
+          info.label = QString("HOMO-%1").arg(nOcc - 1 - i);
         }
       } else {
         info.index = i;
         if (i == nOcc) {
-          info.label = QString("%1 (LUMO)").arg(i);
+          info.label = QString("LUMO");
         } else {
-          info.label = QString("%1 (LUMO+%2)").arg(i).arg(i - nOcc);
+          info.label = QString("LUMO+%1").arg(i - nOcc);
         }
       }
-
-      // Filter based on orbital type selection
-      const int typeIndex = ui->orbitalTypeComboBox->currentIndex();
-      if (typeIndex == 0 && !info.occupied)
-        continue; // Occupied only
-      if (typeIndex == 1 && info.occupied)
-        continue; // Virtual only
-
-      m_orbitalLabels.push_back(info);
-
-      // Add to list widget with energy if available
-      QString displayText = info.label;
-      if (energies.size() > i) {
-        double energy = energies[i];
-        displayText += QString(" (%.3f au)").arg(energy);
-      }
-
-      auto *item = new QListWidgetItem(displayText);
-      item->setData(Qt::UserRole, i); // Store orbital index
-      ui->orbitalSelectionListWidget->addItem(item);
+      orbs.push_back(info);
     }
+  }
+
+  if(orbs.size() > 0) {
+    ui->orbitalSelectionWidget->setWavefunctionCalculated(true);
+    ui->orbitalSelectionWidget->setOrbitalData(orbs);
+    ui->orbitalSelectionWidget->setNumberOfBasisFunctions(nOrb);
+    ui->orbitalSelectionWidget->setNumberOfElectrons(nOcc);
   } else {
-    // No wavefunction yet - show generic labels
-    const int defaultNumOrbitals = 4; // Show reasonable number of options
-
-    for (int i = defaultNumOrbitals - 1; i >= 0; --i) {
-      isosurface::OrbitalDetails info;
-      info.occupied = true;
-      info.index = i;
-      info.label = (i == defaultNumOrbitals - 1)
-                       ? "HOMO"
-                       : QString("HOMO-%1").arg(defaultNumOrbitals - 1 - i);
-
-      if (ui->orbitalTypeComboBox->currentIndex() != 1) { // Not virtual only
-        m_orbitalLabels.push_back(info);
-        ui->orbitalSelectionListWidget->addItem(info.label);
-      }
-    }
-
-    for (int i = 0; i < defaultNumOrbitals; ++i) {
-      isosurface::OrbitalDetails info;
-      info.occupied = false;
-      info.index = defaultNumOrbitals + i;
-      info.label = (i == 0) ? "LUMO" : QString("LUMO+%1").arg(i);
-
-      if (ui->orbitalTypeComboBox->currentIndex() != 0) { // Not occupied only
-        m_orbitalLabels.push_back(info);
-        ui->orbitalSelectionListWidget->addItem(info.label);
-      }
-    }
+    ui->orbitalSelectionWidget->setWavefunctionCalculated(false);
+    ui->orbitalSelectionWidget->setNumberOfElectrons(m_numElectrons);
+    ui->orbitalSelectionWidget->setNumberOfBasisFunctions(
+        m_numElectrons + qMin(m_numElectrons, 10));
   }
 }
 
-void SurfaceGenerationDialog::setupOrbitalUI() {
-  // Replace the simple combobox with a more flexible list widget
-  ui->orbitalSelectionListWidget->setSelectionMode(
-      QAbstractItemView::ExtendedSelection);
-
-  // Add orbital type selector
-  ui->orbitalTypeComboBox->addItems({"Occupied", "Virtual", "All"});
-
-  connect(ui->orbitalTypeComboBox,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          &SurfaceGenerationDialog::updateOrbitalLabels);
-
-  connect(
-      ui->orbitalSelectionListWidget, &QListWidget::itemSelectionChanged, this,
-      [this]() {
-        // Enable the OK button only if at least one orbital is selected
-        bool hasSelection =
-            !ui->orbitalSelectionListWidget->selectedItems().isEmpty();
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(hasSelection);
-      });
-}
+void SurfaceGenerationDialog::setupOrbitalUI() {}
 
 bool SurfaceGenerationDialog::needIsovalueBox() {
   const auto &currentSurface = ui->surfaceComboBox->currentSurfaceDescription();

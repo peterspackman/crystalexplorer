@@ -8,10 +8,10 @@
 #include <QtConcurrent>
 
 #include "childpropertycontroller.h"
-#include "projectcontroller.h"
 #include "fingerprintwindow.h"
 #include "glwindow.h"
 #include "project.h"
+#include "projectcontroller.h"
 #include "viewtoolbar.h"
 
 #include "animationsettingsdialog.h"
@@ -93,7 +93,7 @@ public slots:
   void handleEnergyColorSchemeChanged();
 
 protected slots:
-  void closeEvent(QCloseEvent *);
+  void closeEvent(QCloseEvent *) override;
 
 private slots:
   bool resetElementData();
@@ -221,6 +221,15 @@ private:
   bool getFragmentStatesFromUser(ChemicalStructure *);
   void exportCurrentGraphics(const QString &);
 
+  void processDroppedFiles(const QStringList &filePaths);
+  void setupDragAndDrop();
+
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragMoveEvent(QDragMoveEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
+
+  bool isFileAccepted(const QString &filePath) const;
+
   Project *project{nullptr};
   GLWindow *glWindow{nullptr};
   ViewToolbar *viewToolbar{nullptr};
@@ -262,4 +271,7 @@ private:
 
   TaskManager *m_taskManager{nullptr};
   TaskManagerWidget *m_taskManagerWidget{nullptr};
+
+  bool m_showDropIndicator = false;
+  QStringList m_acceptedFileTypes;
 };

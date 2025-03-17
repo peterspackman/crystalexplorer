@@ -28,6 +28,13 @@ void OccSurfaceTask::appendWavefunctionTransformArguments(QStringList &args) {
   }
 }
 
+void OccSurfaceTask::appendOrbitalLabels(QStringList &args) {
+  auto labels = orbitalLabels();
+  if(labels.size() < 1) return;
+
+  args << QString("--orbitals=%1").arg(labels.join(","));
+}
+
 void OccSurfaceTask::start() {
   emit progressText("Generated JSON input");
   auto name = baseName();
@@ -66,6 +73,8 @@ void OccSurfaceTask::start() {
     appendWavefunctionTransformArguments(args);
   }
 
+  appendOrbitalLabels(args);
+
   for (const auto &prop : m_parameters.additionalProperties) {
     args << "--properties=" + prop;
   }
@@ -74,8 +83,10 @@ void OccSurfaceTask::start() {
   setArguments(args);
   setRequirements(reqs);
   for (const auto &filename : outputFileNames()) {
+    qDebug() << "Outputs:" << filename;
     outputs.append(FileDependency{filename, filename});
   }
+
 
   setOutputs(outputs);
   emit progressText("Starting OCC process");
@@ -108,6 +119,10 @@ QString OccSurfaceTask::environmentFileName() const {
   return properties().value("environmentFile", "").toString();
 }
 
+QStringList OccSurfaceTask::orbitalLabels() const {
+  return properties().value("orbitalLabels", {}).toStringList();
+}
+
 QString OccSurfaceTask::outputFileNameTemplate() const {
   return properties()
       .value("outputFileNameTemplate", "surface{}.ply")
@@ -118,6 +133,14 @@ QStringList OccSurfaceTask::outputFileNames() const {
 
   if (properties().value("computeNegativeIsovalue", false).toBool()) {
     return {"surface0.ply", "surface1.ply"};
+  }
+  auto orbs = orbitalLabels();
+  if(orbs.size() > 1) {
+    QStringList result;
+    for(int i = 0; i < orbs.size(); i++) {
+      result.push_back(QString("surface%1.ply").arg(i));
+    }
+    return result;
   }
   return {"surface.ply"};
 }

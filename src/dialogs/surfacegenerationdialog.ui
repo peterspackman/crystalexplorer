@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>376</width>
-    <height>717</height>
+    <width>597</width>
+    <height>777</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -229,10 +229,14 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QComboBox" name="orbitalTypeComboBox"/>
-      </item>
-      <item>
-       <widget class="QListWidget" name="orbitalSelectionListWidget"/>
+       <widget class="MolecularOrbitalSelector" name="orbitalSelectionWidget" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>480</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -288,6 +292,12 @@
    <class>SurfacePropertyTypeDropdown</class>
    <extends>QComboBox</extends>
    <header>surfacedropdown.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MolecularOrbitalSelector</class>
+   <extends>QWidget</extends>
+   <header>molecular_orbital_selector.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
