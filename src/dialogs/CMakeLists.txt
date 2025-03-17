@@ -1,5 +1,6 @@
 # Wrap the UI files
 qt_wrap_ui(DIALOG_UI_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/aboutcrystalexplorerdialog.ui"
     "${CMAKE_CURRENT_SOURCE_DIR}/animationsettingsdialog.ui"
     "${CMAKE_CURRENT_SOURCE_DIR}/celllimitsdialog.ui"
     "${CMAKE_CURRENT_SOURCE_DIR}/closecontactsdialog.ui"
@@ -20,6 +21,7 @@ qt_wrap_ui(DIALOG_UI_HEADERS
 
 qt_add_library(cx_dialogs STATIC
     ${DIALOG_UI_HEADERS}
+    "${CMAKE_CURRENT_SOURCE_DIR}/aboutcrystalexplorerdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/animationsettingsdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/atominfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/celllimitsdialog.cpp"

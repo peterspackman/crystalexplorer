@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/images">
+        <file>ce_header.png</file>
+        <file>ce_header_dark.png</file>
         <file>d_e.png</file>
         <file>d_i.png</file>
         <file>d_norm.png</file>

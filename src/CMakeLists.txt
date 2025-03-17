@@ -80,16 +80,6 @@ target_include_directories(cx
     PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_compile_features(cx PUBLIC cxx_std_17)
-target_compile_definitions(cx
-    PUBLIC
-    PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-    PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-    PROJECT_GIT_REVISION=${PROJECT_GIT_REVISION}
-    PROJECT_VERSION=${PROJECT_VERSION}
-    PROJECT_BUILD_DATE=${PROJECT_BUILD_DATE}
-    HS_PREVIOUS_VERSION="17.5"
-    GL_SILENCE_DEPRECATION=1
-)
 
 qt_add_executable(
     CrystalExplorer 

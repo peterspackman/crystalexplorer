@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AboutCrystalExplorerDialog</class>
+ <widget class="QDialog" name="AboutCrystalExplorerDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>480</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>430</y>
+     <width>341</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Orientation::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::StandardButton::Ok</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="messageLabel">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>140</y>
+     <width>571</width>
+     <height>271</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;%COPYRIGHT%  %AUTHORS% &lt;/p&gt;&lt;p&gt;Website: &lt;a href=&quot;https://crystalexplorer.net&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;crystalexplorer.net&lt;/span&gt;&lt;/a&gt;&lt;br/&gt;Email: &lt;a href=&quot;mailto:support@crystalexplorer.net?subject=CrystalExplorer&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;support@crystalexplorer.net&lt;/span&gt;&lt;/a&gt;&lt;br/&gt;Github: &lt;a href=&quot;https://github.com/peterspackman/crystalexplorer&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;peterspackman/crystalexplorer&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;For detailed citation information, please see the &lt;a href=&quot;https://crystalexplorer.net/docs/how-to-cite.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;how to cite &lt;/span&gt;&lt;/a&gt;page on the website.&lt;/p&gt;&lt;p&gt;CrystalExplorer uses the &lt;a href=&quot;https://github.com/peterspackman/occ&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;Open Computational Chemistry project&lt;/span&gt;&lt;/a&gt; by Peter. R. Spackman.&lt;/p&gt;&lt;hr/&gt;&lt;p&gt;Version: %VERSION%, Revision: %REVISION%&lt;br/&gt;Build: %BUILD_DATE% &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="textFormat">
+    <enum>Qt::TextFormat::RichText</enum>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+   <property name="openExternalLinks">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>40</y>
+     <width>561</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLabel {
+    image: url(:/images/ce_header.png);
+}
+
+QLabel:dark {
+    image: url(:/images/ce_header_dark.png);
+}</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../../icons/crystalexplorer.qrc"/>
+  <include location="../../icons/crystalexplorer.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>AboutCrystalExplorerDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>AboutCrystalExplorerDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

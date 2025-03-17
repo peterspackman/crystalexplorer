@@ -21,6 +21,7 @@
 #include "pair_energy_calculator.h"
 #include "settings.h"
 #include "wavefunction_calculator.h"
+#include "aboutcrystalexplorerdialog.h"
 
 Crystalx::Crystalx() : QMainWindow() {
   setupUi(this);
@@ -634,27 +635,8 @@ void Crystalx::generateSlab() {
 }
 
 void Crystalx::helpAboutActionDialog() {
-  using namespace cx::globals;
-  QString message = "";
-  message += DialogHtml::paragraph(authors);
-  message += DialogHtml::paragraph(
-      "Website: " + DialogHtml::website(url, url) + DialogHtml::linebreak() +
-      "Email: " +
-      DialogHtml::email(email, email, "CrystalExplorer",
-                        QString("Re: Build= %1").arg(CX_BUILD_DATE)) +
-      DialogHtml::linebreak() + "Citation: " +
-      DialogHtml::website(citationUrl, "How to Cite CrystalExplorer"));
-  message += DialogHtml::paragraph(
-      QString(copyrightNoticeTemplate).arg(QDate::currentDate().year()));
-  message += DialogHtml::paragraph(QString(name) + " uses " +
-                                   DialogHtml::website(occUrl, "OCC") +
-                                   "<br/>by P.R. Spackman");
-  message += DialogHtml::line();
-  message += DialogHtml::paragraph(QString("Version:  %1").arg(CX_VERSION) +
-                                   ",  Revision: " + CX_GIT_REVISION +
-                                   DialogHtml::linebreak() +
-                                   "Build:    " + CX_BUILD_DATE);
-  QMessageBox::information(this, settings::APPLICATION_NAME, message);
+  auto dialog = new AboutCrystalExplorerDialog(this);
+  dialog->exec();
 }
 
 void Crystalx::initMoleculeStyles() {
@@ -1040,7 +1022,8 @@ void Crystalx::getSurfaceParametersFromUser() {
   auto atomIndices = structure->atomsWithFlags(AtomFlag::Selected);
   m_surfaceGenerationDialog->setAtomIndices(atomIndices);
 
-  m_surfaceGenerationDialog->setNumberOfElectronsForCalculation(structure->atomicNumbersForIndices(atomIndices).sum());
+  m_surfaceGenerationDialog->setNumberOfElectronsForCalculation(
+      structure->atomicNumbersForIndices(atomIndices).sum());
   auto candidates = structure->wavefunctionsAndTransformsForAtoms(atomIndices);
   m_surfaceGenerationDialog->setSuitableWavefunctions(candidates);
   m_surfaceGenerationDialog->show();

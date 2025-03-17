@@ -40,7 +40,16 @@ target_link_libraries(
 )
 
 target_compile_features(cx_core PUBLIC cxx_std_20)
-target_compile_definitions(cx_core PUBLIC GL_SILENCE_DEPRECATION)
+target_compile_definitions(cx_core
+    PUBLIC
+    PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    PROJECT_GIT_REVISION=${PROJECT_GIT_REVISION}
+    PROJECT_VERSION=${PROJECT_VERSION}
+    PROJECT_BUILD_DATE=${PROJECT_BUILD_DATE}
+    HS_PREVIOUS_VERSION="17.5"
+    GL_SILENCE_DEPRECATION=1
+)
 
 target_include_directories(cx_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
