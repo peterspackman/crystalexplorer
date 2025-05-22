@@ -40,7 +40,7 @@ private:
   int m_xOffset{0};
   int m_yOffset{0};
 
-  QString m_colorScheme{"CE_RGB"};
+  QString m_colorScheme{"RedGreenBlue"};
 
   // Constants (you might want to make these configurable)
   static constexpr double EPS_DPCM = 28.36;
