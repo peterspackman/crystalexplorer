@@ -44,7 +44,6 @@ private:
     TaskManager *m_taskManager{nullptr};
     QTableWidget *m_taskTable{nullptr};
     QPushButton *m_stopTaskButton{nullptr};
-    QPushButton *m_startTaskButton{nullptr};
     QPushButton *m_removeTaskButton{nullptr};
     QMap<TaskID, int> m_taskItems;
     QList<TaskID> m_rowTasks;

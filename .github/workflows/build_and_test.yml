@@ -32,7 +32,7 @@ jobs:
           - os: windows-latest
             name: "windows-x86_64"
             qtarch: "win64_msvc2019_64"
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             name: "linux-x86_64"
             qtarch: "linux_gcc_64"
 
