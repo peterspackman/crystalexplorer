@@ -280,7 +280,7 @@ bool SlabStructure::fromJson(const nlohmann::json &json) {
     if (json.contains("miller_plane") && json["miller_plane"].is_array() && 
         json["miller_plane"].size() == 3) {
       auto hkl = json["miller_plane"];
-      m_millerPlane = occ::crystal::HKL(hkl[0], hkl[1], hkl[2]);
+      m_millerPlane = occ::crystal::HKL{hkl[0], hkl[1], hkl[2]};
     }
     if (json.contains("termination")) {
       m_termination = QString::fromStdString(json["termination"]);

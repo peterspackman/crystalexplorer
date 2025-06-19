@@ -268,7 +268,11 @@ void addTextToBillboardRenderer(BillboardRenderer &b, const QVector3D &position,
     texture->setFormat(QOpenGLTexture::R8_UNorm);
     texture->allocateStorage();
     texture->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8,
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
                      sdf.flipped(Qt::Vertical).constBits());
+#else
+                     sdf.mirrored(false, true).constBits());
+#endif
     texture->setMinificationFilter(QOpenGLTexture::Linear);
     texture->setMagnificationFilter(QOpenGLTexture::Linear);
     texture->setWrapMode(QOpenGLTexture::ClampToEdge);

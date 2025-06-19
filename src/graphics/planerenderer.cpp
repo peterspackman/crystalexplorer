@@ -52,43 +52,43 @@ PlaneRenderer::PlaneRenderer()
   m_program->enableAttributeArray(2);
   m_program->setAttributeBuffer(2, GL_FLOAT, PlaneInstanceData::originOffset(),
                                 PlaneInstanceData::OriginTupleSize, PlaneInstanceData::stride());
-  glVertexAttribDivisor(2, 1); // advance once per instance
+  this->glVertexAttribDivisor(2, 1); // advance once per instance
   
   // axisA (attribute 3)
   m_program->enableAttributeArray(3);
   m_program->setAttributeBuffer(3, GL_FLOAT, PlaneInstanceData::axisAOffset(),
                                 PlaneInstanceData::AxisATupleSize, PlaneInstanceData::stride());
-  glVertexAttribDivisor(3, 1);
+  this->glVertexAttribDivisor(3, 1);
   
   // axisB (attribute 4)
   m_program->enableAttributeArray(4);
   m_program->setAttributeBuffer(4, GL_FLOAT, PlaneInstanceData::axisBOffset(),
                                 PlaneInstanceData::AxisBTupleSize, PlaneInstanceData::stride());
-  glVertexAttribDivisor(4, 1);
+  this->glVertexAttribDivisor(4, 1);
   
   // color (attribute 5)
   m_program->enableAttributeArray(5);
   m_program->setAttributeBuffer(5, GL_FLOAT, PlaneInstanceData::colorOffset(),
                                 PlaneInstanceData::ColorTupleSize, PlaneInstanceData::stride());
-  glVertexAttribDivisor(5, 1);
+  this->glVertexAttribDivisor(5, 1);
   
   // gridParams (attribute 6)
   m_program->enableAttributeArray(6);
   m_program->setAttributeBuffer(6, GL_FLOAT, PlaneInstanceData::gridParamsOffset(),
                                 PlaneInstanceData::GridParamsTupleSize, PlaneInstanceData::stride());
-  glVertexAttribDivisor(6, 1);
+  this->glVertexAttribDivisor(6, 1);
   
   // boundsA (attribute 7)
   m_program->enableAttributeArray(7);
   m_program->setAttributeBuffer(7, GL_FLOAT, PlaneInstanceData::boundsAOffset(),
                                 PlaneInstanceData::BoundsATupleSize, PlaneInstanceData::stride());
-  glVertexAttribDivisor(7, 1);
+  this->glVertexAttribDivisor(7, 1);
   
   // boundsB (attribute 8)
   m_program->enableAttributeArray(8);
   m_program->setAttributeBuffer(8, GL_FLOAT, PlaneInstanceData::boundsBOffset(),
                                 PlaneInstanceData::BoundsBTupleSize, PlaneInstanceData::stride());
-  glVertexAttribDivisor(8, 1);
+  this->glVertexAttribDivisor(8, 1);
 
   // Release all
   m_index.release();
@@ -248,8 +248,8 @@ void PlaneRenderer::draw() {
     return;
     
   // Use instanced drawing
-  glDrawElementsInstanced(DrawType, m_numberOfIndices, IndexType, 0, 
-                         static_cast<GLsizei>(m_instanceData.size()));
+  this->glDrawElementsInstanced(DrawType, m_numberOfIndices, IndexType, 0, 
+                               static_cast<GLsizei>(m_instanceData.size()));
   
   qDebug() << "PlaneRenderer: Drew" << m_instanceData.size() << "plane instances";
 }

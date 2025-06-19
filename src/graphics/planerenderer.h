@@ -4,7 +4,7 @@
 #include "plane.h"
 #include "planeinstance.h"
 #include <QOpenGLBuffer>
-#include <QOpenGLFunctions>
+#include <QOpenGLExtraFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLTexture>
@@ -12,7 +12,7 @@
 
 using std::vector;
 
-class PlaneRenderer : public IndexedRenderer, protected QOpenGLFunctions {
+class PlaneRenderer : public IndexedRenderer, protected QOpenGLExtraFunctions {
 public:
   PlaneRenderer();
   virtual ~PlaneRenderer();
