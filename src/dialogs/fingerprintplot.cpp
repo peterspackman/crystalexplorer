@@ -15,6 +15,9 @@
 #include "elementdata.h"
 #include "fingerprint_eps.h"
 #include "settings.h"
+#include "chemicalstructure.h"
+#include "isosurface.h"
+#include <vector>
 
 FingerprintPlot::FingerprintPlot(QWidget *parent) : QWidget(parent) { init(); }
 
@@ -80,9 +83,7 @@ void FingerprintPlot::setPropertiesToPlot() {
   m_ymin = m_y.minCoeff();
   m_ymax = m_y.maxCoeff();
 
-  qDebug() << "face property di";
   m_xFace = m_mesh->averagedFaceProperty(diName).cast<double>();
-  qDebug() << "face property de";
   m_yFace = m_mesh->averagedFaceProperty(deName).cast<double>();
 
   m_xFaceMin = m_xFace.minCoeff();
@@ -90,7 +91,6 @@ void FingerprintPlot::setPropertiesToPlot() {
   m_yFaceMin = m_yFace.minCoeff();
   m_yFaceMax = m_yFace.maxCoeff();
 
-  qDebug() << "Set axis labels";
   setAxisLabels();
 }
 
@@ -101,20 +101,14 @@ void FingerprintPlot::setAxisLabels() {
 
 void FingerprintPlot::updateFingerprintPlot() {
   if (m_mesh) {
-    qDebug() << "Set properties to plot";
     setPropertiesToPlot();
-    qDebug() << "Init binned areas";
     initBinnedAreas();
-    qDebug() << "Init binned filter flags";
     initBinnedFilterFlags();
-    qDebug() << "calculate binned areas";
     calculateBinnedAreas();
-    qDebug() << "draw fingerprint";
     drawFingerprint();
   } else {
     drawEmptyFingerprint();
   }
-  qDebug() << "Set fixed size";
   setFixedSize(plotSize());
   parentWidget()->adjustSize();
   update();
@@ -201,7 +195,16 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
   binUsed = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>::Zero(nx, ny);
 
   double totalArea = 0.0;
+  double totalAreaSampled = 0.0;
+  
+  // Set vertex mask to show all vertices when no filter is applied
+  auto &vmask = m_mesh->vertexMask();
+  vmask.setConstant(true);
 
+  int facesProcessed = 0;
+  int samplesGenerated = 0;
+  int samplesInBounds = 0;
+  
   for (int faceIdx = 0; faceIdx < m_mesh->numberOfFaces(); ++faceIdx) {
     Eigen::Vector3i faceIndices = m_mesh->faces().col(faceIdx);
 
@@ -211,13 +214,20 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
 
     double faceArea = m_mesh->faceAreas()(faceIdx);
     totalArea += faceArea;
-
+    facesProcessed++;
+    
     // Interpolate points within the face
+    int expectedSamplesThisFace = (m_settings.samplesPerEdge + 1) * (m_settings.samplesPerEdge + 2) / 2;
+    int actualSamplesThisFace = 0;
+    int samplesInBoundsThisFace = 0;
+    
     for (int i = 0; i <= m_settings.samplesPerEdge; ++i) {
       for (int j = 0; j <= m_settings.samplesPerEdge - i; ++j) {
         double a = static_cast<double>(i) / m_settings.samplesPerEdge;
         double b = static_cast<double>(j) / m_settings.samplesPerEdge;
         double c = 1.0 - a - b;
+        actualSamplesThisFace++;
+        samplesGenerated++;
 
         double x = a * x1 + b * x2 + c * x3;
         double y = a * y1 + b * y2 + c * y3;
@@ -225,9 +235,11 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
         if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
           int xIndex = static_cast<int>((x - xmin) * normx);
           int yIndex = static_cast<int>((y - ymin) * normy);
+          samplesInBoundsThisFace++;
+          samplesInBounds++;
 
-          double sampleArea = faceArea / ((m_settings.samplesPerEdge + 1) *
-                                          (m_settings.samplesPerEdge + 2) / 2);
+          double sampleArea = faceArea / expectedSamplesThisFace;
+          totalAreaSampled += sampleArea;
 
           binUsed(xIndex, yIndex) = true;
           binnedAreas(xIndex, yIndex) += sampleArea;
@@ -236,15 +248,17 @@ double FingerprintPlot::calculateBinnedAreasNoFilter() {
     }
   }
 
-  qDebug() << "Total surface area (interpolated):" << totalArea;
-  qDebug() << "Total binned area:" << binnedAreas.sum();
-  qDebug() << "Mesh surface area:" << m_mesh->surfaceArea();
+  
+  // Set face mask to show all faces when no filter is applied
+  auto &faceMask = m_mesh->faceMask();
+  faceMask.setConstant(true);
 
   return m_mesh->surfaceArea();
 }
 
 double FingerprintPlot::calculateBinnedAreasWithFilter() {
   double totalFilteredArea = 0.0;
+  double totalAreaSampled = 0.0;
 
   double nx = numUsedxBins();
   double ny = numUsedyBins();
@@ -258,10 +272,76 @@ double FingerprintPlot::calculateBinnedAreasWithFilter() {
   binnedAreas = Eigen::MatrixXd::Zero(nx, ny);
   binUsed = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>::Zero(nx, ny);
 
-  computeFaceMask();
 
-  auto &faceMask = m_mesh->faceMask();
+  int facesProcessed = 0;
+  int facesContributing = 0;  // Faces that contribute some area to this filter
+  int samplesGenerated = 0;
+  int samplesInBounds = 0;
+  int samplesPassingFilter = 0;
 
+  // Get element assignment data for vertex-based filtering (only for element filters)
+  auto *structure = qobject_cast<ChemicalStructure *>(m_mesh->parent());
+  Eigen::VectorXi insideNums, outsideNums, di_idx, de_idx;
+  
+  if (m_filterMode == FingerprintFilterMode::Element && structure) {
+    insideNums = structure->atomicNumbersForIndices(m_mesh->atomsInside());
+    outsideNums = structure->atomicNumbersForIndices(m_mesh->atomsOutside());
+    QString diIdxName = isosurface::getSurfacePropertyDisplayName("di_idx");
+    QString deIdxName = isosurface::getSurfacePropertyDisplayName("de_idx");
+    di_idx = m_mesh->vertexProperty(diIdxName).cast<int>();
+    de_idx = m_mesh->vertexProperty(deIdxName).cast<int>();
+  }
+  
+  // Create vertex mask for display based on filter type
+  auto &vmask = m_mesh->vertexMask();
+  vmask.setConstant(false);  // Start with all vertices hidden
+  
+  switch (m_filterMode) {
+  case FingerprintFilterMode::Element: {
+    // Set vertex mask based on element assignments
+    auto check = [](int ref, int value) { return (ref == -1) || (value == ref); };
+    
+    for (int v = 0; v < di_idx.rows(); v++) {
+      if (di_idx(v) >= 0 && de_idx(v) >= 0) {
+        int insideAtom = insideNums(di_idx(v));
+        int outsideAtom = outsideNums(de_idx(v));
+        
+        bool vertexPassesFilter = check(m_filterInsideElement, insideAtom) && check(m_filterOutsideElement, outsideAtom);
+        if (m_includeReciprocalContacts) {
+          vertexPassesFilter |= (check(m_filterInsideElement, outsideAtom) && check(m_filterOutsideElement, insideAtom));
+        }
+        
+        vmask(v) = vertexPassesFilter;
+      }
+    }
+    break;
+  }
+  case FingerprintFilterMode::Di: {
+    // Set vertex mask based on di values
+    for (int v = 0; v < m_x.rows(); v++) {
+      vmask(v) = (m_x(v) >= m_filterLower && m_x(v) <= m_filterUpper);
+    }
+    break;
+  }
+  case FingerprintFilterMode::De: {
+    // Set vertex mask based on de values
+    for (int v = 0; v < m_y.rows(); v++) {
+      vmask(v) = (m_y(v) >= m_filterLower && m_y(v) <= m_filterUpper);
+    }
+    break;
+  }
+  default:
+    vmask.setConstant(true);
+    break;
+  }
+  
+  // Count vertices passing filter for debug
+  int verticesPassingFilter = 0;
+  for (int v = 0; v < vmask.rows(); ++v) {
+    if (vmask(v)) verticesPassingFilter++;
+  }
+  qDebug() << "Vertices passing filter:" << verticesPassingFilter << "out of" << m_mesh->numberOfVertices() << "(" << (100.0 * verticesPassingFilter / m_mesh->numberOfVertices()) << "%)";
+  
   for (int faceIdx = 0; faceIdx < m_mesh->numberOfFaces(); ++faceIdx) {
     Eigen::Vector3i faceIndices = m_mesh->faces().col(faceIdx);
 
@@ -270,33 +350,108 @@ double FingerprintPlot::calculateBinnedAreasWithFilter() {
     double x3 = m_x(faceIndices[2]), y3 = m_y(faceIndices[2]);
 
     double faceArea = m_mesh->faceAreas()(faceIdx);
+    facesProcessed++;
+    
+    // Track samples for this face
+    int samplesPassingCurrentFilter = 0;
 
-    // Interpolate points within the face
+    // Interpolate points within the face with proportional allocation
+    int expectedSamplesThisFace = (m_settings.samplesPerEdge + 1) * (m_settings.samplesPerEdge + 2) / 2;
+    int actualSamplesThisFace = 0;
+    int samplesInBoundsThisFace = 0;
+    int samplesPassingFilterThisFace = 0;
+    
     for (int i = 0; i <= m_settings.samplesPerEdge; ++i) {
       for (int j = 0; j <= m_settings.samplesPerEdge - i; ++j) {
         double a = static_cast<double>(i) / m_settings.samplesPerEdge;
         double b = static_cast<double>(j) / m_settings.samplesPerEdge;
         double c = 1.0 - a - b;
+        actualSamplesThisFace++;
+        samplesGenerated++;
 
         double x = a * x1 + b * x2 + c * x3;
         double y = a * y1 + b * y2 + c * y3;
+        
 
         if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
           int xIndex = static_cast<int>((x - xmin) * normx);
           int yIndex = static_cast<int>((y - ymin) * normy);
+          samplesInBoundsThisFace++;
+          samplesInBounds++;
+          
+          // Determine if this sample passes the filter based on filter mode
+          bool samplePassesFilter = false;
+          
+          switch (m_filterMode) {
+          case FingerprintFilterMode::Element: {
+            // Element-based filtering using vertex assignments
+            int v0 = faceIndices[0], v1 = faceIndices[1], v2 = faceIndices[2];
+            
+            if (v0 < di_idx.rows() && v1 < di_idx.rows() && v2 < di_idx.rows() &&
+                di_idx(v0) >= 0 && de_idx(v0) >= 0 && di_idx(v1) >= 0 && de_idx(v1) >= 0 && 
+                di_idx(v2) >= 0 && de_idx(v2) >= 0) {
+              
+              // Use the vertex with highest barycentric weight to determine element assignment
+              int dominantVertex;
+              if (a >= b && a >= c) dominantVertex = v0;
+              else if (b >= c) dominantVertex = v1;
+              else dominantVertex = v2;
+              
+              int insideAtom = insideNums(di_idx(dominantVertex));
+              int outsideAtom = outsideNums(de_idx(dominantVertex));
+              
+              // Check if this sample passes the current element filter
+              auto check = [](int ref, int value) { return (ref == -1) || (value == ref); };
+              samplePassesFilter = check(m_filterInsideElement, insideAtom) && check(m_filterOutsideElement, outsideAtom);
+              if (m_includeReciprocalContacts) {
+                samplePassesFilter |= (check(m_filterInsideElement, outsideAtom) && check(m_filterOutsideElement, insideAtom));
+              }
+            }
+            break;
+          }
+          case FingerprintFilterMode::Di: {
+            // Distance-based filtering on di values (x coordinate)
+            samplePassesFilter = (x >= m_filterLower && x <= m_filterUpper);
+            break;
+          }
+          case FingerprintFilterMode::De: {
+            // Distance-based filtering on de values (y coordinate)
+            samplePassesFilter = (y >= m_filterLower && y <= m_filterUpper);
+            break;
+          }
+          default:
+            samplePassesFilter = true;
+            break;
+          }
 
-          double sampleArea = faceArea / ((m_settings.samplesPerEdge + 1) *
-                                          (m_settings.samplesPerEdge + 2) / 2);
+          double sampleArea = faceArea / expectedSamplesThisFace;
+          totalAreaSampled += sampleArea;
+          
 
           binUsed(xIndex, yIndex) = true;
-          if (faceMask(faceIdx)) {
+          if (samplePassesFilter) {
             totalFilteredArea += sampleArea;
             binnedAreas(xIndex, yIndex) += sampleArea;
+            samplesPassingFilterThisFace++;
+            samplesPassingFilter++;
+            samplesPassingCurrentFilter++;
           }
         }
       }
     }
+    
+    // Update face statistics - a face contributes if any of its samples pass the filter
+    if (samplesPassingCurrentFilter > 0) {
+      facesContributing++;
+    }
+    
   }
+
+
+  // Also set face mask to all true since we're using vertex masking for display
+  auto &faceMask = m_mesh->faceMask();
+  faceMask.setConstant(true);
+  
   return totalFilteredArea;
 }
 
@@ -307,54 +462,95 @@ QVector<double> FingerprintPlot::filteredAreas(QString insideElementSymbol,
   if (!m_mesh)
     return result;
 
-  // Save existing filter options
-  auto savedFilterMode = m_filterMode;
-  bool savedIncludeReciprocalContacts = m_includeReciprocalContacts;
-  int savedFilterInsideElement = m_filterInsideElement;
-  int savedFilterOutsideElement = m_filterOutsideElement;
-  QString savedInsideFilterElementSymbol = m_insideFilterElementSymbol;
-  QString savedOutsideFilterElementSymbol = m_outsideFilterElementSymbol;
+  // Get element assignment data
+  auto *structure = qobject_cast<ChemicalStructure *>(m_mesh->parent());
+  if (!structure)
+    return result;
+    
+  auto insideNums = structure->atomicNumbersForIndices(m_mesh->atomsInside());
+  auto outsideNums = structure->atomicNumbersForIndices(m_mesh->atomsOutside());
+  QString diIdxName = isosurface::getSurfacePropertyDisplayName("di_idx");
+  QString deIdxName = isosurface::getSurfacePropertyDisplayName("de_idx");
+  Eigen::VectorXi di_idx = m_mesh->vertexProperty(diIdxName).cast<int>();
+  Eigen::VectorXi de_idx = m_mesh->vertexProperty(deIdxName).cast<int>();
+  
+  if (di_idx.rows() == 0 || de_idx.rows() == 0)
+    return result;
 
-  m_filterMode = FingerprintFilterMode::Element;
-  m_includeReciprocalContacts = false;
-  m_filterInsideElement = true;
-  m_filterOutsideElement = true;
-  m_insideFilterElementSymbol = insideElementSymbol;
-
-  int symbolListSize = elementSymbolList.size();
-
-  QVector<double> totalFilteredArea(symbolListSize);
-  totalFilteredArea.fill(0.0);
-
-  const auto &faceAreas = m_mesh->faceAreas();
-  for (int i = 0; i < symbolListSize; ++i) {
-    // Sum all the areas of the faces which contribute to a particular bin
-    m_outsideFilterElementSymbol = elementSymbolList[i];
-    computeFaceMask();
-    const auto &mask = m_mesh->faceMask();
-    for (int f = 0; f < faceAreas.rows(); f++) {
-      if (mask(f)) {
-        totalFilteredArea[i] += faceAreas(f);
+  int insideAtomicNum = ElementData::atomicNumberFromElementSymbol(insideElementSymbol);
+  
+  // Calculate area for each outside element using vertex-based sampling
+  double nx = numUsedxBins();
+  double ny = numUsedyBins();
+  double xmax = usedxPlotMax();
+  double xmin = usedxPlotMin();
+  double normx = nx / (xmax - xmin);
+  double ymin = usedyPlotMin();
+  double ymax = usedyPlotMax();
+  double normy = ny / (ymax - ymin);
+  
+  QVector<double> totalFilteredArea(elementSymbolList.size(), 0.0);
+  
+  for (int faceIdx = 0; faceIdx < m_mesh->numberOfFaces(); ++faceIdx) {
+    Eigen::Vector3i faceIndices = m_mesh->faces().col(faceIdx);
+    
+    double x1 = m_x(faceIndices[0]), y1 = m_y(faceIndices[0]);
+    double x2 = m_x(faceIndices[1]), y2 = m_y(faceIndices[1]);
+    double x3 = m_x(faceIndices[2]), y3 = m_y(faceIndices[2]);
+    
+    double faceArea = m_mesh->faceAreas()(faceIdx);
+    int expectedSamplesThisFace = (m_settings.samplesPerEdge + 1) * (m_settings.samplesPerEdge + 2) / 2;
+    
+    for (int i = 0; i <= m_settings.samplesPerEdge; ++i) {
+      for (int j = 0; j <= m_settings.samplesPerEdge - i; ++j) {
+        double a = static_cast<double>(i) / m_settings.samplesPerEdge;
+        double b = static_cast<double>(j) / m_settings.samplesPerEdge;
+        double c = 1.0 - a - b;
+        
+        double x = a * x1 + b * x2 + c * x3;
+        double y = a * y1 + b * y2 + c * y3;
+        
+        if (x >= xmin && x < xmax && y >= ymin && y < ymax) {
+          // Determine element assignment for this sample
+          int v0 = faceIndices[0], v1 = faceIndices[1], v2 = faceIndices[2];
+          
+          if (v0 < di_idx.rows() && v1 < di_idx.rows() && v2 < di_idx.rows() &&
+              di_idx(v0) >= 0 && de_idx(v0) >= 0 && di_idx(v1) >= 0 && de_idx(v1) >= 0 && 
+              di_idx(v2) >= 0 && de_idx(v2) >= 0) {
+              
+            // Use dominant vertex for element assignment
+            int dominantVertex;
+            if (a >= b && a >= c) dominantVertex = v0;
+            else if (b >= c) dominantVertex = v1;
+            else dominantVertex = v2;
+            
+            int sampleInsideAtom = insideNums(di_idx(dominantVertex));
+            int sampleOutsideAtom = outsideNums(de_idx(dominantVertex));
+            
+            // Check if this sample matches the requested inside element
+            if (sampleInsideAtom == insideAtomicNum) {
+              // Find which outside element this sample belongs to
+              for (int elemIdx = 0; elemIdx < elementSymbolList.size(); ++elemIdx) {
+                int outsideAtomicNum = ElementData::atomicNumberFromElementSymbol(elementSymbolList[elemIdx]);
+                if (sampleOutsideAtom == outsideAtomicNum) {
+                  double sampleArea = faceArea / expectedSamplesThisFace;
+                  totalFilteredArea[elemIdx] += sampleArea;
+                  break;
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
-
-  // Calculate percentages
-  for (const auto &filteredArea : totalFilteredArea) {
-    double percentageFilteredArea =
-        (filteredArea / m_mesh->surfaceArea()) * 100.0;
-    result.append(percentageFilteredArea);
+  
+  // Convert to percentages
+  for (int i = 0; i < totalFilteredArea.size(); ++i) {
+    double percentage = (totalFilteredArea[i] / m_mesh->surfaceArea()) * 100.0;
+    result.append(percentage);
   }
-
-  // Restore exisiting filter options
-  m_filterMode = savedFilterMode;
-  m_includeReciprocalContacts = savedIncludeReciprocalContacts;
-  m_filterInsideElement = savedFilterInsideElement;
-  m_filterOutsideElement = savedFilterOutsideElement;
-  m_insideFilterElementSymbol = savedInsideFilterElementSymbol;
-  m_outsideFilterElementSymbol = savedOutsideFilterElementSymbol;
-  computeFaceMask();
-
+  
   return result;
 }
 
@@ -368,11 +564,9 @@ void FingerprintPlot::calculateBinnedAreas() {
     break;
   }
 
-  // outputFingerprintAsTable();
-  // outputFingerprintAsJSON();
+  double percentageOfTotal = (m_totalFilteredArea / m_mesh->surfaceArea()) * 100;
 
-  emit surfaceAreaPercentageChanged(
-      (m_totalFilteredArea / m_mesh->surfaceArea()) * 100);
+  emit surfaceAreaPercentageChanged(percentageOfTotal);
   emit surfaceFeatureChanged();
 }
 
@@ -750,10 +944,6 @@ void FingerprintPlot::drawBins(QPainter *painter) {
 
   auto func = ColorMap(m_colorScheme, 0.0, maxValue);
   func.reverse = true;
-  qDebug() << "Pixels per bin" << m_settings.pixelsPerBin;
-  qDebug() << "Surface area" << m_mesh->surfaceArea();
-  qDebug() << "Surface area (faces)" << m_mesh->faceAreas().sum();
-  qDebug() << "Surface area (verts)" << m_mesh->vertexAreas().sum();
 
   for (int i = 0; i < numxBins; ++i) {
     for (int j = 0; j < numyBins; ++j) {

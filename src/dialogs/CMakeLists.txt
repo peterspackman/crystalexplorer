@@ -39,6 +39,7 @@ qt_add_library(cx_dialogs STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/exportdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fingerprintoptions.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fingerprintplot.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fingerprintcalculator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fingerprintwindow.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fileeditor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fragmentstatedialog.cpp"

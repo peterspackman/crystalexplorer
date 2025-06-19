@@ -206,6 +206,10 @@ void Crystalx::initInfoViewer() {
 
   connect(infoViewer, &InfoViewer::energyColorSchemeChanged, this,
           &Crystalx::handleEnergyColorSchemeChanged);
+  
+  // Connect surface selection changes to update info viewer
+  connect(project, &Project::surfaceSelectionChanged, infoViewer,
+          &InfoViewer::updateInfoViewerForSurfaceChange);
 }
 
 void Crystalx::createDockWidgets() {
@@ -1470,7 +1474,41 @@ void Crystalx::handleMeshSelectionChanged() {
   auto scene = project->currentScene();
   if (!scene)
     return;
-  scene->setSelectedSurface(childPropertyController->getCurrentMeshInstance());
+  
+  auto *structure = scene->chemicalStructure();
+  if (!structure)
+    return;
+  
+  // Try mesh instance first, then direct mesh
+  auto *meshInstance = childPropertyController->getCurrentMeshInstance();
+  if (meshInstance) {
+    scene->setSelectedSurface(meshInstance);
+    auto index = structure->treeModel()->indexFromObject(meshInstance);
+    emit scene->clickedSurface(index);
+  } else {
+    // Handle direct mesh selection - find first MeshInstance child
+    auto *mesh = childPropertyController->getCurrentMesh();
+    if (mesh) {
+      // Look for the first MeshInstance child of this mesh
+      MeshInstance *firstInstance = nullptr;
+      for (auto *child : mesh->children()) {
+        if (auto *instance = qobject_cast<MeshInstance *>(child)) {
+          firstInstance = instance;
+          break;
+        }
+      }
+      
+      if (firstInstance) {
+        scene->setSelectedSurface(firstInstance);
+        auto index = structure->treeModel()->indexFromObject(firstInstance);
+        emit scene->clickedSurface(index);
+      } else {
+        // Fallback: emit signal for the mesh itself
+        auto index = structure->treeModel()->indexFromObject(mesh);
+        emit scene->clickedSurface(index);
+      }
+    }
+  }
 }
 
 void Crystalx::enableGenerateSurfaceAction(bool enable) {

@@ -23,5 +23,7 @@ private:
   void resetCursorToBeginning();
   void insertGeneralInformation(QTextCursor &, Mesh *);
   void insertMeshInstanceInformation(QTextCursor &, MeshInstance *);
+  void insertPropertyInformation(QTextCursor &, Mesh *);
+  void insertFingerprintBreakdown(QTextCursor &, Mesh *);
 
 };
