@@ -1,6 +1,9 @@
 #include "planegenerationdialog.h"
 #include "ui_planegenerationdialog.h"
 #include <QColorDialog>
+#include "colormap.h"
+#include "crystalstructure.h"
+#include "surface_cut_generator.h"
 
 inline void setButtonColor(QAbstractButton *colorButton, QColor color) {
   QString styleSheet = QString("background-color: %1;").arg(color.name());
@@ -8,9 +11,12 @@ inline void setButtonColor(QAbstractButton *colorButton, QColor color) {
 }
 
 PlaneGenerationDialog::PlaneGenerationDialog(QWidget *parent)
-    : QDialog(parent), ui(new Ui::PlaneGenerationDialog), m_color("red"),
+    : QDialog(parent), ui(new Ui::PlaneGenerationDialog), 
       m_planesModel(new CrystalPlanesModel(this)),
-      m_colorDelegate(new ColorDelegate(this)), m_spaceGroup(1) {
+      m_colorDelegate(new ColorDelegate(this)) {
+  
+  // Set initial color from colormap
+  updateColorFromMap();
   ui->setupUi(this);
   setButtonColor(ui->colorButton, m_color);
   connect(ui->colorButton, &QAbstractButton::clicked, this,
@@ -26,6 +32,30 @@ PlaneGenerationDialog::PlaneGenerationDialog(QWidget *parent)
           &PlaneGenerationDialog::removeSelectedPlane);
   connect(ui->createSurfaceStructureButton, &QAbstractButton::clicked, this,
           &PlaneGenerationDialog::createSurfaceGeometryButtonClicked);
+  connect(ui->createSurfaceCutButton, &QAbstractButton::clicked, this,
+          &PlaneGenerationDialog::createSurfaceCutButtonClicked);
+  
+  // Connect visualization option signals
+  connect(ui->infinitePlaneCheckBox, &QCheckBox::toggled, this,
+          &PlaneGenerationDialog::visualizationOptionsChanged);
+  connect(ui->showGridCheckBox, &QCheckBox::toggled, this,
+          &PlaneGenerationDialog::visualizationOptionsChanged);
+  connect(ui->showUnitCellIntersectionCheckBox, &QCheckBox::toggled, this,
+          &PlaneGenerationDialog::visualizationOptionsChanged);
+  connect(ui->gridSpacingSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &PlaneGenerationDialog::visualizationOptionsChanged);
+  connect(ui->repeatRangeMinSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          &PlaneGenerationDialog::visualizationOptionsChanged);
+  connect(ui->repeatRangeMaxSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          &PlaneGenerationDialog::visualizationOptionsChanged);
+  
+  // Connect Miller index changes to update suggested cuts
+  connect(ui->hSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          &PlaneGenerationDialog::updateSuggestedCuts);
+  connect(ui->kSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          &PlaneGenerationDialog::updateSuggestedCuts);
+  connect(ui->lSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          &PlaneGenerationDialog::updateSuggestedCuts);
 }
 
 void PlaneGenerationDialog::onColorButtonClicked() {
@@ -48,11 +78,21 @@ double PlaneGenerationDialog::offset() const {
   return ui->offsetDoubleSpinBox->value();
 }
 
-void PlaneGenerationDialog::removeSelectedPlane() {
-  m_planesModel->removePlane(ui->currentPlanes->currentIndex().row());
+double PlaneGenerationDialog::surfaceCutDepth() const {
+  return ui->surfaceCutDepthSpinBox->value();
 }
 
-void PlaneGenerationDialog::removeAllPlanes() { m_planesModel->clear(); }
+void PlaneGenerationDialog::removeSelectedPlane() {
+  m_planesModel->removePlane(ui->currentPlanes->currentIndex().row());
+  // Update color for next plane based on new total count
+  updateColorFromMap();
+}
+
+void PlaneGenerationDialog::removeAllPlanes() { 
+  m_planesModel->clear(); 
+  // Update color for next plane based on new total count
+  updateColorFromMap();
+}
 
 void PlaneGenerationDialog::createSurfaceGeometryButtonClicked() {
   CrystalPlane plane{{h(), k(), l()}, offset(), m_color};
@@ -61,14 +101,14 @@ void PlaneGenerationDialog::createSurfaceGeometryButtonClicked() {
 
 void PlaneGenerationDialog::addPlaneFromCurrentSettings() {
   CrystalPlane plane{{h(), k(), l()}, offset(), m_color};
-  if (ui->symmetryEquivalentCheckBox->isChecked() &&
-      (m_spaceGroup.symmetry_operations().size() > 0)) {
+  if (ui->symmetryEquivalentCheckBox->isChecked() && m_crystalStructure &&
+      (m_crystalStructure->spaceGroup().symmetry_operations().size() > 0)) {
     occ::Vec3 hklVec =
         occ::Vec3{static_cast<double>(h()), static_cast<double>(k()),
                  static_cast<double>(l())};
     QSet<CrystalPlane> uniquePlanes;
     uniquePlanes.insert(plane);
-    for (const auto &symop: m_spaceGroup.symmetry_operations()) {
+    for (const auto &symop: m_crystalStructure->spaceGroup().symmetry_operations()) {
       occ::Vec3 candidate = symop.rotation() * hklVec;
       CrystalPlane candidatePlane = plane;
       candidatePlane.hkl = {static_cast<int>(candidate(0)),
@@ -82,12 +122,17 @@ void PlaneGenerationDialog::addPlaneFromCurrentSettings() {
   } else {
     m_planesModel->addPlane(plane);
   }
+  
+  // Update color for next plane based on new total count
+  updateColorFromMap();
 }
 
 void PlaneGenerationDialog::loadPlanes(
     const std::vector<CrystalPlane> &planes) {
   m_planesModel->clear();
   m_planesModel->addPlanes(planes);
+  // Update color for next plane based on loaded planes count
+  updateColorFromMap();
 }
 
 std::vector<CrystalPlane> PlaneGenerationDialog::planes() const {
@@ -98,8 +143,93 @@ std::vector<CrystalPlane> PlaneGenerationDialog::planes() const {
   return result;
 }
 
-void PlaneGenerationDialog::setSpaceGroup(const occ::crystal::SpaceGroup &sg) {
-  m_spaceGroup = sg;
+void PlaneGenerationDialog::setCrystalStructure(CrystalStructure *crystalStructure) {
+  m_crystalStructure = crystalStructure;
+  updateSuggestedCuts();
+}
+
+PlaneVisualizationOptions PlaneGenerationDialog::getVisualizationOptions() const {
+  PlaneVisualizationOptions options;
+  options.useInfinitePlanes = ui->infinitePlaneCheckBox->isChecked();
+  options.showGrid = ui->showGridCheckBox->isChecked();
+  options.showUnitCellIntersection = ui->showUnitCellIntersectionCheckBox->isChecked();
+  options.gridSpacing = ui->gridSpacingSpinBox->value();
+  
+  // Get repeat ranges from UI controls
+  int minRange = ui->repeatRangeMinSpinBox->value();
+  int maxRange = ui->repeatRangeMaxSpinBox->value();
+  options.repeatRangeA = QVector2D(minRange, maxRange);
+  options.repeatRangeB = QVector2D(minRange, maxRange);  // Use same range for both directions
+  
+  return options;
+}
+
+void PlaneGenerationDialog::setVisualizationOptions(const PlaneVisualizationOptions &options) {
+  ui->infinitePlaneCheckBox->setChecked(options.useInfinitePlanes);
+  ui->showGridCheckBox->setChecked(options.showGrid);
+  ui->showUnitCellIntersectionCheckBox->setChecked(options.showUnitCellIntersection);
+  ui->gridSpacingSpinBox->setValue(options.gridSpacing);
+  
+  // Set repeat ranges from the options (using the A range for both since UI only has one range)
+  ui->repeatRangeMinSpinBox->setValue(static_cast<int>(options.repeatRangeA.x()));
+  ui->repeatRangeMaxSpinBox->setValue(static_cast<int>(options.repeatRangeA.y()));
+}
+
+void PlaneGenerationDialog::updateColorFromMap() {
+  try {
+    // Use Hokusai1 colormap to assign colors based on number of existing planes
+    ColorMap colorMap("Hokusai1", 0.0, 1.0);  // Normalized range
+    int numPlanes = m_planesModel->rowCount();
+    
+    // Get color from colormap position (cycle through colors every 8 planes)
+    double position = static_cast<double>(numPlanes % 8) / 8.0;
+    m_color = colorMap(position);
+  } catch (...) {
+    // Fallback to a simple color cycle if colormap fails
+    QStringList fallbackColors = {"#e74c3c", "#3498db", "#2ecc71", "#f39c12", 
+                                  "#9b59b6", "#1abc9c", "#e67e22", "#34495e"};
+    int numPlanes = m_planesModel->rowCount();
+    QString colorName = fallbackColors[numPlanes % fallbackColors.size()];
+    m_color = QColor(colorName);
+  }
+  
+  // Update the UI button if it exists
+  if (ui && ui->colorButton) {
+    setButtonColor(ui->colorButton, m_color);
+  }
+}
+
+void PlaneGenerationDialog::createSurfaceCutButtonClicked() {
+  emit createSurfaceCut(h(), k(), l(), offset(), surfaceCutDepth());
+}
+
+QStringList PlaneGenerationDialog::getSuggestedCuts() const {
+  QStringList suggestions;
+  if (!m_crystalStructure) {
+    return suggestions;
+  }
+
+  std::vector<double> cuts = cx::crystal::getSuggestedCuts(m_crystalStructure, h(), k(), l());
+  
+  for (double cut : cuts) {
+    suggestions.append(QString::number(cut, 'f', 4));
+  }
+
+  return suggestions;
+}
+
+void PlaneGenerationDialog::updateSuggestedCuts() {
+  if (!ui || !ui->suggestedCutsLabel) {
+    return;
+  }
+  
+  QStringList suggestions = getSuggestedCuts();
+  if (suggestions.isEmpty()) {
+    ui->suggestedCutsLabel->setText("Suggested cuts: (set valid Miller indices and crystal structure)");
+  } else {
+    QString text = QString("Suggested cuts: %1").arg(suggestions.join(", "));
+    ui->suggestedCutsLabel->setText(text);
+  }
 }
 
 PlaneGenerationDialog::~PlaneGenerationDialog() { delete ui; }

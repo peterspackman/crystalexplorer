@@ -46,6 +46,7 @@
         <file>wfn_icon.png</file>
         <file>psi.png</file>
         <file>interaction_energies.png</file>
+        <file>cut_crystal.png</file>
     </qresource>
     <qresource prefix="/svg">
         <file>source_images/a-axis.svg</file>

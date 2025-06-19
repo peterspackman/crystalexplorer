@@ -913,9 +913,6 @@ void Scene::ensureRenderersInitialized() {
   if (!m_lightPositionRenderer) {
     m_lightPositionRenderer = new EllipsoidRenderer();
   }
-  if (!m_crystalPlaneRenderer) {
-    m_crystalPlaneRenderer = new CrystalPlaneRenderer();
-  }
 }
 
 void Scene::drawChemicalStructure() {
@@ -932,19 +929,8 @@ void Scene::drawExtras() {
   }
 
   drawLights();
-  drawPlanes();
 }
 
-void Scene::drawPlanes() {
-  updateCrystalPlanes();
-
-  if (m_crystalPlaneRenderer->size() > 0) {
-    m_crystalPlaneRenderer->bind();
-    setRendererUniforms(m_crystalPlaneRenderer, false);
-    m_crystalPlaneRenderer->draw();
-    m_crystalPlaneRenderer->release();
-  }
-}
 
 void Scene::draw() {
   ensureRenderersInitialized();
@@ -1039,15 +1025,7 @@ void Scene::depthFogSettingsChanged() {
       settings::readSetting(settings::keys::DEPTH_FOG_OFFSET).toFloat();
 }
 
-void Scene::addCrystalPlane(CrystalPlane plane) {
-  m_crystalPlanes.push_back(plane);
-  m_crystalPlanesNeedUpdate = true;
-}
 
-void Scene::setCrystalPlanes(const std::vector<CrystalPlane> &planes) {
-  m_crystalPlanes = planes;
-  m_crystalPlanesNeedUpdate = true;
-}
 
 void Scene::materialChanged() {
   m_uniforms.u_materialMetallic =
@@ -1285,28 +1263,6 @@ void Scene::reset() {
   resetViewAndSelections();
 }
 
-void Scene::updateCrystalPlanes() {
-  if (!m_crystalPlanesNeedUpdate)
-    return;
-  m_crystalPlaneRenderer->clear();
-  m_crystalPlaneRenderer->beginUpdates();
-  for (const auto &plane : std::as_const(m_crystalPlanes)) {
-    if (plane.hkl.h == 0 && plane.hkl.k == 0 && plane.hkl.l == 0)
-      continue;
-    CrystalPlaneGenerator generator(m_structure, plane.hkl);
-    const auto &aVector = generator.aVector();
-    const auto &bVector = generator.bVector();
-    const auto &origin = generator.origin();
-    QVector3D qorigin(origin(0), origin(1), origin(2));
-    QVector3D qa(aVector(0), aVector(1), aVector(2));
-    QVector3D qb(bVector(0), bVector(1), bVector(2));
-
-    cx::graphics::addPlaneToCrystalPlaneRenderer(*m_crystalPlaneRenderer,
-                                                 qorigin, qa, qb, plane.color);
-  }
-  m_crystalPlaneRenderer->endUpdates();
-  m_crystalPlanesNeedUpdate = false;
-}
 
 bool Scene::showCells() {
   if (m_structureRenderer) {

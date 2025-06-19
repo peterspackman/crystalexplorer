@@ -3,6 +3,7 @@
 #include "graphics.h"
 #include "mesh.h"
 #include "settings.h"
+#include "crystalplanegenerator.h"
 #include <iostream>
 
 namespace cx::graphics {
@@ -17,6 +18,7 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
   m_cellLinesRenderer = new LineRenderer();
   m_highlightRenderer = new LineRenderer();
   m_frameworkRenderer = new FrameworkRenderer(m_structure);
+  m_planeRenderer = new PlaneRenderer();
 
   connect(m_structure, &ChemicalStructure::childAdded, this,
           &ChemicalStructureRenderer::childAddedToStructure);
@@ -33,9 +35,12 @@ void ChemicalStructureRenderer::initStructureChildren() {
   for (auto *child : m_structure->children()) {
     if (auto *mesh = qobject_cast<Mesh *>(child)) {
       connectMeshSignals(mesh);
+    } else if (auto *plane = qobject_cast<Plane *>(child)) {
+      connectPlaneSignals(plane);
     }
   }
   m_meshesNeedsUpdate = true;
+  m_planesNeedUpdate = true;
 }
 
 void ChemicalStructureRenderer::setSelectionHandler(RenderSelection *ptr) {
@@ -553,7 +558,8 @@ void ChemicalStructureRenderer::endUpdates() {
 bool ChemicalStructureRenderer::needsUpdate() {
   // TODO check for efficiency in non-granular toggle like this
   return m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate ||
-         m_labelsNeedsUpdate || m_cellsNeedsUpdate;
+         m_labelsNeedsUpdate || m_cellsNeedsUpdate ||
+         m_planesNeedUpdate;
 }
 
 void ChemicalStructureRenderer::draw(bool forPicking) {
@@ -564,6 +570,7 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
     handleBondsUpdate();
     handleMeshesUpdate();
     handleCellsUpdate();
+    updatePlanes();
     endUpdates();
   }
 
@@ -619,6 +626,15 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
   }
 
   m_frameworkRenderer->draw();
+
+  
+  // Draw new planes with instancing
+  if (!forPicking && m_planeRenderer && m_planeRenderer->instanceCount() > 0) {
+    m_planeRenderer->bind();
+    m_uniforms.apply(m_planeRenderer);
+    m_planeRenderer->draw();
+    m_planeRenderer->release();
+  }
 
   // Draw transparent meshes last
   for (auto *meshRenderer : transparentMeshes) {
@@ -758,12 +774,16 @@ void ChemicalStructureRenderer::handleMeshesUpdate() {
 
 void ChemicalStructureRenderer::childVisibilityChanged() {
   // TODO more granularity
+  qDebug() << "ChemicalStructureRenderer::childVisibilityChanged() called";
   updateMeshes();
+  m_planesNeedUpdate = true;
 }
 
 void ChemicalStructureRenderer::childPropertyChanged() {
   // TODO more granularity
+  qDebug() << "ChemicalStructureRenderer::childPropertyChanged() called";
   updateMeshes();
+  m_planesNeedUpdate = true;
 }
 
 void ChemicalStructureRenderer::connectMeshSignals(Mesh *mesh) {
@@ -778,29 +798,55 @@ void ChemicalStructureRenderer::connectMeshSignals(Mesh *mesh) {
           &ChemicalStructureRenderer::childPropertyChanged);
 }
 
+void ChemicalStructureRenderer::connectPlaneSignals(Plane *plane) {
+  if (!plane)
+    return;
+
+  qDebug() << "Connecting plane signals for plane:" << plane << "name:" << plane->name();
+  connect(plane, &Plane::settingsChanged, this,
+          &ChemicalStructureRenderer::childVisibilityChanged);
+  connect(plane, &Plane::settingsChanged, this,
+          &ChemicalStructureRenderer::childPropertyChanged);
+}
+
 void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
-  qDebug() << "Child added to structure called" << child;
-  qDebug() << "Class Name:" << child->metaObject()->className();
-  qDebug() << "Is MeshInstance:"
-           << (dynamic_cast<MeshInstance *>(child) != nullptr);
+  qDebug() << "ChemicalStructureRenderer::childAddedToStructure() called with child:" << child;
   auto *mesh = qobject_cast<Mesh *>(child);
   auto *meshInstance = qobject_cast<MeshInstance *>(child);
+  auto *plane = qobject_cast<Plane *>(child);
+  auto *planeInstance = qobject_cast<PlaneInstance *>(child);
+  
   if (mesh) {
+    qDebug() << "Child is a Mesh:" << mesh->objectName();
     connectMeshSignals(mesh);
-  } else if (meshInstance) {
-    qDebug() << "Mesh instance added";
   }
-  updateMeshes();
+  
+  if (plane) {
+    qDebug() << "Child is a Plane:" << plane->name();
+    connectPlaneSignals(plane);
+  }
+  
+  if (mesh || meshInstance) {
+    updateMeshes();
+  }
+  if (plane || planeInstance) {
+    m_planesNeedUpdate = true;
+  }
 }
 
 void ChemicalStructureRenderer::childRemovedFromStructure(QObject *child) {
   qDebug() << "Child removed @" << child << "TODO, for now bulk reset";
   auto *mesh = qobject_cast<Mesh *>(child);
+  auto *plane = qobject_cast<Plane *>(child);
   if (mesh) {
     qDebug() << "Child removed (mesh) from structure, disconnected";
     disconnect(mesh, &Mesh::visibilityChanged, this,
                &ChemicalStructureRenderer::childVisibilityChanged);
     m_meshesNeedsUpdate = true;
+  } else if (plane) {
+    qDebug() << "Child removed (plane) from structure, disconnected";
+    disconnect(plane, &Plane::settingsChanged, this, nullptr);
+    m_planesNeedUpdate = true;
   }
 }
 
@@ -827,6 +873,41 @@ int ChemicalStructureRenderer::getMeshInstanceIndex(
   if (!result)
     return -1;
   return static_cast<int>(*result);
+}
+
+
+void ChemicalStructureRenderer::updatePlanes() {
+  if (!m_planesNeedUpdate)
+    return;
+
+  if (!m_structure) {
+    m_planesNeedUpdate = false;
+    return;
+  }
+
+  m_planeRenderer->beginUpdates();
+  m_planeRenderer->clear();
+  
+  for (auto *child : m_structure->children()) {
+    auto *plane = qobject_cast<Plane *>(child);
+    if (!plane)
+      continue;
+      
+    // Get plane instances
+    for (auto *planeChild : plane->children()) {
+      auto *instance = qobject_cast<PlaneInstance *>(planeChild);
+      if (!instance)
+        continue;
+        
+      // Only add visible instances of visible planes
+      if (plane->isVisible() && instance->isVisible()) {
+        m_planeRenderer->addPlaneInstance(plane, instance);
+      }
+    }
+  }
+  
+  m_planeRenderer->endUpdates();
+  m_planesNeedUpdate = false;
 }
 
 } // namespace cx::graphics

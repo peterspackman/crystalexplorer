@@ -3,7 +3,6 @@
 
 #include "billboardrenderer.h"
 #include "circlerenderer.h"
-#include "crystalplanerenderer.h"
 #include "cylinderimpostorrenderer.h"
 #include "cylinderrenderer.h"
 #include "ellipsoidrenderer.h"
@@ -27,9 +26,6 @@ struct ColorSettings {
 void addCircleToCircleRenderer(CircleRenderer &c, const QVector3D &position,
                                const QVector3D &right, const QVector3D &up,
                                const QColor &color);
-void addPlaneToCrystalPlaneRenderer(CrystalPlaneRenderer &c,
-                                    const QVector3D &origin, const QVector3D &a,
-                                    const QVector3D &b, const QColor &color);
 
 void addPartialDiskToCircleRenderer(CircleRenderer &c, const QVector3D &v0,
                                     const QVector3D &v1,

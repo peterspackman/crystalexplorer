@@ -13,6 +13,7 @@
 #include "project.h"
 #include "version.h"
 #include "xyzfile.h"
+#include "slabstructure.h"
 
 namespace SceneNotification {
 void subscribe(Project *project) {
@@ -371,6 +372,24 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
   }
 
   return true;
+}
+
+void Project::addSlabStructure(SlabStructure *slab, const QString &title) {
+  if (!slab) {
+    qDebug() << "Cannot add null slab structure";
+    return;
+  }
+  
+  Scene *scene = new Scene(slab);
+  scene->setTitle(title);
+  int position = m_scenes.size();
+  beginInsertRows(QModelIndex(), position, position);
+  m_scenes.append(scene);
+  endInsertRows();
+  
+  setUnsavedChangesExists();
+  setCurrentCrystal(position);
+  emit sceneSelectionChanged(position);
 }
 
 bool Project::loadCrystalClearSurfaceJson(const QString &filename) {

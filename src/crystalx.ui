@@ -85,8 +85,13 @@
     <addaction name="toggleContactAtomsAction"/>
     <addaction name="showAtomsWithinRadiusAction"/>
     <addaction name="generateSurfaceAction"/>
+    <addaction name="createPlaneAction"/>
     <addaction name="cloneSurfaceAction"/>
     <addaction name="calculateEnergiesAction"/>
+    <addaction name="separator"/>
+    <addaction name="generateWavefunctionAction"/>
+    <addaction name="loadWavefunctionAction"/>
+    <addaction name="separator"/>
     <addaction name="selectAction"/>
     <addaction name="separator"/>
     <addaction name="distanceAction"/>
@@ -221,10 +226,12 @@
    <addaction name="toggleContactAtomsAction"/>
    <addaction name="showAtomsWithinRadiusAction"/>
    <addaction name="generateSurfaceAction"/>
+   <addaction name="createPlaneAction"/>
    <addaction name="cloneSurfaceAction"/>
    <addaction name="generateWavefunctionAction"/>
+   <addaction name="loadWavefunctionAction"/>
    <addaction name="calculateEnergiesAction"/>
-   <addaction name="showCrystalPlanesAction"/>
+   <addaction name="crystalCutsAction"/>
    <addaction name="separator"/>
    <addaction name="selectAction"/>
    <addaction name="distanceAction"/>
@@ -519,6 +526,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="createPlaneAction">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/plane_icon.png</normaloff>:/images/plane_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Create Plane...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="distanceAction">
@@ -1076,13 +1098,13 @@
     <string>Import...</string>
    </property>
   </action>
-  <action name="showCrystalPlanesAction">
+  <action name="crystalCutsAction">
    <property name="icon">
     <iconset resource="../icons/crystalexplorer.qrc">
-     <normaloff>:/images/plane_icon.png</normaloff>:/images/plane_icon.png</iconset>
+     <normaloff>:/images/cut_crystal.png</normaloff>:/images/cut_crystal.png</iconset>
    </property>
    <property name="text">
-    <string>Show Crystal Planes...</string>
+    <string>Crystal Cuts...</string>
    </property>
   </action>
   <action name="actionShowTaskManager">
@@ -1116,6 +1138,24 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+G</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="loadWavefunctionAction">
+   <property name="icon">
+    <iconset resource="../icons/crystalexplorer.qrc">
+     <normaloff>:/images/wfn_icon.png</normaloff>:/images/wfn_icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load Wavefunction...</string>
+   </property>
+   <property name="toolTip">
+    <string>Load a wavefunction from file for the selected atoms</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+L</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>

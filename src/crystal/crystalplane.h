@@ -1,6 +1,7 @@
 #pragma once
 #include <QColor>
 #include <QHashFunctions>
+#include <QVector2D>
 
 struct MillerIndex {
   int h{0};
@@ -15,6 +16,15 @@ struct MillerIndex {
   }
 
   inline bool isZero() const { return h == 0 && k == 0 && l == 0; }
+};
+
+struct PlaneVisualizationOptions {
+  bool useInfinitePlanes{false};
+  bool showGrid{true};
+  bool showUnitCellIntersection{true};
+  double gridSpacing{1.0};
+  QVector2D repeatRangeA{-2, 2};  // Repeat range in first plane direction
+  QVector2D repeatRangeB{-2, 2};  // Repeat range in second plane direction
 };
 
 struct CrystalPlane {

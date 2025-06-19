@@ -1,5 +1,6 @@
 #include "object_tree_model.h"
 #include "mesh.h"
+#include "plane.h"
 #include <QEvent>
 #include <QIcon>
 
@@ -87,6 +88,10 @@ QVariant ObjectTreeModel::data(const QModelIndex &index, int role) const {
       auto *mesh = qobject_cast<Mesh *>(itemObject);
       if (mesh) {
         return QIcon(":/images/mesh.png");
+      }
+      auto *plane = qobject_cast<Plane *>(itemObject);
+      if (plane) {
+        return QIcon(":/images/plane_icon.png");
       }
       auto *wfn = qobject_cast<MolecularWavefunction*>(itemObject);
       if (wfn) {

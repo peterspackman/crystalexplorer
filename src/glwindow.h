@@ -107,6 +107,7 @@ signals:
   void mouseDrag(QPointF);
   void contextualFilterAtoms(AtomFlag, bool);
   void atomLabelOptionsChanged(AtomLabelOptions);
+  void loadWavefunctionRequested();
 
 protected:
   void initializeGL() override;
@@ -163,6 +164,7 @@ private slots:
   void contextualUnbondSelectedAtoms();
   void contextualColorSelection(bool fragments);
   void contextualResetCustomAtomColors();
+  void contextualLoadWavefunction();
   void forcedRedraw();
 
 protected slots:

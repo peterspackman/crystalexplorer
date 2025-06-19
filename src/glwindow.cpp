@@ -785,6 +785,9 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
                            &GLWindow::contextualDeleteFragmentWithAtom);
     contextMenu->addAction(tr("Edit Element"), this,
                            &GLWindow::contextualEditElement);
+    contextMenu->addSeparator();
+    contextMenu->addAction(tr("Load Wavefunction..."), this,
+                           &GLWindow::contextualLoadWavefunction);
     break;
   case SelectionType::Bond:
     contextMenu->addAction(tr("Complete Fragment"), this,
@@ -1390,6 +1393,11 @@ void GLWindow::contextualResetCustomAtomColors() {
   Q_ASSERT(scene);
   scene->resetAllAtomColors();
   redraw();
+}
+
+void GLWindow::contextualLoadWavefunction() {
+  Q_ASSERT(scene);
+  emit loadWavefunctionRequested();
 }
 
 QColor GLWindow::pickObjectAt(QPoint pos) {

@@ -30,8 +30,8 @@
         <file>pointcloudinstance.frag</file>
         <file>pointcloudinstance.vert</file>
         <file>selection.glsl</file>
-        <file>crystalplane.frag</file>
-        <file>crystalplane.vert</file>
+        <file>plane.frag</file>
+        <file>plane.vert</file>
         <file>uniforms.glsl</file>
         <file>flat.glsl</file>
         <file>final_pass.frag</file>

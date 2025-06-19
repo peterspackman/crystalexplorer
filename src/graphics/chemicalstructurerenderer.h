@@ -9,7 +9,10 @@
 #include "ellipsoidrenderer.h"
 #include "frameworkrenderer.h"
 #include "linerenderer.h"
-#include "crystalplanerenderer.h"
+#include "crystalplane.h"
+#include "planerenderer.h"
+#include "plane.h"
+#include "planeinstance.h"
 #include "mesh.h"
 #include "meshinstance.h"
 #include "meshinstancerenderer.h"
@@ -82,6 +85,9 @@ public:
   }
   void setFrameworkOptions(const FrameworkOptions &);
 
+  // New plane management
+  void updatePlanes();
+
   void updateAtoms();
   void updateCells();
   void updateLabels();
@@ -111,6 +117,7 @@ public slots:
 
 private:
   void connectMeshSignals(Mesh* mesh);
+  void connectPlaneSignals(Plane* plane);
   bool needsUpdate();
   void initStructureChildren();
 
@@ -134,6 +141,7 @@ private:
   bool m_meshesNeedsUpdate{true};
   bool m_labelsNeedsUpdate{true};
   bool m_cellsNeedsUpdate{true};
+  bool m_planesNeedUpdate{true};
 
   bool m_showHydrogens{true};
   bool m_showSuppressedAtoms{false};
@@ -163,12 +171,14 @@ private:
   BillboardRenderer *m_labelRenderer{nullptr};
 
   LineRenderer *m_cellLinesRenderer{nullptr};
+  PlaneRenderer *m_planeRenderer{nullptr};
 
   ChemicalStructure *m_structure{nullptr};
 
   RendererUniforms m_uniforms;
   FrameworkOptions m_frameworkOptions;
   std::vector<AggregateIndex> m_aggregateIndices;
+  
 };
 
 } // namespace cx::graphics

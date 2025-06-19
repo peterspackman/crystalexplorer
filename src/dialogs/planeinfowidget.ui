@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PlaneInfoWidget</class>
+ <widget class="QWidget" name="PlaneInfoWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>350</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>6</number>
+   </property>
+   <property name="leftMargin">
+    <number>6</number>
+   </property>
+   <property name="topMargin">
+    <number>6</number>
+   </property>
+   <property name="rightMargin">
+    <number>6</number>
+   </property>
+   <property name="bottomMargin">
+    <number>6</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="basicGroup">
+     <property name="title">
+      <string>Basic Properties</string>
+     </property>
+     <layout class="QFormLayout" name="basicLayout">
+      <property name="horizontalSpacing">
+       <number>6</number>
+      </property>
+      <property name="verticalSpacing">
+       <number>6</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="nameLabel">
+        <property name="text">
+         <string>Name:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="nameEdit"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="colorLabel">
+        <property name="text">
+         <string>Color:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="colorButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>32</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="millerGroup">
+     <property name="title">
+      <string>Miller Indices</string>
+     </property>
+     <layout class="QFormLayout" name="millerFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="millerLabel">
+        <property name="text">
+         <string>h k l:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="millerHLayout">
+        <item>
+         <widget class="QSpinBox" name="millerHSpinBox">
+          <property name="toolTip">
+           <string>h (Miller index)</string>
+          </property>
+          <property name="minimum">
+           <number>-99</number>
+          </property>
+          <property name="maximum">
+           <number>99</number>
+          </property>
+          <property name="value">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="millerKSpinBox">
+          <property name="toolTip">
+           <string>k (Miller index)</string>
+          </property>
+          <property name="minimum">
+           <number>-99</number>
+          </property>
+          <property name="maximum">
+           <number>99</number>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="millerLSpinBox">
+          <property name="toolTip">
+           <string>l (Miller index)</string>
+          </property>
+          <property name="minimum">
+           <number>-99</number>
+          </property>
+          <property name="maximum">
+           <number>99</number>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="spacingLabel">
+        <property name="text">
+         <string>d-spacing:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="spacingValueLabel">
+        <property name="text">
+         <string>—</string>
+        </property>
+        <property name="toolTip">
+         <string>Interplanar spacing in Ångströms</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="geometryGroup">
+     <property name="title">
+      <string>Geometry</string>
+     </property>
+     <layout class="QVBoxLayout" name="geometryLayout">
+      <item>
+       <layout class="QFormLayout" name="originFormLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="originLabel">
+          <property name="text">
+           <string>Origin:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <layout class="QHBoxLayout" name="originHLayout">
+          <item>
+           <widget class="QDoubleSpinBox" name="originXSpinBox">
+            <property name="toolTip">
+             <string>X coordinate</string>
+            </property>
+            <property name="minimum">
+             <double>-999.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>999.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="originYSpinBox">
+            <property name="toolTip">
+             <string>Y coordinate</string>
+            </property>
+            <property name="minimum">
+             <double>-999.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>999.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="originZSpinBox">
+            <property name="toolTip">
+             <string>Z coordinate</string>
+            </property>
+            <property name="minimum">
+             <double>-999.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>999.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="normalLabel">
+          <property name="text">
+           <string>Normal:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <layout class="QHBoxLayout" name="normalHLayout">
+          <item>
+           <widget class="QDoubleSpinBox" name="normalXSpinBox">
+            <property name="toolTip">
+             <string>X component</string>
+            </property>
+            <property name="minimum">
+             <double>-1.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="normalYSpinBox">
+            <property name="toolTip">
+             <string>Y component</string>
+            </property>
+            <property name="minimum">
+             <double>-1.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="normalZSpinBox">
+            <property name="toolTip">
+             <string>Z component</string>
+            </property>
+            <property name="minimum">
+             <double>-1.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="displayGroup">
+     <property name="title">
+      <string>Display Options</string>
+     </property>
+     <layout class="QFormLayout" name="displayFormLayout">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="showGridCheckBox">
+        <property name="text">
+         <string>Show Grid</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="gridSpacingLayout">
+        <item>
+         <widget class="QLabel" name="gridSpacingLabel">
+          <property name="text">
+           <string>Spacing:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="gridSpacingSpinBox">
+          <property name="suffix">
+           <string>Å</string>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="boundsGroup">
+     <property name="title">
+      <string>Bounds</string>
+     </property>
+     <layout class="QGridLayout" name="boundsGridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="boundsALabel">
+        <property name="text">
+         <string>A:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="boundsAMinSpinBox">
+        <property name="toolTip">
+         <string>Minimum A bound</string>
+        </property>
+        <property name="minimum">
+         <double>-99.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>99.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>-5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QDoubleSpinBox" name="boundsAMaxSpinBox">
+        <property name="toolTip">
+         <string>Maximum A bound</string>
+        </property>
+        <property name="minimum">
+         <double>-99.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>99.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="boundsBLabel">
+        <property name="text">
+         <string>B:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="boundsBMinSpinBox">
+        <property name="toolTip">
+         <string>Minimum B bound</string>
+        </property>
+        <property name="minimum">
+         <double>-99.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>99.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>-5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QDoubleSpinBox" name="boundsBMaxSpinBox">
+        <property name="toolTip">
+         <string>Maximum B bound</string>
+        </property>
+        <property name="minimum">
+         <double>-99.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>99.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>-5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="instanceGroup">
+     <property name="title">
+      <string>Create Instance</string>
+     </property>
+     <layout class="QHBoxLayout" name="instanceLayout">
+      <item>
+       <widget class="QLabel" name="offsetLabel">
+        <property name="text">
+         <string>Offset:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QDoubleSpinBox" name="newOffsetSpinBox">
+        <property name="toolTip">
+         <string>Distance from the main plane</string>
+        </property>
+        <property name="suffix">
+         <string>Å</string>
+        </property>
+        <property name="minimum">
+         <double>-100.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="createInstanceButton">
+        <property name="text">
+         <string>Create</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="slabGroup">
+     <property name="title">
+      <string>Crystal Slab Generation</string>
+     </property>
+     <layout class="QVBoxLayout" name="slabLayout">
+      <item>
+       <widget class="QPushButton" name="generateSlabButton">
+        <property name="text">
+         <string>Generate Slab Structure...</string>
+        </property>
+        <property name="toolTip">
+         <string>Create a slab structure by cutting the crystal along this plane</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

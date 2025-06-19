@@ -17,12 +17,14 @@
 #include "animationsettingsdialog.h"
 #include "celllimitsdialog.h"
 #include "closecontactsdialog.h"
+#include "crystalcutdialog.h"
 #include "depthfadingandclippingdialog.h"
 #include "energycalculationdialog.h"
 #include "exportdialog.h"
 #include "fragmentstatedialog.h"
 #include "infoviewer.h"
 #include "pair_energy_parameters.h"
+#include "planedialog.h"
 #include "planegenerationdialog.h"
 #include "preferencesdialog.h"
 #include "surfacegenerationdialog.h"
@@ -108,6 +110,9 @@ private slots:
   void updateWindowTitle();
   void quit();
   void getSurfaceParametersFromUser();
+  void showPlaneDialog();
+  void showCrystalCutDialog();
+  void handleCrystalCutDialogAccepted();
   void updateCloseContactOptions();
   void setMoleculeStyleForCurrent();
   void setEllipsoidStyleWithProbabilityForCurrent();
@@ -122,6 +127,7 @@ private slots:
   void showPreferencesDialog();
   void helpAboutActionDialog();
   void generateSlab();
+  void generateSlabFromPlane(int h, int k, int l, double offset);
   void clearCurrent();
   void clearAll();
   void setAnimateScene(bool);
@@ -149,7 +155,7 @@ private slots:
   void cycleEnergyFrameworkBackwards();
   void cycleEnergyFramework(bool cycleBackwards = false);
 
-  void showCrystalPlaneDialog();
+  void createSurfaceCut(int h, int k, int l, double offset, double depth);
 
   void setFragmentStates();
 
@@ -163,6 +169,7 @@ private slots:
   void handleStructureChange();
   void handleSceneSelectionChange();
   void handleGenerateWavefunctionAction();
+  void handleLoadWavefunctionAction();
 
 private:
   void init();
@@ -244,7 +251,8 @@ private:
   DepthFadingAndClippingDialog *depthFadingAndClippingDialog{nullptr};
   FragmentStateDialog *m_fragmentStateDialog{nullptr};
   InfoViewer *infoViewer{nullptr};
-  PlaneGenerationDialog *m_planeGenerationDialog{nullptr};
+  PlaneDialog *m_planeDialog{nullptr};
+  CrystalCutDialog *m_crystalCutDialog{nullptr};
 
   QDockWidget *childPropertyControllerDockWidget{nullptr};
   QDockWidget *projectControllerDockWidget{nullptr};

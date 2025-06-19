@@ -3,8 +3,13 @@
 #include <QCheckBox>
 #include <QColorDialog>
 #include <QDebug>
+#include <QFormLayout>
+#include <QLabel>
 #include <QLocale>
+#include <QVBoxLayout>
 
+#include "plane.h"
+#include "planeinstance.h"
 #include "settings.h"
 
 ChildPropertyController::ChildPropertyController(QWidget *parent)
@@ -15,6 +20,7 @@ ChildPropertyController::ChildPropertyController(QWidget *parent)
   m_clampedProperties = {{"shape_index", {-1.0f, 1.0f}},
                          {"curvedness", {-4.0f, 0.4f}},
                          {"None", {0.0f, 0.0f}}};
+  
   setup();
 }
 
@@ -24,10 +30,20 @@ void ChildPropertyController::reset() {
   m_meshPropertyModel->setMesh(nullptr);
   m_pairInteractions = nullptr;
 
+  // Reset plane widgets
+  if (m_planeInfoWidget) {
+    m_planeInfoWidget->setPlane(nullptr);
+  }
+  if (m_planeInstanceWidget) {
+    m_planeInstanceWidget->setPlaneInstance(nullptr);
+  }
+
   // Reset tabs
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
   showFrameworkTabs(false);
+  showPlaneTabs(false);
+  showPlaneInstanceTabs(false);
 
   m_state = DisplayState::None;
   setEnabled(false);
@@ -142,6 +158,8 @@ void ChildPropertyController::setup() {
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
   showFrameworkTabs(false);
+  showPlaneTabs(false);
+  showPlaneInstanceTabs(false);
 
   enableFingerprintButton(false);
 }
@@ -207,6 +225,26 @@ void ChildPropertyController::showWavefunctionTabs(bool show) {
   tabWidget->setCurrentIndex(0);
 }
 
+void ChildPropertyController::showPlaneTabs(bool show) {
+  if (show && !m_planePropertiesTab) {
+    createPlanePropertiesTab();
+  }
+  showTab(m_planePropertiesTab, show, "Plane Properties");
+  if (show) {
+    tabWidget->setCurrentIndex(0);
+  }
+}
+
+void ChildPropertyController::showPlaneInstanceTabs(bool show) {
+  if (show && !m_planeInstancePropertiesTab) {
+    createPlaneInstancePropertiesTab();
+  }
+  showTab(m_planeInstancePropertiesTab, show, "Instance Properties");
+  if (show) {
+    tabWidget->setCurrentIndex(0);
+  }
+}
+
 void ChildPropertyController::setUnitLabels(QString units) {
   unitText->setText(units);
   unitsLabel->setText(units);
@@ -216,6 +254,8 @@ void ChildPropertyController::setCurrentMesh(Mesh *mesh) {
   showSurfaceTabs(true);
   showWavefunctionTabs(false);
   showFrameworkTabs(false);
+  showPlaneTabs(false);
+  showPlaneInstanceTabs(false);
   m_state = DisplayState::Mesh;
 
   m_meshPropertyModel->setMesh(mesh);
@@ -234,6 +274,8 @@ void ChildPropertyController::setCurrentPairInteractions(PairInteractions *p) {
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
   showFrameworkTabs(true);
+  showPlaneTabs(false);
+  showPlaneInstanceTabs(false);
 
   m_pairInteractions = p;
   m_state = DisplayState::Framework;
@@ -350,6 +392,8 @@ void ChildPropertyController::setCurrentMeshInstance(MeshInstance *mi) {
   showSurfaceTabs(true);
   showWavefunctionTabs(false);
   showFrameworkTabs(false);
+  showPlaneTabs(false);
+  showPlaneInstanceTabs(false);
 
   m_state = ChildPropertyController::DisplayState::Mesh;
   m_meshPropertyModel->setMeshInstance(mi);
@@ -361,6 +405,8 @@ void ChildPropertyController::setCurrentWavefunction(
   showWavefunctionTabs(true);
   showSurfaceTabs(false);
   showFrameworkTabs(false);
+  showPlaneTabs(false);
+  showPlaneInstanceTabs(false);
 
   m_state = ChildPropertyController::DisplayState::Wavefunction;
 
@@ -540,6 +586,12 @@ void ChildPropertyController::setCurrentObject(QObject *obj) {
   } else if (auto *interactions = qobject_cast<PairInteractions *>(obj)) {
     qDebug() << "Setting pair interactions to" << interactions;
     setCurrentPairInteractions(interactions);
+  } else if (auto *plane = qobject_cast<Plane *>(obj)) {
+    qDebug() << "Setting current plane to" << plane;
+    setCurrentPlane(plane);
+  } else if (auto *planeInstance = qobject_cast<PlaneInstance *>(obj)) {
+    qDebug() << "Setting current plane instance to" << planeInstance;
+    setCurrentPlaneInstance(planeInstance);
   } else if (auto *structure = qobject_cast<ChemicalStructure *>(obj)) {
     handleStructureSelection(structure);
   }
@@ -557,4 +609,95 @@ void ChildPropertyController::handleStructureSelection(
       break;
     }
   }
+}
+
+void ChildPropertyController::setCurrentPlane(Plane *plane) {
+  showSurfaceTabs(false);
+  showWavefunctionTabs(false);
+  showFrameworkTabs(false);
+  showPlaneInstanceTabs(false);  // Hide instance tabs since this is a plane
+  showPlaneTabs(true);
+  m_state = DisplayState::Plane;
+
+  setEnabled(plane != nullptr);
+  
+  // Widget is created when tab is shown, so check if it exists
+  if (m_planeInfoWidget) {
+    m_planeInfoWidget->setPlane(plane);
+  }
+  
+  if (plane) {
+    qDebug() << "Selected plane:" << plane->name();
+    qDebug() << "  Color:" << plane->color();
+    qDebug() << "  Visible:" << plane->isVisible();
+    qDebug() << "  Show Grid:" << plane->showGrid();
+    qDebug() << "  Show Axes:" << plane->showAxes();
+    qDebug() << "  Show Bounds:" << plane->showBounds();
+  }
+}
+
+void ChildPropertyController::setCurrentPlaneInstance(PlaneInstance *instance) {
+  showSurfaceTabs(false);
+  showWavefunctionTabs(false);
+  showFrameworkTabs(false);
+  showPlaneTabs(false);  // Hide plane tabs since this is an instance
+  showPlaneInstanceTabs(true);
+  m_state = DisplayState::PlaneInstance;
+
+  setEnabled(instance != nullptr);
+  
+  // Widget is created when tab is shown, so check if it exists
+  if (m_planeInstanceWidget) {
+    m_planeInstanceWidget->setPlaneInstance(instance);
+  }
+  
+  if (instance) {
+    qDebug() << "Selected plane instance:" << instance->name();
+    qDebug() << "  Offset:" << instance->offset();
+    qDebug() << "  Visible:" << instance->isVisible();
+    if (instance->plane()) {
+      qDebug() << "  Parent plane:" << instance->plane()->name();
+    }
+  }
+}
+
+void ChildPropertyController::createPlanePropertiesTab() {
+  m_planePropertiesTab = new QWidget;
+  
+  auto *layout = new QVBoxLayout(m_planePropertiesTab);
+  
+  m_planeInfoWidget = new PlaneInfoWidget(m_planePropertiesTab);
+  layout->addWidget(m_planeInfoWidget);
+  
+  // Connect the generate slab signal
+  connect(m_planeInfoWidget, &PlaneInfoWidget::generateSlabRequested,
+          this, &ChildPropertyController::onGenerateSlabRequested);
+  
+  layout->addStretch();
+  
+  // Ensure the widget geometry is properly calculated before adding to tabs
+  m_planePropertiesTab->updateGeometry();
+  m_planeInfoWidget->updateGeometry();
+}
+
+void ChildPropertyController::createPlaneInstancePropertiesTab() {
+  m_planeInstancePropertiesTab = new QWidget;
+  
+  auto *layout = new QVBoxLayout(m_planeInstancePropertiesTab);
+  
+  m_planeInstanceWidget = new PlaneInstanceWidget(m_planeInstancePropertiesTab);
+  layout->addWidget(m_planeInstanceWidget);
+  
+  layout->addStretch();
+}
+
+void ChildPropertyController::updatePlaneInfo(Plane *plane, PlaneInstance *instance) {
+  if (m_planeInfoWidget) {
+    m_planeInfoWidget->setPlane(plane);
+  }
+}
+
+void ChildPropertyController::onGenerateSlabRequested(int h, int k, int l, double offset) {
+  // Simply forward the signal to higher-level components
+  emit generateSlabRequested(h, k, l, offset);
 }

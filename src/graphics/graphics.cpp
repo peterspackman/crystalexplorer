@@ -27,17 +27,6 @@ void addCircleToCircleRenderer(CircleRenderer &c, const QVector3D &position,
   });
 }
 
-void addPlaneToCrystalPlaneRenderer(CrystalPlaneRenderer &c,
-                                    const QVector3D &origin, const QVector3D &a,
-                                    const QVector3D &b, const QColor &color) {
-  QVector4D col(color.redF(), color.greenF(), color.blueF(), 0.5);
-  c.addVertices({
-      CrystalPlaneVertex(origin, a, b, col, {0, 0}),
-      CrystalPlaneVertex(origin, a, b, col, {0, 1}),
-      CrystalPlaneVertex(origin, a, b, col, {1, 1}),
-      CrystalPlaneVertex(origin, a, b, col, {1, 0}),
-  });
-}
 
 void addPartialDiskToCircleRenderer(CircleRenderer &c, const QVector3D &v0,
                                     const QVector3D &v1,
@@ -279,7 +268,7 @@ void addTextToBillboardRenderer(BillboardRenderer &b, const QVector3D &position,
     texture->setFormat(QOpenGLTexture::R8_UNorm);
     texture->allocateStorage();
     texture->setData(QOpenGLTexture::Red, QOpenGLTexture::UInt8,
-                     sdf.mirrored().constBits());
+                     sdf.flipped(Qt::Vertical).constBits());
     texture->setMinificationFilter(QOpenGLTexture::Linear);
     texture->setMagnificationFilter(QOpenGLTexture::Linear);
     texture->setWrapMode(QOpenGLTexture::ClampToEdge);

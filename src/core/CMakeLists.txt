@@ -23,6 +23,8 @@ add_library(cx_core
     "${CMAKE_CURRENT_SOURCE_DIR}/object_tree_model.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pair_energy_parameters.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pair_energy_results.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/plane.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/planeinstance.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/serializable.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/settings.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/slab_options.cpp"

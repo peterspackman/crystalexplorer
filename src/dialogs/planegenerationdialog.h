@@ -6,6 +6,8 @@
 #include <QDialog>
 #include <QStandardItemModel>
 
+class CrystalStructure;
+
 namespace Ui {
 class PlaneGenerationDialog;
 }
@@ -47,14 +49,25 @@ public:
   int k() const;
   int l() const;
   double offset() const;
+  double surfaceCutDepth() const;
 
   std::vector<CrystalPlane> planes() const;
   void loadPlanes(const std::vector<CrystalPlane> &planes);
 
-  void setSpaceGroup(const occ::crystal::SpaceGroup &);
+  // Infinite plane visualization options
+  PlaneVisualizationOptions getVisualizationOptions() const;
+  void setVisualizationOptions(const PlaneVisualizationOptions &options);
+
+  void setCrystalStructure(CrystalStructure *crystalStructure);
+  
+  // Surface cut functionality
+  QStringList getSuggestedCuts() const;
+  void updateSuggestedCuts();
 
 signals:
   void createSurfaceGeometry(CrystalPlane);
+  void createSurfaceCut(int h, int k, int l, double offset, double depth);
+  void visualizationOptionsChanged();
 
 private slots:
   void onColorButtonClicked();
@@ -63,10 +76,16 @@ private slots:
   void removeAllPlanes();
   void createSurfaceGeometryButtonClicked();
 
+private slots:
+  void createSurfaceCutButtonClicked();
+
+private:
+  void updateColorFromMap();
+
 private:
   Ui::PlaneGenerationDialog *ui;
   QColor m_color;
   CrystalPlanesModel *m_planesModel{nullptr};
   ColorDelegate *m_colorDelegate{nullptr};
-  occ::crystal::SpaceGroup m_spaceGroup;
+  CrystalStructure *m_crystalStructure{nullptr};
 };

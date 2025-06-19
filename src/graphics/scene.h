@@ -12,7 +12,6 @@
 #include "chemicalstructurerenderer.h"
 #include "circlerenderer.h"
 #include "crystalplane.h"
-#include "crystalplanerenderer.h"
 #include "crystalstructure.h"
 #include "cylinderimpostorrenderer.h"
 #include "cylinderrenderer.h"
@@ -236,11 +235,8 @@ public:
   int numberOfSelectedAtoms() const;
   bool hasAtomsWithCustomColor() const;
 
-  const std::vector<CrystalPlane> &crystalPlanes() const {
-    return m_crystalPlanes;
-  }
-  void setCrystalPlanes(const std::vector<CrystalPlane> &);
   void generateSlab(SlabGenerationOptions);
+
 
   double getThermalEllipsoidProbability() const;
 
@@ -261,7 +257,6 @@ public slots:
   void lightSettingsChanged();
   void textSettingsChanged();
   void depthFogSettingsChanged();
-  void addCrystalPlane(CrystalPlane);
 
   void updateThermalEllipsoidProbability(double);
   void updateHydrogenBondCriteria(HBondCriteria);
@@ -288,11 +283,8 @@ private:
   int numberOfBonds() const;
   int numberOfAtoms() const;
 
-  void updateCrystalPlanes();
-
   void drawLights();
   void drawMeasurements();
-  void drawPlanes();
 
   void setLightPositionsBasedOnCamera();
 
@@ -316,7 +308,6 @@ private:
   cx::graphics::MeasurementRenderer *m_measurementRenderer{nullptr};
 
   EllipsoidRenderer *m_lightPositionRenderer{nullptr};
-  CrystalPlaneRenderer *m_crystalPlaneRenderer{nullptr};
   QMap<QString, Orientation> _savedOrientations;
 
   bool m_drawLights{false};
@@ -345,11 +336,8 @@ private:
   bool _drawMultipleCellBoxes;
 
   bool m_labelsNeedUpdate{true};
-  bool m_crystalPlanesNeedUpdate{true};
   bool m_hydrogenBondsNeedUpdate{true};
   bool m_closeContactsNeedUpdate{true};
-
-  std::vector<CrystalPlane> m_crystalPlanes;
 
   HighlightMode _highlightMode;
 

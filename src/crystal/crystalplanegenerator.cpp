@@ -20,7 +20,7 @@ std::vector<size_t> argsort(const Eigen::Matrix<T, Rows, 1> &vec) {
 }
 
 double CrystalPlaneGenerator::interplanarSpacing() const {
-  return (m_uc.reciprocal() * occ::Vec3(m_hkl.h, m_hkl.k, m_hkl.l)).norm();
+  return 1.0 / (m_uc.reciprocal() * occ::Vec3(m_hkl.h, m_hkl.k, m_hkl.l)).norm();
 }
 
 CrystalPlaneGenerator::CrystalPlaneGenerator(ChemicalStructure * structure,

@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CrystalCutDialog</class>
+ <widget class="QDialog" name="CrystalCutDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Generate Crystal Slab</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="millerGroup">
+     <property name="title">
+      <string>Crystal Plane</string>
+     </property>
+     <layout class="QFormLayout" name="millerFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="millerLabel">
+        <property name="text">
+         <string>Miller Indices (h k l):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="millerHLayout">
+        <item>
+         <widget class="QSpinBox" name="millerHSpinBox">
+          <property name="minimum">
+           <number>-99</number>
+          </property>
+          <property name="maximum">
+           <number>99</number>
+          </property>
+          <property name="value">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="millerKSpinBox">
+          <property name="minimum">
+           <number>-99</number>
+          </property>
+          <property name="maximum">
+           <number>99</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="millerLSpinBox">
+          <property name="minimum">
+           <number>-99</number>
+          </property>
+          <property name="maximum">
+           <number>99</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="cutGroup">
+     <property name="title">
+      <string>Cut Parameters</string>
+     </property>
+     <layout class="QFormLayout" name="cutFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="offsetLabel">
+        <property name="text">
+         <string>Cut Offset:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="offsetSpinBox">
+        <property name="toolTip">
+         <string>Offset along the plane normal in d-spacing units</string>
+        </property>
+        <property name="suffix">
+         <string> d</string>
+        </property>
+        <property name="decimals">
+         <number>2</number>
+        </property>
+        <property name="minimum">
+         <double>-10.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.250000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="thicknessLabel">
+        <property name="text">
+         <string>Slab Thickness:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="thicknessLayout">
+        <item>
+         <widget class="QDoubleSpinBox" name="thicknessSpinBox">
+          <property name="toolTip">
+           <string>Thickness of the slab in Angstroms</string>
+          </property>
+          <property name="suffix">
+           <string> Å</string>
+          </property>
+          <property name="minimum">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>10.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="thicknessInfoLabel">
+          <property name="text">
+           <string>(~1.0 d-spacings)</string>
+          </property>
+          <property name="toolTip">
+           <string>Approximate number of d-spacing units</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="optionsGroup">
+     <property name="title">
+      <string>Generation Options</string>
+     </property>
+     <layout class="QFormLayout" name="optionsFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="terminationLabel">
+        <property name="text">
+         <string>Surface Termination:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="terminationComboBox">
+        <property name="toolTip">
+         <string>Choose how the surface should be terminated</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>Auto (Best guess)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Custom...</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QCheckBox" name="preserveMoleculesCheckBox">
+        <property name="text">
+         <string>Preserve whole molecules</string>
+        </property>
+        <property name="toolTip">
+         <string>Keep molecular units intact rather than cutting through bonds</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="suggestedGroup">
+     <property name="title">
+      <string>Suggested Cut Positions</string>
+     </property>
+     <layout class="QVBoxLayout" name="suggestedLayout">
+      <item>
+       <widget class="QLabel" name="suggestedLabel">
+        <property name="text">
+         <string>Common cut positions for this plane:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QListWidget" name="suggestedOffsetsList">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>80</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Click to use a suggested cut position</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>CrystalCutDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>CrystalCutDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

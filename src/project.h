@@ -10,6 +10,8 @@
 #include "packingdialog.h" // access to enum UnitCellPackingCriteria
 #include "scene.h"
 
+class SlabStructure;
+
 /*!
  \class Project
  \brief Contains all the data: crystals, surfaces etc.
@@ -42,6 +44,9 @@ public:
   bool loadCrystalClearJson(const QString &);
   bool loadCrystalClearSurfaceJson(const QString &);
   bool loadGulpInputFile(const QString &);
+  
+  // Add a slab structure as a new scene
+  void addSlabStructure(SlabStructure *slab, const QString &title);
 
   bool hasFrames();
   int nextFrame(bool forward);
