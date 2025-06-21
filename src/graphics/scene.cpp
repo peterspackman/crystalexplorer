@@ -10,6 +10,7 @@
 #include "mathconstants.h"
 #include "scene.h"
 #include "settings.h"
+#include "performancetimer.h"
 #include <ankerl/unordered_dense.h>
 
 using cx::graphics::SelectionType;
@@ -923,20 +924,45 @@ void Scene::drawChemicalStructure() {
 
 void Scene::drawExtras() {
   if (hasVisibleAtoms()) {
-    drawHydrogenBonds();
-    drawCloseContacts();
-    drawMeasurements();
+    {
+      PERF_SCOPED_TIMER("Hydrogen Bonds");
+      drawHydrogenBonds();
+    }
+    {
+      PERF_SCOPED_TIMER("Close Contacts");
+      drawCloseContacts();
+    }
+    {
+      PERF_SCOPED_TIMER("Measurements");
+      drawMeasurements();
+    }
   }
 
-  drawLights();
+  {
+    PERF_SCOPED_TIMER("Light Rendering");
+    drawLights();
+  }
 }
 
 
 void Scene::draw() {
-  ensureRenderersInitialized();
-  updateRendererUniforms();
-  drawChemicalStructure();
-  drawExtras();
+  PERF_SCOPED_TIMER("Scene::draw");
+  
+  {
+    PERF_SCOPED_TIMER("Scene Setup");
+    ensureRenderersInitialized();
+    updateRendererUniforms();
+  }
+  
+  {
+    PERF_SCOPED_TIMER("Chemical Structure");
+    drawChemicalStructure();
+  }
+  
+  {
+    PERF_SCOPED_TIMER("Scene Extras");
+    drawExtras();
+  }
 }
 
 void Scene::setModelViewProjection(const QMatrix4x4 &model,

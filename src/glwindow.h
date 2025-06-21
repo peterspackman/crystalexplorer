@@ -73,6 +73,7 @@ public slots:
 
   void updateDepthTest(bool);
   void updateFrontClippingPlane(float);
+  void updateTargetFramerate(int fps);
 
   void setAnimateScene(bool);
   void setAnimationSettings(double minorX, double minorY, double minorZ,
@@ -269,4 +270,6 @@ private:
   QOpenGLShaderProgram *m_postprocessShader{nullptr};
   QOpenGLVertexArrayObject m_quadVAO;
   QOpenGLBuffer m_quadVBO;
+  
+  QTimer *m_redrawBatchTimer{nullptr};
 };

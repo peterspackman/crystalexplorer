@@ -33,6 +33,7 @@ signals:
   void materialChanged();
   void lightSettingsChanged();
   void textSettingsChanged();
+  void targetFramerateChanged(int fps);
 
 private slots:
   void getValueForExternalProgramSetting(QStandardItem *item);
@@ -62,6 +63,7 @@ private slots:
   void setShowLightPositions(bool);
   void setGLDepthTestEnabled(bool);
   void setUseImpostorRendering(bool);
+  void setTargetFramerate(int);
   void setLightColors();
   void setLightIntensities(double);
   void setTextSliders(int);

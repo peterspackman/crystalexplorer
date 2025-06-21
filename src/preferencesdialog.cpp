@@ -150,6 +150,8 @@ void PreferencesDialog::initConnections() {
           &PreferencesDialog::setGLDepthTestEnabled);
   connect(useImpostorRenderingCheckBox, &QCheckBox::toggled, this,
           &PreferencesDialog::setUseImpostorRendering);
+  connect(targetFramerateSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
+          &PreferencesDialog::setTargetFramerate);
   connect(materialComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, &PreferencesDialog::setMaterialFactors);
   connect(metallicSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -543,6 +545,8 @@ void PreferencesDialog::updateDialogFromSettings() {
       settings::readSetting(settings::keys::ENABLE_DEPTH_TEST).toBool());
   useImpostorRenderingCheckBox->setChecked(
       settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool());
+  targetFramerateSpinBox->setValue(
+      settings::readSetting(settings::keys::TARGET_FRAMERATE).toInt());
 
   updateLightsFromSettings();
   bondThicknessSlider->setValue(
@@ -596,6 +600,7 @@ void PreferencesDialog::updateSettingsFromDialog() {
         glDepthTestEnabledCheckBox->isChecked()},
        {settings::keys::USE_IMPOSTOR_RENDERING,
         useImpostorRenderingCheckBox->isChecked()},
+       {settings::keys::TARGET_FRAMERATE, targetFramerateSpinBox->value()},
        // Advanced Preferences
        {settings::keys::DELETE_WORKING_FILES,
         deleteWorkingFilesCheckBox->isChecked()},
@@ -798,6 +803,13 @@ void PreferencesDialog::setUseImpostorRendering(bool value) {
   settings::writeSetting(settings::keys::USE_IMPOSTOR_RENDERING, value);
   if (_updateDialogFromSettingsDone) {
     emit redrawCrystalForPreferencesChange();
+  }
+}
+
+void PreferencesDialog::setTargetFramerate(int value) {
+  settings::writeSetting(settings::keys::TARGET_FRAMERATE, value);
+  if (_updateDialogFromSettingsDone) {
+    emit targetFramerateChanged(value);
   }
 }
 

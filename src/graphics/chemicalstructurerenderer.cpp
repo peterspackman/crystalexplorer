@@ -4,6 +4,7 @@
 #include "mesh.h"
 #include "settings.h"
 #include "crystalplanegenerator.h"
+#include "performancetimer.h"
 #include <iostream>
 
 namespace cx::graphics {
@@ -598,14 +599,37 @@ bool ChemicalStructureRenderer::needsUpdate() {
 }
 
 void ChemicalStructureRenderer::draw(bool forPicking) {
+  PERF_SCOPED_TIMER("ChemicalStructureRenderer::draw");
+  
   if (needsUpdate()) {
+    PERF_SCOPED_TIMER("Structure Updates");
     beginUpdates();
-    handleLabelsUpdate();
-    handleAtomsUpdate();
-    handleBondsUpdate();
-    handleMeshesUpdate();
-    handleCellsUpdate();
-    updatePlanes();
+    
+    {
+      PERF_SCOPED_TIMER("Labels Update");
+      handleLabelsUpdate();
+    }
+    {
+      PERF_SCOPED_TIMER("Atoms Update");
+      handleAtomsUpdate();
+    }
+    {
+      PERF_SCOPED_TIMER("Bonds Update");
+      handleBondsUpdate();
+    }
+    {
+      PERF_SCOPED_TIMER("Meshes Update");
+      handleMeshesUpdate();
+    }
+    {
+      PERF_SCOPED_TIMER("Cells Update");
+      handleCellsUpdate();
+    }
+    {
+      PERF_SCOPED_TIMER("Planes Update");
+      updatePlanes();
+    }
+    
     endUpdates();
   }
 
@@ -672,7 +696,6 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
 
   m_frameworkRenderer->draw();
 
-  
   // Draw new planes with instancing
   if (!forPicking && m_planeRenderer && m_planeRenderer->instanceCount() > 0) {
     m_planeRenderer->bind();

@@ -143,6 +143,8 @@ const QString DEPTH_FOG_DENSITY = "graphics/depthFogDensity";
 const QString DEPTH_FOG_OFFSET = "graphics/depthFogOffset";
 
 const QString USE_IMPOSTOR_RENDERING = "graphics/useImpostorRendering";
+const QString TARGET_FRAMERATE = "graphics/targetFramerate";
+const QString ENABLE_PERFORMANCE_TIMING = "debug/enablePerformanceTiming";
 
 const QString TEXT_OUTLINE = "graphics/textOutlineWidth";
 const QString TEXT_BUFFER = "graphics/textBufferWidth";

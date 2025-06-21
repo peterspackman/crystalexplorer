@@ -114,10 +114,15 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   m_ellipsoidRenderer->clear();
   m_lineRenderer->clear();
   m_cylinderRenderer->clear();
+  m_sphereImpostorRenderer->clear();
+  m_cylinderImpostorRenderer->clear();
   m_labelRenderer->clear();
 
   if (m_options.display == FrameworkOptions::Display::None)
     return;
+
+  // Check impostor setting once per update for performance
+  bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
 
   FragmentPairSettings pairSettings;
 
@@ -224,9 +229,6 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
       if (inv) {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
-          // Check if impostor rendering is enabled
-          bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
-          
           if (useImpostors) {
             // Use impostor renderers
             cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, va,
@@ -253,9 +255,6 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       } else {
         QVector3D m2 = va + (m - va) * 0.5;
         if (m_options.display == FrameworkOptions::Display::Tubes) {
-          // Check if impostor rendering is enabled
-          bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
-          
           if (useImpostors) {
             // Use impostor renderers
             cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, va,

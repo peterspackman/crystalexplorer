@@ -1849,6 +1849,8 @@ void Crystalx::initPreferencesDialog() {
             glWindow, &GLWindow::textSettingsChanged);
     connect(preferencesDialog, &PreferencesDialog::glDepthTestEnabledChanged,
             glWindow, &GLWindow::updateDepthTest);
+    connect(preferencesDialog, &PreferencesDialog::targetFramerateChanged,
+            glWindow, &GLWindow::updateTargetFramerate);
   }
 }
 

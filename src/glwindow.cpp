@@ -13,9 +13,20 @@
 #include "mathconstants.h"
 #include "renderselection.h"
 #include "settings.h"
+#include "performancetimer.h"
 #include <fmt/core.h>
 
-GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) { init(); }
+GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) { 
+  init(); 
+  
+  // Initialize performance timing based on settings
+  bool timingEnabled = settings::readSetting(settings::keys::ENABLE_PERFORMANCE_TIMING).toBool();
+  PerformanceTimer::instance().setEnabled(timingEnabled);
+  PerformanceTimer::instance().setOutputFrequency(10); // Print every 10 frames for testing
+  
+  // Initialize target framerate
+  updateTargetFramerate(settings::readSetting(settings::keys::TARGET_FRAMERATE).toInt());
+}
 
 void GLWindow::init() {
 
@@ -316,36 +327,62 @@ void GLWindow::paintGL() {
   if (!m_renderingEnabled)
     return;
 
-  m_framebuffer->bind();
-  if (enableDepthTest) {
-    glEnable(GL_DEPTH_TEST);
+  static int paintCallCount = 0;
+  static QElapsedTimer frameTimer;
+  if (paintCallCount == 0) {
+    frameTimer.start();
+  }
+  paintCallCount++;
+  
+  PerformanceTimer::instance().startFrame();
+  PERF_SCOPED_TIMER("Total paintGL");
+  
+  printf("paintGL call #%d (%.3fms since last)\n", paintCallCount, frameTimer.restart() / 1000.0);
+
+  {
+    PERF_SCOPED_TIMER("Framebuffer Setup");
+    m_framebuffer->bind();
+    if (enableDepthTest) {
+      glEnable(GL_DEPTH_TEST);
+    }
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearDepth(0);
+    setModelView();
   }
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearDepth(0);
-  setModelView();
-  drawScene(false);
-  m_framebuffer->release();
+  {
+    PERF_SCOPED_TIMER("Scene Rendering");
+    drawScene(false);
+  }
 
-  m_framebuffer->blitFramebuffer(
-      m_resolvedFramebuffer, QRect(QPoint(), m_resolvedFramebuffer->size()),
-      m_framebuffer, QRect(QPoint(), m_framebuffer->size()));
-  glDisable(GL_DEPTH_TEST);
+  {
+    PERF_SCOPED_TIMER("Framebuffer Resolve");
+    m_framebuffer->release();
+    m_framebuffer->blitFramebuffer(
+        m_resolvedFramebuffer, QRect(QPoint(), m_resolvedFramebuffer->size()),
+        m_framebuffer, QRect(QPoint(), m_framebuffer->size()));
+    glDisable(GL_DEPTH_TEST);
+  }
 
-  QOpenGLFramebufferObject::bindDefault();
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, m_resolvedFramebuffer->texture());
+  {
+    PERF_SCOPED_TIMER("Post-processing");
+    QOpenGLFramebufferObject::bindDefault();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_resolvedFramebuffer->texture());
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearDepth(0);
-  // Draw the screen-filling quad
-  m_postprocessShader->bind();
-  m_postprocessShader->setUniformValue(
-      "screenTexture", 0); // Assuming the texture is bound to texture unit 0
-  m_postprocessShader->setUniformValue("resolution", width(), height());
-  m_quadVAO.bind();
-  glDrawArrays(GL_TRIANGLES, 0, 6);
-  m_postprocessShader->release();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearDepth(0);
+    // Draw the screen-filling quad
+    m_postprocessShader->bind();
+    m_postprocessShader->setUniformValue(
+        "screenTexture", 0); // Assuming the texture is bound to texture unit 0
+    m_postprocessShader->setUniformValue("resolution", width(), height());
+    m_quadVAO.bind();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    m_postprocessShader->release();
+  }
+
+  PerformanceTimer::instance().endFrame();
 }
 
 QImage GLWindow::exportToImage(int scaleFactor, const QColor &background) {
@@ -1584,7 +1621,46 @@ void GLWindow::setCurrentCrystal(Project *project) {
   redraw();
 }
 
-void GLWindow::redraw() { update(); }
+void GLWindow::updateTargetFramerate(int fps) {
+  // Validate framerate range
+  fps = qBound(30, fps, 240); // Clamp between 30-240 fps
+  int interval = 1000 / fps; // Convert fps to milliseconds
+  
+  // Initialize timer if it doesn't exist
+  if (!m_redrawBatchTimer) {
+    m_redrawBatchTimer = new QTimer(this);
+    m_redrawBatchTimer->setSingleShot(true);
+    connect(m_redrawBatchTimer, &QTimer::timeout, this, [this]() {
+      static int batchedRedrawCount = 0;
+      batchedRedrawCount++;
+      printf("Batched redraw #%d\n", batchedRedrawCount);
+      update();
+    });
+  }
+  
+  // Update the interval
+  m_redrawBatchTimer->setInterval(interval);
+}
+
+void GLWindow::redraw() { 
+  // Timer should be initialized by updateTargetFramerate() in constructor
+  if (!m_redrawBatchTimer) {
+    qWarning() << "Redraw timer not initialized! Call updateTargetFramerate() first.";
+    return;
+  }
+  
+  // Only start timer if not already active (batches multiple redraw requests)
+  if (!m_redrawBatchTimer->isActive()) {
+    static int redrawRequestCount = 0;
+    redrawRequestCount++;
+    printf("Redraw request #%d - starting batch timer\n", redrawRequestCount);
+    m_redrawBatchTimer->start();
+  } else {
+    static int skippedRedrawCount = 0;
+    skippedRedrawCount++;
+    printf("Redraw request batched (skipped #%d)\n", skippedRedrawCount);
+  }
+}
 
 void GLWindow::getViewAngleAndScaleFromScene() {
   Q_ASSERT(scene);
