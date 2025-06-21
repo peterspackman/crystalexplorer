@@ -61,6 +61,7 @@ private slots:
   void setLightFixedToCamera(bool);
   void setShowLightPositions(bool);
   void setGLDepthTestEnabled(bool);
+  void setUseImpostorRendering(bool);
   void setLightColors();
   void setLightIntensities(double);
   void setTextSliders(int);

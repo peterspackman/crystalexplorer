@@ -107,6 +107,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::ENABLE_EXPERIMENTAL_INTERACTION_ENERGIES, false},
     {keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG, false},
     {keys::SHOW_LIGHT_POSITIONS, false},
+    {keys::USE_IMPOSTOR_RENDERING, true},
 };
 
 namespace impl {

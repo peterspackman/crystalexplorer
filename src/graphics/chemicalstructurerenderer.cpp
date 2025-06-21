@@ -13,6 +13,8 @@ ChemicalStructureRenderer::ChemicalStructureRenderer(
 
   m_ellipsoidRenderer = new EllipsoidRenderer();
   m_cylinderRenderer = new CylinderRenderer();
+  m_sphereImpostorRenderer = new SphereImpostorRenderer();
+  m_cylinderImpostorRenderer = new CylinderImpostorRenderer();
   m_labelRenderer = new BillboardRenderer();
   m_bondLineRenderer = new LineRenderer();
   m_cellLinesRenderer = new LineRenderer();
@@ -369,6 +371,7 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
         m_drawingStyle == DrawingStyle::CenterOfMass))
     return;
   m_ellipsoidRenderer->clear();
+  m_sphereImpostorRenderer->clear();
 
   if (m_selectionHandler) {
     m_selectionHandler->clear(SelectionType::Aggregate);
@@ -396,8 +399,17 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
     }
 
     m_aggregateIndices.push_back(AggregateIndex{frag, pos});
-    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color,
-                                               0.4, selectionIdColor, selected);
+    
+    // Check if impostor rendering is enabled
+    bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+    
+    if (useImpostors) {
+      cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, pos, color,
+                                             0.4, selectionIdColor, selected);
+    } else {
+      cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color,
+                                                 0.4, selectionIdColor, selected);
+    }
     i++;
   }
 }
@@ -413,6 +425,7 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
   }
 
   m_ellipsoidRenderer->clear();
+  m_sphereImpostorRenderer->clear();
 
   if (atomStyle() == AtomDrawingStyle::None) {
     addAggregateRepresentations();
@@ -469,9 +482,17 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
         continue;
       }
     }
-    cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, position,
-                                               color, radius, selectionIdColor,
-                                               selected);
+    // Check if impostor rendering is enabled
+    bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+    
+    if (useImpostors) {
+      cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, position,
+                                             color, radius, selectionIdColor, selected);
+    } else {
+      cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, position,
+                                                 color, radius, selectionIdColor,
+                                                 selected);
+    }
   }
   m_atomsNeedsUpdate = false;
 }
@@ -487,6 +508,7 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
 
   m_bondLineRenderer->clear();
   m_cylinderRenderer->clear();
+  m_cylinderImpostorRenderer->clear();
 
   if (bondStyle() == BondDrawingStyle::None) {
     m_bondsNeedsUpdate = false;
@@ -531,9 +553,18 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
           *m_bondLineRenderer, pointB, 0.5 * pointA + 0.5 * pointB,
           DrawingStyleConstants::bondLineWidth, colorB, id_color, selectedB);
     } else {
-      cx::graphics::addCylinderToCylinderRenderer(
-          m_cylinderRenderer, pointA, pointB, colorA, colorB, radius, id_color,
-          selectedA, selectedB);
+      // Check if impostor rendering is enabled
+      bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+      
+      if (useImpostors) {
+        cx::graphics::addCylinderToCylinderRenderer(
+            m_cylinderImpostorRenderer, pointA, pointB, colorA, colorB, radius, id_color,
+            selectedA, selectedB);
+      } else {
+        cx::graphics::addCylinderToCylinderRenderer(
+            m_cylinderRenderer, pointA, pointB, colorA, colorB, radius, id_color,
+            selectedA, selectedB);
+      }
     }
   }
   m_bondsNeedsUpdate = false;
@@ -542,7 +573,9 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
 void ChemicalStructureRenderer::beginUpdates() {
   m_bondLineRenderer->beginUpdates();
   m_cylinderRenderer->beginUpdates();
+  m_cylinderImpostorRenderer->beginUpdates();
   m_ellipsoidRenderer->beginUpdates();
+  m_sphereImpostorRenderer->beginUpdates();
   m_highlightRenderer->beginUpdates();
   m_cellLinesRenderer->beginUpdates();
 }
@@ -550,7 +583,9 @@ void ChemicalStructureRenderer::beginUpdates() {
 void ChemicalStructureRenderer::endUpdates() {
   m_bondLineRenderer->endUpdates();
   m_cylinderRenderer->endUpdates();
+  m_cylinderImpostorRenderer->endUpdates();
   m_ellipsoidRenderer->endUpdates();
+  m_sphereImpostorRenderer->endUpdates();
   m_highlightRenderer->endUpdates();
   m_cellLinesRenderer->endUpdates();
 }
@@ -586,10 +621,20 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
   m_ellipsoidRenderer->draw();
   m_ellipsoidRenderer->release();
 
+  m_sphereImpostorRenderer->bind();
+  m_uniforms.apply(m_sphereImpostorRenderer);
+  m_sphereImpostorRenderer->draw();
+  m_sphereImpostorRenderer->release();
+
   m_cylinderRenderer->bind();
   m_uniforms.apply(m_cylinderRenderer);
   m_cylinderRenderer->draw();
   m_cylinderRenderer->release();
+
+  m_cylinderImpostorRenderer->bind();
+  m_uniforms.apply(m_cylinderImpostorRenderer);
+  m_cylinderImpostorRenderer->draw();
+  m_cylinderImpostorRenderer->release();
 
   m_bondLineRenderer->bind();
   m_uniforms.apply(m_bondLineRenderer);

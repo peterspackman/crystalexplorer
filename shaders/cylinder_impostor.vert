@@ -12,16 +12,18 @@ layout(location = 6) in float radius;
 out vec3 axis; // Cylinder axis
 out vec4 base_radius; // base position and cylinder radius packed into a vec4
 out vec4 end_b; // End position and "b" flag which indicates whether pos1/2 is flipped
+out vec3 v_pointA; // Original pointA for color calculation
+out vec3 v_pointB; // Original pointB for color calculation
 out vec3 U; // axis, U, V form orthogonal basis aligned to the cylinder
 out vec3 V;
 out vec4 w; // The position of the vertex after applying the mapping
 
 out vec3 v_colorA;
 out vec3 v_colorB;
+out float v_blend;
 out vec3 v_selection_id;
 out vec3 v_light;
-flat out int v_selectedA;
-flat out int v_selectedB;
+flat out int v_selected;
 
 uniform mat4 u_modelViewMat;
 uniform mat4 u_modelViewMatInv;
@@ -34,13 +36,11 @@ uniform vec4 u_lightDiffuse;
 
 void main(){
 
-    v_selectedA = colorA.x < 0 ? 1 : 0;
-    v_selectedB = colorB.x < 0 ? 1 : 0;
-
-    v_colorA = abs(colorA);
-    v_colorB = abs(colorB);
-
     v_selection_id = selection_id;
+
+    // Pass original endpoints in view space for consistent color calculation
+    v_pointA = (u_modelViewMat * vec4(pointA, 1.0)).xyz;
+    v_pointB = (u_modelViewMat * vec4(pointB, 1.0)).xyz;
 
     base_radius.w = radius * u_scale * u_scale;
 
@@ -99,6 +99,20 @@ void main(){
     );
 
     gl_Position = u_projectionMat * w;
+    
+    // Pass both colors to fragment shader
+    v_colorA = abs(colorA);
+    v_colorB = abs(colorB);
+    
+    // Set blend factor based on original cylinder direction (pointB - pointA)
+    // not the view-flipped ldir, so colors don't flip with camera
+    vec3 vertex_pos = center + mapping.x*ldir + mapping.y*left + mapping.z*up;
+    float axis_pos = dot(vertex_pos - pointA, normalize(pointB - pointA));
+    float cylinder_len = length(pointB - pointA);
+    v_blend = (axis_pos > cylinder_len * 0.5) ? 1.0 : 0.0;
+    
+    // Set selection based on either color being selected
+    v_selected = (colorA.x < 0 || colorB.x < 0) ? 1 : 0;
 
     // avoid clipping (1.0 seems to induce flickering with some drivers)
     // Is this required?

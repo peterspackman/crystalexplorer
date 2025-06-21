@@ -1,4 +1,5 @@
 #include "sphereimpostorrenderer.h"
+#include "shaderloader.h"
 #include <QOpenGLShaderProgram>
 #include <QUuid>
 
@@ -6,10 +7,10 @@ SphereImpostorRenderer::SphereImpostorRenderer()
     : m_vertex(QOpenGLBuffer::VertexBuffer) {
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceFile(QOpenGLShader::Vertex,
-                                              ":/shaders/sphere_impostor.vert");
-  m_program->addCacheableShaderFromSourceFile(QOpenGLShader::Fragment,
-                                              ":/shaders/sphere_impostor.frag");
+  m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                     cx::shader::loadShaderFile(":/shaders/sphere_impostor.vert"));
+  m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                     cx::shader::loadShaderFile(":/shaders/sphere_impostor.frag"));
   m_program->link();
   m_program->bind();
 

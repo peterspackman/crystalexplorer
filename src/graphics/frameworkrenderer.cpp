@@ -1,6 +1,7 @@
 #include "frameworkrenderer.h"
 #include "drawingstyle.h"
 #include "graphics.h"
+#include "settings.h"
 #include <QElapsedTimer>
 
 namespace cx::graphics {
@@ -10,6 +11,8 @@ FrameworkRenderer::FrameworkRenderer(ChemicalStructure *structure,
     : QObject(parent) {
   m_ellipsoidRenderer = new EllipsoidRenderer();
   m_cylinderRenderer = new CylinderRenderer();
+  m_sphereImpostorRenderer = new SphereImpostorRenderer();
+  m_cylinderImpostorRenderer = new CylinderImpostorRenderer();
   m_lineRenderer = new LineRenderer();
   m_labelRenderer = new BillboardRenderer();
 
@@ -55,9 +58,12 @@ void FrameworkRenderer::updateInteractions() { m_needsUpdate = true; }
 void FrameworkRenderer::forceUpdates() { m_needsUpdate = true; }
 
 void FrameworkRenderer::beginUpdates() {
+  // Always clear all renderers to ensure clean state when switching modes
   m_lineRenderer->beginUpdates();
   m_ellipsoidRenderer->beginUpdates();
   m_cylinderRenderer->beginUpdates();
+  m_sphereImpostorRenderer->beginUpdates();
+  m_cylinderImpostorRenderer->beginUpdates();
   m_labelRenderer->beginUpdates();
 }
 
@@ -65,6 +71,8 @@ void FrameworkRenderer::endUpdates() {
   m_lineRenderer->endUpdates();
   m_ellipsoidRenderer->endUpdates();
   m_cylinderRenderer->endUpdates();
+  m_sphereImpostorRenderer->endUpdates();
+  m_cylinderImpostorRenderer->endUpdates();
   m_labelRenderer->endUpdates();
 }
 
@@ -216,12 +224,26 @@ void FrameworkRenderer::handleInteractionsUpdate() {
 
       if (inv) {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
-          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
-                                                     color, std::abs(scale));
-          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
-                                                     color, std::abs(scale));
-          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va,
-                                                      vb, color, color, scale);
+          // Check if impostor rendering is enabled
+          bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+          
+          if (useImpostors) {
+            // Use impostor renderers
+            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, va,
+                                                   color, std::abs(scale));
+            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, vb,
+                                                   color, std::abs(scale));
+            cx::graphics::addCylinderToCylinderRenderer(m_cylinderImpostorRenderer, va,
+                                                        vb, color, color, scale);
+          } else {
+            // Use geometry-based renderers
+            cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
+                                                       color, std::abs(scale));
+            cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
+                                                       color, std::abs(scale));
+            cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va,
+                                                        vb, color, color, scale);
+          }
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb,
                                               lineWidth, color);
@@ -231,12 +253,26 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       } else {
         QVector3D m2 = va + (m - va) * 0.5;
         if (m_options.display == FrameworkOptions::Display::Tubes) {
-          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
-                                                     color, std::abs(scale));
-          cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, m,
-                                                     color, std::abs(scale));
-          cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, m,
-                                                      color, color, scale);
+          // Check if impostor rendering is enabled
+          bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+          
+          if (useImpostors) {
+            // Use impostor renderers
+            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, va,
+                                                   color, std::abs(scale));
+            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, m,
+                                                   color, std::abs(scale));
+            cx::graphics::addCylinderToCylinderRenderer(m_cylinderImpostorRenderer, va, m,
+                                                        color, color, scale);
+          } else {
+            // Use geometry-based renderers
+            cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
+                                                       color, std::abs(scale));
+            cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, m,
+                                                       color, std::abs(scale));
+            cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, m,
+                                                        color, color, scale);
+          }
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, lineWidth,
                                               color);
@@ -256,22 +292,45 @@ void FrameworkRenderer::draw(bool forPicking) {
   }
 
   const auto storedRenderMode = m_uniforms.u_renderMode;
+  
+  // Only draw based on the framework display mode
+  if (m_options.display == FrameworkOptions::Display::Tubes) {
+    // Check if impostor rendering is enabled for tubes mode
+    bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
 
-  m_ellipsoidRenderer->bind();
-  m_uniforms.apply(m_ellipsoidRenderer);
-  m_ellipsoidRenderer->draw();
-  m_ellipsoidRenderer->release();
+    if (useImpostors) {
+      // Use impostor renderers for better performance
+      m_sphereImpostorRenderer->bind();
+      m_uniforms.apply(m_sphereImpostorRenderer);
+      m_sphereImpostorRenderer->draw();
+      m_sphereImpostorRenderer->release();
 
-  m_cylinderRenderer->bind();
-  m_uniforms.apply(m_cylinderRenderer);
-  m_cylinderRenderer->draw();
-  m_cylinderRenderer->release();
+      m_cylinderImpostorRenderer->bind();
+      m_uniforms.apply(m_cylinderImpostorRenderer);
+      m_cylinderImpostorRenderer->draw();
+      m_cylinderImpostorRenderer->release();
+    } else {
+      // Use geometry-based renderers
+      m_ellipsoidRenderer->bind();
+      m_uniforms.apply(m_ellipsoidRenderer);
+      m_ellipsoidRenderer->draw();
+      m_ellipsoidRenderer->release();
 
-  m_lineRenderer->bind();
-  m_uniforms.apply(m_lineRenderer);
-  m_lineRenderer->draw();
-  m_lineRenderer->release();
+      m_cylinderRenderer->bind();
+      m_uniforms.apply(m_cylinderRenderer);
+      m_cylinderRenderer->draw();
+      m_cylinderRenderer->release();
+    }
+  } else if (m_options.display == FrameworkOptions::Display::Lines) {
+    // Only draw lines for lines mode
+    m_lineRenderer->bind();
+    m_uniforms.apply(m_lineRenderer);
+    m_lineRenderer->draw();
+    m_lineRenderer->release();
+  }
+  // For FrameworkOptions::Display::None, draw nothing
 
+  // Always draw labels if they exist
   m_labelRenderer->bind();
   m_uniforms.apply(m_labelRenderer);
   m_labelRenderer->draw();

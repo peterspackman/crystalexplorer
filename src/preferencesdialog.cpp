@@ -145,6 +145,11 @@ void PreferencesDialog::initConnections() {
 
   connect(gammaSlider, &QSlider::valueChanged, this,
           &PreferencesDialog::setScreenGamma);
+  
+  connect(glDepthTestEnabledCheckBox, &QCheckBox::toggled, this,
+          &PreferencesDialog::setGLDepthTestEnabled);
+  connect(useImpostorRenderingCheckBox, &QCheckBox::toggled, this,
+          &PreferencesDialog::setUseImpostorRendering);
   connect(materialComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, &PreferencesDialog::setMaterialFactors);
   connect(metallicSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
@@ -536,6 +541,8 @@ void PreferencesDialog::updateDialogFromSettings() {
       settings::readSetting(settings::keys::TEXT_BUFFER).toFloat() * 100.0f));
   glDepthTestEnabledCheckBox->setChecked(
       settings::readSetting(settings::keys::ENABLE_DEPTH_TEST).toBool());
+  useImpostorRenderingCheckBox->setChecked(
+      settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool());
 
   updateLightsFromSettings();
   bondThicknessSlider->setValue(
@@ -585,6 +592,10 @@ void PreferencesDialog::updateSettingsFromDialog() {
        {settings::keys::BOND_THICKNESS, bondThicknessSlider->value()},
        {settings::keys::CONTACT_LINE_THICKNESS,
         contactLineThicknessSlider->value()},
+       {settings::keys::ENABLE_DEPTH_TEST,
+        glDepthTestEnabledCheckBox->isChecked()},
+       {settings::keys::USE_IMPOSTOR_RENDERING,
+        useImpostorRenderingCheckBox->isChecked()},
        // Advanced Preferences
        {settings::keys::DELETE_WORKING_FILES,
         deleteWorkingFilesCheckBox->isChecked()},
@@ -781,6 +792,13 @@ void PreferencesDialog::editElements() {
 void PreferencesDialog::setGLDepthTestEnabled(bool value) {
   settings::writeSetting(settings::keys::ENABLE_DEPTH_TEST, value);
   emit glDepthTestEnabledChanged(value);
+}
+
+void PreferencesDialog::setUseImpostorRendering(bool value) {
+  settings::writeSetting(settings::keys::USE_IMPOSTOR_RENDERING, value);
+  if (_updateDialogFromSettingsDone) {
+    emit redrawCrystalForPreferencesChange();
+  }
 }
 
 void PreferencesDialog::setJmolColors(bool value) {

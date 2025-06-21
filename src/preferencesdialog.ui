@@ -629,6 +629,16 @@
             </property>
            </widget>
           </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="useImpostorRenderingCheckBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use impostor rendering for spheres and cylinders. This can improve performance for large structures by rendering geometry using ray-traced fragment shaders instead of tessellated meshes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Use Impostor Rendering</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

@@ -3,7 +3,9 @@
 #include "colormap.h"
 #include "billboardrenderer.h"
 #include "cylinderrenderer.h"
+#include "cylinderimpostorrenderer.h"
 #include "ellipsoidrenderer.h"
+#include "sphereimpostorrenderer.h"
 #include "frameworkoptions.h"
 #include "linerenderer.h"
 #include "rendereruniforms.h"
@@ -43,6 +45,12 @@ public:
   [[nodiscard]] inline EllipsoidRenderer *ellipsoidRenderer() {
     return m_ellipsoidRenderer;
   }
+  [[nodiscard]] inline SphereImpostorRenderer *sphereImpostorRenderer() {
+    return m_sphereImpostorRenderer;
+  }
+  [[nodiscard]] inline CylinderImpostorRenderer *cylinderImpostorRenderer() {
+    return m_cylinderImpostorRenderer;
+  }
   [[nodiscard]] inline LineRenderer *lineRenderer() { return m_lineRenderer; }
 
 signals:
@@ -60,6 +68,8 @@ private:
   LineRenderer *m_lineRenderer{nullptr};
   EllipsoidRenderer *m_ellipsoidRenderer{nullptr};
   CylinderRenderer *m_cylinderRenderer{nullptr};
+  SphereImpostorRenderer *m_sphereImpostorRenderer{nullptr};
+  CylinderImpostorRenderer *m_cylinderImpostorRenderer{nullptr};
   BillboardRenderer *m_labelRenderer{nullptr};
 
   ChemicalStructure *m_structure{nullptr};

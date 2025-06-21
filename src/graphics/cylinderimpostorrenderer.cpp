@@ -1,14 +1,15 @@
 #include "cylinderimpostorrenderer.h"
+#include "shaderloader.h"
 #include <QOpenGLShaderProgram>
 
 CylinderImpostorRenderer::CylinderImpostorRenderer()
     : m_vertex(QOpenGLBuffer::VertexBuffer) {
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceFile(
-      QOpenGLShader::Vertex, ":/shaders/cylinder_impostor.vert");
-  m_program->addCacheableShaderFromSourceFile(
-      QOpenGLShader::Fragment, ":/shaders/cylinder_impostor.frag");
+  m_program->addShaderFromSourceCode(
+      QOpenGLShader::Vertex, cx::shader::loadShaderFile(":/shaders/cylinder_impostor.vert"));
+  m_program->addShaderFromSourceCode(
+      QOpenGLShader::Fragment, cx::shader::loadShaderFile(":/shaders/cylinder_impostor.frag"));
   m_program->link();
   m_program->bind();
 

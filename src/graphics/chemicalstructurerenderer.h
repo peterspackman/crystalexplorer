@@ -5,10 +5,12 @@
 #include "chemicalstructure.h"
 #include "colormap.h"
 #include "cylinderrenderer.h"
+#include "cylinderimpostorrenderer.h"
 #include "drawingstyle.h"
 #include "ellipsoidrenderer.h"
 #include "frameworkrenderer.h"
 #include "linerenderer.h"
+#include "sphereimpostorrenderer.h"
 #include "crystalplane.h"
 #include "planerenderer.h"
 #include "plane.h"
@@ -165,6 +167,8 @@ private:
   LineRenderer *m_highlightRenderer{nullptr};
   EllipsoidRenderer *m_ellipsoidRenderer{nullptr};
   CylinderRenderer *m_cylinderRenderer{nullptr};
+  SphereImpostorRenderer *m_sphereImpostorRenderer{nullptr};
+  CylinderImpostorRenderer *m_cylinderImpostorRenderer{nullptr};
   std::vector<MeshInstanceRenderer *> m_meshRenderers;
   std::vector<PointCloudInstanceRenderer *> m_pointCloudRenderers;
   FrameworkRenderer *m_frameworkRenderer{nullptr};
