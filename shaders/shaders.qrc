@@ -21,7 +21,6 @@
         <file>billboard.vert</file>
         <file>ellipsoid.frag</file>
         <file>ellipsoid.vert</file>
-        <file>pbr.glsl</file>
         <file>cylinder.frag</file>
         <file>cylinder.vert</file>
         <file>sphere_impostor_flat.frag</file>
@@ -33,7 +32,7 @@
         <file>plane.frag</file>
         <file>plane.vert</file>
         <file>uniforms.glsl</file>
-        <file>flat.glsl</file>
+        <file>common.glsl</file>
         <file>final_pass.frag</file>
         <file>ssao.frag</file>
         <file>ssao.vert</file>

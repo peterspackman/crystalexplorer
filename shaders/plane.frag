@@ -1,7 +1,7 @@
 #version 330
 #include "uniforms.glsl"
 
-#include "pbr.glsl"
+#include "common.glsl"
 
 // Inputs from vertex shader
 in vec4 v_color;

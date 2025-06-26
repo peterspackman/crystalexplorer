@@ -8,9 +8,7 @@ flat in int v_selected;
 out highp vec4 f_color;
 
 #define SELECTION_OUTLINE 1
-
-#include "flat.glsl"
-#include "pbr.glsl"
+#include "common.glsl"
 
 
 

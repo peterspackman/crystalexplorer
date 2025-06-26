@@ -1,4 +1,24 @@
+// Combined flat and PBR shading functions
 
+// Flat shading functions
+vec3 flatWithNormalOutline(vec3 cameraPos, vec3 position, vec3 normal, vec3 color) {
+
+    vec3 V = normalize(cameraPos - position);
+    vec3 N = normalize(normal);
+    float c = dot(N, V);
+ #ifdef SELECTION_OUTLINE
+     if(v_selected == 1) {
+         // could use c to mix as well
+         color = mix(vec3(u_selectionColor), color, smoothstep(0.0, 0.5, c*c));
+     }
+     else {
+         color = mix(vec3(0), color, smoothstep(-0.5, 0.5, c));
+     }
+ #endif
+     return color;
+}
+
+// PBR structures and functions
 struct PBRMaterial {
     vec3 color;
     float metallic;
@@ -165,6 +185,49 @@ vec3 PBRLighting(in vec3 cameraPosition, in vec3 position, in vec3 normal, in Li
     return color;
 }
 
+vec3 GoochLighting(in vec3 cameraPosition, in vec3 position, in vec3 normal, in Lights lights, in vec3 materialColor) {
+    vec3 N = normalize(normal);
+    vec3 L = normalize(lights.positions[0].xyz - position);
+    vec3 V = normalize(cameraPosition - position);
+    
+    // Adjusted Gooch parameters - less aggressive tinting
+    float a = 0.2;
+    float b = 0.6;
+    float shininess = 60.0;
+    
+    // Diffuse component
+    float NL = dot(N, L);
+    float it = (1.0 + NL) / 2.0;
+    
+    // Use light color for warm, black for cool
+    vec3 lightColor = lights.specular[0].rgb * 0.02;  // Tone down light intensity
+    vec3 coolColor = vec3(0.0) + a * materialColor;  // Black + material
+    vec3 warmColor = lightColor + b * materialColor;  // Light color + material
+    
+    // Mix between cool and warm based on lighting
+    vec3 goochColor = (1.0 - it) * coolColor + it * warmColor;
+    
+    // Strong ambient contribution to preserve material colors
+    vec3 ambient = lights.ambient * materialColor;
+    vec3 color = mix(goochColor, materialColor, 0.6) + ambient * 0.8;
+    
+    // Specular highlights
+    vec3 R = reflect(-L, N);
+    float ER = clamp(dot(V, R), 0.0, 1.0);
+    vec3 spec = vec3(1.0) * pow(ER, shininess) * 0.3; // Reduced spec intensity
+    
+    color += spec;
+    
+#ifdef SELECTION_OUTLINE
+    if(v_selected == 1) {
+        float c = dot(N, V);
+        color = mix(vec3(u_selectionColor), color, smoothstep(0.0, 0.5, c*c));
+    }
+#endif
+
+    return color;
+}
+
 float fogFactor(float density, float fc) {
     float result = exp(-pow(density * fc, 2.0));
     return 1.0 - clamp(result, 0.0, 1.0);
@@ -174,4 +237,55 @@ vec4 applyFog(vec4 color, vec3 fogColor, float offset, float density, float dept
     if(fogColor.r < 0.0) return color;
     // since we have inverted depth it's offset - depth not vice-versa
     return mix(color, vec4(fogColor, 1.0), fogFactor(density, clamp(offset - depth, 0, 1.0f)));
+}
+
+// Unified shading function that handles all render modes
+vec4 calculateShading(int renderMode, vec3 materialColor, vec3 cameraPosition, vec3 worldPosition, vec3 worldNormal, float alpha, vec3 selectionId) {
+    vec4 outputColor;
+    
+    if(renderMode == 0) {
+        // Selection mode
+        outputColor = vec4(selectionId, alpha);
+    } 
+    else if(renderMode == 1) {
+        // Flat shading mode
+        vec3 colorLinear = linearizeColor(materialColor, u_screenGamma);
+        colorLinear = flatWithNormalOutline(cameraPosition, worldPosition, worldNormal, colorLinear);
+        outputColor = vec4(unlinearizeColor(colorLinear, u_screenGamma), alpha);
+    }
+    else if(renderMode == 2) {
+        // PBR shading mode
+        PBRMaterial material;
+        material.color = linearizeColor(materialColor, u_screenGamma);
+        material.metallic = u_materialMetallic;
+        material.roughness = u_materialRoughness;
+        
+        Lights lights;
+        lights.positions = u_lightPos;
+        lights.ambient = u_lightGlobalAmbient.xyz;
+        lights.specular = u_lightSpecular;
+        
+        vec3 colorLinear = PBRLighting(cameraPosition, worldPosition, worldNormal, lights, material);
+        outputColor = vec4(unlinearizeColor(colorLinear, u_screenGamma), alpha);
+    }
+    else if(renderMode == 3) {
+        // Gooch shading mode
+        vec3 colorLinear = linearizeColor(materialColor, u_screenGamma);
+        
+        Lights lights;
+        lights.positions = u_lightPos;
+        lights.ambient = u_lightGlobalAmbient.xyz;
+        lights.specular = u_lightSpecular;
+        
+        colorLinear = GoochLighting(cameraPosition, worldPosition, worldNormal, lights, colorLinear);
+        outputColor = vec4(unlinearizeColor(colorLinear, u_screenGamma), alpha);
+    }
+    else {
+        // Default fallback to flat
+        vec3 colorLinear = linearizeColor(materialColor, u_screenGamma);
+        colorLinear = flatWithNormalOutline(cameraPosition, worldPosition, worldNormal, colorLinear);
+        outputColor = vec4(unlinearizeColor(colorLinear, u_screenGamma), alpha);
+    }
+    
+    return outputColor;
 }

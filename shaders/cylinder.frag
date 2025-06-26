@@ -15,8 +15,7 @@ flat in int v_pattern;
 out vec4 f_color;
 int v_selected;
 #define SELECTION_OUTLINE 1
-#include "pbr.glsl"
-#include "flat.glsl"
+#include "common.glsl"
 
 
 vec2 generateUV(vec3 vertex) {
@@ -66,53 +65,24 @@ vec3 applyPattern(vec3 baseColor, vec2 texCoord) {
 
 void main()
 {
-    if(u_renderMode == 0) {
-        if(v_cylinderPosition.z < 0) {
-            f_color = v_selection_idA;
-        }
-        else {
-            f_color = v_selection_idB;
-        }
-    }
-    else if(u_renderMode == 1) {
-        vec4 color;
-        if(v_cylinderPosition.z < 0) {
-            color = v_colorA;
-            v_selected = v_selectedA;
-        }
-        else {
-            color = v_colorB;
-            v_selected = v_selectedB;
-        }
-        vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
-        colorLinear = applyPattern(colorLinear, generateUV(v_cylinderPosition));
-        colorLinear = flatWithNormalOutline(u_cameraPosVec, v_position, v_normal, colorLinear);
-        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
-        f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
+    // Determine which end of cylinder we're on and get appropriate color/selection
+    vec4 color;
+    vec3 selectionId;
+    if(v_cylinderPosition.z < 0) {
+        color = v_colorA;
+        v_selected = v_selectedA;
+        selectionId = v_selection_idA.xyz;
     }
     else {
-        vec4 color;
-        if(v_cylinderPosition.z < 0) {
-            color = v_colorA;
-            v_selected = v_selectedA;
-        }
-        else {
-            color = v_colorB;
-            v_selected = v_selectedB;
-        }
-        vec3 colorLinear = linearizeColor(color.xyz, u_screenGamma);
-        colorLinear = applyPattern(colorLinear, generateUV(v_cylinderPosition));
-        PBRMaterial material;
-        material.color = colorLinear;
-        material.metallic = u_materialMetallic;
-        material.roughness = u_materialRoughness;
-        Lights lights;
-        lights.positions = u_lightPos;
-        lights.ambient = u_lightGlobalAmbient.xyz;
-        lights.specular = u_lightSpecular;
-        // since we're passing things through in camera space, the camera is located at the origin
-        colorLinear = PBRLighting(u_cameraPosVec, v_position, v_normal, lights, material);
-        f_color = vec4(unlinearizeColor(colorLinear, u_screenGamma), color.w);
-        f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
+        color = v_colorB;
+        v_selected = v_selectedB;
+        selectionId = v_selection_idB.xyz;
     }
+    
+    // Apply pattern to base color
+    vec3 materialColor = applyPattern(color.xyz, generateUV(v_cylinderPosition));
+    
+    // Use unified shading
+    f_color = calculateShading(u_renderMode, materialColor, u_cameraPosVec, v_position, v_normal, color.w, selectionId);
+    f_color = applyFog(f_color, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragCoord.z);
 }

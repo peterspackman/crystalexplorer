@@ -14,7 +14,32 @@ set(APPS "\${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app")
 set(CX_BINARY_LOCATION "${APPS}/Contents/MacOS/CrystalExplorer")
 set(RESOURCES_DESTINATION "${PROJECT_NAME}.app/Contents/Resources")
 set(OCC_DESTINATION "${PROJECT_NAME}.app/Contents/MacOS/")
+
+# Code signing configuration
+option(ENABLE_CODESIGNING "Enable code signing for distribution" OFF)
+set(CODESIGN_IDENTITY "" CACHE STRING "Code signing identity (leave empty for ad-hoc)")
+set(CODESIGN_ENTITLEMENTS "" CACHE FILEPATH "Path to entitlements file")
+
+# Auto-detect code signing from environment
+if(DEFINED ENV{APPLE_DISTRIBUTION_CERT} AND NOT ENABLE_CODESIGNING)
+    set(ENABLE_CODESIGNING ON CACHE BOOL "Enable code signing for distribution" FORCE)
+    if(NOT CODESIGN_IDENTITY)
+        set(CODESIGN_IDENTITY "$ENV{APPLE_DISTRIBUTION_CERT}" CACHE STRING "Code signing identity" FORCE)
+    endif()
+    message(STATUS "Auto-enabled code signing with identity: ${CODESIGN_IDENTITY}")
+endif()
+
 find_program(MACDEPLOYQT_COMMAND NAMES macdeployqt HINTS "${CMAKE_PREFIX_PATH}/bin")
 message(STATUS "macdeployqt located at ${MACDEPLOYQT_COMMAND}")
+
+if(ENABLE_CODESIGNING)
+    message(STATUS "Code signing enabled with identity: ${CODESIGN_IDENTITY}")
+    if(CODESIGN_ENTITLEMENTS)
+        message(STATUS "Using entitlements file: ${CODESIGN_ENTITLEMENTS}")
+    endif()
+else()
+    message(STATUS "Code signing disabled - using ad-hoc signing")
+endif()
+
 install(FILES ${APP_ICON_MACOS} DESTINATION ${RESOURCES_DESTINATION}
     COMPONENT Runtime)

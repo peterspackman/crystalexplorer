@@ -19,8 +19,7 @@ flat in int v_selected;
 out vec4 outputColor;
 
 #define SELECTION_OUTLINE 1
-#include "flat.glsl"
-#include "pbr.glsl"
+#include "common.glsl"
 
 // Calculate depth based on the given camera position.
 float calcDepth( in vec3 cameraPos ){
@@ -70,13 +69,32 @@ void main(){
     // Use Inigo Quilez intersection with proper cylinder endpoints
     vec4 intersection = cylIntersect(ray_origin, ray_direction, base, end, vRadius);
     
-    if (intersection.x < 0.0) {
-        discard; // No intersection
-    }
+    // Calculate alpha for antialiasing based on distance to cylinder edge
+    float alpha = 1.0;
+    vec3 surface_point;
     
-    // Calculate intersection point using the nearest intersection
-    float t = intersection.x;
-    vec3 surface_point = ray_origin + t * ray_direction;
+    if (intersection.x < 0.0) {
+        // Calculate distance to cylinder for edge antialiasing
+        vec3 axis = normalize(end - base);
+        vec3 to_ray = ray_target - base;
+        float axis_proj = dot(to_ray, axis);
+        vec3 closest_on_axis = base + clamp(axis_proj, 0.0, length(end - base)) * axis;
+        float dist_to_surface = length(ray_target - closest_on_axis);
+        
+        float edge_width = fwidth(dist_to_surface) * 1.5;
+        alpha = 1.0 - smoothstep(vRadius - edge_width, vRadius + edge_width, dist_to_surface);
+        
+        if (alpha < 0.01) {
+            discard; // No intersection and no edge contribution
+        }
+        
+        // For edge pixels, use projected surface point
+        surface_point = closest_on_axis + normalize(ray_target - closest_on_axis) * vRadius;
+    } else {
+        // Calculate intersection point using the nearest intersection
+        float t = intersection.x;
+        surface_point = ray_origin + t * ray_direction;
+    }
     
     // Calculate surface normal using original axis direction for consistency
     vec3 original_axis = normalize(v_pointB - v_pointA);
@@ -101,30 +119,7 @@ void main(){
     vec4 worldSpacePos = u_modelViewMatInv * vec4(surface_point, 1.0);
     vec4 worldSpaceNormal = transpose(u_viewMat) * vec4(surface_normal, 1.0);
 
-    if(u_renderMode == 0) {
-        outputColor = vec4(v_selection_id, 1.0);
-    } 
-    else if(u_renderMode == 1) {
-        // Flat shading mode
-        vec3 colorLinear = linearizeColor(vColor, u_screenGamma);
-        colorLinear = flatWithNormalOutline(u_cameraPosVec, worldSpacePos.xyz, worldSpaceNormal.xyz, colorLinear);
-        outputColor = vec4(unlinearizeColor(colorLinear, u_screenGamma), 1.0);
-        outputColor = applyFog(outputColor, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragDepth);
-    }
-    else {
-        // PBR shading mode
-        PBRMaterial material;
-        material.color = linearizeColor(vColor, u_screenGamma);
-        material.metallic = u_materialMetallic;
-        material.roughness = u_materialRoughness;
-        
-        Lights lights;
-        lights.positions = u_lightPos;
-        lights.ambient = u_lightGlobalAmbient.xyz;
-        lights.specular = u_lightSpecular;
-        
-        vec3 colorLinear = PBRLighting(u_cameraPosVec, worldSpacePos.xyz, worldSpaceNormal.xyz, lights, material);
-        outputColor = vec4(unlinearizeColor(colorLinear, u_screenGamma), 1.0);
-        outputColor = applyFog(outputColor, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragDepth);
-    }
+    // Use unified shading function
+    outputColor = calculateShading(u_renderMode, vColor, u_cameraPosVec, worldSpacePos.xyz, worldSpaceNormal.xyz, alpha, v_selection_id);
+    outputColor = applyFog(outputColor, u_depthFogColor, u_depthFogOffset, u_depthFogDensity, gl_FragDepth);
 }
