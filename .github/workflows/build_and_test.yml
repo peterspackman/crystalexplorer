@@ -32,9 +32,9 @@ jobs:
           - os: windows-latest
             name: "windows-x86_64"
             qtarch: "win64_msvc2022_64"
-          - os: windows-11-arm
-            name: "windows-arm64"
-            qtarch: "win64_msvc2022_arm64"
+#          - os: windows-11-arm
+#            name: "windows-arm64"
+#            qtarch: "win64_msvc2022_arm64"
           - os: ubuntu-latest
             name: "linux-x86_64"
             qtarch: "linux_gcc_64"
