@@ -70,6 +70,26 @@
       }
     },
     {
+      "name": "windows-arm64",
+      "inherits": "base",
+      "displayName": "Windows arm64 Config",
+      "description": "Target Windows arm64 with Ninja generator",
+      "toolset": {
+        "value": "host=arm64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
+        "CPACK_SYSTEM_NAME": "windows-arm64"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
       "name": "ubuntu-latest-x86_64",
       "displayName": "Ubuntu latest x86_64 Config",
       "description": "Ubuntu latest build using ninja generator",
@@ -97,6 +117,10 @@
     {
       "name": "windows-x86_64",
       "configurePreset": "windows-x86_64"
+    },
+    {
+      "name": "windows-arm64",
+      "configurePreset": "windows-arm64"
     },
     {
       "name": "ubuntu-latest-x86_64",
@@ -149,6 +173,17 @@
       }
     },
     {
+      "name": "windows-arm64",
+      "configurePreset": "windows-arm64",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
       "name": "ubuntu-latest-x86_64",
       "configurePreset": "ubuntu-latest-x86_64",
       "output": {
@@ -185,6 +220,13 @@
     {
       "name": "windows-x86_64",
       "configurePreset": "windows-x86_64",
+      "generators": [
+        "NSIS"
+      ]
+    },
+    {
+      "name": "windows-arm64",
+      "configurePreset": "windows-arm64",
       "generators": [
         "NSIS"
       ]

@@ -31,7 +31,10 @@ jobs:
             qtarch: "clang_64"
           - os: windows-latest
             name: "windows-x86_64"
-            qtarch: "win64_msvc2019_64"
+            qtarch: "win64_msvc2022_64"
+          - os: windows-11-arm
+            name: "windows-arm64"
+            qtarch: "win64_msvc2022_arm64"
           - os: ubuntu-latest
             name: "linux-x86_64"
             qtarch: "linux_gcc_64"
@@ -48,9 +51,9 @@ jobs:
         key: crystalexplorer-cache-${{ matrix.name }}
     
     - name: Install Qt
-      uses: jurplel/install-qt-action@v4.1.1
+      uses: jurplel/install-qt-action@v4.3.0
       with:
-        version: 6.7.2
+        version: 6.8.3
         cache: true
         arch: ${{ matrix.qtarch }}
 
