@@ -5,6 +5,7 @@
 #include <array>
 #include <gemmi/cif.hpp>
 #include <gemmi/numb.hpp>
+#include <gemmi/symmetry.hpp>
 #include <gemmi/to_cif.hpp>
 
 struct CifAtomData {
@@ -167,8 +168,7 @@ inline void setAtomData(int index, const std::vector<AtomField> &fields,
 }
 
 void extractAtomSites(const gemmi::cif::Loop &loop,
-                      std::vector<CifAtomData> &atoms,
-                                          AdpMap &adps) {
+                      std::vector<CifAtomData> &atoms, AdpMap &adps) {
   std::vector<AtomField> fields(loop.tags.size(), AtomField::Ignore);
 
   bool found_info = false;
@@ -185,7 +185,7 @@ void extractAtomSites(const gemmi::cif::Loop &loop,
   if (!found_info)
     return;
 
-  if(atoms.size() != loop.length())
+  if (atoms.size() != loop.length())
     atoms.resize(std::max(atoms.size(), loop.length()));
   for (size_t i = 0; i < loop.length(); i++) {
     AdpData adp;
@@ -292,7 +292,7 @@ std::vector<CifCrystalData> readDocument(gemmi::cif::Document &document) {
         break;
       case gemmi::cif::ItemType::Loop:
         if (item.has_prefix("_atom_site_")) {
-            extractAtomSites(item.loop, cifData.atoms, cifData.adps);
+          extractAtomSites(item.loop, cifData.atoms, cifData.adps);
         } else if (item.has_prefix("_symmetry_equiv_pos") ||
                    item.has_prefix("_space_group_symop")) {
           cifData.symmetryData.symmetryOperations =
@@ -366,34 +366,65 @@ occ::crystal::SpaceGroup buildSpacegroup(const CifSymmetryData &symmetryData) {
                 "CIF, using P1";
     return occ::crystal::SpaceGroup(1);
   }
-  if (!symmetryData.HM.empty()) {
+
+  bool found = false;
+
+  // Try HM symbol first (highest priority)
+  if (!symmetryData.HM.empty() && symmetryData.HM != "Not set") {
+    qDebug() << "Trying space group HM name:"
+             << QString::fromStdString(symmetryData.HM);
     const auto *sgdata = gemmi::find_spacegroup_by_name(symmetryData.HM);
     if (sgdata) {
-      return occ::crystal::SpaceGroup(symmetryData.HM);
+      qDebug() << "Found space group:" << sgdata->number
+               << QString::fromStdString(sgdata->hm);
+      // Use the HM symbol from gemmi to ensure we get the standard setting
+      return occ::crystal::SpaceGroup(sgdata->hm);
     }
   }
-  if (!symmetryData.Hall.empty()) {
+
+  // Try Hall symbol second
+  if (!symmetryData.Hall.empty() && symmetryData.Hall != "Not set") {
+    qDebug() << "Trying space group Hall name:"
+             << QString::fromStdString(symmetryData.Hall);
     const auto *sgdata = gemmi::find_spacegroup_by_name(symmetryData.Hall);
     if (sgdata) {
-      return occ::crystal::SpaceGroup(symmetryData.Hall);
+      qDebug() << "Found space group:" << sgdata->number
+               << QString::fromStdString(sgdata->hm);
+      // Use the HM symbol from gemmi for consistency
+      return occ::crystal::SpaceGroup(sgdata->hm);
     }
   }
+
+  // Try symmetry operations third
   if (symmetryData.symmetryOperations.size() > 0) {
-    gemmi::GroupOps ops;
+    qDebug() << "Trying space group from"
+             << symmetryData.symmetryOperations.size() << "symmetry operations";
+    std::vector<gemmi::Op> operations;
     for (const auto &symop : symmetryData.symmetryOperations) {
-      ops.sym_ops.push_back(gemmi::parse_triplet(symop));
+      operations.push_back(gemmi::parse_triplet(symop));
     }
+    // Use split_centering_vectors to properly handle non-standard settings
+    gemmi::GroupOps ops = gemmi::split_centering_vectors(operations);
     const auto *sgdata = gemmi::find_spacegroup_by_ops(ops);
     if (sgdata) {
-      return occ::crystal::SpaceGroup(symmetryData.symmetryOperations);
+      qDebug() << "Found space group:" << sgdata->number
+               << QString::fromStdString(sgdata->hm);
+      // Use the HM symbol from gemmi
+      return occ::crystal::SpaceGroup(sgdata->hm);
     }
   }
+
+  // Try space group number last (lowest priority for non-standard settings)
   if (symmetryData.number > 0) {
+    qDebug() << "Trying space group number:" << symmetryData.number;
     const auto *sgdata = gemmi::find_spacegroup_by_number(symmetryData.number);
     if (sgdata) {
+      qDebug() << "Found space group:" << sgdata->number
+               << QString::fromStdString(sgdata->hm);
       return occ::crystal::SpaceGroup(symmetryData.number);
     }
   }
+
   qDebug() << "Valid symmetry data, but unable to determine space group from "
               "CIF, using P1";
   return occ::crystal::SpaceGroup(1);

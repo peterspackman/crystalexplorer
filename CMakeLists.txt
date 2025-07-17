@@ -22,6 +22,7 @@ endif()
 message(STATUS "Using CPACK_SYSTEM_NAME=${CPACK_SYSTEM_NAME}")
 
 option(ENABLE_CX_TESTS "Enable testing" OFF)
+option(ENABLE_PERFORMANCE_TIMING "Enable performance timing and logging" OFF)
 set(OCC_VERSION "0.7.5" CACHE STRING "OCC version number for download")
 set(OCC_PLATFORM "${CPACK_SYSTEM_NAME}" CACHE STRING "OCC platform string for download")
 
@@ -35,6 +36,14 @@ message(STATUS "${PROJECT_NAME} version: ${PROJECT_VERSION}-${PROJECT_GIT_REVISI
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGL Concurrent OpenGLWidgets DBus Test)
 find_package(OpenGL REQUIRED)
+
+# Configure performance timing
+if(ENABLE_PERFORMANCE_TIMING)
+    add_compile_definitions(CX_ENABLE_PERFORMANCE_TIMING)
+    message(STATUS "Performance timing enabled")
+else()
+    message(STATUS "Performance timing disabled")
+endif()
 
 qt_standard_project_setup()
 add_subdirectory(3rdparty)

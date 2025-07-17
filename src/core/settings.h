@@ -106,6 +106,7 @@ const QString CONTACT3_COLOR = "contact3Color";
 const QString SURFACE_NUMBER_SAMPLES = "graphics/numberSamples";
 const QString SURFACE_DEPTH_BUFFER_SIZE = "graphics/depthBufferSize";
 const QString SURFACE_STENCIL_BUFFER_SIZE = "graphics/stencilBufferSize";
+const QString SURFACE_VSYNC_ENABLED = "graphics/vsyncEnabled";
 const QString ENABLE_DEPTH_TEST = "graphics/enableDepthTest";
 
 const QString SELECTION_COLOR = "graphics/selectionColor";

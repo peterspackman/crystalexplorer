@@ -53,6 +53,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::SURFACE_DEPTH_BUFFER_SIZE, 24},
     {keys::SURFACE_STENCIL_BUFFER_SIZE, 8},
     {keys::SURFACE_NUMBER_SAMPLES, 4},
+    {keys::SURFACE_VSYNC_ENABLED, true},
     {keys::ENABLE_DEPTH_TEST, true},
     {keys::SELECTION_COLOR, "#ffac00"}, // yellow
     {keys::LIGHT_TRACKS_CAMERA, true},

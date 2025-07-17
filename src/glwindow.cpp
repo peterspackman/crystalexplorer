@@ -21,8 +21,8 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   
   // Initialize performance timing based on settings
   bool timingEnabled = settings::readSetting(settings::keys::ENABLE_PERFORMANCE_TIMING).toBool();
-  PerformanceTimer::instance().setEnabled(timingEnabled);
-  PerformanceTimer::instance().setOutputFrequency(10); // Print every 10 frames for testing
+  PERF_TIMER_SET_ENABLED(timingEnabled);
+  PERF_TIMER_SET_FREQUENCY(60); // Print every 60 frames when enabled
   
   // Initialize target framerate
   updateTargetFramerate(settings::readSetting(settings::keys::TARGET_FRAMERATE).toInt());
@@ -140,7 +140,8 @@ void GLWindow::makeFrameBufferObject() {
   QOpenGLFramebufferObjectFormat format;
   format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
   format.setTextureTarget(GL_TEXTURE_2D);
-  format.setSamples(4);
+  format.setSamples(
+      settings::readSetting(settings::keys::SURFACE_NUMBER_SAMPLES).toInt());
   int w = std::max(1, static_cast<int>(width() * devicePixelRatio()));
   int h = std::max(1, static_cast<int>(height() * devicePixelRatio()));
   m_framebuffer = new QOpenGLFramebufferObject(w, h, format);
@@ -334,11 +335,9 @@ void GLWindow::paintGL() {
   }
   paintCallCount++;
   
-  PerformanceTimer::instance().startFrame();
+  PERF_FRAME_START();
   PERF_SCOPED_TIMER("Total paintGL");
   
-  printf("paintGL call #%d (%.3fms since last)\n", paintCallCount, frameTimer.restart() / 1000.0);
-
   {
     PERF_SCOPED_TIMER("Framebuffer Setup");
     m_framebuffer->bind();
@@ -382,7 +381,7 @@ void GLWindow::paintGL() {
     m_postprocessShader->release();
   }
 
-  PerformanceTimer::instance().endFrame();
+  PERF_FRAME_END();
 }
 
 QImage GLWindow::exportToImage(int scaleFactor, const QColor &background) {
@@ -1631,9 +1630,6 @@ void GLWindow::updateTargetFramerate(int fps) {
     m_redrawBatchTimer = new QTimer(this);
     m_redrawBatchTimer->setSingleShot(true);
     connect(m_redrawBatchTimer, &QTimer::timeout, this, [this]() {
-      static int batchedRedrawCount = 0;
-      batchedRedrawCount++;
-      printf("Batched redraw #%d\n", batchedRedrawCount);
       update();
     });
   }
@@ -1651,14 +1647,7 @@ void GLWindow::redraw() {
   
   // Only start timer if not already active (batches multiple redraw requests)
   if (!m_redrawBatchTimer->isActive()) {
-    static int redrawRequestCount = 0;
-    redrawRequestCount++;
-    printf("Redraw request #%d - starting batch timer\n", redrawRequestCount);
     m_redrawBatchTimer->start();
-  } else {
-    static int skippedRedrawCount = 0;
-    skippedRedrawCount++;
-    printf("Redraw request batched (skipped #%d)\n", skippedRedrawCount);
   }
 }
 

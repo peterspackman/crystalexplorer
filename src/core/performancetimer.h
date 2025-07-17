@@ -6,6 +6,9 @@
 #include <QMap>
 #include <vector>
 
+// Define CX_ENABLE_PERFORMANCE_TIMING in CMake or as a compile flag to enable timing
+// e.g., cmake -DCX_ENABLE_PERFORMANCE_TIMING=ON or add -DCX_ENABLE_PERFORMANCE_TIMING to compiler flags
+
 class PerformanceTimer {
 public:
     struct TimingData {
@@ -104,6 +107,21 @@ private:
 };
 
 // Convenience macros
-#define PERF_TIMER_START(name) PerformanceTimer::instance().startTiming(name)
-#define PERF_TIMER_END(name) PerformanceTimer::instance().endTiming(name)
-#define PERF_SCOPED_TIMER(name) ScopedTimer _timer(name)
+#ifdef CX_ENABLE_PERFORMANCE_TIMING
+  #define PERF_TIMER_START(name) PerformanceTimer::instance().startTiming(name)
+  #define PERF_TIMER_END(name) PerformanceTimer::instance().endTiming(name)
+  #define PERF_SCOPED_TIMER(name) ScopedTimer _timer(name)
+  #define PERF_FRAME_START() PerformanceTimer::instance().startFrame()
+  #define PERF_FRAME_END() PerformanceTimer::instance().endFrame()
+  #define PERF_TIMER_SET_ENABLED(enabled) PerformanceTimer::instance().setEnabled(enabled)
+  #define PERF_TIMER_SET_FREQUENCY(frames) PerformanceTimer::instance().setOutputFrequency(frames)
+#else
+  // No-op macros when performance timing is disabled
+  #define PERF_TIMER_START(name) ((void)0)
+  #define PERF_TIMER_END(name) ((void)0)
+  #define PERF_SCOPED_TIMER(name) ((void)0)
+  #define PERF_FRAME_START() ((void)0)
+  #define PERF_FRAME_END() ((void)0)
+  #define PERF_TIMER_SET_ENABLED(enabled) ((void)0)
+  #define PERF_TIMER_SET_FREQUENCY(frames) ((void)0)
+#endif

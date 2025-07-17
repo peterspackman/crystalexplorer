@@ -83,9 +83,15 @@ int main(int argc, char *argv[]) {
           .toInt());
   format.setVersion(4, 3);
   format.setProfile(QSurfaceFormat::CoreProfile);
+#ifdef QT_DEBUG
   format.setOption(QSurfaceFormat::DebugContext, true);
-  format.setSamples(
-      settings::readSetting(settings::keys::SURFACE_NUMBER_SAMPLES).toInt());
+#endif
+  format.setSamples(0); // Disable widget MSAA, use FBO MSAA instead for better control
+  
+  // Configure VSync
+  bool vsyncEnabled = settings::readSetting(settings::keys::SURFACE_VSYNC_ENABLED).toBool();
+  format.setSwapInterval(vsyncEnabled ? 1 : 0); // 1 = VSync on, 0 = VSync off
+  
   QSurfaceFormat::setDefaultFormat(format);
 
   QApplication app(argc, argv);
