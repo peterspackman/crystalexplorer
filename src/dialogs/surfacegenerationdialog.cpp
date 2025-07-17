@@ -63,7 +63,8 @@ void SurfaceGenerationDialog::initConnections() {
           &SurfaceGenerationDialog::validate);
   connect(ui->useUserDefinedCluster, &QCheckBox::toggled,
           ui->voidClusterPaddingSpinBox, &QDoubleSpinBox::setEnabled);
-  connect(ui->wavefunctionCombobox, &QComboBox::currentIndexChanged, this, &SurfaceGenerationDialog::updateOrbitalLabels);
+  connect(ui->wavefunctionCombobox, &QComboBox::currentIndexChanged, this,
+          &SurfaceGenerationDialog::updateOrbitalLabels);
 }
 
 void SurfaceGenerationDialog::setAtomIndices(
@@ -120,6 +121,7 @@ void SurfaceGenerationDialog::validate() {
   }
   parameters.separation =
       isosurface::resolutionValue(ui->resolutionComboBox->currentLevel());
+  parameters.fragmentIdentifier = generateFragmentIdentifier();
   qDebug() << isosurface::kindToString(parameters.kind);
 
   if (needWavefunction()) {
@@ -139,8 +141,9 @@ void SurfaceGenerationDialog::validate() {
       parameters.wfn_transform = transform;
     }
 
-    if(needOrbitalBox()) {
-      parameters.orbitalLabels = ui->orbitalSelectionWidget->getSelectedOrbitalLabels();
+    if (needOrbitalBox()) {
+      parameters.orbitalLabels =
+          ui->orbitalSelectionWidget->getSelectedOrbitalLabels();
     }
     emit surfaceParametersChosenNeedWavefunction(parameters, wfn_params);
   } else {
@@ -243,7 +246,7 @@ void SurfaceGenerationDialog::updateOrbitalLabels() {
       // Create some example data
       info.index = i;
       info.energy = 0.0;
-      if(energies.size() > i) {
+      if (energies.size() > i) {
         info.energy = energies[i];
       }
       info.label = QString("%1 (HOMO)").arg(i);
@@ -267,7 +270,7 @@ void SurfaceGenerationDialog::updateOrbitalLabels() {
     }
   }
 
-  if(orbs.size() > 0) {
+  if (orbs.size() > 0) {
     ui->orbitalSelectionWidget->setWavefunctionCalculated(true);
     ui->orbitalSelectionWidget->setOrbitalData(orbs);
     ui->orbitalSelectionWidget->setNumberOfBasisFunctions(nOrb);
@@ -358,4 +361,17 @@ void SurfaceGenerationDialog::updateDescriptions() {
 const std::vector<GenericAtomIndex> &
 SurfaceGenerationDialog::atomIndices() const {
   return m_atomIndices;
+}
+
+void SurfaceGenerationDialog::setStructure(ChemicalStructure *structure) {
+  m_structure = structure;
+}
+
+QString SurfaceGenerationDialog::generateFragmentIdentifier() const {
+  if (!m_structure || m_atomIndices.empty()) {
+    return "Fragment";
+  }
+
+  // Use the existing fragment labeling system
+  return m_structure->getFragmentLabelForAtoms(m_atomIndices);
 }

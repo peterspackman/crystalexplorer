@@ -35,6 +35,8 @@ public:
 
   void setAtomIndices(const std::vector<GenericAtomIndex> &atoms);
   [[nodiscard]] const std::vector<GenericAtomIndex> &atomIndices() const;
+  
+  void setStructure(ChemicalStructure *structure);
 
 private slots:
   void surfaceChanged(QString);
@@ -72,8 +74,10 @@ private:
   bool needWavefunctionCalc();
 
   wfn::Parameters getCurrentWavefunctionParameters();
+  QString generateFragmentIdentifier() const;
 
   std::vector<GenericAtomIndex> m_atomIndices;
+  ChemicalStructure *m_structure{nullptr};
   QString m_currentSurfaceType{"Hirshfeld"};
 
   std::vector<WavefunctionAndTransform> m_availableWavefunctions;

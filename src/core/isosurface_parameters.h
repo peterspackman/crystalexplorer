@@ -89,6 +89,7 @@ struct Parameters {
   Eigen::Isometry3d wfn_transform{Eigen::Isometry3d::Identity()};
   QStringList additionalProperties;
   QStringList orbitalLabels;
+  QString fragmentIdentifier;
 };
 
 struct Result {
@@ -142,6 +143,9 @@ struct SurfacePropertyDescriptions {
 
 QString getSurfaceDisplayName(QString);
 QString getSurfacePropertyDisplayName(QString);
+
+QString generateSurfaceName(const Parameters &parameters, 
+                           const QString &fragmentIdentifier = QString());
 
 bool loadSurfaceDescriptionConfiguration(SurfacePropertyDescriptions &,
                                          SurfaceDescriptions &,

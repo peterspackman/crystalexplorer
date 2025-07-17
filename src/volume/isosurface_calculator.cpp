@@ -10,13 +10,9 @@
 
 namespace volume {
 
-inline QString surfaceName(const isosurface::Parameters &parameters, int index) {
-  isosurface::SurfaceDescription desc =
-      isosurface::getSurfaceDescription(parameters.kind);
-  return QString("%1 (%2) [isovalue = %3]")
-      .arg(desc.displayName)
-      .arg(parameters.separation)
-      .arg(parameters.isovalue);
+inline QString surfaceName(const isosurface::Parameters &parameters,
+                           int index) {
+  return isosurface::generateSurfaceName(parameters);
 }
 
 inline Mesh::Attributes makeAttributes(const isosurface::Parameters &params) {
@@ -177,7 +173,8 @@ void setFragmentPatchForMesh(Mesh *mesh, ChemicalStructure *structure) {
 
 void IsosurfaceCalculator::surfaceComplete() {
   qDebug() << "Task" << m_name << "finished in IsosurfaceCalculator";
-  bool preload = settings::readSetting(settings::keys::PRELOAD_MESH_FILES).toBool();
+  bool preload =
+      settings::readSetting(settings::keys::PRELOAD_MESH_FILES).toBool();
   qDebug() << "Raeding" << m_fileNames;
   QList<Mesh *> meshes = io::loadMeshes(m_fileNames, preload);
   if (m_deleteWorkingFiles) {
@@ -193,6 +190,10 @@ void IsosurfaceCalculator::surfaceComplete() {
     mesh->setAtomsInside(m_atomsInside);
     mesh->setAtomsOutside(m_atomsOutside);
     setFragmentPatchForMesh(mesh, params.structure);
+
+    // Set the mesh name using our improved naming
+    QString meshName = surfaceName(params, idx);
+    mesh->setObjectName(meshName);
 
     if (params.additionalProperties.size() > 0) {
       mesh->setSelectedProperty(isosurface::getSurfacePropertyDisplayName(

@@ -1260,10 +1260,10 @@ QString ChemicalStructure::getFragmentLabelForAtoms(
   // Calculate centroid
   occ::Mat3N positions = atomicPositionsForIndices(idxs);
   occ::Vec3 centroid = positions.rowwise().mean();
-  QString centroidStr = QString("[%.2f, %.2f, %.2f]")
-                            .arg(centroid(0))
-                            .arg(centroid(1))
-                            .arg(centroid(2));
+  QString centroidStr = QString("[%1, %2, %3]")
+                            .arg(centroid(0), 0, 'f', 2)
+                            .arg(centroid(1), 0, 'f', 2)
+                            .arg(centroid(2), 0, 'f', 2);
 
   // If all atoms belong to same fragment
   if (uniqueFragments.size() == 1) {
@@ -1292,8 +1292,14 @@ QString ChemicalStructure::getFragmentLabelForAtoms(
   QStringList fragmentLabels;
   for (const auto &fragIdx : uniqueFragments) {
     if (fragIdx.u >= 0) {
-      fragmentLabels.append(getFragmentLabel(fragIdx));
+      QString label = getFragmentLabel(fragIdx);
+      fragmentLabels.append(label);
     }
+  }
+
+  // If ALL fragment labels are unknown (??), just return the chemical formula
+  if (fragmentLabels.size() > 0 && fragmentLabels.size() == fragmentLabels.count("??")) {
+    return formula;
   }
 
   return QString("Mix of %1 - %2 %3")

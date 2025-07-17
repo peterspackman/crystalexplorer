@@ -85,34 +85,33 @@ void from_json(const nlohmann::json &j, isosurface::SurfaceDescription &s) {
   }
 }
 
-void to_json(nlohmann::json& j, const isosurface::Resolution& res) {
-    j = isosurface::resolutionToString(res);
+void to_json(nlohmann::json &j, const isosurface::Resolution &res) {
+  j = isosurface::resolutionToString(res);
 }
 
-void from_json(const nlohmann::json& j, isosurface::Resolution& res) {
-    res = isosurface::stringToResolution(QString::fromStdString(j.get<std::string>()));
+void from_json(const nlohmann::json &j, isosurface::Resolution &res) {
+  res = isosurface::stringToResolution(
+      QString::fromStdString(j.get<std::string>()));
 }
 
-void to_json(nlohmann::json& j, const isosurface::Kind& kind) {
-    j = isosurface::kindToString(kind).toStdString();
+void to_json(nlohmann::json &j, const isosurface::Kind &kind) {
+  j = isosurface::kindToString(kind).toStdString();
 }
 
-void from_json(const nlohmann::json& j, isosurface::Kind& kind) {
-    kind = isosurface::stringToKind(QString::fromStdString(j.get<std::string>()));
+void from_json(const nlohmann::json &j, isosurface::Kind &kind) {
+  kind = isosurface::stringToKind(QString::fromStdString(j.get<std::string>()));
 }
 
-void to_json(nlohmann::json& j, const isosurface::OrbitalDetails& details) {
-    j = {
-        {"label", details.label.toStdString()},
-        {"index", details.index},
-        {"occupied", details.occupied}
-    };
+void to_json(nlohmann::json &j, const isosurface::OrbitalDetails &details) {
+  j = {{"label", details.label.toStdString()},
+       {"index", details.index},
+       {"occupied", details.occupied}};
 }
 
-void from_json(const nlohmann::json& j, isosurface::OrbitalDetails& details) {
-    details.label = QString::fromStdString(j.at("label").get<std::string>());
-    details.index = j.at("index").get<int>();
-    details.occupied = j.at("occupied").get<bool>();
+void from_json(const nlohmann::json &j, isosurface::OrbitalDetails &details) {
+  details.label = QString::fromStdString(j.at("label").get<std::string>());
+  details.index = j.at("index").get<int>();
+  details.occupied = j.at("occupied").get<bool>();
 }
 
 namespace isosurface {
@@ -317,6 +316,42 @@ QString getSurfacePropertyDisplayName(QString s) {
   const auto &descriptions =
       GlobalConfiguration::getInstance()->getPropertyDescriptions();
   return descriptions.get(s).displayName;
+}
+
+QString generateSurfaceName(const Parameters &parameters,
+                            const QString &fragmentIdentifier) {
+  SurfaceDescription desc = getSurfaceDescription(parameters.kind);
+  QString surfaceType = desc.displayName;
+
+  // Use the fragment identifier from parameters, or the override
+  QString fragId = fragmentIdentifier.isEmpty() ? parameters.fragmentIdentifier
+                                                : fragmentIdentifier;
+
+  // Default fallback
+  if (fragId.isEmpty()) {
+    fragId = "Fragment";
+  }
+
+  // Build the name: "Kind FragmentID (resolution) [params]"
+  QString result = QString("%1 %2 (%3)")
+                       .arg(surfaceType)
+                       .arg(fragId)
+                       .arg(parameters.separation);
+
+  // Add technical parameters in brackets
+  QStringList params;
+  if (desc.needsIsovalue && parameters.isovalue != desc.defaultIsovalue) {
+    params << QString("iso=%1").arg(parameters.isovalue);
+  }
+  if (parameters.computeNegativeIsovalue) {
+    params << "±";
+  }
+
+  if (!params.isEmpty()) {
+    result += QString(" [%1]").arg(params.join(", "));
+  }
+
+  return result;
 }
 
 } // namespace isosurface

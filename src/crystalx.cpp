@@ -12,21 +12,21 @@
 #include <QUrl>
 #include <QtDebug>
 
+#include "aboutcrystalexplorerdialog.h"
 #include "confirmationbox.h"
 #include "crystalx.h"
 #include "dialoghtml.h"
-#include "plane.h"
-#include "planeinstance.h"
 #include "elementdata.h"
 #include "isosurface_calculator.h"
+#include "load_wavefunction.h"
 #include "mathconstants.h"
 #include "pair_energy_calculator.h"
+#include "plane.h"
+#include "planeinstance.h"
 #include "settings.h"
-#include "wavefunction_calculator.h"
-#include "load_wavefunction.h"
-#include "aboutcrystalexplorerdialog.h"
 #include "slabstructure.h"
 #include "surface_cut_generator.h"
+#include "wavefunction_calculator.h"
 
 Crystalx::Crystalx() : QMainWindow() {
   setupUi(this);
@@ -206,7 +206,7 @@ void Crystalx::initInfoViewer() {
 
   connect(infoViewer, &InfoViewer::energyColorSchemeChanged, this,
           &Crystalx::handleEnergyColorSchemeChanged);
-  
+
   // Connect surface selection changes to update info viewer
   connect(project, &Project::surfaceSelectionChanged, infoViewer,
           &InfoViewer::updateInfoViewerForSurfaceChange);
@@ -531,8 +531,9 @@ void Crystalx::initCloseContactsDialog() {
 
 void Crystalx::updateCrystalActions() {
   bool enable = project->currentScene();
-  bool hasCrystalStructure = enable && 
-    qobject_cast<CrystalStructure*>(project->currentScene()->chemicalStructure()) != nullptr;
+  bool hasCrystalStructure =
+      enable && qobject_cast<CrystalStructure *>(
+                    project->currentScene()->chemicalStructure()) != nullptr;
 
   completeFragmentsAction->setEnabled(enable);
   generateCellsAction->setEnabled(enable);
@@ -548,7 +549,7 @@ void Crystalx::updateCrystalActions() {
   InPlaneBendAction->setEnabled(enable);
   calculateEnergiesAction->setEnabled(enable);
   infoAction->setEnabled(enable);
-  
+
   // Crystal cuts only enabled when there's a crystal structure
   crystalCutsAction->setEnabled(hasCrystalStructure);
 }
@@ -660,7 +661,7 @@ void Crystalx::generateSlab() {
 
 void Crystalx::generateSlabFromPlane(int h, int k, int l, double offset) {
   Q_ASSERT(project->currentScene());
-  
+
   Scene *scene = project->currentScene();
   if (!scene) {
     qDebug() << "No current scene for slab generation";
@@ -672,46 +673,45 @@ void Crystalx::generateSlabFromPlane(int h, int k, int l, double offset) {
     qDebug() << "Current structure is not a crystal - cannot create slab";
     return;
   }
-  
+
   // Create and show the crystal cut dialog
   auto *dialog = new CrystalCutDialog(this);
   dialog->setMillerIndices(h, k, l);
   dialog->setInitialOffset(offset);
   dialog->setCrystalStructure(crystal);
-  
+
   // Connect the dialog's signal to actually create the slab
-  connect(dialog, &CrystalCutDialog::slabCutRequested, 
+  connect(dialog, &CrystalCutDialog::slabCutRequested,
           [this, crystal](const SlabCutOptions &options) {
-    
-    // For surface cuts, d-spacing units map directly to fractional units
-    // (i.e., 1.0 d = 1.0 fractional unit along the surface normal)
-    double fractionalOffset = options.offset;
-    
-    // Use the existing surface cut generation function
-    SlabStructure *slab = cx::crystal::generateSurfaceCut(
-      crystal, 
-      options.h, options.k, options.l, 
-      fractionalOffset,
-      options.thickness
-    );
-    
-    if (!slab) {
-      qDebug() << "Failed to generate slab from plane";
-      return;
-    }
+            // For surface cuts, d-spacing units map directly to fractional
+            // units (i.e., 1.0 d = 1.0 fractional unit along the surface
+            // normal)
+            double fractionalOffset = options.offset;
 
-    // Set a descriptive title
-    QString title = QString("Slab (%1,%2,%3) offset=%4d depth=%5Å")
-                    .arg(options.h).arg(options.k).arg(options.l)
-                    .arg(options.offset, 0, 'f', 2)
-                    .arg(options.thickness, 0, 'f', 1);
+            // Use the existing surface cut generation function
+            SlabStructure *slab = cx::crystal::generateSurfaceCut(
+                crystal, options.h, options.k, options.l, fractionalOffset,
+                options.thickness);
 
-    // Add the slab structure to the project
-    project->addSlabStructure(slab, title);
-    
-    qDebug() << "Created slab structure:" << title;
-  });
-  
+            if (!slab) {
+              qDebug() << "Failed to generate slab from plane";
+              return;
+            }
+
+            // Set a descriptive title
+            QString title = QString("Slab (%1,%2,%3) offset=%4d depth=%5Å")
+                                .arg(options.h)
+                                .arg(options.k)
+                                .arg(options.l)
+                                .arg(options.offset, 0, 'f', 2)
+                                .arg(options.thickness, 0, 'f', 1);
+
+            // Add the slab structure to the project
+            project->addSlabStructure(slab, title);
+
+            qDebug() << "Created slab structure:" << title;
+          });
+
   dialog->show();
 }
 
@@ -1102,6 +1102,7 @@ void Crystalx::getSurfaceParametersFromUser() {
   }
   auto atomIndices = structure->atomsWithFlags(AtomFlag::Selected);
   m_surfaceGenerationDialog->setAtomIndices(atomIndices);
+  m_surfaceGenerationDialog->setStructure(structure);
 
   m_surfaceGenerationDialog->setNumberOfElectronsForCalculation(
       structure->atomicNumbersForIndices(atomIndices).sum());
@@ -1128,15 +1129,15 @@ void Crystalx::showPlaneDialog() {
       auto *structure = scene->chemicalStructure();
       if (!structure)
         return;
-      
+
       // Create the plane with the structure as parent
       Plane *plane = m_planeDialog->createPlane(structure);
-      
-      // Plane instances are now created automatically by PlaneDialog based on configured offsets
-      
+
+      // Plane instances are now created automatically by PlaneDialog based on
+      // configured offsets
     });
   }
-  
+
   m_planeDialog->show();
 }
 
@@ -1144,7 +1145,8 @@ void Crystalx::showCrystalCutDialog() {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  auto *crystalStructure = qobject_cast<CrystalStructure*>(scene->chemicalStructure());
+  auto *crystalStructure =
+      qobject_cast<CrystalStructure *>(scene->chemicalStructure());
   if (!crystalStructure)
     return;
 
@@ -1154,7 +1156,7 @@ void Crystalx::showCrystalCutDialog() {
     connect(m_crystalCutDialog, &QDialog::accepted, this,
             &Crystalx::handleCrystalCutDialogAccepted);
   }
-  
+
   // Set the current structure in the dialog if needed
   m_crystalCutDialog->setCrystalStructure(crystalStructure);
   m_crystalCutDialog->show();
@@ -1164,31 +1166,33 @@ void Crystalx::handleCrystalCutDialogAccepted() {
   Scene *scene = project->currentScene();
   if (!scene)
     return;
-  auto *crystalStructure = qobject_cast<CrystalStructure*>(scene->chemicalStructure());
+  auto *crystalStructure =
+      qobject_cast<CrystalStructure *>(scene->chemicalStructure());
   if (!crystalStructure)
     return;
-  
+
   // Get the cut parameters from the dialog and generate the slab directly
   auto options = m_crystalCutDialog->getSlabOptions();
-  
-  // Use the same logic as generateSlabFromPlane but without showing another dialog
+
+  // Use the same logic as generateSlabFromPlane but without showing another
+  // dialog
   SlabStructure *slab = cx::crystal::generateSurfaceCut(
-    crystalStructure, 
-    options.h, options.k, options.l, 
-    options.offset,
-    options.thickness
-  );
-  
+      crystalStructure, options.h, options.k, options.l, options.offset,
+      options.thickness);
+
   if (!slab) {
     qDebug() << "Failed to generate slab from crystal cut dialog";
     return;
   }
 
-  // Set a descriptive title and add to project (following the same pattern as generateSlabFromPlane)
+  // Set a descriptive title and add to project (following the same pattern as
+  // generateSlabFromPlane)
   QString title = QString("Slab (%1,%2,%3) offset=%4d depth=%5Å")
-                    .arg(options.h).arg(options.k).arg(options.l)
-                    .arg(options.offset, 0, 'f', 2)
-                    .arg(options.thickness, 0, 'f', 1);
+                      .arg(options.h)
+                      .arg(options.k)
+                      .arg(options.l)
+                      .arg(options.offset, 0, 'f', 2)
+                      .arg(options.thickness, 0, 'f', 1);
 
   // Add the slab structure to the project
   project->addSlabStructure(slab, title);
@@ -1293,22 +1297,24 @@ void Crystalx::handleGenerateWavefunctionAction() {
 void Crystalx::handleLoadWavefunctionAction() {
   auto *structure = project->currentStructure();
   if (!structure) {
-    QMessageBox::warning(this, tr("Load Wavefunction"), 
-                         tr("No structure loaded. Please load a structure first."));
+    QMessageBox::warning(
+        this, tr("Load Wavefunction"),
+        tr("No structure loaded. Please load a structure first."));
     return;
   }
 
   auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
   if (selectedAtoms.empty()) {
-    QMessageBox::warning(this, tr("Load Wavefunction"), 
+    QMessageBox::warning(this, tr("Load Wavefunction"),
                          tr("No atoms selected. Please select atoms first."));
     return;
   }
 
-  const QString FILTER = tr("Wavefunction Files (*.molden *.molden.input *.fchk *.json *.wfn *.wfx)");
+  const QString FILTER = tr(
+      "Wavefunction Files (*.molden *.molden.input *.fchk *.json *.wfn *.wfx)");
   QString filename = QFileDialog::getOpenFileName(
       this, tr("Load Wavefunction File"), QDir::currentPath(), FILTER);
-  
+
   if (filename.isEmpty()) {
     return;
   }
@@ -1320,15 +1326,17 @@ void Crystalx::handleLoadWavefunctionAction() {
     params.structure = structure;
     params.atoms = selectedAtoms;
     params.accepted = true;
-    
+
     wavefunction->setParameters(params);
     wavefunction->setObjectName(QFileInfo(filename).baseName());
     wavefunction->setParent(structure);
-    
-    showStatusMessage(tr("Wavefunction loaded successfully from: %1").arg(filename));
+
+    showStatusMessage(
+        tr("Wavefunction loaded successfully from: %1").arg(filename));
   } else {
-    QMessageBox::critical(this, tr("Load Wavefunction"), 
-                         tr("Failed to load wavefunction from file: %1").arg(filename));
+    QMessageBox::critical(
+        this, tr("Load Wavefunction"),
+        tr("Failed to load wavefunction from file: %1").arg(filename));
   }
 }
 
@@ -1474,11 +1482,11 @@ void Crystalx::handleMeshSelectionChanged() {
   auto scene = project->currentScene();
   if (!scene)
     return;
-  
+
   auto *structure = scene->chemicalStructure();
   if (!structure)
     return;
-  
+
   // Try mesh instance first, then direct mesh
   auto *meshInstance = childPropertyController->getCurrentMeshInstance();
   if (meshInstance) {
@@ -1497,7 +1505,7 @@ void Crystalx::handleMeshSelectionChanged() {
           break;
         }
       }
-      
+
       if (firstInstance) {
         scene->setSelectedSurface(firstInstance);
         auto index = structure->treeModel()->indexFromObject(firstInstance);
@@ -1949,6 +1957,7 @@ void Crystalx::cloneSurface() {
   Mesh *mesh = childPropertyController->getCurrentMesh();
   if (!mesh) {
     qDebug() << "Clone surface called with no current mesh";
+    showStatusMessage("No surface selected for cloning");
     return;
   }
 
@@ -1958,20 +1967,41 @@ void Crystalx::cloneSurface() {
     return;
   }
 
+  showStatusMessage("Cloning surface...");
+
+  int clonedCount = 0;
   auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
   if (selectedAtoms.size() > 0) {
     auto *instance =
         MeshInstance::newInstanceFromSelectedAtoms(mesh, selectedAtoms);
-    qDebug() << "Cloned surface: " << instance;
-
+    if (instance) {
+      clonedCount++;
+      qDebug() << "Cloned surface: " << instance;
+    }
   } else {
     for (const auto &[fragIndex, fragment] : structure->getFragments()) {
       auto idxs = structure->atomIndicesForFragment(fragIndex);
       if (idxs.size() < 1)
         continue;
       auto *instance = MeshInstance::newInstanceFromSelectedAtoms(mesh, idxs);
-      qDebug() << "Cloned surface: " << instance;
+      if (instance) {
+        clonedCount++;
+        qDebug() << "Cloned surface: " << instance;
+      }
     }
+  }
+
+  // Ensure the scene updates to show the new surfaces
+  scene->handleSurfacesNeedUpdate();
+  glWindow->redraw();
+
+  // Provide feedback to the user
+  if (clonedCount > 0) {
+    showStatusMessage(QString("Cloned %1 surface%2")
+                          .arg(clonedCount)
+                          .arg(clonedCount == 1 ? "" : "s"));
+  } else {
+    showStatusMessage("No surfaces were cloned");
   }
 }
 
@@ -2314,8 +2344,8 @@ void Crystalx::cycleEnergyFramework(bool cycleBackwards) {
   */
 }
 
-
-void Crystalx::createSurfaceCut(int h, int k, int l, double offset, double depth) {
+void Crystalx::createSurfaceCut(int h, int k, int l, double offset,
+                                double depth) {
   Scene *scene = project->currentScene();
   if (!scene) {
     qDebug() << "No current scene for surface cut";
@@ -2324,12 +2354,14 @@ void Crystalx::createSurfaceCut(int h, int k, int l, double offset, double depth
 
   auto *crystal = qobject_cast<CrystalStructure *>(scene->chemicalStructure());
   if (!crystal) {
-    qDebug() << "Current structure is not a crystal - cannot create surface cut";
+    qDebug()
+        << "Current structure is not a crystal - cannot create surface cut";
     return;
   }
 
   // Generate the surface cut using SlabStructure with specified depth
-  SlabStructure *slab = cx::crystal::generateSurfaceCut(crystal, h, k, l, offset, depth);
+  SlabStructure *slab =
+      cx::crystal::generateSurfaceCut(crystal, h, k, l, offset, depth);
   if (!slab) {
     qDebug() << "Failed to generate surface cut";
     return;
@@ -2337,11 +2369,15 @@ void Crystalx::createSurfaceCut(int h, int k, int l, double offset, double depth
 
   // Set a descriptive title
   QString title = QString("Surface cut (%1,%2,%3) offset=%4 depth=%5Å")
-                  .arg(h).arg(k).arg(l).arg(offset, 0, 'f', 3).arg(depth, 0, 'f', 1);
+                      .arg(h)
+                      .arg(k)
+                      .arg(l)
+                      .arg(offset, 0, 'f', 3)
+                      .arg(depth, 0, 'f', 1);
 
   // Add the slab structure to the project
   project->addSlabStructure(slab, title);
-  
+
   qDebug() << "Created surface cut:" << title;
 }
 
