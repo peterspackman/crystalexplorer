@@ -50,6 +50,9 @@ public:
   inline const QVector3D right() const {
     return m_view.row(0).toVector3D().normalized();
   }
+  inline const QVector3D forward() const {
+    return (m_origin - m_location).normalized();
+  }
 
   inline void setModel(const QMatrix4x4 &m) { m_model = m; }
   inline void setView(const QMatrix4x4 &m) {

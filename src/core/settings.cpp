@@ -67,10 +67,10 @@ static const QMap<QString, QVariant> defaults{
     {keys::LIGHT_SPECULAR_3, QVariant::fromValue(Qt::white)},
     {keys::LIGHT_SPECULAR_4, QVariant::fromValue(Qt::white)},
     {keys::LIGHT_AMBIENT_INTENSITY, 0.1f},
-    {keys::LIGHT_INTENSITY_1, 10.0f},
-    {keys::LIGHT_INTENSITY_2, 10.0f},
-    {keys::LIGHT_INTENSITY_3, 10.0f},
-    {keys::LIGHT_INTENSITY_4, 10.0f},
+    {keys::LIGHT_INTENSITY_1, 12.0f},  // Key light (strongest)
+    {keys::LIGHT_INTENSITY_2, 6.0f},   // Fill light (medium)
+    {keys::LIGHT_INTENSITY_3, 8.0f},   // Rim light (medium-strong)
+    {keys::LIGHT_INTENSITY_4, 3.0f},   // Environment light (gentle)
     {keys::LIGHT_ATTENUATION_MINIMUM, 0.2f},
     {keys::LIGHT_ATTENUATION_MAXIMUM, 40.0f},
     {keys::LIGHTING_EXPOSURE, 1.0f},

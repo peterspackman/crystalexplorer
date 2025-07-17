@@ -974,14 +974,34 @@ void Scene::setModelViewProjection(const QMatrix4x4 &model,
 }
 
 void Scene::setLightPositionsBasedOnCamera() {
-  QVector3D pos = m_camera.location();
-  float d = 2.0f;
-  QVector3D right = m_camera.right() * d;
-  QVector3D up = m_camera.up() * d;
-  m_uniforms.u_lightPos.setColumn(0, QVector4D(pos + right * d + up * d));
-  m_uniforms.u_lightPos.setColumn(1, QVector4D(pos - right * d + up * d));
-  m_uniforms.u_lightPos.setColumn(2, QVector4D(-pos + right * d + up * d));
-  m_uniforms.u_lightPos.setColumn(3, QVector4D(-pos - right * d + up * d));
+  QVector3D cameraPos = m_camera.location();
+  QVector3D right = m_camera.right();
+  QVector3D up = m_camera.up();
+  QVector3D forward = m_camera.forward();
+  
+  // Studio lighting setup for professional appearance
+  float distance = 3.0f;
+  
+  // Key Light: Primary light from upper front-left (45° up, 30° left)
+  QVector3D keyLightDir = (-forward + right * 0.5f + up * 0.7f).normalized();
+  QVector3D keyLight = cameraPos + keyLightDir * distance;
+  
+  // Fill Light: Secondary light from upper front-right (30° up, 45° right) 
+  QVector3D fillLightDir = (-forward - right * 0.7f + up * 0.5f).normalized();
+  QVector3D fillLight = cameraPos + fillLightDir * distance;
+  
+  // Rim Light: Back light from upper back-left for depth and separation
+  QVector3D rimLightDir = (forward + right * 0.3f + up * 0.8f).normalized();
+  QVector3D rimLight = cameraPos + rimLightDir * distance;
+  
+  // Environment Light: Gentle upward light to lift shadows
+  QVector3D envLightDir = (-forward + up * 0.3f).normalized();
+  QVector3D envLight = cameraPos + envLightDir * (distance * 0.8f);
+  
+  m_uniforms.u_lightPos.setColumn(0, QVector4D(keyLight));    // Primary key light
+  m_uniforms.u_lightPos.setColumn(1, QVector4D(fillLight));   // Fill light
+  m_uniforms.u_lightPos.setColumn(2, QVector4D(rimLight));    // Rim light
+  m_uniforms.u_lightPos.setColumn(3, QVector4D(envLight));    // Environment light
 }
 
 void Scene::setRendererUniforms(Renderer *renderer, bool selection_mode) {
