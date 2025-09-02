@@ -1,0 +1,151 @@
+{
+  "references": [
+    {
+      "key": "Spackman2021",
+      "type": "article",
+      "authors": [
+        "Spackman,  Peter R.",
+        "Turner,  Michael J.",
+        "McKinnon,  Joshua J.",
+        "Wolff,  Stephen K.",
+        "Grimwood,  Daniel J.",
+        "Jayatilaka,  Dylan",
+        "Spackman,  Mark A."
+      ],
+      "title": "CrystalExplorer: a program for Hirshfeld surface analysis, visualization and quantitative analysis of molecular crystals",
+      "journal": "Journal of Applied Crystallography",
+      "year": "2021",
+      "volume": "54",
+      "issue": "3",
+      "pages": "1006–1011",
+      "doi": "10.1107/s1600576721002910",
+      "url": "http://dx.doi.org/10.1107/S1600576721002910"
+    },
+    {
+      "key": "Spackman2023b",
+      "type": "article",
+      "authors": [
+        "Spackman,  Peter R.",
+        "Spackman,  Mark A.",
+        "Gale,  Julian D."
+      ],
+      "title": "A transferable quantum mechanical energy model for intermolecular interactions using a single empirical parameter",
+      "journal": "IUCrJ",
+      "year": "2023",
+      "volume": "10",
+      "issue": "6",
+      "pages": "754–765",
+      "doi": "10.1107/s2052252523008941",
+      "url": "http://dx.doi.org/10.1107/S2052252523008941"
+    },
+    {
+      "key": "Spackman2023a",
+      "type": "article",
+      "authors": [
+        "Spackman,  Peter R.",
+        "Walisinghe,  Alvin J.",
+        "Anderson,  Michael W.",
+        "Gale,  Julian D."
+      ],
+      "title": "CrystalClear: an open, modular protocol for predicting molecular crystal growth from solution",
+      "journal": "Chemical Science",
+      "year": "2023",
+      "volume": "14",
+      "issue": "26",
+      "pages": "7192–7207",
+      "doi": "10.1039/d2sc06761g",
+      "url": "http://dx.doi.org/10.1039/D2SC06761G"
+    },
+    {
+      "key": "Mackenzie2017",
+      "type": "article",
+      "authors": [
+        "Mackenzie,  Campbell F.",
+        "Spackman,  Peter R.",
+        "Jayatilaka,  Dylan",
+        "Spackman,  Mark A."
+      ],
+      "title": "CrystalExplorermodel energies and energy frameworks: extension to metal coordination compounds, organic salts, solvates and open-shell systems",
+      "journal": "IUCrJ",
+      "year": "2017",
+      "volume": "4",
+      "issue": "5",
+      "pages": "575–587",
+      "doi": "10.1107/s205225251700848x",
+      "url": "http://dx.doi.org/10.1107/S205225251700848X"
+    },
+    {
+      "key": "Thomas2018",
+      "type": "article",
+      "authors": [
+        "Thomas,  Sajesh P.",
+        "Spackman,  Peter R.",
+        "Jayatilaka,  Dylan",
+        "Spackman,  Mark A."
+      ],
+      "title": "Accurate Lattice Energies for Molecular Crystals from Experimental Crystal Structures",
+      "journal": "Journal of Chemical Theory and Computation",
+      "year": "2018",
+      "volume": "14",
+      "issue": "3",
+      "pages": "1614–1623",
+      "doi": "10.1021/acs.jctc.7b01200",
+      "url": "http://dx.doi.org/10.1021/acs.jctc.7b01200"
+    },
+    {
+      "key": "Bannwarth2019",
+      "type": "article",
+      "authors": [
+        "Bannwarth,  Christoph",
+        "Ehlert,  Sebastian",
+        "Grimme,  Stefan"
+      ],
+      "title": "GFN2-xTB—An Accurate and Broadly Parametrized Self-Consistent Tight-Binding Quantum Chemical Method with Multipole Electrostatics and Density-Dependent Dispersion Contributions",
+      "journal": "Journal of Chemical Theory and Computation",
+      "year": "2019",
+      "volume": "15",
+      "issue": "3",
+      "pages": "1652–1671",
+      "doi": "10.1021/acs.jctc.8b01176",
+      "url": "http://dx.doi.org/10.1021/acs.jctc.8b01176"
+    },
+    {
+      "key": "Grimme2017",
+      "type": "article",
+      "authors": [
+        "Grimme,  Stefan",
+        "Bannwarth,  Christoph",
+        "Shushkov,  Philip"
+      ],
+      "title": "A Robust and Accurate Tight-Binding Quantum Chemical Method for Structures, Vibrational Frequencies, and Noncovalent Interactions of Large Molecular Systems Parametrized for All spd-Block Elements (Z = 1–86)",
+      "journal": "Journal of Chemical Theory and Computation",
+      "year": "2017",
+      "volume": "13",
+      "issue": "5",
+      "pages": "1989–2009",
+      "doi": "10.1021/acs.jctc.7b00118",
+      "url": "http://dx.doi.org/10.1021/acs.jctc.7b00118"
+    },
+    {
+      "key": "Spicher2020",
+      "type": "article",
+      "authors": [
+        "Spicher,  Sebastian",
+        "Grimme,  Stefan"
+      ],
+      "title": "Robust Atomistic Modeling of Materials, Organometallic, and Biochemical Systems",
+      "journal": "Angewandte Chemie International Edition",
+      "year": "2020",
+      "volume": "59",
+      "issue": "36",
+      "pages": "15665–15673",
+      "doi": "10.1002/anie.202004239",
+      "url": "http://dx.doi.org/10.1002/anie.202004239"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "generated_from": "/Users/285699f/git/crystalexplorer/references.bib",
+    "count": 8
+  }
+}
