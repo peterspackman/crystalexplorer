@@ -128,6 +128,7 @@ private slots:
   void updateAtomLabelContextMenu(QMenu *contextMenu);
   void contextualSelectAtomsInsideSurface();
   void contextualSelectAtomsOutsideSurface();
+  void contextualGenerateAtomsInsideSurface();
   void contextualGenerateInternalFragment();
   void contextualGenerateExternalFragment();
   void contextualGenerateAllExternalFragments();

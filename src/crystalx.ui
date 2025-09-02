@@ -41,9 +41,16 @@
       <string>Open Recent</string>
      </property>
     </widget>
+    <widget class="QMenu" name="importMenu">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="importElasticTensorAction"/>
+    </widget>
     <addaction name="fileNewAction"/>
     <addaction name="fileOpenAction"/>
     <addaction name="openRecentMenu"/>
+    <addaction name="importMenu"/>
     <addaction name="separator"/>
     <addaction name="fileSaveAction"/>
     <addaction name="fileSaveAsAction"/>
@@ -1096,6 +1103,14 @@
   <action name="actionImport">
    <property name="text">
     <string>Import...</string>
+   </property>
+  </action>
+  <action name="importElasticTensorAction">
+   <property name="text">
+    <string>Elastic Tensor...</string>
+   </property>
+   <property name="statusTip">
+    <string>Import elastic tensor data from file or clipboard</string>
    </property>
   </action>
   <action name="crystalCutsAction">

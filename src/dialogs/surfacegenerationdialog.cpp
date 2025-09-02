@@ -7,6 +7,8 @@
 
 #include <QDebug>
 #include <QSignalBlocker>
+#include <QStandardItemModel>
+#include <algorithm>
 
 SurfaceGenerationDialog::SurfaceGenerationDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::SurfaceGenerationDialog()) {
@@ -119,6 +121,9 @@ void SurfaceGenerationDialog::validate() {
   if (prop != "None") {
     parameters.additionalProperties.append(prop);
   }
+  
+  // Note: Background density for slab structures is handled directly in isosurface_calculator
+  
   parameters.separation =
       isosurface::resolutionValue(ui->resolutionComboBox->currentLevel());
   parameters.fragmentIdentifier = generateFragmentIdentifier();
@@ -365,6 +370,30 @@ SurfaceGenerationDialog::atomIndices() const {
 
 void SurfaceGenerationDialog::setStructure(ChemicalStructure *structure) {
   m_structure = structure;
+  
+  // For slab structures, disable inappropriate surface types instead of removing them
+  if (structure && structure->structureType() == ChemicalStructure::StructureType::Surface) {
+    // Disable surfaces that don't work properly with 2D slab structures
+    for (int i = 0; i < ui->surfaceComboBox->count(); i++) {
+      QString surfaceType = ui->surfaceComboBox->itemData(i).toString();
+      auto kind = isosurface::stringToKind(surfaceType);
+      
+      // Disable void surfaces for slab structures (3D crystal packing analysis)
+      bool shouldDisable = (kind == isosurface::Kind::Void);
+      
+      if (shouldDisable) {
+        // Disable the item and add explanatory text
+        auto model = qobject_cast<QStandardItemModel*>(ui->surfaceComboBox->model());
+        if (model) {
+          auto item = model->item(i);
+          if (item) {
+            item->setEnabled(false);
+            item->setToolTip("Not available for 2D slab structures");
+          }
+        }
+      }
+    }
+  }
 }
 
 QString SurfaceGenerationDialog::generateFragmentIdentifier() const {

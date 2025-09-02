@@ -195,6 +195,7 @@ public:
   void generateAllExternalFragments();
   void generateInternalFragment();
   void generateExternalFragment();
+  void generateAtomsInsideSurface();
 
   bool hasAllAtomsSelected();
 

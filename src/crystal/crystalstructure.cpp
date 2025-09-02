@@ -518,6 +518,60 @@ void CrystalStructure::deleteAtoms(const std::vector<GenericAtomIndex> &atoms) {
   updateBondGraph();
 }
 
+std::vector<GenericAtomIndex> CrystalStructure::atomsInBoundingBox(const occ::Vec3& min, const occ::Vec3& max) const {
+  std::vector<GenericAtomIndex> result;
+  
+  // For crystal structures, we need to consider all atoms in the unit cell and their periodic images
+  const auto &uc_atoms = m_crystal.unit_cell_atoms();
+  const int numUnitCellAtoms = uc_atoms.size();
+  
+  // Convert bounding box to fractional coordinates
+  occ::Vec3 fracMin = m_crystal.to_fractional(min);
+  occ::Vec3 fracMax = m_crystal.to_fractional(max);
+  
+  // Ensure min/max are ordered correctly
+  occ::Vec3 actualMin = fracMin.cwiseMin(fracMax);
+  occ::Vec3 actualMax = fracMin.cwiseMax(fracMax);
+  
+  // Calculate how many unit cells we need to check in each direction
+  int minX = static_cast<int>(std::floor(actualMin.x())) - 1;
+  int maxX = static_cast<int>(std::ceil(actualMax.x())) + 1;
+  int minY = static_cast<int>(std::floor(actualMin.y())) - 1;
+  int maxY = static_cast<int>(std::ceil(actualMax.y())) + 1;
+  int minZ = static_cast<int>(std::floor(actualMin.z())) - 1;
+  int maxZ = static_cast<int>(std::ceil(actualMax.z())) + 1;
+  
+  // Check atoms in all relevant unit cells
+  for (int cellX = minX; cellX <= maxX; ++cellX) {
+    for (int cellY = minY; cellY <= maxY; ++cellY) {
+      for (int cellZ = minZ; cellZ <= maxZ; ++cellZ) {
+        for (int atomIdx = 0; atomIdx < numUnitCellAtoms; ++atomIdx) {
+          // Calculate position of this atom in this unit cell
+          occ::Vec3 fracPos = uc_atoms.frac_pos.col(atomIdx) + occ::Vec3(cellX, cellY, cellZ);
+          occ::Vec3 cartPos = m_crystal.to_cartesian(fracPos);
+          
+          // Check if atom is within bounding box
+          if (cartPos.x() >= min.x() && cartPos.x() <= max.x() &&
+              cartPos.y() >= min.y() && cartPos.y() <= max.y() &&
+              cartPos.z() >= min.z() && cartPos.z() <= max.z()) {
+            
+            GenericAtomIndex idx{atomIdx, cellX, cellY, cellZ};
+            result.push_back(idx);
+          }
+        }
+      }
+    }
+  }
+  
+  return result;
+}
+
+void CrystalStructure::addAtomsByGenericIndex(const std::vector<GenericAtomIndex> &indices, const AtomFlags &flags) {
+  // CrystalStructure implementation - delegate to addAtomsByCrystalIndex and update bonds
+  addAtomsByCrystalIndex(indices, flags);
+  updateBondGraph();
+}
+
 void CrystalStructure::deleteAtomsByOffset(
     const std::vector<int> &atomIndices) {
   const int originalNumAtoms = numberOfAtoms();

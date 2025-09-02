@@ -107,11 +107,6 @@ private:
   OccCrystal m_parentCrystal;
   CrystalSurfaceCutOptions m_lastOptions;
   
-  // Store base slab atom data for periodic expansion
-  occ::Mat3N m_baseSlabPositions;          // Base atom positions in slab
-  occ::IVec m_baseSlabNumbers;             // Atomic numbers for base atoms
-  std::vector<QString> m_baseSlabLabels;   // Labels for base atoms
-  
   // Bond connectivity for 2D slab
   mutable occ::core::graph::PeriodicBondGraph m_slabConnectivity;
 };

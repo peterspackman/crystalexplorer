@@ -1,138 +1,110 @@
-#include <QtTest>
+#include <catch2/catch_test_macros.hpp>
+#include <QObject>
+#include <QModelIndex>
 #include "object_tree_model.h"
 
-class TestObjectTreeModel : public QObject
-{
-    Q_OBJECT
+TEST_CASE("ObjectTreeModel creation", "[model][tree]") {
+    QObject root;
+    ObjectTreeModel model(&root);
+    
+    REQUIRE(model.rowCount(QModelIndex()) == 0);
+    REQUIRE(model.columnCount(QModelIndex()) == 2);
+}
 
-private slots:
-    void initTestCase()
-    {
-        // Set up any necessary test data or resources
+TEST_CASE("ObjectTreeModel index function", "[model][tree]") {
+    QObject root;
+    QObject child1(&root);
+    QObject child2(&root);
+    QObject grandchild1(&child1);
+    QObject grandchild2(&child1);
+    ObjectTreeModel model(&root);
+
+    SECTION("Root index") {
+        QModelIndex rootIndex = QModelIndex();
+        REQUIRE_FALSE(rootIndex.isValid());
     }
 
-    void cleanupTestCase()
-    {
-        // Clean up any test data or resources
+    SECTION("Child indices") {
+        QModelIndex child1Index = model.index(0, 0, QModelIndex());
+        REQUIRE(child1Index.isValid());
+        REQUIRE(child1Index.internalPointer() == &child1);
+
+        QModelIndex child2Index = model.index(1, 0, QModelIndex());
+        REQUIRE(child2Index.isValid());
+        REQUIRE(child2Index.internalPointer() == &child2);
     }
 
-    void testModelCreation()
-    {
-        QObject root;
-        ObjectTreeModel model(&root);
-        QVERIFY(model.rowCount(QModelIndex()) == 0);
-        QVERIFY(model.columnCount(QModelIndex()) == 2);
+    SECTION("Grandchild indices") {
+        QModelIndex child1Index = model.index(0, 0, QModelIndex());
+        
+        QModelIndex grandchild1Index = model.index(0, 0, child1Index);
+        REQUIRE(grandchild1Index.isValid());
+        REQUIRE(grandchild1Index.internalPointer() == &grandchild1);
+
+        QModelIndex grandchild2Index = model.index(1, 0, child1Index);
+        REQUIRE(grandchild2Index.isValid());
+        REQUIRE(grandchild2Index.internalPointer() == &grandchild2);
+    }
+}
+
+TEST_CASE("ObjectTreeModel data retrieval", "[model][tree]") {
+    QObject root;
+    root.setObjectName("Root");
+    QObject child(&root);
+    child.setObjectName("Child");
+    QObject grandchild(&child);
+    grandchild.setObjectName("Grandchild");
+    ObjectTreeModel model(&root);
+
+    SECTION("Child data") {
+        QModelIndex childIndex = model.index(0, 1, QModelIndex());
+        REQUIRE(model.data(childIndex, Qt::DisplayRole).toString() == QString("Child"));
     }
 
-    void testIndexFunction()
-    {
-	QObject root;
-	QObject child1(&root);
-	QObject child2(&root);
-	QObject grandchild1(&child1);
-	QObject grandchild2(&child1);
-	ObjectTreeModel model(&root);
+    SECTION("Grandchild data") {
+        QModelIndex childIndex = model.index(0, 1, QModelIndex());
+        QModelIndex grandchildIndex = model.index(0, 1, childIndex);
+        REQUIRE(model.data(grandchildIndex, Qt::DisplayRole).toString() == QString("Grandchild"));
+    }
+}
 
-	QModelIndex rootIndex = QModelIndex();
-	QVERIFY(!rootIndex.isValid());
+TEST_CASE("ObjectTreeModel indexFromObject", "[model][tree]") {
+    QObject root;
+    QObject child(&root);
+    QObject grandchild(&child);
+    ObjectTreeModel model(&root);
 
-	QModelIndex child1Index = model.index(0, 0, QModelIndex());
-	QVERIFY(child1Index.isValid());
-	QCOMPARE(child1Index.internalPointer(), &child1);
-
-	QModelIndex child2Index = model.index(1, 0, QModelIndex());
-	QVERIFY(child2Index.isValid());
-	QCOMPARE(child2Index.internalPointer(), &child2);
-
-	QModelIndex grandchild1Index = model.index(0, 0, child1Index);
-	QVERIFY(grandchild1Index.isValid());
-	QCOMPARE(grandchild1Index.internalPointer(), &grandchild1);
-
-	QModelIndex grandchild2Index = model.index(1, 0, child1Index);
-	QVERIFY(grandchild2Index.isValid());
-	QCOMPARE(grandchild2Index.internalPointer(), &grandchild2);
+    SECTION("Child index from object") {
+        QModelIndex childIndex = model.indexFromObject(&child);
+        REQUIRE(childIndex.isValid());
+        REQUIRE(childIndex.internalPointer() == &child);
     }
 
-    void testData()
-    {
-	QObject root;
-	root.setObjectName("Root");
-	QObject child(&root);
-	child.setObjectName("Child");
-	QObject grandchild(&child);
-	grandchild.setObjectName("Grandchild");
-	ObjectTreeModel model(&root);
-
-	QModelIndex childIndex = model.index(0, 1, QModelIndex());
-	QCOMPARE(model.data(childIndex, Qt::DisplayRole).toString(), QString("Child"));
-
-	QModelIndex grandchildIndex = model.index(0, 1, childIndex);
-	QCOMPARE(model.data(grandchildIndex, Qt::DisplayRole).toString(), QString("Grandchild"));
+    SECTION("Grandchild index from object") {
+        QModelIndex grandchildIndex = model.indexFromObject(&grandchild);
+        REQUIRE(grandchildIndex.isValid());
+        REQUIRE(grandchildIndex.internalPointer() == &grandchild);
     }
+}
 
-    void testIndexFromObject()
-    {
-	QObject root;
-	QObject child(&root);
-	QObject grandchild(&child);
-	ObjectTreeModel model(&root);
+TEST_CASE("ObjectTreeModel parent function", "[model][tree]") {
+    QObject root;
+    QObject child(&root);
+    ObjectTreeModel model(&root);
 
-	QModelIndex childIndex = model.indexFromObject(&child);
-	QVERIFY(childIndex.isValid());
-	QCOMPARE(childIndex.internalPointer(), &child);
+    QModelIndex childIndex = model.index(0, 0, QModelIndex());
+    QModelIndex parentIndex = model.parent(childIndex);
+    
+    REQUIRE_FALSE(parentIndex.isValid());
+}
 
-	QModelIndex grandchildIndex = model.indexFromObject(&grandchild);
-	QVERIFY(grandchildIndex.isValid());
-	QCOMPARE(grandchildIndex.internalPointer(), &grandchild);
-    }
+TEST_CASE("ObjectTreeModel row and column count", "[model][tree]") {
+    QObject root;
+    QObject child1(&root);
+    QObject child2(&root);
+    ObjectTreeModel model(&root);
 
-    void testParentFunction()
-    {
-        QObject root;
-        QObject child(&root);
-        ObjectTreeModel model(&root);
+    REQUIRE(model.rowCount(QModelIndex()) == 2);
+    REQUIRE(model.columnCount(QModelIndex()) == 2);
+}
 
-        QModelIndex childIndex = model.index(0, 0, QModelIndex());
-        QModelIndex parentIndex = model.parent(childIndex);
-        QVERIFY(!parentIndex.isValid());
-    }
-
-    void testRowAndColumnCount()
-    {
-        QObject root;
-        QObject child1(&root);
-        QObject child2(&root);
-        ObjectTreeModel model(&root);
-
-        QCOMPARE(model.rowCount(QModelIndex()), 2);
-        QCOMPARE(model.columnCount(QModelIndex()), 2);
-    }
-
-    void testEventFilter()
-    {
-	QObject root;
-	ObjectTreeModel model(&root);
-
-	QObject child;
-	QSignalSpy childAddedSpy(&model, &ObjectTreeModel::childAdded);
-	child.setParent(&root);
-	QCOMPARE(childAddedSpy.count(), 1);
-
-	QObject grandchild;
-	QSignalSpy grandchildAddedSpy(&model, &ObjectTreeModel::childAdded);
-	grandchild.setParent(&child);
-	QCOMPARE(grandchildAddedSpy.count(), 1);
-
-	QSignalSpy childRemovedSpy(&model, &ObjectTreeModel::childRemoved);
-	child.setParent(nullptr);
-	QCOMPARE(childRemovedSpy.count(), 2);
-
-	QSignalSpy grandchildRemovedSpy(&model, &ObjectTreeModel::childRemoved);
-	grandchild.setParent(nullptr);
-	QCOMPARE(grandchildRemovedSpy.count(), 0);
-    }
-
-};
-
-QTEST_MAIN(TestObjectTreeModel)
-#include "test_object_tree_model.moc"

@@ -19,6 +19,7 @@
 #include "planeinstance.h"
 #include "planeinfowidget.h"
 #include "planeinstancewidget.h"
+#include "elastic_tensor_results.h"
 #include "ui_childpropertycontroller.h"
 
 class ChildPropertyController : public QWidget,
@@ -47,6 +48,7 @@ public slots:
   void setCurrentPairInteractions(PairInteractions *);
   void setCurrentPlane(Plane *);
   void setCurrentPlaneInstance(PlaneInstance *);
+  void setCurrentElasticTensor(ElasticTensorResults *);
   void setSelectedPropertyValue(float);
 
 protected slots:
@@ -77,6 +79,7 @@ private:
     Framework,
     Plane,
     PlaneInstance,
+    ElasticTensor,
   };
 
   void setFrameworkDisplay(FrameworkOptions::Display);
@@ -87,9 +90,12 @@ private:
   void showFrameworkTabs(bool);
   void showPlaneTabs(bool);
   void showPlaneInstanceTabs(bool);
+  void showElasticTensorTabs(bool);
   void createPlanePropertiesTab();
   void createPlaneInstancePropertiesTab();
+  void createElasticTensorPropertiesTab();
   void updatePlaneInfo(Plane *plane, PlaneInstance *instance = nullptr);
+  void updateElasticTensorInfo(ElasticTensorResults *tensor);
   void showTab(QWidget *, bool, QString);
   void emitFrameworkOptions();
 
@@ -119,6 +125,10 @@ private:
   PlaneInstanceWidget *m_planeInstanceWidget{nullptr};
   
   QWidget *m_planeInstancePropertiesTab{nullptr};
+  
+  // Elastic tensor properties tab
+  QWidget *m_elasticTensorPropertiesTab{nullptr};
+  ElasticTensorResults *m_currentElasticTensor{nullptr};
   QMap<QString, Mesh::ScalarPropertyRange> m_clampedProperties;
   QColor m_customFrameworkColor{Qt::blue};
 };

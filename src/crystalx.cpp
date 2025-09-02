@@ -386,6 +386,10 @@ void Crystalx::initMenuConnections() {
   connect(preferencesAction, &QAction::triggered, this,
           &Crystalx::showPreferencesDialog);
 
+  // Import menu
+  connect(importElasticTensorAction, &QAction::triggered, this,
+          &Crystalx::showElasticTensorImportDialog);
+
   connect(actionExport_As, &QAction::triggered, this, &Crystalx::exportAs);
   connect(quickExportAction, &QAction::triggered, this,
           &Crystalx::quickExportCurrentGraphics);
@@ -648,9 +652,30 @@ void Crystalx::clearAll() { project->deleteAllStructures(); }
 void Crystalx::generateSlab() {
   Q_ASSERT(project->currentScene());
 
+  // Determine periodicity based on current structure
+  int periodicDimensions = 3; // Default to 3D
+  auto structure = project->currentScene()->chemicalStructure();
+  if (structure) {
+    auto structureType = structure->structureType();
+    switch (structureType) {
+      case ChemicalStructure::StructureType::Cluster:
+        periodicDimensions = 0;
+        break;
+      case ChemicalStructure::StructureType::Wire:
+        periodicDimensions = 1;
+        break;
+      case ChemicalStructure::StructureType::Surface:
+        periodicDimensions = 2;
+        break;
+      case ChemicalStructure::StructureType::Crystal:
+        periodicDimensions = 3;
+        break;
+    }
+  }
+
   bool ok{false};
   auto slabOptions = CellLimitsDialog::getSlabGenerationOptions(
-      0, "Generate slab", QString(), ok);
+      0, "Generate slab", QString(), periodicDimensions, ok);
 
   if (ok) {
     m_savedSlabGenerationOptions =
@@ -2014,6 +2039,16 @@ void Crystalx::showEnergyCalculationDialog() {
   if (!structure)
     return;
 
+  // Energy calculations are not supported for slab structures
+  if (structure->structureType() == ChemicalStructure::StructureType::Surface) {
+    QMessageBox::information(this, "Energy Calculation", 
+                           "Energy calculations are not available for slab structures.\n\n"
+                           "Energy calculations are designed for analyzing intermolecular "
+                           "interactions in 3D crystal structures and are not applicable "
+                           "to 2D periodic slab structures.");
+    return;
+  }
+
   auto completeFragments = structure->completedFragments();
   qDebug() << "Complete fragments:" << completeFragments.size();
   auto selectedFragments = structure->selectedFragments();
@@ -2077,6 +2112,40 @@ void Crystalx::showEnergyCalculationDialog() {
     QString errorMessage = baseMessage + cond1 + cond2 + cond3;
     QMessageBox::warning(this, "Error", errorMessage);
   }
+}
+
+void Crystalx::showElasticTensorImportDialog() {
+  if (!m_elasticTensorDialog) {
+    m_elasticTensorDialog = new ElasticTensorDialog(this);
+    
+    connect(m_elasticTensorDialog, &QDialog::accepted, this, [this]() {
+      // Get the elastic tensor results from the dialog
+      ElasticTensorResults* tensorResults = m_elasticTensorDialog->elasticTensorResults();
+      if (tensorResults) {
+        Scene* scene = project->currentScene();
+        if (scene) {
+          ChemicalStructure* structure = scene->chemicalStructure();
+          if (structure) {
+            // Add the elastic tensor as a child of the chemical structure
+            tensorResults->setParent(structure);
+            
+            statusBar()->showMessage(QString("Imported elastic tensor: %1").arg(tensorResults->name()), 3000);
+            qDebug() << "Elastic tensor added to structure:" << tensorResults->name();
+          } else {
+            QMessageBox::warning(this, "Import Error", 
+              "No chemical structure available. Please load a structure first.");
+          }
+        } else {
+          QMessageBox::warning(this, "Import Error", 
+            "No scene available. Please create or load a project first.");
+        }
+      }
+    });
+  }
+  
+  m_elasticTensorDialog->show();
+  m_elasticTensorDialog->raise();
+  m_elasticTensorDialog->activateWindow();
 }
 
 void Crystalx::calculatePairEnergiesWithExistingWavefunctions(

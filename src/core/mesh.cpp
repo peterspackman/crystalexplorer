@@ -408,6 +408,144 @@ const std::vector<GenericAtomIndex> &Mesh::atomsOutside() const {
   return m_atomsOutside;
 }
 
+bool Mesh::containsPoint(const occ::Vec3& point) const {
+  // Multi-ray consensus algorithm for robust point-in-mesh testing
+  // Works for arbitrary closed meshes (convex and non-convex)
+  
+  // Use carefully chosen ray directions to avoid edge cases
+  // Based on golden ratio and other irrational numbers to minimize 
+  // chance of hitting edges exactly
+  const double phi = (1.0 + std::sqrt(5.0)) / 2.0; // Golden ratio
+  const double sqrt2 = std::sqrt(2.0);
+  const double sqrt3 = std::sqrt(3.0);
+  
+  std::vector<occ::Vec3> rayDirections = {
+    occ::Vec3(1.0, phi, 1.0/phi).normalized(),           // Golden ratio based
+    occ::Vec3(-phi, 1.0, 1.0/phi).normalized(),          // Golden ratio based  
+    occ::Vec3(1.0/phi, -1.0, phi).normalized(),          // Golden ratio based
+    occ::Vec3(sqrt2, sqrt3, 1.0).normalized(),           // Irrational direction
+    occ::Vec3(-1.0, sqrt2, sqrt3).normalized(),          // Irrational direction
+    occ::Vec3(sqrt3, -sqrt2, 1.0).normalized(),          // Irrational direction
+    occ::Vec3(1.0, 1.0, 1.0).normalized()                // Simple diagonal
+  };
+  
+  int insideVotes = 0;
+  const double epsilon = 1e-12; // Very tight epsilon for robustness
+  
+  for (const auto& rayDir : rayDirections) {
+    int intersectionCount = 0;
+    
+    for (int f = 0; f < m_faces.cols(); ++f) {
+      // Get triangle vertices
+      occ::Vec3 v0 = m_vertices.col(m_faces(0, f));
+      occ::Vec3 v1 = m_vertices.col(m_faces(1, f));
+      occ::Vec3 v2 = m_vertices.col(m_faces(2, f));
+      
+      // Möller-Trumbore ray-triangle intersection algorithm
+      occ::Vec3 edge1 = v1 - v0;
+      occ::Vec3 edge2 = v2 - v0;
+      occ::Vec3 h = rayDir.cross(edge2);
+      double a = edge1.dot(h);
+      
+      // Skip if ray is parallel to triangle (within epsilon)
+      if (std::abs(a) < epsilon) {
+        continue;
+      }
+      
+      double f_inv = 1.0 / a;
+      occ::Vec3 s = point - v0;
+      double u = f_inv * s.dot(h);
+      
+      // Check if intersection is within triangle bounds
+      if (u < 0.0 || u > 1.0) {
+        continue;
+      }
+      
+      occ::Vec3 q = s.cross(edge1);
+      double v = f_inv * rayDir.dot(q);
+      
+      if (v < 0.0 || u + v > 1.0) {
+        continue;
+      }
+      
+      // Compute t to find intersection point on ray
+      double t = f_inv * edge2.dot(q);
+      
+      // Only count intersections in positive ray direction
+      // Use small epsilon but be more inclusive for boundary points
+      if (t > epsilon) {
+        intersectionCount++;
+      }
+    }
+    
+    // Odd number of intersections means point is inside for this ray
+    if ((intersectionCount % 2) == 1) {
+      insideVotes++;
+    }
+  }
+  
+  // Use majority vote with tie-breaking favoring inside
+  const int totalRays = rayDirections.size();
+  const int majorityThreshold = totalRays / 2;
+  
+  if (insideVotes > majorityThreshold) {
+    return true;  // Clear majority says inside
+  } else if (insideVotes < majorityThreshold) {
+    return false; // Clear majority says outside  
+  } else {
+    // Tie case - favor inside for boundary points
+    // This handles points exactly on edges/faces more inclusively
+    return true;
+  }
+}
+
+std::pair<occ::Vec3, occ::Vec3> Mesh::boundingBox() const {
+  if (m_vertices.cols() == 0) {
+    return {occ::Vec3::Zero(), occ::Vec3::Zero()};
+  }
+  
+  occ::Vec3 min = m_vertices.col(0);
+  occ::Vec3 max = m_vertices.col(0);
+  
+  for (int i = 1; i < m_vertices.cols(); ++i) {
+    const occ::Vec3& v = m_vertices.col(i);
+    min = min.cwiseMin(v);
+    max = max.cwiseMax(v);
+  }
+  
+  return {min, max};
+}
+
+std::vector<GenericAtomIndex> Mesh::findAtomsInside(const ChemicalStructure* structure) const {
+  if (!structure) {
+    return {};
+  }
+  
+  // Use bounding box to get candidate atoms first (much more efficient for crystals)
+  auto [minBox, maxBox] = boundingBox();
+  auto candidateAtoms = structure->atomsInBoundingBox(minBox, maxBox);
+  
+  if (candidateAtoms.empty()) {
+    return {};
+  }
+  
+  // Get actual positions for all candidate atoms (handles periodic images correctly)
+  auto positions = structure->atomicPositionsForIndices(candidateAtoms);
+  
+  std::vector<GenericAtomIndex> result;
+  
+  for (int i = 0; i < candidateAtoms.size(); ++i) {
+    const auto& atomIndex = candidateAtoms[i];
+    const occ::Vec3& atomPos = positions.col(i);
+    
+    if (containsPoint(atomPos)) {
+      result.push_back(atomIndex);
+    }
+  }
+  
+  return result;
+}
+
 bool Mesh::haveChildMatchingTransform(
     const Eigen::Isometry3d &transform) const {
   // TODO do this in bulk

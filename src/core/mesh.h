@@ -139,6 +139,11 @@ public:
 
   void setAtomsOutside(const std::vector<GenericAtomIndex> &idxs);
   [[nodiscard]] const std::vector<GenericAtomIndex> &atomsOutside() const;
+  
+  // Geometric queries
+  [[nodiscard]] bool containsPoint(const occ::Vec3& point) const;
+  [[nodiscard]] std::pair<occ::Vec3, occ::Vec3> boundingBox() const; // returns (min, max)
+  [[nodiscard]] std::vector<GenericAtomIndex> findAtomsInside(const class ChemicalStructure* structure) const;
 
   bool haveChildMatchingTransform(const Eigen::Isometry3d &transform) const;
 

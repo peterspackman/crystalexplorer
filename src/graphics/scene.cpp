@@ -1494,6 +1494,25 @@ void Scene::generateExternalFragment() {
   }
 }
 
+void Scene::generateAtomsInsideSurface() {
+  if (m_selectedSurface.surface) {
+    auto atomIndices = m_selectedSurface.surface->atomsInside();
+    qDebug() << "Generating" << atomIndices.size() << "atoms inside surface";
+    
+    if (!atomIndices.empty()) {
+      // Add the atoms using the new method
+      m_structure->addAtomsByGenericIndex(atomIndices, AtomFlag::Selected);
+      qDebug() << "Added" << atomIndices.size() << "atoms inside surface";
+      
+      // Reset view to show only the atoms inside the surface
+      m_structure->resetAtomsAndBonds(true);
+      qDebug() << "Reset view to show only atoms inside surface";
+    } else {
+      qDebug() << "No atoms found inside surface";
+    }
+  }
+}
+
 bool Scene::hasAllAtomsSelected() {
   return m_structure->allAtomsHaveFlags(AtomFlag::Selected);
 }

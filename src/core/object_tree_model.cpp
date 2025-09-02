@@ -1,6 +1,7 @@
 #include "object_tree_model.h"
 #include "mesh.h"
 #include "plane.h"
+#include "elastic_tensor_results.h"
 #include <QEvent>
 #include <QIcon>
 
@@ -96,6 +97,10 @@ QVariant ObjectTreeModel::data(const QModelIndex &index, int role) const {
       auto *wfn = qobject_cast<MolecularWavefunction*>(itemObject);
       if (wfn) {
         return QIcon(":/images/psi.png");
+      }
+      auto *tensor = qobject_cast<ElasticTensorResults*>(itemObject);
+      if (tensor) {
+        return QIcon(":/images/mesh.png"); // Using mesh icon for now, could add specific tensor icon
       }
 
     }

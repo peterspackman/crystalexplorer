@@ -73,6 +73,10 @@ const QString ORCA_NTHREADS = ORCA_GROUP + "/numProcs";
 const QString XTB_GROUP = "xtb";
 const QString XTB_EXECUTABLE = XTB_GROUP + "/executablePath";
 
+// Custom Energy Calculators
+const QString CUSTOM_GROUP = "custom";
+const QString CUSTOM_CALCULATORS = CUSTOM_GROUP + "/calculators";
+
 const QString XH_NORMALIZATION = "XHNormalization";
 const QString CH_BOND_LENGTH = "CHBondLength";
 const QString NH_BOND_LENGTH = "NHBondLength";

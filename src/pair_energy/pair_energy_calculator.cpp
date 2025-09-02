@@ -1,9 +1,12 @@
 #include "pair_energy_calculator.h"
+#include "interaction_energy_calculator.h"
+#include "io_utilities.h"
 #include "load_pair_energy_json.h"
 #include "load_wavefunction.h"
-#include "io_utilities.h"
+#include "molecular_wavefunction_provider.h"
 #include "occpairtask.h"
 #include "settings.h"
+#include "simple_energy_provider.h"
 #include <QFile>
 #include <QTextStream>
 #include <occ/core/element.h>
@@ -154,8 +157,37 @@ void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params,
     if (!success) {
       qWarning() << "Invalid result from xtb task!";
     }
-    double e = wfn->totalEnergy() - params.reference_energy;
-    pair->addComponent("Total", e * 2625.5);
+
+    // Use provider system for interaction energy calculation
+    SimpleEnergyProvider combinedProvider(wfn->totalEnergy(),
+                                          xtb::methodToString(params.method));
+
+    // Get original parameters to access monomer wavefunctions
+    const auto &originalParams = m_parameters[result.name];
+    if (originalParams.wfnA && originalParams.wfnB) {
+      MolecularWavefunctionProvider providerA(originalParams.wfnA);
+      MolecularWavefunctionProvider providerB(originalParams.wfnB);
+
+      auto calcResult = InteractionEnergyCalculator::calculateInteraction(
+          &combinedProvider, &providerA, &providerB);
+
+      if (calcResult.success) {
+        double e = calcResult.interactionEnergy;
+        pair->addComponent("Total", e * 2625.5);
+        qDebug() << "Provider-based calculation:" << calcResult.description
+                 << "Energy:" << e << "kJ/mol:" << (e * 2625.5);
+      } else {
+        qWarning() << "Provider-based calculation failed:"
+                   << calcResult.description;
+        // Fallback to original calculation
+        double e = wfn->totalEnergy() - params.reference_energy;
+        pair->addComponent("Total", e * 2625.5);
+      }
+    } else {
+      qWarning() << "No monomer wavefunctions available, using fallback";
+      double e = wfn->totalEnergy() - params.reference_energy;
+      pair->addComponent("Total", e * 2625.5);
+    }
     pair->setParameters(m_parameters[result.name]);
     interactions->add(pair);
 

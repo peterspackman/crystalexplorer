@@ -11,6 +11,21 @@
 
 using OccCrystal = occ::crystal::Crystal;
 
+// Base atom data for periodic structures (similar to CrystalAtomRegion)
+struct BaseAtomData {
+  occ::Mat3N positions;        // Base atom positions
+  occ::IVec atomic_numbers;    // Atomic numbers for base atoms
+  std::vector<QString> labels; // Labels for base atoms
+
+  void resize(size_t n) {
+    positions.resize(3, n);
+    atomic_numbers.resize(n);
+    labels.resize(n);
+  }
+
+  size_t size() const { return positions.cols(); }
+};
+
 // Abstract base class for structures with periodic boundary conditions
 // Provides common functionality for both 3D crystals and 2D slabs
 class PeriodicStructure : public ChemicalStructure {
@@ -110,6 +125,9 @@ protected:
   std::vector<GenericAtomIndex> m_periodicAtomOffsets;
   ankerl::unordered_dense::map<GenericAtomIndex, int, GenericAtomIndexHash> m_periodicAtomMap;
   ContactSettings m_contactSettings;
+
+  // Base atom data (unit cell for crystals, base slab for slabs)
+  BaseAtomData m_baseAtoms;
 
   // Fragment management (shared between 2D and 3D)
   FragmentMap m_periodicFragments;

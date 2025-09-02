@@ -129,15 +129,26 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   pairSettings.allowInversion =
       m_options.allowInversion &
       m_interactions->hasPermutationSymmetry(m_options.model);
+  
+  // Safety check: ensure structure has completed fragments before finding pairs
+  if (m_structure->numberOfAtoms() == 0) {
+    return;
+  }
+  
   auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
 
   std::vector<FragmentDimer> uniquePairs = fragmentPairs.uniquePairs;
+  
+  // Safety check: ensure we have valid fragment pairs
+  if (uniquePairs.empty()) {
+    return;
+  }
 
   auto interactionMap =
       m_interactions->getInteractionsMatchingFragments(uniquePairs);
 
   auto uniqueInteractions = interactionMap.value(m_options.model, {});
-  if (uniqueInteractions.size() < uniquePairs.size())
+  if (uniqueInteractions.empty() || uniqueInteractions.size() < uniquePairs.size())
     return;
 
   QColor color = m_options.customColor;

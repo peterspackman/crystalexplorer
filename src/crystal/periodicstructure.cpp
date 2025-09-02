@@ -131,6 +131,7 @@ void PeriodicStructure::deleteIncompleteFragments() {
   }
 }
 
+
 void PeriodicStructure::deleteAtoms(const std::vector<GenericAtomIndex> &atoms) {
   std::vector<int> offsets;
   offsets.reserve(atoms.size());
@@ -738,7 +739,10 @@ PeriodicStructure::atomsWithFlags(const AtomFlags &flags, bool set) const {
 std::vector<GenericAtomIndex>
 PeriodicStructure::atomsSurroundingAtoms(const std::vector<GenericAtomIndex> &idxs,
                                         float radius) const {
-  return findAtomsWithinRadius(idxs, radius);
+  qDebug() << "PeriodicStructure::atomsSurroundingAtoms called with" << idxs.size() << "atoms, radius =" << radius;
+  auto result = findAtomsWithinRadius(idxs, radius);
+  qDebug() << "PeriodicStructure::atomsSurroundingAtoms returning" << result.size() << "atoms";
+  return result;
 }
 
 std::vector<GenericAtomIndex>
@@ -753,9 +757,12 @@ occ::IVec PeriodicStructure::atomicNumbersForIndices(
     const std::vector<GenericAtomIndex> &idxs) const {
   occ::IVec result(idxs.size());
   for (int i = 0; i < idxs.size(); i++) {
-    int atomIndex = genericIndexToIndex(idxs[i]);
-    if (atomIndex >= 0) {
-      result(i) = atomicNumbers()(atomIndex);
+    const auto &idx = idxs[i];
+    if (idx.unique >= 0 && idx.unique < m_baseAtoms.atomic_numbers.size()) {
+      result(i) = m_baseAtoms.atomic_numbers(idx.unique);
+    } else {
+      qDebug() << "Warning: Invalid unique index" << idx.unique << "for base atoms size" << m_baseAtoms.atomic_numbers.size();
+      result(i) = 1; // Default to hydrogen to avoid crashes
     }
   }
   return result;

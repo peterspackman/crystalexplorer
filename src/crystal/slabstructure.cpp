@@ -62,9 +62,7 @@ void SlabStructure::buildFromCrystal(const CrystalStructure &crystal,
   m_fragmentForAtom.clear();
   
   // Store base slab data
-  m_baseSlabPositions.resize(3, 0);
-  m_baseSlabNumbers.resize(0);
-  m_baseSlabLabels.clear();
+  m_baseAtoms.resize(0);
   
   int atomIndex = 0;
   int fragmentIndex = 0;
@@ -109,9 +107,9 @@ void SlabStructure::buildFromCrystal(const CrystalStructure &crystal,
   setAtoms(elementSymbols, positions, labels);
   
   // Store base slab data for periodic expansion
-  m_baseSlabPositions = atomicPositions();
-  m_baseSlabNumbers = atomicNumbers();
-  m_baseSlabLabels = labels;
+  m_baseAtoms.positions = atomicPositions();
+  m_baseAtoms.atomic_numbers = atomicNumbers();
+  m_baseAtoms.labels = labels;
   
   // Set up atom-to-fragment mapping
   fragmentIndex = 0;
@@ -203,7 +201,86 @@ FragmentIndex SlabStructure::fragmentIndexForGeneralAtom(GenericAtomIndex idx) c
 }
 
 void SlabStructure::buildSlab(SlabGenerationOptions options) {
-  qDebug() << "SlabStructure::buildSlab called - use buildFromCrystal instead";
+  // Clear existing atoms and mappings (following CrystalStructure pattern)
+  clearAtoms();
+  m_periodicAtomOffsets.clear();
+  m_periodicAtomMap.clear();
+
+  if (m_baseAtoms.size() == 0) {
+    qDebug() << "SlabStructure::buildSlab: no base slab data available";
+    return;
+  }
+
+  const auto &l = options.lowerBound;
+  const auto &u = options.upperBound;
+  occ::Vec3 lowerFrac(l[0], l[1], l[2]);
+  occ::Vec3 upperFrac(u[0], u[1], u[2]);
+
+  // Convert to integer bounds for 2D iteration (force z to 0 for slabs)
+  int lower_h = static_cast<int>(std::floor(lowerFrac[0]));
+  int lower_k = static_cast<int>(std::floor(lowerFrac[1]));
+  int upper_h = static_cast<int>(std::ceil(upperFrac[0]) - 1);
+  int upper_k = static_cast<int>(std::ceil(upperFrac[1]) - 1);
+  
+  std::vector<GenericAtomIndex> indices;
+
+  switch (options.mode) {
+    case SlabGenerationOptions::Mode::UnitCellMolecules: {
+      // For slabs, generate based on unit cell fragments in 2D
+      for (const auto &[fragIndex, frag] : m_unitCellFragments) {
+        for (int h = lower_h; h <= upper_h; h++) {
+          for (int k = lower_k; k <= upper_k; k++) {
+            for (auto &atomIndex : frag.atomIndices) {
+              // For slabs, only expand in h,k directions (z=0)
+              indices.push_back(
+                  GenericAtomIndex{atomIndex.unique, atomIndex.x + h,
+                                   atomIndex.y + k, 0});
+            }
+          }
+        }
+      }
+      break;
+    }
+    case SlabGenerationOptions::Mode::MoleculesCentroid:
+    case SlabGenerationOptions::Mode::MoleculesCenterOfMass:
+    case SlabGenerationOptions::Mode::MoleculesAnyAtom: {
+      // TODO: Implement molecule center-based filtering for slabs
+      // For now, fall back to atoms mode
+      qDebug() << "Molecule-based modes not yet implemented for slabs, using atoms mode";
+      [[fallthrough]];
+    }
+    default: {
+      // Atoms mode: generate slab similar to Crystal::slab() but for 2D
+      // Convert base slab positions to fractional coordinates
+      occ::Mat3N baseFracPos = convertCoordinates(m_baseAtoms.positions, CoordinateConversion::CartToFrac);
+      
+      for (int baseAtomIdx = 0; baseAtomIdx < baseFracPos.cols(); baseAtomIdx++) {
+        for (int h = lower_h; h <= upper_h; h++) {
+          for (int k = lower_k; k <= upper_k; k++) {
+            // Calculate fractional position for this periodic copy
+            occ::Vec3 fracPos = baseFracPos.col(baseAtomIdx) + occ::Vec3(h, k, 0);
+            
+            // Check if within fractional bounds (following Crystal::slab pattern)
+            if (fracPos[0] >= lowerFrac[0] && fracPos[0] <= upperFrac[0] &&
+                fracPos[1] >= lowerFrac[1] && fracPos[1] <= upperFrac[1]) {
+              indices.push_back(GenericAtomIndex{baseAtomIdx, h, k, 0});
+            }
+          }
+        }
+      }
+      break;
+    }
+  }
+
+  // Add atoms using the PeriodicStructure method
+  addPeriodicAtoms(indices);
+
+  // Handle molecule completion
+  if (options.mode == SlabGenerationOptions::Mode::MoleculesAnyAtom) {
+    completeAllFragments();
+  }
+
+  updateBondGraph();
 }
 
 CellIndexSet SlabStructure::occupiedCells() const {
@@ -319,7 +396,7 @@ bool SlabStructure::fromJson(const nlohmann::json &json) {
 
 void SlabStructure::addPeriodicAtoms(const std::vector<GenericAtomIndex> &unfilteredIndices,
                                     const AtomFlags &flags) {
-  qDebug() << "SlabStructure::addPeriodicAtoms called with" << unfilteredIndices.size() << "indices";
+  // Filter out already existing indices
   
   // Filter out already existing indices
   std::vector<GenericAtomIndex> indices;
@@ -331,7 +408,6 @@ void SlabStructure::addPeriodicAtoms(const std::vector<GenericAtomIndex> &unfilt
                  return m_periodicAtomMap.find(index) == m_periodicAtomMap.end();
                });
                
-  qDebug() << "After filtering, have" << indices.size() << "indices to add";
 
   const int numAtomsBefore = numberOfAtoms();
   
@@ -340,26 +416,16 @@ void SlabStructure::addPeriodicAtoms(const std::vector<GenericAtomIndex> &unfilt
   std::vector<QString> labelsToAdd;
 
   for (const auto &idx : indices) {
-    // Find base atom data by looking for the base unique index (without periodic offsets)
-    GenericAtomIndex baseIdx{idx.unique, 0, 0, 0};
-    int baseAtomIndex = genericIndexToIndex(baseIdx);
-    
-    if (baseAtomIndex == -1) {
-      qDebug() << "Warning: Could not find base atom for index" << idx.unique;
+    // Use stored base slab data directly instead of trying to find atoms via genericIndexToIndex
+    if (idx.unique >= m_baseAtoms.size() || idx.unique < 0) {
+      qDebug() << "Warning: Invalid base atom index" << idx.unique << "for slab with" << m_baseAtoms.size() << "base atoms";
       continue;
     }
     
-    // Get base atom properties
-    if (baseAtomIndex >= m_baseSlabPositions.cols() || 
-        baseAtomIndex >= m_baseSlabNumbers.rows() ||
-        baseAtomIndex >= m_baseSlabLabels.size()) {
-      qDebug() << "Warning: Base atom index out of range:" << baseAtomIndex;
-      continue;
-    }
-    
-    occ::Vec3 basePos = m_baseSlabPositions.col(baseAtomIndex);
-    int baseAtomicNum = m_baseSlabNumbers(baseAtomIndex);
-    QString baseLabel = m_baseSlabLabels[baseAtomIndex];
+    // Get base atom properties directly from stored data
+    occ::Vec3 basePos = m_baseAtoms.positions.col(idx.unique);
+    int baseAtomicNum = m_baseAtoms.atomic_numbers(idx.unique);
+    QString baseLabel = m_baseAtoms.labels[idx.unique];
     
     // Calculate position using 2D slab periodicity (only x,y shifts, not z)
     occ::Vec3 shiftVec = idx.x * m_surfaceVectors.col(0) + idx.y * m_surfaceVectors.col(1);
@@ -368,7 +434,11 @@ void SlabStructure::addPeriodicAtoms(const std::vector<GenericAtomIndex> &unfilt
     positionsToAdd.push_back(newPos);
     elementSymbols.push_back(QString::fromStdString(occ::core::Element(baseAtomicNum).symbol()));
     
-    QString label = QString("S%1_%2_%3").arg(idx.unique).arg(idx.x).arg(idx.y);
+    // Create label using original crystal label with periodic offset notation
+    QString label = baseLabel;
+    if (idx.x != 0 || idx.y != 0) {
+      label += QString("_%1_%2").arg(idx.x).arg(idx.y);
+    }
     labelsToAdd.push_back(label);
     
     // Update mapping
@@ -384,7 +454,6 @@ void SlabStructure::addPeriodicAtoms(const std::vector<GenericAtomIndex> &unfilt
     setAtomFlags(indices[i], flags);
   }
   
-  qDebug() << "Added" << indices.size() << "slab atoms";
   emit atomsChanged();
 }
 
@@ -395,7 +464,6 @@ void SlabStructure::resetAtomsAndBonds(bool toSelection) {
     return;
   }
   
-  qDebug() << "SlabStructure::resetAtomsAndBonds - resetting to initial slab molecules";
   
   // Clear current atoms
   clearAtoms();
@@ -405,20 +473,20 @@ void SlabStructure::resetAtomsAndBonds(bool toSelection) {
   m_fragmentForAtom.clear();
   
   // Rebuild from stored base slab data
-  if (m_baseSlabPositions.cols() == 0 || m_baseSlabNumbers.rows() == 0) {
+  if (m_baseAtoms.size() == 0) {
     qWarning() << "No base slab data available for reset";
     return;
   }
   
   std::vector<QString> elementSymbols;
   std::vector<occ::Vec3> positions;
-  std::vector<QString> labels = m_baseSlabLabels;
+  std::vector<QString> labels = m_baseAtoms.labels;
   
   // Convert base slab data back to atom format
-  for (int i = 0; i < m_baseSlabPositions.cols(); i++) {
-    positions.push_back(m_baseSlabPositions.col(i));
+  for (int i = 0; i < m_baseAtoms.size(); i++) {
+    positions.push_back(m_baseAtoms.positions.col(i));
     elementSymbols.push_back(QString::fromStdString(
-        occ::core::Element(m_baseSlabNumbers(i)).symbol()));
+        occ::core::Element(m_baseAtoms.atomic_numbers(i)).symbol()));
     
     // Create base atom index (no periodic offset)
     GenericAtomIndex atomIdx{i, 0, 0, 0};
@@ -438,7 +506,6 @@ void SlabStructure::resetAtomsAndBonds(bool toSelection) {
 }
 
 void SlabStructure::removePeriodicContactAtoms() {
-  qDebug() << "SlabStructure::removePeriodicContactAtoms called";
   
   std::vector<int> indicesToRemove;
   
@@ -463,7 +530,6 @@ void SlabStructure::removePeriodicContactAtoms() {
 }
 
 void SlabStructure::deleteAtomsByOffset(const std::vector<int> &atomIndices) {
-  qDebug() << "SlabStructure::deleteAtomsByOffset called with" << atomIndices.size() << "indices";
   
   const int originalNumAtoms = numberOfAtoms();
 
@@ -511,6 +577,8 @@ void SlabStructure::deleteAtomsByOffset(const std::vector<int> &atomIndices) {
 std::vector<GenericAtomIndex>
 SlabStructure::findAtomsWithinRadius(const std::vector<GenericAtomIndex> &centerAtoms,
                                     float radius) const {
+  qDebug() << "SlabStructure::findAtomsWithinRadius called with" << centerAtoms.size() << "center atoms, radius =" << radius;
+  
   using GenericAtomIndexSet = ankerl::unordered_dense::set<GenericAtomIndex, GenericAtomIndexHash>;
   GenericAtomIndexSet surrounding;
   
@@ -534,19 +602,15 @@ SlabStructure::findAtomsWithinRadius(const std::vector<GenericAtomIndex> &center
       for (int k = -maxK; k <= maxK; k++) {
         occ::Vec3 cellShift = h * m_surfaceVectors.col(0) + k * m_surfaceVectors.col(1);
         
-        // Check all base atoms (those with no periodic offset)
-        for (int i = 0; i < numberOfAtoms(); i++) {
-          GenericAtomIndex testIdx = indexToGenericIndex(i);
-          
-          // Only consider base atoms for expansion
-          if (testIdx.x != 0 || testIdx.y != 0 || testIdx.z != 0) continue;
-          
-          occ::Vec3 testPos = atomicPositions().col(i) + cellShift;
+        // Check all base atoms and generate their periodic images
+        for (int baseIdx = 0; baseIdx < m_baseAtoms.size(); baseIdx++) {
+          occ::Vec3 basePos = m_baseAtoms.positions.col(baseIdx);
+          occ::Vec3 testPos = basePos + cellShift;
           
           double distance = (centerPos - testPos).norm();
           if (distance <= radius && distance > 1e-6) { // Avoid self-inclusion
             // Create periodic image index (2D only, z stays 0)
-            GenericAtomIndex periodicIdx{testIdx.unique, testIdx.x + h, testIdx.y + k, testIdx.z};
+            GenericAtomIndex periodicIdx{baseIdx, h, k, 0};
             surrounding.insert(periodicIdx);
           }
         }
@@ -554,7 +618,16 @@ SlabStructure::findAtomsWithinRadius(const std::vector<GenericAtomIndex> &center
     }
   }
   
-  return std::vector<GenericAtomIndex>(surrounding.begin(), surrounding.end());
+  auto result = std::vector<GenericAtomIndex>(surrounding.begin(), surrounding.end());
+  qDebug() << "SlabStructure::findAtomsWithinRadius found" << result.size() << "surrounding atoms";
+  
+  if (result.empty()) {
+    qDebug() << "WARNING: No surrounding atoms found! This may cause issues with surface calculations.";
+    qDebug() << "Current structure has" << numberOfAtoms() << "atoms";
+    qDebug() << "Surface vectors: a =" << m_surfaceVectors.col(0).norm() << "b =" << m_surfaceVectors.col(1).norm();
+  }
+  
+  return result;
 }
 
 // Private helper methods

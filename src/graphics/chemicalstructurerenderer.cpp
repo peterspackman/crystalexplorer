@@ -314,6 +314,32 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
       settings::readSetting(settings::keys::CE_BLUE_COLOR).toString();
   const QColor UNITCELLCOLOR = QColor("#646464");
 
+  // Check structure type to determine dimensionality
+  bool isPeriodicX = true, isPeriodicY = true, isPeriodicZ = true;
+  auto structureType = m_structure->structureType();
+  
+  // For different structure types, determine which dimensions are periodic
+  switch (structureType) {
+    case ChemicalStructure::StructureType::Cluster:
+      // 0D - no periodicity
+      isPeriodicX = isPeriodicY = isPeriodicZ = false;
+      break;
+    case ChemicalStructure::StructureType::Wire:
+      // 1D - periodic only in one direction (assume X)
+      isPeriodicX = true;
+      isPeriodicY = isPeriodicZ = false;
+      break;
+    case ChemicalStructure::StructureType::Surface:
+      // 2D - periodic in X and Y, not Z
+      isPeriodicX = isPeriodicY = true;
+      isPeriodicZ = false;
+      break;
+    case ChemicalStructure::StructureType::Crystal:
+      // 3D - periodic in all directions
+      isPeriodicX = isPeriodicY = isPeriodicZ = true;
+      break;
+  }
+
   CellIndexPairSet drawnLines;
 
   auto drawLine = [&](const CellIndex &start, const CellIndex &end,
@@ -333,28 +359,47 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
     QColor bColor = (cell == CellIndex{0, 0, 0}) ? B_AXISCOLOR : UNITCELLCOLOR;
     QColor cColor = (cell == CellIndex{0, 0, 0}) ? C_AXISCOLOR : UNITCELLCOLOR;
 
-    // Draw 12 edges of the parallelepiped
-    drawLine(cell, CellIndex{cell.x + 1, cell.y, cell.z}, aColor);
-    drawLine(cell, CellIndex{cell.x, cell.y + 1, cell.z}, bColor);
-    drawLine(cell, CellIndex{cell.x, cell.y, cell.z + 1}, cColor);
-    drawLine(CellIndex{cell.x + 1, cell.y, cell.z},
-             CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x + 1, cell.y, cell.z},
-             CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y + 1, cell.z},
-             CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y + 1, cell.z},
-             CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y, cell.z + 1},
-             CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y, cell.z + 1},
-             CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x + 1, cell.y + 1, cell.z},
-             CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x + 1, cell.y, cell.z + 1},
-             CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
-    drawLine(CellIndex{cell.x, cell.y + 1, cell.z + 1},
-             CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    // Draw unit cell edges only in periodic dimensions
+    // Primary edges from origin
+    if (isPeriodicX) {
+      drawLine(cell, CellIndex{cell.x + 1, cell.y, cell.z}, aColor);
+    }
+    if (isPeriodicY) {
+      drawLine(cell, CellIndex{cell.x, cell.y + 1, cell.z}, bColor);
+    }
+    if (isPeriodicZ) {
+      drawLine(cell, CellIndex{cell.x, cell.y, cell.z + 1}, cColor);
+    }
+
+    // Face edges - only draw if both dimensions are periodic
+    if (isPeriodicX && isPeriodicY) {
+      drawLine(CellIndex{cell.x + 1, cell.y, cell.z},
+               CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
+      drawLine(CellIndex{cell.x, cell.y + 1, cell.z},
+               CellIndex{cell.x + 1, cell.y + 1, cell.z}, UNITCELLCOLOR);
+    }
+    if (isPeriodicX && isPeriodicZ) {
+      drawLine(CellIndex{cell.x + 1, cell.y, cell.z},
+               CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
+      drawLine(CellIndex{cell.x, cell.y, cell.z + 1},
+               CellIndex{cell.x + 1, cell.y, cell.z + 1}, UNITCELLCOLOR);
+    }
+    if (isPeriodicY && isPeriodicZ) {
+      drawLine(CellIndex{cell.x, cell.y + 1, cell.z},
+               CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+      drawLine(CellIndex{cell.x, cell.y, cell.z + 1},
+               CellIndex{cell.x, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    }
+
+    // Volume edges - only draw if all three dimensions are periodic
+    if (isPeriodicX && isPeriodicY && isPeriodicZ) {
+      drawLine(CellIndex{cell.x + 1, cell.y + 1, cell.z},
+               CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+      drawLine(CellIndex{cell.x + 1, cell.y, cell.z + 1},
+               CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+      drawLine(CellIndex{cell.x, cell.y + 1, cell.z + 1},
+               CellIndex{cell.x + 1, cell.y + 1, cell.z + 1}, UNITCELLCOLOR);
+    }
   }
 
   m_cellsNeedsUpdate = false;

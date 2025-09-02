@@ -132,6 +132,9 @@ public:
   [[nodiscard]] nlohmann::json toJson() const override;
   bool fromJson(const nlohmann::json &) override;
 
+  // Public spatial query methods
+  std::vector<GenericAtomIndex> atomsInBoundingBox(const occ::Vec3& min, const occ::Vec3& max) const override;
+
 private:
   void updateFragments();
   void updateAtomFragmentMapping(const Fragment &frag);
@@ -144,6 +147,8 @@ private:
 
   void addAtomsByCrystalIndex(const std::vector<GenericAtomIndex> &,
                               const AtomFlags &flags = AtomFlag::NoFlag);
+  void addAtomsByGenericIndex(const std::vector<GenericAtomIndex> &,
+                              const AtomFlags &flags = AtomFlag::NoFlag) override;
   void addVanDerWaalsContactAtoms();
   void removeVanDerWaalsContactAtoms();
   void deleteAtomsByOffset(const std::vector<int> &atomIndices);

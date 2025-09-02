@@ -78,6 +78,8 @@ public:
   void addAtoms(const std::vector<QString> &elementSymbols,
                 const std::vector<occ::Vec3> &positions,
                 const std::vector<QString> &labels = {});
+  virtual void addAtomsByGenericIndex(const std::vector<GenericAtomIndex> &,
+                                      const AtomFlags &flags = AtomFlag::NoFlag);
 
   QStringList uniqueElementSymbols() const;
   std::vector<int> hydrogenBondDonors() const;
@@ -290,6 +292,10 @@ public:
       atomicDisplacementParameters(GenericAtomIndex) const;
 
   std::vector<GenericAtomIndex> atomIndices() const;
+  
+  // Spatial atom queries
+  virtual std::vector<GenericAtomIndex> atomsInBoundingBox(const occ::Vec3& min, const occ::Vec3& max) const;
+  
   [[nodiscard]] virtual nlohmann::json toJson() const;
   virtual bool fromJson(const nlohmann::json &);
 

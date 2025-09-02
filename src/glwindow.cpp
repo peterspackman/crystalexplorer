@@ -857,6 +857,8 @@ void GLWindow::showSelectionSpecificContextMenu(const QPoint &pos,
                              &GLWindow::contextualSelectAtomsInsideSurface);
       contextMenu->addAction(tr("Select Atoms Outside Surface"), this,
                              &GLWindow::contextualSelectAtomsOutsideSurface);
+      contextMenu->addAction(tr("Generate Atoms Inside Surface"), this,
+                             &GLWindow::contextualGenerateAtomsInsideSurface);
     }
     break;
   }
@@ -897,6 +899,12 @@ void GLWindow::contextualGenerateInternalFragment() {
 void GLWindow::contextualGenerateExternalFragment() {
   Q_ASSERT(scene);
   scene->generateExternalFragment();
+}
+
+void GLWindow::contextualGenerateAtomsInsideSurface() {
+  Q_ASSERT(scene);
+  scene->generateAtomsInsideSurface();
+  redraw();
 }
 
 void GLWindow::contextualHideSurface() {

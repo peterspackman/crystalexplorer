@@ -1,13 +1,13 @@
 #include "chemicalstructure.h"
 #include "colormap.h"
 #include "elementdata.h"
-#include "mesh.h"
 #include "object_tree_model.h"
 #include <QEvent>
 #include <QIcon>
 #include <occ/core/element.h>
 #include <occ/core/kabsch.h>
 #include <occ/core/kdtree.h>
+
 
 namespace impl {
 
@@ -1358,6 +1358,30 @@ std::vector<GenericAtomIndex> ChemicalStructure::atomIndices() const {
     result.push_back(indexToGenericIndex(i));
   }
   return result;
+}
+
+std::vector<GenericAtomIndex> ChemicalStructure::atomsInBoundingBox(const occ::Vec3& min, const occ::Vec3& max) const {
+  std::vector<GenericAtomIndex> result;
+  auto allAtoms = atomIndices();
+  
+  for (const auto& atomIndex : allAtoms) {
+    occ::Vec3 atomPos = atomicPositions().col(genericIndexToIndex(atomIndex));
+    
+    // Check if atom position is within bounding box
+    if (atomPos.x() >= min.x() && atomPos.x() <= max.x() &&
+        atomPos.y() >= min.y() && atomPos.y() <= max.y() &&
+        atomPos.z() >= min.z() && atomPos.z() <= max.z()) {
+      result.push_back(atomIndex);
+    }
+  }
+  
+  return result;
+}
+
+void ChemicalStructure::addAtomsByGenericIndex(const std::vector<GenericAtomIndex> &indices, const AtomFlags &flags) {
+  // Base implementation for ChemicalStructure (non-periodic)
+  // This doesn't make sense for non-periodic structures, so just warn and ignore
+  qWarning() << "addAtomsByGenericIndex called on base ChemicalStructure - ignoring call since this is not a periodic system";
 }
 
 occ::Mat3N ChemicalStructure::convertCoordinates(

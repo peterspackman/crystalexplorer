@@ -1,21 +1,11 @@
-#include <QtTest>
-#include <QByteArray>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
+#include <QString>
 #include "genericxyzfile.h"
 
-class TestIO: public QObject {
-    Q_OBJECT
+using Catch::Approx;
 
-public:
-    TestIO() {}
-
-private slots:
-
-    void testGenericXyzFileCorrectFormat();
-    void testGenericXyzFileIncorrectFormat();
-    void testGenericXyzFileEmptyFile();
-};
-
-void TestIO::testGenericXyzFileCorrectFormat() {
+TEST_CASE("GenericXYZFile correct format", "[io][xyz]") {
     QString testData = 
         "2\n"
         "x y z e neighbor\n"
@@ -24,19 +14,25 @@ void TestIO::testGenericXyzFileCorrectFormat() {
 
     GenericXYZFile xyzFile;
     bool success = xyzFile.readFromString(testData);
-    QVERIFY(success);
-    auto columnNames = xyzFile.columnNames();
-    QVERIFY(columnNames[0] == "x");
-    QVERIFY(columnNames[4] == "neighbor");
-
-    const auto &neighbors = xyzFile.column("neighbor");
-    QVERIFY(neighbors.rows() == 2);
-    QVERIFY(neighbors(1) == 6.0f);
-    // Add more checks to validate the contents of xyzFile
-    // ...
+    
+    SECTION("Reading succeeds") {
+        REQUIRE(success);
+    }
+    
+    SECTION("Column names are correct") {
+        auto columnNames = xyzFile.columnNames();
+        REQUIRE(columnNames[0] == "x");
+        REQUIRE(columnNames[4] == "neighbor");
+    }
+    
+    SECTION("Data values are correct") {
+        const auto &neighbors = xyzFile.column("neighbor");
+        REQUIRE(neighbors.rows() == 2);
+        REQUIRE(neighbors(1) == Approx(6.0f));
+    }
 }
 
-void TestIO::testGenericXyzFileIncorrectFormat() {
+TEST_CASE("GenericXYZFile incorrect format", "[io][xyz]") {
     QString testData = 
         "2\n"
         "x y z e neighbor\n"
@@ -44,16 +40,16 @@ void TestIO::testGenericXyzFileIncorrectFormat() {
         "1.1 2.1 3.1 4.1 6\n";
 
     GenericXYZFile xyzFile;
-    QVERIFY(!xyzFile.readFromString(testData));  // Expect failure due to incorrect format
+    bool success = xyzFile.readFromString(testData);
+    
+    REQUIRE_FALSE(success); // Expect failure due to incorrect format
 }
 
-void TestIO::testGenericXyzFileEmptyFile() {
+TEST_CASE("GenericXYZFile empty file", "[io][xyz]") {
     QString testData;
 
     GenericXYZFile xyzFile;
-    QVERIFY(!xyzFile.readFromString(testData));  // Expect failure due to empty content
+    bool success = xyzFile.readFromString(testData);
+    
+    REQUIRE_FALSE(success); // Expect failure due to empty content
 }
-
-QTEST_MAIN(TestIO)
-#include "test_io.moc"
-

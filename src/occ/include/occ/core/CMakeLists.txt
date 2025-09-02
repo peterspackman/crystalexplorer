@@ -3,6 +3,7 @@ set(OCC_CORE_INCLUDE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/bondgraph.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/combinations.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/eem.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/elastic_tensor.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/element.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/fraction.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph.h"

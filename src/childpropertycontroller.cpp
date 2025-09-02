@@ -11,6 +11,9 @@
 #include "plane.h"
 #include "planeinstance.h"
 #include "settings.h"
+#include "icosphere_mesh.h"
+#include "meshinstance.h"
+#include <occ/core/element.h>
 
 ChildPropertyController::ChildPropertyController(QWidget *parent)
     : QWidget(parent), m_meshPropertyModel(new MeshPropertyModel(this)) {
@@ -38,12 +41,16 @@ void ChildPropertyController::reset() {
     m_planeInstanceWidget->setPlaneInstance(nullptr);
   }
 
+  // Reset elastic tensor
+  m_currentElasticTensor = nullptr;
+
   // Reset tabs
   showSurfaceTabs(false);
   showWavefunctionTabs(false);
   showFrameworkTabs(false);
   showPlaneTabs(false);
   showPlaneInstanceTabs(false);
+  showElasticTensorTabs(false);
 
   m_state = DisplayState::None;
   setEnabled(false);
@@ -240,6 +247,16 @@ void ChildPropertyController::showPlaneInstanceTabs(bool show) {
     createPlaneInstancePropertiesTab();
   }
   showTab(m_planeInstancePropertiesTab, show, "Instance Properties");
+  if (show) {
+    tabWidget->setCurrentIndex(0);
+  }
+}
+
+void ChildPropertyController::showElasticTensorTabs(bool show) {
+  if (show && !m_elasticTensorPropertiesTab) {
+    createElasticTensorPropertiesTab();
+  }
+  showTab(m_elasticTensorPropertiesTab, show, "Elastic Tensor");
   if (show) {
     tabWidget->setCurrentIndex(0);
   }
@@ -592,6 +609,9 @@ void ChildPropertyController::setCurrentObject(QObject *obj) {
   } else if (auto *planeInstance = qobject_cast<PlaneInstance *>(obj)) {
     qDebug() << "Setting current plane instance to" << planeInstance;
     setCurrentPlaneInstance(planeInstance);
+  } else if (auto *tensor = qobject_cast<ElasticTensorResults *>(obj)) {
+    qDebug() << "Setting current elastic tensor to" << tensor;
+    setCurrentElasticTensor(tensor);
   } else if (auto *structure = qobject_cast<ChemicalStructure *>(obj)) {
     handleStructureSelection(structure);
   }
@@ -661,6 +681,28 @@ void ChildPropertyController::setCurrentPlaneInstance(PlaneInstance *instance) {
   }
 }
 
+void ChildPropertyController::setCurrentElasticTensor(ElasticTensorResults *tensor) {
+  showSurfaceTabs(false);
+  showWavefunctionTabs(false);
+  showFrameworkTabs(false);
+  showPlaneTabs(false);
+  showPlaneInstanceTabs(false);
+  showElasticTensorTabs(true);
+  m_state = DisplayState::ElasticTensor;
+
+  setEnabled(tensor != nullptr);
+  m_currentElasticTensor = tensor;
+  
+  if (tensor) {
+    qDebug() << "Selected elastic tensor:" << tensor->name();
+    qDebug() << "  Average Young's Modulus:" << tensor->averageYoungsModulus() << "GPa";
+    qDebug() << "  Average Shear Modulus:" << tensor->averageShearModulus() << "GPa";
+    qDebug() << "  Stable:" << (tensor->isStable() ? "Yes" : "No");
+    
+    updateElasticTensorInfo(tensor);
+  }
+}
+
 void ChildPropertyController::createPlanePropertiesTab() {
   m_planePropertiesTab = new QWidget;
   
@@ -695,6 +737,242 @@ void ChildPropertyController::updatePlaneInfo(Plane *plane, PlaneInstance *insta
   if (m_planeInfoWidget) {
     m_planeInfoWidget->setPlane(plane);
   }
+}
+
+void ChildPropertyController::createElasticTensorPropertiesTab() {
+  m_elasticTensorPropertiesTab = new QWidget;
+  
+  auto *layout = new QVBoxLayout(m_elasticTensorPropertiesTab);
+  
+  // Title
+  auto *titleLabel = new QLabel("Elastic Tensor Properties");
+  titleLabel->setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px;");
+  layout->addWidget(titleLabel);
+  
+  // Properties display (will be populated in updateElasticTensorInfo)
+  auto *propsLayout = new QFormLayout;
+  
+  auto *nameLabel = new QLabel("--");
+  nameLabel->setObjectName("tensorNameLabel");
+  propsLayout->addRow("Name:", nameLabel);
+  
+  auto *stableLabel = new QLabel("--");
+  stableLabel->setObjectName("tensorStableLabel");  
+  propsLayout->addRow("Stability:", stableLabel);
+  
+  auto *bulkLabel = new QLabel("--");
+  bulkLabel->setObjectName("tensorBulkLabel");
+  propsLayout->addRow("Bulk Modulus:", bulkLabel);
+  
+  auto *shearLabel = new QLabel("--");
+  shearLabel->setObjectName("tensorShearLabel");
+  propsLayout->addRow("Shear Modulus:", shearLabel);
+  
+  auto *youngLabel = new QLabel("--");
+  youngLabel->setObjectName("tensorYoungLabel");
+  propsLayout->addRow("Young's Modulus:", youngLabel);
+  
+  auto *poissonLabel = new QLabel("--");
+  poissonLabel->setObjectName("tensorPoissonLabel");
+  propsLayout->addRow("Poisson Ratio:", poissonLabel);
+  
+  layout->addLayout(propsLayout);
+  
+  // Mesh generation section
+  layout->addWidget(new QLabel("Mesh Generation"));
+  
+  auto *meshLayout = new QFormLayout;
+  
+  auto *propertyCombo = new QComboBox;
+  propertyCombo->setObjectName("tensorPropertyCombo");
+  propertyCombo->addItems({"Young's Modulus", 
+                           "Shear Modulus (Max)", 
+                           "Shear Modulus (Min)", 
+                           "Linear Compressibility", 
+                           "Poisson's Ratio (Max)",
+                           "Poisson's Ratio (Min)"});
+  meshLayout->addRow("Property:", propertyCombo);
+  
+  auto *subdivisionsSpinBox = new QSpinBox;
+  subdivisionsSpinBox->setObjectName("tensorSubdivisionsSpinBox");
+  subdivisionsSpinBox->setRange(0, 7);
+  subdivisionsSpinBox->setValue(5);
+  meshLayout->addRow("Subdivisions:", subdivisionsSpinBox);
+  
+  auto *radiusSpinBox = new QDoubleSpinBox;
+  radiusSpinBox->setObjectName("tensorRadiusSpinBox");
+  radiusSpinBox->setRange(0.1, 100.0);
+  radiusSpinBox->setValue(10.0);
+  radiusSpinBox->setSuffix(" Å");
+  meshLayout->addRow("Radius:", radiusSpinBox);
+  
+  // Add center point controls
+  auto *centerWidget = new QWidget;
+  auto *centerLayout = new QHBoxLayout(centerWidget);
+  centerLayout->setContentsMargins(0, 0, 0, 0);
+  
+  auto *centerXSpinBox = new QDoubleSpinBox;
+  centerXSpinBox->setObjectName("tensorCenterX");
+  centerXSpinBox->setRange(-100.0, 100.0);
+  centerXSpinBox->setValue(0.0);
+  centerXSpinBox->setSingleStep(0.1);
+  centerXSpinBox->setPrefix("X: ");
+  centerLayout->addWidget(centerXSpinBox);
+  
+  auto *centerYSpinBox = new QDoubleSpinBox;
+  centerYSpinBox->setObjectName("tensorCenterY");
+  centerYSpinBox->setRange(-100.0, 100.0);
+  centerYSpinBox->setValue(0.0);
+  centerYSpinBox->setSingleStep(0.1);
+  centerYSpinBox->setPrefix("Y: ");
+  centerLayout->addWidget(centerYSpinBox);
+  
+  auto *centerZSpinBox = new QDoubleSpinBox;
+  centerZSpinBox->setObjectName("tensorCenterZ");
+  centerZSpinBox->setRange(-100.0, 100.0);
+  centerZSpinBox->setValue(0.0);
+  centerZSpinBox->setSingleStep(0.1);
+  centerZSpinBox->setPrefix("Z: ");
+  centerLayout->addWidget(centerZSpinBox);
+  
+  meshLayout->addRow("Center:", centerWidget);
+  
+  // Add button to center on selected atoms
+  auto *centerOnSelectionButton = new QPushButton("Center on Selection");
+  centerOnSelectionButton->setObjectName("tensorCenterOnSelection");
+  connect(centerOnSelectionButton, &QPushButton::clicked, this, [this, centerXSpinBox, centerYSpinBox, centerZSpinBox]() {
+    if (!m_currentElasticTensor || !m_currentElasticTensor->parent()) {
+      qDebug() << "No elastic tensor or parent structure";
+      return;
+    }
+    
+    auto *structure = qobject_cast<ChemicalStructure*>(m_currentElasticTensor->parent());
+    if (!structure) {
+      qDebug() << "Parent is not a ChemicalStructure";
+      return;
+    }
+    
+    // Get selected atoms
+    auto selectedAtoms = structure->atomsWithFlags(AtomFlag::Selected);
+    if (selectedAtoms.empty()) {
+      qDebug() << "No atoms selected";
+      return;
+    }
+    
+    // Calculate center of mass
+    auto positions = structure->atomicPositionsForIndices(selectedAtoms);
+    auto atomicNumbers = structure->atomicNumbersForIndices(selectedAtoms);
+    
+    double totalMass = 0.0;
+    Eigen::Vector3d centerOfMass = Eigen::Vector3d::Zero();
+    
+    for (int i = 0; i < selectedAtoms.size(); ++i) {
+      double mass = occ::core::Element(atomicNumbers(i)).mass();
+      totalMass += mass;
+      centerOfMass += mass * positions.col(i);
+    }
+    
+    if (totalMass > 0.0) {
+      centerOfMass /= totalMass;
+      centerXSpinBox->setValue(centerOfMass.x());
+      centerYSpinBox->setValue(centerOfMass.y());
+      centerZSpinBox->setValue(centerOfMass.z());
+      qDebug() << "Centered on selection center of mass:" << centerOfMass.x() << centerOfMass.y() << centerOfMass.z();
+    }
+  });
+  meshLayout->addRow("", centerOnSelectionButton);
+  
+  auto *generateButton = new QPushButton("Generate Mesh");
+  generateButton->setObjectName("tensorGenerateButton");
+  
+  // Connect the generate button
+  connect(generateButton, &QPushButton::clicked, this, [this]() {
+    if (!m_currentElasticTensor) {
+      qDebug() << "No current elastic tensor for mesh generation";
+      return;
+    }
+    
+    auto *combo = m_elasticTensorPropertiesTab->findChild<QComboBox*>("tensorPropertyCombo");
+    auto *subdivisions = m_elasticTensorPropertiesTab->findChild<QSpinBox*>("tensorSubdivisionsSpinBox");
+    auto *radius = m_elasticTensorPropertiesTab->findChild<QDoubleSpinBox*>("tensorRadiusSpinBox");
+    auto *centerX = m_elasticTensorPropertiesTab->findChild<QDoubleSpinBox*>("tensorCenterX");
+    auto *centerY = m_elasticTensorPropertiesTab->findChild<QDoubleSpinBox*>("tensorCenterY");
+    auto *centerZ = m_elasticTensorPropertiesTab->findChild<QDoubleSpinBox*>("tensorCenterZ");
+    
+    if (!combo || !subdivisions || !radius || !centerX || !centerY || !centerZ) {
+      qDebug() << "Missing UI controls for mesh generation";
+      return;
+    }
+    
+    // Validate parent structure exists
+    if (!m_currentElasticTensor->parent()) {
+      qDebug() << "Elastic tensor has no parent structure";
+      return;
+    }
+    
+    ElasticTensorResults::PropertyType propType;
+    switch (combo->currentIndex()) {
+    case 0: propType = ElasticTensorResults::PropertyType::YoungsModulus; break;
+    case 1: propType = ElasticTensorResults::PropertyType::ShearModulusMax; break;
+    case 2: propType = ElasticTensorResults::PropertyType::ShearModulusMin; break;
+    case 3: propType = ElasticTensorResults::PropertyType::LinearCompressibility; break;
+    case 4: propType = ElasticTensorResults::PropertyType::PoissonRatioMax; break;
+    case 5: propType = ElasticTensorResults::PropertyType::PoissonRatioMin; break;
+    default: 
+      qDebug() << "Invalid property type index:" << combo->currentIndex();
+      propType = ElasticTensorResults::PropertyType::YoungsModulus;
+    }
+    
+    try {
+      Mesh* mesh = m_currentElasticTensor->createPropertyMesh(propType, subdivisions->value(), radius->value());
+      if (mesh) {
+        // Set the mesh's parent to the same as the elastic tensor (the ChemicalStructure)
+        mesh->setParent(m_currentElasticTensor->parent());
+        
+        // Create MeshInstance with translation to specified center
+        MeshTransform transform = MeshTransform::Identity();
+        transform.translation() = Eigen::Vector3d(centerX->value(), centerY->value(), centerZ->value());
+        
+        MeshInstance *instance = new MeshInstance(mesh, transform);
+        instance->setObjectName(QString("%1 - %2").arg(combo->currentText(), m_currentElasticTensor->name()));
+        
+        qDebug() << "Successfully generated mesh for" << combo->currentText() << "from elastic tensor" << m_currentElasticTensor->name();
+        qDebug() << "Mesh has" << mesh->numberOfVertices() << "vertices and" << mesh->numberOfFaces() << "faces";
+        qDebug() << "Created MeshInstance for visibility";
+      } else {
+        qDebug() << "Failed to create mesh - createPropertyMesh returned nullptr";
+      }
+    } catch (const std::exception& e) {
+      qDebug() << "Exception during mesh generation:" << e.what();
+    }
+  });
+  
+  meshLayout->addRow("", generateButton);
+  layout->addLayout(meshLayout);
+  
+  layout->addStretch();
+}
+
+void ChildPropertyController::updateElasticTensorInfo(ElasticTensorResults *tensor) {
+  if (!m_elasticTensorPropertiesTab || !tensor) return;
+  
+  auto *nameLabel = m_elasticTensorPropertiesTab->findChild<QLabel*>("tensorNameLabel");
+  auto *stableLabel = m_elasticTensorPropertiesTab->findChild<QLabel*>("tensorStableLabel");
+  auto *bulkLabel = m_elasticTensorPropertiesTab->findChild<QLabel*>("tensorBulkLabel");
+  auto *shearLabel = m_elasticTensorPropertiesTab->findChild<QLabel*>("tensorShearLabel");
+  auto *youngLabel = m_elasticTensorPropertiesTab->findChild<QLabel*>("tensorYoungLabel");
+  auto *poissonLabel = m_elasticTensorPropertiesTab->findChild<QLabel*>("tensorPoissonLabel");
+  
+  if (nameLabel) nameLabel->setText(tensor->name());
+  if (stableLabel) {
+    bool stable = tensor->isStable();
+    stableLabel->setText(stable ? "Stable" : "Unstable");
+    stableLabel->setStyleSheet(stable ? "color: green;" : "color: red;");
+  }
+  if (bulkLabel) bulkLabel->setText(QString("%1 GPa").arg(tensor->averageBulkModulus(), 0, 'f', 2));
+  if (shearLabel) shearLabel->setText(QString("%1 GPa").arg(tensor->averageShearModulus(), 0, 'f', 2));
+  if (youngLabel) youngLabel->setText(QString("%1 GPa").arg(tensor->averageYoungsModulus(), 0, 'f', 2));
+  if (poissonLabel) poissonLabel->setText(QString("%1").arg(tensor->averagePoissonRatio(), 0, 'f', 3));
 }
 
 void ChildPropertyController::onGenerateSlabRequested(int h, int k, int l, double offset) {

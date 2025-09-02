@@ -9,6 +9,48 @@
       "needsOrbitalSelection": false,
       "description": "<p>No surface property. The surface has a solid color defined by the 'None' color set in the CrystalExplorer preferences</p>"
     },
+    "Young's Modulus (GPa)": {
+      "cmap": "Viridis",
+      "occName": "youngs_modulus",
+      "displayName": "Young's Modulus",
+      "units": "GPa",
+      "description": "<p>Young's modulus - measure of stiffness in the given direction</p>"
+    },
+    "Shear Modulus Max (GPa)": {
+      "cmap": "Plasma",
+      "occName": "shear_modulus_max",
+      "displayName": "Shear Modulus (Max)",
+      "units": "GPa",
+      "description": "<p>Maximum shear modulus in the given direction</p>"
+    },
+    "Shear Modulus Min (GPa)": {
+      "cmap": "Plasma",
+      "occName": "shear_modulus_min",
+      "displayName": "Shear Modulus (Min)",
+      "units": "GPa",
+      "description": "<p>Minimum shear modulus in the given direction</p>"
+    },
+    "Linear Compressibility (TPa⁻¹)": {
+      "cmap": "Magma",
+      "occName": "linear_compressibility",
+      "displayName": "Linear Compressibility",
+      "units": "TPa⁻¹",
+      "description": "<p>Linear compressibility - inverse of linear bulk modulus</p>"
+    },
+    "Poisson Ratio Max": {
+      "cmap": "RedWhiteBlue",
+      "occName": "poisson_ratio_max",
+      "displayName": "Poisson's Ratio (Max)",
+      "units": "",
+      "description": "<p>Maximum Poisson's ratio in the given direction</p>"
+    },
+    "Poisson Ratio Min": {
+      "cmap": "RedWhiteBlue",
+      "occName": "poisson_ratio_min",
+      "displayName": "Poisson's Ratio (Min)",
+      "units": "",
+      "description": "<p>Minimum Poisson's ratio in the given direction</p>"
+    },
     "di": {
       "cmap": "RedGreenBlue",
       "occName": "di",

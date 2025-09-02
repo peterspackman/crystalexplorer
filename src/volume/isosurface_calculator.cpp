@@ -130,6 +130,14 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   if (params.computeNegativeIsovalue) {
     surfaceTask->setProperty("computeNegativeIsovalue", true);
   }
+  
+  // For slab structures, automatically enable background density for Hirshfeld surfaces
+  if (params.structure && params.structure->structureType() == ChemicalStructure::StructureType::Surface) {
+    if (params.kind == isosurface::Kind::Hirshfeld) {
+      surfaceTask->setProperty("background_density", 0.002f);
+      qDebug() << "Automatically enabled background density (0.002) for slab Hirshfeld surface";
+    }
+  }
 
   auto taskId = m_taskManager->add(surfaceTask);
   m_fileNames = surfaceTask->outputFileNames();

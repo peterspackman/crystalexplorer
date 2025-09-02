@@ -19,6 +19,7 @@
 #include "closecontactsdialog.h"
 #include "crystalcutdialog.h"
 #include "depthfadingandclippingdialog.h"
+#include "elastictensordialog.h"
 #include "energycalculationdialog.h"
 #include "exportdialog.h"
 #include "fragmentstatedialog.h"
@@ -150,6 +151,7 @@ private slots:
   void allowCloneSurfaceAction();
   void allowCalculateEnergiesAction();
   void showEnergyCalculationDialog();
+  void showElasticTensorImportDialog();
 
   void showEnergyFrameworkDialog();
   void cycleEnergyFrameworkBackwards();
@@ -253,6 +255,7 @@ private:
   InfoViewer *infoViewer{nullptr};
   PlaneDialog *m_planeDialog{nullptr};
   CrystalCutDialog *m_crystalCutDialog{nullptr};
+  ElasticTensorDialog *m_elasticTensorDialog{nullptr};
 
   QDockWidget *childPropertyControllerDockWidget{nullptr};
   QDockWidget *projectControllerDockWidget{nullptr};
