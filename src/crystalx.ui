@@ -46,6 +46,7 @@
       <string>Import</string>
      </property>
      <addaction name="importElasticTensorAction"/>
+     <addaction name="loadWavefunctionAction"/>
     </widget>
     <addaction name="fileNewAction"/>
     <addaction name="fileOpenAction"/>
@@ -97,7 +98,6 @@
     <addaction name="calculateEnergiesAction"/>
     <addaction name="separator"/>
     <addaction name="generateWavefunctionAction"/>
-    <addaction name="loadWavefunctionAction"/>
     <addaction name="separator"/>
     <addaction name="selectAction"/>
     <addaction name="separator"/>
@@ -236,7 +236,6 @@
    <addaction name="createPlaneAction"/>
    <addaction name="cloneSurfaceAction"/>
    <addaction name="generateWavefunctionAction"/>
-   <addaction name="loadWavefunctionAction"/>
    <addaction name="calculateEnergiesAction"/>
    <addaction name="crystalCutsAction"/>
    <addaction name="separator"/>

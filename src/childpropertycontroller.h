@@ -32,6 +32,7 @@ public:
   void currentSurfaceVisibilityChanged(bool);
   Mesh *getCurrentMesh();
   MeshInstance *getCurrentMeshInstance();
+  ElasticTensorResults *getCurrentElasticTensor();
 
   bool showEnergyFramework() const;
   void setShowEnergyFramework(bool);
@@ -70,6 +71,7 @@ signals:
   void frameworkOptionsChanged(FrameworkOptions);
   void meshSelectionChanged();
   void generateSlabRequested(int h, int k, int l, double offset);
+  void elasticTensorSelectionChanged();
 
 private:
   enum class DisplayState {

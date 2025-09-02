@@ -1,8 +1,13 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QDesktopServices>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QHBoxLayout>
 #include <QInputDialog>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPixmap>
@@ -10,6 +15,7 @@
 #include <QRegularExpression>
 #include <QTextBrowser>
 #include <QUrl>
+#include <QVBoxLayout>
 #include <QtDebug>
 
 #include "aboutcrystalexplorerdialog.h"
@@ -261,6 +267,9 @@ void Crystalx::createChildPropertyControllerDockWidget() {
   connect(childPropertyController,
           &ChildPropertyController::generateSlabRequested, this,
           &Crystalx::generateSlabFromPlane);
+  connect(childPropertyController,
+          &ChildPropertyController::elasticTensorSelectionChanged, this,
+          &Crystalx::handleElasticTensorSelectionChanged);
 }
 
 void Crystalx::createProjectControllerDockWidget() {
@@ -1346,10 +1355,90 @@ void Crystalx::handleLoadWavefunctionAction() {
 
   auto *wavefunction = io::loadWavefunction(filename);
   if (wavefunction) {
+    // Show warning about unchecked atom mapping
+    QMessageBox::StandardButton reply = QMessageBox::warning(
+        this, tr("Load Wavefunction - Warning"),
+        tr("Wavefunction loaded successfully.\n\n"
+           "⚠️  WARNING: Atom mapping has NOT been validated.\n\n"
+           "The wavefunction will be associated with the currently selected atoms, "
+           "but the correspondence between wavefunction atoms and structure atoms "
+           "has not been checked. This may result in incorrect surface properties "
+           "or molecular orbital visualizations if the atoms don't match.\n\n"
+           "Please verify that:\n"
+           "• The number of selected atoms matches the wavefunction\n"
+           "• The atom types and positions correspond correctly\n"
+           "• The molecular geometry is consistent\n\n"
+           "Do you want to proceed?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    
+    if (reply == QMessageBox::No) {
+      delete wavefunction;
+      return;
+    }
+    
+    // Prompt user for method and basis set
+    QDialog methodDialog(this);
+    methodDialog.setWindowTitle(tr("Wavefunction Method and Basis Set"));
+    methodDialog.setModal(true);
+    
+    QVBoxLayout *layout = new QVBoxLayout(&methodDialog);
+    
+    // Add instruction label
+    QLabel *instructionLabel = new QLabel(tr("Please specify the method and basis set used for this wavefunction:"), &methodDialog);
+    layout->addWidget(instructionLabel);
+    
+    // Method input
+    QHBoxLayout *methodLayout = new QHBoxLayout();
+    QLabel *methodLabel = new QLabel(tr("Method:"), &methodDialog);
+    QLineEdit *methodEdit = new QLineEdit("b3lyp", &methodDialog);
+    methodLayout->addWidget(methodLabel);
+    methodLayout->addWidget(methodEdit);
+    layout->addLayout(methodLayout);
+    
+    // Basis set input
+    QHBoxLayout *basisLayout = new QHBoxLayout();
+    QLabel *basisLabel = new QLabel(tr("Basis Set:"), &methodDialog);
+    QLineEdit *basisEdit = new QLineEdit("def2-svp", &methodDialog);
+    basisLayout->addWidget(basisLabel);
+    basisLayout->addWidget(basisEdit);
+    layout->addLayout(basisLayout);
+    
+    // Add some common suggestions as labels
+    QLabel *suggestionsLabel = new QLabel(tr("Common methods: B3LYP, PBE0, M06-2X, MP2, CCSD(T)\n"
+                                             "Common basis sets: def2-SVP, def2-TZVP, 6-31G(d,p), cc-pVDZ"), &methodDialog);
+    suggestionsLabel->setStyleSheet("color: #666; font-size: 10pt;");
+    suggestionsLabel->setWordWrap(true);
+    layout->addWidget(suggestionsLabel);
+    
+    // Dialog buttons
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &methodDialog);
+    connect(buttonBox, &QDialogButtonBox::accepted, &methodDialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, &methodDialog, &QDialog::reject);
+    layout->addWidget(buttonBox);
+    
+    // Show dialog and get result
+    if (methodDialog.exec() != QDialog::Accepted) {
+      delete wavefunction;
+      return;
+    }
+    
+    QString userMethod = methodEdit->text().trimmed();
+    QString userBasis = basisEdit->text().trimmed();
+    
+    // Validate input
+    if (userMethod.isEmpty()) {
+      userMethod = "Unknown";
+    }
+    if (userBasis.isEmpty()) {
+      userBasis = "Unknown";
+    }
+    
     // Create a basic parameters object for the loaded wavefunction
     wfn::Parameters params;
     params.structure = structure;
     params.atoms = selectedAtoms;
+    params.method = userMethod;
+    params.basis = userBasis;
     params.accepted = true;
 
     wavefunction->setParameters(params);
@@ -1541,6 +1630,13 @@ void Crystalx::handleMeshSelectionChanged() {
         emit scene->clickedSurface(index);
       }
     }
+  }
+}
+
+void Crystalx::handleElasticTensorSelectionChanged() {
+  if (infoViewer) {
+    auto *currentTensor = childPropertyController->getCurrentElasticTensor();
+    infoViewer->elasticTensorInfoDocument->updateElasticTensor(currentTensor);
   }
 }
 

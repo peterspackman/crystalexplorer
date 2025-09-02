@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
+#include "publication_reference.h"
 #include "fragment.h"
 #include "fragment_index.h"
 #include "generic_atom_index.h"
@@ -369,5 +370,33 @@ TEST_CASE("Vector serialization", "[core][json]") {
         REQUIRE(deserializedIndex.x == singleIndex.x);
         REQUIRE(deserializedIndex.y == singleIndex.y);
         REQUIRE(deserializedIndex.z == singleIndex.z);
+    }
+}
+
+
+TEST_CASE("PublicationReference formatting", "[references]") {
+    PublicationReference ref;
+    ref.key = "Spackman2021";
+    ref.authors = {"Spackman, Peter R.", "Turner, Michael J.", "McKinnon, Joshua J.", 
+                   "Wolff, Stephen K.", "Grimwood, Daniel J.", "Jayatilaka, Dylan", 
+                   "Spackman, Mark A."};
+    ref.title = "CrystalExplorer: a program for Hirshfeld surface analysis";
+    ref.journal = "Journal of Applied Crystallography";
+    ref.year = "2021";
+    ref.volume = "54";
+    ref.issue = "3";
+    ref.pages = "1006-1011";
+    ref.doi = "10.1107/s1600576721002910";
+    
+    SECTION("Short citation formatting") {
+        QString shortCitation = ref.formatShortCitation();
+        REQUIRE(shortCitation == "Spackman et al. (2021)");
+    }
+    
+    SECTION("Full citation formatting") {
+        QString fullCitation = ref.formatCitation();
+        REQUIRE(fullCitation.contains("Spackman, Peter R. et al."));
+        REQUIRE(fullCitation.contains("2021"));
+        REQUIRE(fullCitation.contains("Journal of Applied Crystallography"));
     }
 }

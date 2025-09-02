@@ -8,6 +8,7 @@ enum class InfoType {
   Atoms,
   Surface,
   InteractionEnergy,
+  ElasticTensor,
 };
 
 class InfoViewer : public QDialog, public Ui::InfoViewer {

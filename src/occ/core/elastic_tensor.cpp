@@ -1,4 +1,5 @@
 #include <occ/core/elastic_tensor.h>
+#include <occ/core/constants.h>
 
 namespace occ::core {
 
@@ -121,7 +122,7 @@ ElasticTensor::shear_modulus_minmax(CartesianDirection n) const {
   double max_v = std::numeric_limits<double>::lowest();
 
   const int num_steps = 360;
-  const double step = 2 * M_PI / num_steps;
+  const double step = 2 * occ::constants::pi<double> / num_steps;
 
   for (int i = 0; i < num_steps; ++i) {
     double angle = i * step;
@@ -167,7 +168,7 @@ ElasticTensor::poisson_ratio_minmax(CartesianDirection n) const {
   double max_poisson = std::numeric_limits<double>::lowest();
 
   const int num_steps = 360;
-  const double step = 2 * M_PI / num_steps;
+  const double step = 2 * occ::constants::pi<double> / num_steps;
 
   for (int i = 0; i < num_steps; ++i) {
     double angle = i * step;

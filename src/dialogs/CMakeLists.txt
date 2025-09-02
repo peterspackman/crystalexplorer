@@ -35,6 +35,7 @@ qt_add_library(cx_dialogs STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/crystalinfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/depthfadingandclippingdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/elastictensordialog.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/elastictensorinfodocument.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/elementeditor.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/energycalculationdialog.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/exportdialog.cpp"

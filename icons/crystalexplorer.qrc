@@ -47,6 +47,7 @@
         <file>psi.png</file>
         <file>interaction_energies.png</file>
         <file>cut_crystal.png</file>
+        <file>elastic.png</file>
     </qresource>
     <qresource prefix="/svg">
         <file>source_images/a-axis.svg</file>

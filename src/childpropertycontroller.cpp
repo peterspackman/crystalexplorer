@@ -550,6 +550,12 @@ MeshInstance *ChildPropertyController::getCurrentMeshInstance() {
   return m_meshPropertyModel->getMeshInstance();
 }
 
+ElasticTensorResults *ChildPropertyController::getCurrentElasticTensor() {
+  if (m_state != ChildPropertyController::DisplayState::ElasticTensor)
+    return nullptr;
+  return m_currentElasticTensor;
+}
+
 void ChildPropertyController::setFrameworkDisplay(
     FrameworkOptions::Display choice) {
   showNoneButton->blockSignals(true);
@@ -701,6 +707,9 @@ void ChildPropertyController::setCurrentElasticTensor(ElasticTensorResults *tens
     
     updateElasticTensorInfo(tensor);
   }
+  
+  // Emit signal for info dialog
+  emit elasticTensorSelectionChanged();
 }
 
 void ChildPropertyController::createPlanePropertiesTab() {

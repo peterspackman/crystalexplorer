@@ -3,6 +3,7 @@
 
 #include "crystalplanegenerator.h"
 #include "drawingstyle.h"
+#include "elastic_tensor_results.h"
 #include "elementdata.h"
 #include "fmt/core.h"
 #include "globals.h"
@@ -1655,6 +1656,7 @@ nlohmann::json Scene::toJson() const {
 
   j["meshes"] = nlohmann::json::array();
   j["wavefunctions"] = nlohmann::json::array();
+  j["elasticTensors"] = nlohmann::json::array();
   for (auto *obj : m_structure->children()) {
     if (auto *mesh = qobject_cast<Mesh *>(obj)) {
       nlohmann::json meshJson = mesh->toJson();
@@ -1662,6 +1664,9 @@ nlohmann::json Scene::toJson() const {
     } else if (auto *wfn = qobject_cast<MolecularWavefunction *>(obj)) {
       nlohmann::json wfnJson = wfn->toJson();
       j["wavefunctions"].push_back(wfnJson);
+    } else if (auto *tensor = qobject_cast<ElasticTensorResults *>(obj)) {
+      nlohmann::json tensorJson = tensor->toJson();
+      j["elasticTensors"].push_back(tensorJson);
     }
   }
 
@@ -1748,7 +1753,7 @@ bool Scene::fromJson(const nlohmann::json &j) {
       }
     }
 
-    // Load meshes if present
+    // Load wavefunctions if present
     if (j.contains("wavefunctions")) {
       qDebug() << "Loading" << j["wavefunctions"].size() << "wavefunction";
       for (const auto &wfnJson : j["wavefunctions"]) {
@@ -1759,6 +1764,20 @@ bool Scene::fromJson(const nlohmann::json &j) {
           continue;
         }
         wfn->setParent(m_structure);
+      }
+    }
+
+    // Load elastic tensors if present
+    if (j.contains("elasticTensors")) {
+      qDebug() << "Loading" << j["elasticTensors"].size() << "elastic tensors";
+      for (const auto &tensorJson : j["elasticTensors"]) {
+        auto *tensor = new ElasticTensorResults();
+        if (!tensor->fromJson(tensorJson)) {
+          qDebug() << "Failed to load elastic tensor";
+          delete tensor;
+          continue;
+        }
+        tensor->setParent(m_structure);
       }
     }
 

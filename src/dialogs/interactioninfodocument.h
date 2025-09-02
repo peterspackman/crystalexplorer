@@ -7,6 +7,7 @@ class QTabWidget;
 class QLabel;
 class QTableView;
 class QShowEvent;
+class QTextBrowser;
 
 struct InteractionInfoSettings {
   QString colorScheme{"Viridis"};
@@ -38,6 +39,8 @@ private:
   void showNoDataMessage();
   void setupTableForModel(const QString &model);
   void setupCopyAction();
+  QString generateCitationHtml(const QString &model);
+  QWidget* createTableWithCitations(const QString &model);
 
   void showHeaderContextMenu(const QPoint &pos);
   QMenu *m_headerContextMenu{nullptr};
@@ -46,7 +49,9 @@ private:
   Scene *m_scene{nullptr};
   QTabWidget *m_tabWidget{nullptr};
   QLabel *m_noDataLabel{nullptr};
+  QTextBrowser *m_citationBrowser{nullptr};
   InteractionInfoSettings m_settings;
   QHash<QString, PairInteractionTableModel *> m_models;
   QHash<QString, QTableView *> m_views;
+  QHash<QString, QTextBrowser *> m_citationBrowsers;
 };

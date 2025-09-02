@@ -14,12 +14,15 @@ void InfoViewer::setScene(Scene *scene) {
   atomInfoDocument->updateScene(scene);
   interactionsInfoDocument->updateScene(scene);
   surfaceInfoDocument->updateScene(scene);
+  elasticTensorInfoDocument->updateScene(scene);
 }
 
 void InfoViewer::init() {
   Qt::WindowFlags flags = windowFlags();
   setWindowFlags(flags | Qt::WindowStaysOnTopHint);
   setModal(false);
+  
+  // Set up color maps
   auto colorMaps = availableColorMaps();
   energyColorComboBox->clear();
   energyColorComboBox->insertItems(0, colorMaps);
@@ -76,6 +79,9 @@ void InfoViewer::setTab(InfoType infoType) {
   case InfoType::InteractionEnergy:
     tabWidget->setCurrentWidget(energiesTab);
     break;
+  case InfoType::ElasticTensor:
+    tabWidget->setCurrentWidget(elasticTensorTab);
+    break;
   }
 }
 
@@ -97,6 +103,9 @@ InfoType InfoViewer::currentTab() {
     break;
   case 3:
     result = InfoType::InteractionEnergy;
+    break;
+  case 4:
+    result = InfoType::ElasticTensor;
     break;
   }
   return result;

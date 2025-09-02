@@ -8,5 +8,6 @@
         <file>jmol_colours.json</file>
         <file>surface_description.json</file>
         <file>colormaps.json</file>
+        <file>references.json</file>
     </qresource>
 </RCC>

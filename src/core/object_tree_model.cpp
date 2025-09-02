@@ -100,7 +100,7 @@ QVariant ObjectTreeModel::data(const QModelIndex &index, int role) const {
       }
       auto *tensor = qobject_cast<ElasticTensorResults*>(itemObject);
       if (tensor) {
-        return QIcon(":/images/mesh.png"); // Using mesh icon for now, could add specific tensor icon
+        return QIcon(":/images/elastic.png");
       }
 
     }

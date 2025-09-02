@@ -94,6 +94,7 @@ public slots:
   void handleAtomLabelActions();
   void handleMeshSelectionChanged();
   void handleEnergyColorSchemeChanged();
+  void handleElasticTensorSelectionChanged();
 
 protected slots:
   void closeEvent(QCloseEvent *) override;
