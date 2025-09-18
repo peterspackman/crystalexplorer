@@ -93,6 +93,7 @@ public slots:
   void materialChanged();
   void lightSettingsChanged();
   void textSettingsChanged();
+  void setDebugVisualizationEnabled(bool enabled);
   void handleAtomLabelOptionsChanged(AtomLabelOptions);
   void pauseRendering();
   void resumeRendering();

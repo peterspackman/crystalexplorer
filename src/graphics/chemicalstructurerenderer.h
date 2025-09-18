@@ -1,30 +1,30 @@
 #pragma once
 #include "atom_label_options.h"
-#include "bimap.h"
 #include "billboardrenderer.h"
+#include "bimap.h"
 #include "chemicalstructure.h"
 #include "colormap.h"
-#include "cylinderrenderer.h"
+#include "crystalplane.h"
 #include "cylinderimpostorrenderer.h"
+#include "cylinderrenderer.h"
 #include "drawingstyle.h"
 #include "ellipsoidrenderer.h"
 #include "frameworkrenderer.h"
 #include "linerenderer.h"
-#include "sphereimpostorrenderer.h"
-#include "crystalplane.h"
-#include "planerenderer.h"
-#include "plane.h"
-#include "planeinstance.h"
 #include "mesh.h"
 #include "meshinstance.h"
 #include "meshinstancerenderer.h"
 #include "meshrenderer.h"
+#include "plane.h"
+#include "planeinstance.h"
+#include "planerenderer.h"
 #include "pointcloudinstancerenderer.h"
 #include "rendereruniforms.h"
 #include "renderselection.h"
+#include "scene_export_data.h"
+#include "sphereimpostorrenderer.h"
 
 namespace cx::graphics {
-
 
 struct TextLabel {
   QString text;
@@ -61,13 +61,12 @@ public:
   void toggleShowMultipleCells();
 
   void setAtomLabelOptions(const AtomLabelOptions &);
-  [[nodiscard]] const AtomLabelOptions & atomLabelOptions() const;
+  [[nodiscard]] const AtomLabelOptions &atomLabelOptions() const;
   void toggleShowAtomLabels();
 
   void setShowHydrogenAtomEllipsoids(bool show);
   [[nodiscard]] bool showHydrogenAtomEllipsoids() const;
   void toggleShowHydrogenAtomEllipsoids();
-
 
   void setAtomStyle(AtomDrawingStyle);
   void setBondStyle(BondDrawingStyle);
@@ -102,7 +101,9 @@ public:
 
   void forceUpdates();
   void draw(bool forPicking = false);
-  [[nodiscard]] inline double getThermalEllipsoidProbability() const { return m_thermalEllipsoidProbability; }
+  [[nodiscard]] inline double getThermalEllipsoidProbability() const {
+    return m_thermalEllipsoidProbability;
+  }
 
   [[nodiscard]] MeshInstance *getMeshInstance(size_t index) const;
   [[nodiscard]] int getMeshInstanceIndex(MeshInstance *) const;
@@ -117,9 +118,17 @@ public slots:
   void childPropertyChanged();
   void updateThermalEllipsoidProbability(double);
 
+  // Export convenience methods
+  void getCurrentAtomsForExport(SceneExportData &data) const;
+  void getCurrentBondsForExport(SceneExportData &data) const;
+  void getCurrentFrameworkForExport(SceneExportData &data) const;
+  void getCurrentMeshesForExport(SceneExportData &data) const;
+  // TODO: Camera export is currently broken, needs investigation
+  // void getCurrentCameraForExport(SceneExportData& data) const;
+
 private:
-  void connectMeshSignals(Mesh* mesh);
-  void connectPlaneSignals(Plane* plane);
+  void connectMeshSignals(Mesh *mesh);
+  void connectPlaneSignals(Plane *plane);
   bool needsUpdate();
   void initStructureChildren();
 
@@ -182,7 +191,6 @@ private:
   RendererUniforms m_uniforms;
   FrameworkOptions m_frameworkOptions;
   std::vector<AggregateIndex> m_aggregateIndices;
-  
 };
 
 } // namespace cx::graphics

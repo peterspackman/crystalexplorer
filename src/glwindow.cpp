@@ -1281,6 +1281,13 @@ void GLWindow::textSettingsChanged() {
   redraw();
 }
 
+void GLWindow::setDebugVisualizationEnabled(bool enabled) {
+  if (scene) {
+    scene->setDebugVisualizationEnabled(enabled);
+  }
+  redraw();
+}
+
 void GLWindow::setBackgroundColor(QColor color) {
   _backgroundColor = color;
   if (scene)

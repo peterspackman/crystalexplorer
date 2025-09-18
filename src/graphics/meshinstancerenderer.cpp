@@ -170,6 +170,9 @@ void MeshInstanceRenderer::setMesh(Mesh *mesh) {
         propertyData.push_back(color.alphaF());
       }
     }
+    // Cache the property data for export
+    m_cachedPropertyData = propertyData;
+
     m_vertexPropertyBuffer.allocate(
         propertyData.data(),
         static_cast<int>(sizeof(float) * propertyData.size()));
@@ -206,6 +209,46 @@ void MeshInstanceRenderer::clear() {
     m_instances.clear();
     updateBuffers();
   }
+}
+
+const std::vector<float> &MeshInstanceRenderer::getVertexPropertyData() const {
+  return m_cachedPropertyData;
+}
+
+std::vector<float>
+MeshInstanceRenderer::getCurrentPropertyColors(int propertyIndex) const {
+  if (m_cachedPropertyData.empty()) {
+    return {};
+  }
+
+  int numVertices = m_numVertices;
+  int totalProperties = m_availableProperties.size();
+
+  if (propertyIndex < 0 || propertyIndex >= totalProperties) {
+    qWarning() << "Invalid property index:" << propertyIndex;
+    return {};
+  }
+
+  // Extract colors for current property only
+  std::vector<float> currentColors;
+  currentColors.reserve(numVertices * 4); // RGBA per vertex
+
+  int startOffset = propertyIndex * numVertices * 4;
+  for (int i = 0; i < numVertices; ++i) {
+    int srcIndex = startOffset + (i * 4);
+    currentColors.push_back(m_cachedPropertyData[srcIndex + 0]); // R
+    currentColors.push_back(m_cachedPropertyData[srcIndex + 1]); // G
+    currentColors.push_back(m_cachedPropertyData[srcIndex + 2]); // B
+    currentColors.push_back(m_cachedPropertyData[srcIndex + 3]); // A
+  }
+
+  qDebug() << "Extracted" << numVertices << "colors for property index"
+           << propertyIndex << "property name:"
+           << (propertyIndex < m_availableProperties.size()
+                   ? m_availableProperties[propertyIndex]
+                   : "unknown");
+
+  return currentColors;
 }
 
 void MeshInstanceRenderer::draw() {

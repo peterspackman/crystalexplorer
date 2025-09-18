@@ -7,9 +7,11 @@ CylinderImpostorRenderer::CylinderImpostorRenderer()
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
   m_program->addShaderFromSourceCode(
-      QOpenGLShader::Vertex, cx::shader::loadShaderFile(":/shaders/cylinder_impostor.vert"));
+      QOpenGLShader::Vertex,
+      cx::shader::loadShaderFile(":/shaders/cylinder_impostor.vert"));
   m_program->addShaderFromSourceCode(
-      QOpenGLShader::Fragment, cx::shader::loadShaderFile(":/shaders/cylinder_impostor.frag"));
+      QOpenGLShader::Fragment,
+      cx::shader::loadShaderFile(":/shaders/cylinder_impostor.frag"));
   m_program->link();
   m_program->bind();
 

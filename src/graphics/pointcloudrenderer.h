@@ -62,4 +62,3 @@ private:
   QOpenGLBuffer m_vertex;
   vector<PointCloudVertex> m_points;
 };
-

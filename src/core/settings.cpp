@@ -78,6 +78,7 @@ static const QMap<QString, QVariant> defaults{
     {keys::MATERIAL, 2},
     {keys::TEXT_FONT_FAMILY, "Sans"},
     {keys::TEXT_FONT_SIZE, 70},
+    {keys::DEBUG_VISUALIZATION_ENABLED, false},
     {keys::TEXT_OUTLINE, 0.05f},
     {keys::TEXT_BUFFER, 0.02f},
     {keys::TEXT_SMOOTHING, 0.42f},

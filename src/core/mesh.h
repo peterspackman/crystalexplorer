@@ -142,6 +142,25 @@ public:
   
   // Geometric queries
   [[nodiscard]] bool containsPoint(const occ::Vec3& point) const;
+
+  // Debug structure for ray-casting visualization
+  struct RayDebugInfo {
+    occ::Vec3 rayDirection;
+    std::vector<occ::Vec3> intersectionPoints;
+    int intersectionCount;
+    bool insideVote;
+  };
+
+  struct ContainmentDebugInfo {
+    occ::Vec3 testPoint;
+    std::vector<RayDebugInfo> rayResults;
+    int totalInsideVotes;
+    bool finalResult;
+  };
+
+  // Debug version that returns detailed ray-casting information
+  [[nodiscard]] ContainmentDebugInfo containsPointDebug(const occ::Vec3& point) const;
+
   [[nodiscard]] std::pair<occ::Vec3, occ::Vec3> boundingBox() const; // returns (min, max)
   [[nodiscard]] std::vector<GenericAtomIndex> findAtomsInside(const class ChemicalStructure* structure) const;
 

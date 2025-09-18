@@ -1,10 +1,10 @@
 #include "chemicalstructurerenderer.h"
+#include "crystalplanegenerator.h"
 #include "elementdata.h"
 #include "graphics.h"
 #include "mesh.h"
-#include "settings.h"
-#include "crystalplanegenerator.h"
 #include "performancetimer.h"
+#include "settings.h"
 #include <iostream>
 
 namespace cx::graphics {
@@ -317,27 +317,27 @@ void ChemicalStructureRenderer::handleCellsUpdate() {
   // Check structure type to determine dimensionality
   bool isPeriodicX = true, isPeriodicY = true, isPeriodicZ = true;
   auto structureType = m_structure->structureType();
-  
+
   // For different structure types, determine which dimensions are periodic
   switch (structureType) {
-    case ChemicalStructure::StructureType::Cluster:
-      // 0D - no periodicity
-      isPeriodicX = isPeriodicY = isPeriodicZ = false;
-      break;
-    case ChemicalStructure::StructureType::Wire:
-      // 1D - periodic only in one direction (assume X)
-      isPeriodicX = true;
-      isPeriodicY = isPeriodicZ = false;
-      break;
-    case ChemicalStructure::StructureType::Surface:
-      // 2D - periodic in X and Y, not Z
-      isPeriodicX = isPeriodicY = true;
-      isPeriodicZ = false;
-      break;
-    case ChemicalStructure::StructureType::Crystal:
-      // 3D - periodic in all directions
-      isPeriodicX = isPeriodicY = isPeriodicZ = true;
-      break;
+  case ChemicalStructure::StructureType::Cluster:
+    // 0D - no periodicity
+    isPeriodicX = isPeriodicY = isPeriodicZ = false;
+    break;
+  case ChemicalStructure::StructureType::Wire:
+    // 1D - periodic only in one direction (assume X)
+    isPeriodicX = true;
+    isPeriodicY = isPeriodicZ = false;
+    break;
+  case ChemicalStructure::StructureType::Surface:
+    // 2D - periodic in X and Y, not Z
+    isPeriodicX = isPeriodicY = true;
+    isPeriodicZ = false;
+    break;
+  case ChemicalStructure::StructureType::Crystal:
+    // 3D - periodic in all directions
+    isPeriodicX = isPeriodicY = isPeriodicZ = true;
+    break;
   }
 
   CellIndexPairSet drawnLines;
@@ -445,16 +445,18 @@ void ChemicalStructureRenderer::addAggregateRepresentations() {
     }
 
     m_aggregateIndices.push_back(AggregateIndex{frag, pos});
-    
+
     // Check if impostor rendering is enabled
-    bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
-    
+    bool useImpostors =
+        settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+
     if (useImpostors) {
-      cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, pos, color,
-                                             0.4, selectionIdColor, selected);
+      cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, pos,
+                                              color, 0.4, selectionIdColor,
+                                              selected);
     } else {
-      cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, pos, color,
-                                                 0.4, selectionIdColor, selected);
+      cx::graphics::addSphereToEllipsoidRenderer(
+          m_ellipsoidRenderer, pos, color, 0.4, selectionIdColor, selected);
     }
     i++;
   }
@@ -529,15 +531,17 @@ void ChemicalStructureRenderer::handleAtomsUpdate() {
       }
     }
     // Check if impostor rendering is enabled
-    bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
-    
+    bool useImpostors =
+        settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+
     if (useImpostors) {
-      cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, position,
-                                             color, radius, selectionIdColor, selected);
+      cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer,
+                                              position, color, radius,
+                                              selectionIdColor, selected);
     } else {
       cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, position,
-                                                 color, radius, selectionIdColor,
-                                                 selected);
+                                                 color, radius,
+                                                 selectionIdColor, selected);
     }
   }
   m_atomsNeedsUpdate = false;
@@ -570,6 +574,9 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
     if (shouldSkipAtom(i) || shouldSkipAtom(j))
       continue;
 
+    if (i > j)
+      continue;
+
     auto idxA = m_structure->indexToGenericIndex(i);
     auto idxB = m_structure->indexToGenericIndex(j);
     QVector3D pointA(atomPositions(0, i), atomPositions(1, i),
@@ -600,16 +607,18 @@ void ChemicalStructureRenderer::handleBondsUpdate() {
           DrawingStyleConstants::bondLineWidth, colorB, id_color, selectedB);
     } else {
       // Check if impostor rendering is enabled
-      bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
-      
+      bool useImpostors =
+          settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING)
+              .toBool();
+
       if (useImpostors) {
         cx::graphics::addCylinderToCylinderRenderer(
-            m_cylinderImpostorRenderer, pointA, pointB, colorA, colorB, radius, id_color,
-            selectedA, selectedB);
+            m_cylinderImpostorRenderer, pointA, pointB, colorA, colorB, radius,
+            id_color, selectedA, selectedB);
       } else {
         cx::graphics::addCylinderToCylinderRenderer(
-            m_cylinderRenderer, pointA, pointB, colorA, colorB, radius, id_color,
-            selectedA, selectedB);
+            m_cylinderRenderer, pointA, pointB, colorA, colorB, radius,
+            id_color, selectedA, selectedB);
       }
     }
   }
@@ -639,17 +648,16 @@ void ChemicalStructureRenderer::endUpdates() {
 bool ChemicalStructureRenderer::needsUpdate() {
   // TODO check for efficiency in non-granular toggle like this
   return m_atomsNeedsUpdate || m_bondsNeedsUpdate || m_meshesNeedsUpdate ||
-         m_labelsNeedsUpdate || m_cellsNeedsUpdate ||
-         m_planesNeedUpdate;
+         m_labelsNeedsUpdate || m_cellsNeedsUpdate || m_planesNeedUpdate;
 }
 
 void ChemicalStructureRenderer::draw(bool forPicking) {
   PERF_SCOPED_TIMER("ChemicalStructureRenderer::draw");
-  
+
   if (needsUpdate()) {
     PERF_SCOPED_TIMER("Structure Updates");
     beginUpdates();
-    
+
     {
       PERF_SCOPED_TIMER("Labels Update");
       handleLabelsUpdate();
@@ -674,7 +682,7 @@ void ChemicalStructureRenderer::draw(bool forPicking) {
       PERF_SCOPED_TIMER("Planes Update");
       updatePlanes();
     }
-    
+
     endUpdates();
   }
 
@@ -915,7 +923,8 @@ void ChemicalStructureRenderer::connectPlaneSignals(Plane *plane) {
   if (!plane)
     return;
 
-  qDebug() << "Connecting plane signals for plane:" << plane << "name:" << plane->name();
+  qDebug() << "Connecting plane signals for plane:" << plane
+           << "name:" << plane->name();
   connect(plane, &Plane::settingsChanged, this,
           &ChemicalStructureRenderer::childVisibilityChanged);
   connect(plane, &Plane::settingsChanged, this,
@@ -923,22 +932,24 @@ void ChemicalStructureRenderer::connectPlaneSignals(Plane *plane) {
 }
 
 void ChemicalStructureRenderer::childAddedToStructure(QObject *child) {
-  qDebug() << "ChemicalStructureRenderer::childAddedToStructure() called with child:" << child;
+  qDebug()
+      << "ChemicalStructureRenderer::childAddedToStructure() called with child:"
+      << child;
   auto *mesh = qobject_cast<Mesh *>(child);
   auto *meshInstance = qobject_cast<MeshInstance *>(child);
   auto *plane = qobject_cast<Plane *>(child);
   auto *planeInstance = qobject_cast<PlaneInstance *>(child);
-  
+
   if (mesh) {
     qDebug() << "Child is a Mesh:" << mesh->objectName();
     connectMeshSignals(mesh);
   }
-  
+
   if (plane) {
     qDebug() << "Child is a Plane:" << plane->name();
     connectPlaneSignals(plane);
   }
-  
+
   if (mesh || meshInstance) {
     updateMeshes();
   }
@@ -988,7 +999,6 @@ int ChemicalStructureRenderer::getMeshInstanceIndex(
   return static_cast<int>(*result);
 }
 
-
 void ChemicalStructureRenderer::updatePlanes() {
   if (!m_planesNeedUpdate)
     return;
@@ -1000,27 +1010,244 @@ void ChemicalStructureRenderer::updatePlanes() {
 
   m_planeRenderer->beginUpdates();
   m_planeRenderer->clear();
-  
+
   for (auto *child : m_structure->children()) {
     auto *plane = qobject_cast<Plane *>(child);
     if (!plane)
       continue;
-      
+
     // Get plane instances
     for (auto *planeChild : plane->children()) {
       auto *instance = qobject_cast<PlaneInstance *>(planeChild);
       if (!instance)
         continue;
-        
+
       // Only add visible instances of visible planes
       if (plane->isVisible() && instance->isVisible()) {
         m_planeRenderer->addPlaneInstance(plane, instance);
       }
     }
   }
-  
+
   m_planeRenderer->endUpdates();
   m_planesNeedUpdate = false;
+}
+
+void ChemicalStructureRenderer::getCurrentAtomsForExport(
+    SceneExportData &data) const {
+  if (!m_structure)
+    return;
+
+  const auto &positions = m_structure->atomicPositions();
+  const auto &atomicNumbers = m_structure->atomicNumbers();
+  const auto &vdwRadii = m_structure->vdwRadii();
+
+  // Export atoms based on current renderer settings and visibility
+  for (int i = 0; i < m_structure->numberOfAtoms(); ++i) {
+    if (shouldSkipAtom(i))
+      continue; // Use existing visibility logic
+
+    auto *element = ElementData::elementFromAtomicNumber(atomicNumbers(i));
+    if (!element)
+      continue;
+
+    QVector3D pos(positions(0, i), positions(1, i), positions(2, i));
+
+    ExportSphere sphere;
+    sphere.position = pos;
+
+    // Use same radius calculation as renderer (matches lines 502-508)
+    const auto &covRadii = m_structure->covalentRadii();
+    float radius = covRadii(i) * 0.5; // Default: covalent radius * 0.5
+
+    if (atomStyle() == AtomDrawingStyle::RoundCapped) {
+      radius = bondThickness();
+    } else if (atomStyle() == AtomDrawingStyle::VanDerWaalsSphere) {
+      radius = vdwRadii(i); // VdW radius without 0.5 factor
+    }
+    // For other styles, keep the default (covRadii * 0.5)
+
+    sphere.radius = radius;
+
+    sphere.color = element->color();
+    sphere.name = QString("Atom_%1").arg(i);
+    sphere.group = QString("Atoms/%1").arg(element->symbol());
+
+    data.spheres().push_back(sphere);
+  }
+}
+
+void ChemicalStructureRenderer::getCurrentBondsForExport(
+    SceneExportData &data) const {
+  if (!m_structure)
+    return;
+
+  const auto &positions = m_structure->atomicPositions();
+  const auto &bonds = m_structure->covalentBonds();
+
+  float bondRadius = bondThickness(); // Use same radius as renderer
+
+  for (size_t i = 0; i < bonds.size(); ++i) {
+    const auto &bond = bonds[i];
+    int atomA = bond.first;
+    int atomB = bond.second;
+
+    // Skip bonds if either atom should be skipped (same logic as
+    // handleBondsUpdate)
+    if (shouldSkipAtom(atomA) || shouldSkipAtom(atomB))
+      continue;
+
+    // Skip duplicate bonds - only export if atomA < atomB to avoid (i,j) and
+    // (j,i) duplicates
+    if (atomA >= atomB)
+      continue;
+
+    auto idxA = m_structure->indexToGenericIndex(atomA);
+    auto idxB = m_structure->indexToGenericIndex(atomB);
+
+    QVector3D startPos(positions(0, atomA), positions(1, atomA),
+                       positions(2, atomA));
+    QVector3D endPos(positions(0, atomB), positions(1, atomB),
+                     positions(2, atomB));
+    QVector3D midPos = (startPos + endPos) / 2.0f;
+
+    // Use same colors as the renderer (may include custom atom colors)
+    auto colorA = m_structure->atomColor(idxA);
+    auto colorB = m_structure->atomColor(idxB);
+
+    // First half-bond (A to middle)
+    ExportCylinder cylA;
+    cylA.startPosition = startPos;
+    cylA.endPosition = midPos;
+    cylA.radius = bondRadius;
+    cylA.color = colorA;
+    cylA.name = QString("Bond_%1_A").arg(i);
+    cylA.group = "Bonds";
+    data.cylinders().push_back(cylA);
+
+    // Second half-bond (middle to B)
+    ExportCylinder cylB;
+    cylB.startPosition = midPos;
+    cylB.endPosition = endPos;
+    cylB.radius = bondRadius;
+    cylB.color = colorB;
+    cylB.name = QString("Bond_%1_B").arg(i);
+    cylB.group = "Bonds";
+    data.cylinders().push_back(cylB);
+  }
+
+  qDebug() << "Exported" << (data.cylinders().size()) << "bond cylinders for"
+           << bonds.size() << "bonds";
+}
+
+void ChemicalStructureRenderer::getCurrentFrameworkForExport(
+    SceneExportData &data) const {
+  if (!m_frameworkRenderer)
+    return;
+
+  // Delegate to framework renderer's export method
+  m_frameworkRenderer->getCurrentFrameworkForExport(data);
+}
+
+void ChemicalStructureRenderer::getCurrentMeshesForExport(
+    SceneExportData &data) const {
+  if (!m_structure)
+    return;
+
+  // Iterate through structure children to find meshes (similar to GLTF exporter
+  // logic)
+  for (auto *child : m_structure->children()) {
+    auto *mesh = qobject_cast<Mesh *>(child);
+    if (!mesh)
+      continue;
+
+    // Skip empty meshes
+    if (mesh->numberOfVertices() == 0)
+      continue;
+
+    ExportMesh exportMesh;
+    QString baseName =
+        mesh->objectName().isEmpty()
+            ? ("Surface_" + QString::number(data.meshes().size()))
+            : mesh->objectName();
+    exportMesh.name = baseName.replace(" ", "_"); // Remove spaces from names
+    exportMesh.group = "Surfaces";
+    exportMesh.opacity =
+        mesh->isTransparent() ? (1.0f - mesh->getTransparency()) : 1.0f;
+
+    // Get mesh vertex data
+    const auto &vertices = mesh->vertices();
+    const auto &normals = mesh->vertexNormals();
+    const auto &faces = mesh->faces();
+
+    // Convert vertices to flat float array
+    exportMesh.vertices.reserve(vertices.cols() * 3);
+    for (int i = 0; i < vertices.cols(); ++i) {
+      exportMesh.vertices.push_back(static_cast<float>(vertices(0, i)));
+      exportMesh.vertices.push_back(static_cast<float>(vertices(1, i)));
+      exportMesh.vertices.push_back(static_cast<float>(vertices(2, i)));
+    }
+
+    // Convert normals to flat float array
+    exportMesh.normals.reserve(normals.cols() * 3);
+    for (int i = 0; i < normals.cols(); ++i) {
+      exportMesh.normals.push_back(static_cast<float>(normals(0, i)));
+      exportMesh.normals.push_back(static_cast<float>(normals(1, i)));
+      exportMesh.normals.push_back(static_cast<float>(normals(2, i)));
+    }
+
+    // Convert faces to flat uint32_t array
+    exportMesh.indices.reserve(faces.cols() * 3);
+    for (int i = 0; i < faces.cols(); ++i) {
+      exportMesh.indices.push_back(static_cast<uint32_t>(faces(0, i)));
+      exportMesh.indices.push_back(static_cast<uint32_t>(faces(1, i)));
+      exportMesh.indices.push_back(static_cast<uint32_t>(faces(2, i)));
+    }
+
+    // Try to get vertex colors from corresponding mesh renderer
+    for (auto *meshRenderer : m_meshRenderers) {
+      if (!meshRenderer)
+        continue;
+      const auto &availableProperties = meshRenderer->availableProperties();
+
+      if (!availableProperties.empty()) {
+        // Find the current property index (use first instance to determine
+        // current property)
+        int currentPropertyIndex = 0;
+        auto *meshInstance = getMeshInstance(0);
+        if (meshInstance) {
+          QString selectedProperty = meshInstance->getSelectedProperty();
+          currentPropertyIndex = availableProperties.indexOf(selectedProperty);
+          if (currentPropertyIndex < 0)
+            currentPropertyIndex = 0; // fallback to first property
+        }
+
+        // Get colors for current property only
+        auto currentColors =
+            meshRenderer->getCurrentPropertyColors(currentPropertyIndex);
+        if (!currentColors.empty()) {
+          // Convert RGBA floats to RGB floats for vertex colors
+          int numVertices = exportMesh.vertices.size() / 3;
+          exportMesh.colors.reserve(numVertices * 3);
+          for (int i = 0; i < numVertices; ++i) {
+            exportMesh.colors.push_back(currentColors[i * 4 + 0]); // R
+            exportMesh.colors.push_back(currentColors[i * 4 + 1]); // G
+            exportMesh.colors.push_back(currentColors[i * 4 + 2]); // B (skip A)
+          }
+          qDebug() << "Extracted" << numVertices << "vertex colors for mesh"
+                   << exportMesh.name;
+          break; // Use first available property data
+        }
+      }
+    }
+
+    // Set fallback color if no vertex colors
+    if (exportMesh.colors.empty()) {
+      exportMesh.fallbackColor = QColor(128, 128, 128); // Default gray color
+    }
+
+    data.meshes().push_back(exportMesh);
+  }
 }
 
 } // namespace cx::graphics

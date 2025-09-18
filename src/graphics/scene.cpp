@@ -2,6 +2,7 @@
 #include <QtOpenGL>
 
 #include "crystalplanegenerator.h"
+#include "debugrenderer.h"
 #include "drawingstyle.h"
 #include "elastic_tensor_results.h"
 #include "elementdata.h"
@@ -9,9 +10,10 @@
 #include "globals.h"
 #include "graphics.h"
 #include "mathconstants.h"
-#include "scene.h"
-#include "settings.h"
 #include "performancetimer.h"
+#include "scene.h"
+#include "scene_export_data.h"
+#include "settings.h"
 #include <ankerl/unordered_dense.h>
 
 using cx::graphics::SelectionType;
@@ -151,7 +153,7 @@ void Scene::setDrawingStyle(DrawingStyle style) {
   }
 }
 
-DrawingStyle Scene::drawingStyle() { return m_drawingStyle; }
+DrawingStyle Scene::drawingStyle() const { return m_drawingStyle; }
 
 void Scene::setSelectionStatusToDefaults() {
   m_selection.type = SelectionType::None;
@@ -254,10 +256,20 @@ void Scene::setSelectStatusForAtomDoubleClick(int atom) {
 
 void Scene::selectAtomsSeparatedBySurface(bool inside) {
   if (m_selectedSurface.surface) {
-    m_structure->setFlagForAllAtoms(AtomFlag::Selected, !inside);
     auto atomIndices = m_selectedSurface.surface->atomsInside();
-    for (const auto &idx : atomIndices) {
-      m_structure->setAtomFlag(idx, AtomFlag::Selected, inside);
+
+    if (inside) {
+      // Select only atoms inside the surface (clear all others)
+      m_structure->setFlagForAllAtoms(AtomFlag::Selected, false);
+      for (const auto &idx : atomIndices) {
+        m_structure->setAtomFlag(idx, AtomFlag::Selected, true);
+      }
+    } else {
+      // Select only atoms outside the surface (clear all others)
+      m_structure->setFlagForAllAtoms(AtomFlag::Selected, true);
+      for (const auto &idx : atomIndices) {
+        m_structure->setAtomFlag(idx, AtomFlag::Selected, false);
+      }
     }
   }
 }
@@ -915,6 +927,10 @@ void Scene::ensureRenderersInitialized() {
   if (!m_lightPositionRenderer) {
     m_lightPositionRenderer = new EllipsoidRenderer();
   }
+
+  if (!m_debugRenderer) {
+    m_debugRenderer = new DebugRenderer();
+  }
 }
 
 void Scene::drawChemicalStructure() {
@@ -943,23 +959,27 @@ void Scene::drawExtras() {
     PERF_SCOPED_TIMER("Light Rendering");
     drawLights();
   }
-}
 
+  {
+    PERF_SCOPED_TIMER("Debug Rendering");
+    drawDebugVisualization();
+  }
+}
 
 void Scene::draw() {
   PERF_SCOPED_TIMER("Scene::draw");
-  
+
   {
     PERF_SCOPED_TIMER("Scene Setup");
     ensureRenderersInitialized();
     updateRendererUniforms();
   }
-  
+
   {
     PERF_SCOPED_TIMER("Chemical Structure");
     drawChemicalStructure();
   }
-  
+
   {
     PERF_SCOPED_TIMER("Scene Extras");
     drawExtras();
@@ -979,30 +999,30 @@ void Scene::setLightPositionsBasedOnCamera() {
   QVector3D right = m_camera.right();
   QVector3D up = m_camera.up();
   QVector3D forward = m_camera.forward();
-  
+
   // Studio lighting setup for professional appearance
   float distance = 3.0f;
-  
+
   // Key Light: Primary light from upper front-left (45° up, 30° left)
   QVector3D keyLightDir = (-forward + right * 0.5f + up * 0.7f).normalized();
   QVector3D keyLight = cameraPos + keyLightDir * distance;
-  
-  // Fill Light: Secondary light from upper front-right (30° up, 45° right) 
+
+  // Fill Light: Secondary light from upper front-right (30° up, 45° right)
   QVector3D fillLightDir = (-forward - right * 0.7f + up * 0.5f).normalized();
   QVector3D fillLight = cameraPos + fillLightDir * distance;
-  
+
   // Rim Light: Back light from upper back-left for depth and separation
   QVector3D rimLightDir = (forward + right * 0.3f + up * 0.8f).normalized();
   QVector3D rimLight = cameraPos + rimLightDir * distance;
-  
+
   // Environment Light: Gentle upward light to lift shadows
   QVector3D envLightDir = (-forward + up * 0.3f).normalized();
   QVector3D envLight = cameraPos + envLightDir * (distance * 0.8f);
-  
-  m_uniforms.u_lightPos.setColumn(0, QVector4D(keyLight));    // Primary key light
-  m_uniforms.u_lightPos.setColumn(1, QVector4D(fillLight));   // Fill light
-  m_uniforms.u_lightPos.setColumn(2, QVector4D(rimLight));    // Rim light
-  m_uniforms.u_lightPos.setColumn(3, QVector4D(envLight));    // Environment light
+
+  m_uniforms.u_lightPos.setColumn(0, QVector4D(keyLight));  // Primary key light
+  m_uniforms.u_lightPos.setColumn(1, QVector4D(fillLight)); // Fill light
+  m_uniforms.u_lightPos.setColumn(2, QVector4D(rimLight));  // Rim light
+  m_uniforms.u_lightPos.setColumn(3, QVector4D(envLight));  // Environment light
 }
 
 void Scene::setRendererUniforms(Renderer *renderer, bool selection_mode) {
@@ -1071,8 +1091,6 @@ void Scene::depthFogSettingsChanged() {
   m_uniforms.u_depthFogOffset =
       settings::readSetting(settings::keys::DEPTH_FOG_OFFSET).toFloat();
 }
-
-
 
 void Scene::materialChanged() {
   m_uniforms.u_materialMetallic =
@@ -1310,7 +1328,6 @@ void Scene::reset() {
   resetViewAndSelections();
 }
 
-
 bool Scene::showCells() {
   if (m_structureRenderer) {
     return m_structureRenderer->showCells();
@@ -1497,19 +1514,64 @@ void Scene::generateExternalFragment() {
 
 void Scene::generateAtomsInsideSurface() {
   if (m_selectedSurface.surface) {
-    auto atomIndices = m_selectedSurface.surface->atomsInside();
-    qDebug() << "Generating" << atomIndices.size() << "atoms inside surface";
-    
+    auto mesh = m_selectedSurface.surface->mesh();
+    if (!mesh)
+      return;
+
+    // Clear previous debug visualization
+    if (isDebugVisualizationEnabled()) {
+      clearDebugVisualization();
+    }
+
+    // Use the base mesh's findAtomsInside method (mesh now includes offset)
+    auto atomIndices = mesh->findAtomsInside(m_structure);
+
+    // If debug visualization is enabled, add rays for some of the found atoms
+    if (isDebugVisualizationEnabled() && !atomIndices.empty()) {
+      // Get positions for the atoms inside the surface
+      auto insidePositions =
+          m_structure->atomicPositionsForIndices(atomIndices);
+
+      for (int i = 0; i < atomIndices.size(); ++i) {
+        const auto &atomIndex = atomIndices[i];
+        const occ::Vec3 &atomPos = insidePositions.col(i);
+
+        // Get debug info for this atom (mesh and atoms now in same coordinate
+        // system)
+        auto debugInfo = mesh->containsPointDebug(atomPos);
+
+        // Use atom position for visualization
+        QVector3D testPoint(atomPos.x(), atomPos.y(), atomPos.z());
+
+        // Add rays with different colors based on their votes
+        float rayLength = 3.0f; // Make rays shorter for better visibility
+        for (const auto &rayResult : debugInfo.rayResults) {
+          QVector3D rayDir(rayResult.rayDirection.x(),
+                           rayResult.rayDirection.y(),
+                           rayResult.rayDirection.z());
+          QVector3D rayEnd = testPoint + rayDir * rayLength;
+
+          // Color rays based on whether they vote "inside" (odd intersections)
+          // or "outside" (even intersections)
+          QColor rayColor = rayResult.insideVote ? Qt::green : Qt::red;
+          m_debugRenderer->addLine(testPoint, rayEnd, rayColor, 0.5f);
+
+          // Add intersection points as very small cyan dots
+          for (const auto &intersection : rayResult.intersectionPoints) {
+            QVector3D intPoint(intersection.x(), intersection.y(),
+                               intersection.z());
+            m_debugRenderer->addPoint(intPoint, Qt::cyan, 0.1f);
+          }
+        }
+      }
+    }
+
     if (!atomIndices.empty()) {
       // Add the atoms using the new method
       m_structure->addAtomsByGenericIndex(atomIndices, AtomFlag::Selected);
-      qDebug() << "Added" << atomIndices.size() << "atoms inside surface";
-      
+
       // Reset view to show only the atoms inside the surface
       m_structure->resetAtomsAndBonds(true);
-      qDebug() << "Reset view to show only atoms inside surface";
-    } else {
-      qDebug() << "No atoms found inside surface";
     }
   }
 }
@@ -1798,4 +1860,46 @@ bool Scene::fromJson(const nlohmann::json &j) {
     delete structure;
     return false;
   }
+}
+
+// Debug visualization methods
+void Scene::setDebugVisualizationEnabled(bool enabled) {
+  if (m_debugRenderer) {
+    m_debugRenderer->setVisible(enabled);
+  }
+}
+
+bool Scene::isDebugVisualizationEnabled() const {
+  return m_debugRenderer ? m_debugRenderer->isVisible() : false;
+}
+
+void Scene::clearDebugVisualization() {
+  if (m_debugRenderer) {
+    m_debugRenderer->clear();
+  }
+}
+
+void Scene::drawDebugVisualization() {
+  if (m_debugRenderer && m_debugRenderer->isVisible()) {
+    m_debugRenderer->updateRendererUniforms(m_uniforms);
+    m_debugRenderer->draw();
+  }
+}
+
+cx::graphics::SceneExportData Scene::getExportData() const {
+  cx::graphics::SceneExportData data;
+
+  if (!m_structure || !m_structureRenderer) {
+    return data;
+  }
+
+  // Use structure renderer convenience methods to get current display state
+  m_structureRenderer->getCurrentAtomsForExport(data);
+  m_structureRenderer->getCurrentBondsForExport(data);
+  m_structureRenderer->getCurrentFrameworkForExport(data);
+  m_structureRenderer->getCurrentMeshesForExport(data);
+  // TODO: Camera export is currently broken, needs investigation
+  // m_structureRenderer->getCurrentCameraForExport(data);
+
+  return data;
 }

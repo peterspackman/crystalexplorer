@@ -1,7 +1,7 @@
 #pragma once
+#include "colormap.h"
 #include "mesh.h"
 #include "meshinstancevertex.h"
-#include "colormap.h"
 #include "renderer.h"
 #include <QOpenGLBuffer>
 #include <QOpenGLExtraFunctions>
@@ -10,14 +10,14 @@
 #include <QOpenGLVertexArrayObject>
 #include <vector>
 
-class MeshInstanceRenderer : public IndexedRenderer, protected QOpenGLExtraFunctions {
+class MeshInstanceRenderer : public IndexedRenderer,
+                             protected QOpenGLExtraFunctions {
 public:
   struct IndexTuple {
     GLuint i, j, k;
   };
 
   explicit MeshInstanceRenderer(Mesh *mesh = nullptr);
-
 
   void addInstance(const MeshInstanceVertex &);
   void addInstances(const std::vector<MeshInstanceVertex> &instances);
@@ -31,8 +31,14 @@ public:
   [[nodiscard]] inline auto &instances() { return m_instances; }
   void setMesh(Mesh *);
 
-  inline const auto &availableProperties() const { return m_availableProperties; }
+  inline const auto &availableProperties() const {
+    return m_availableProperties;
+  }
   bool hasTransparentObjects() const;
+
+  // Export support
+  const std::vector<float> &getVertexPropertyData() const;
+  std::vector<float> getCurrentPropertyColors(int propertyIndex) const;
 
 private:
   void updateBuffers();
@@ -42,11 +48,12 @@ private:
   std::vector<MeshInstanceVertex> m_instances;
 
   QOpenGLBuffer m_vertexPropertyBuffer;
-  QOpenGLTexture *m_vertexPropertyTexture{nullptr}; 
+  QOpenGLTexture *m_vertexPropertyTexture{nullptr};
 
   QStringList m_availableProperties;
   int m_numIndices{0};
   int m_numVertices{0};
+  std::vector<float> m_cachedPropertyData;
 
 protected:
   bool m_impostor = false;

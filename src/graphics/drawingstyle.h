@@ -1,7 +1,15 @@
 #pragma once
 #include <QKeySequence>
 
-enum class DrawingStyle { Tube, BallAndStick, SpaceFill, WireFrame, Ortep, Centroid, CenterOfMass};
+enum class DrawingStyle {
+  Tube,
+  BallAndStick,
+  SpaceFill,
+  WireFrame,
+  Ortep,
+  Centroid,
+  CenterOfMass
+};
 
 enum class AtomDrawingStyle {
   None,

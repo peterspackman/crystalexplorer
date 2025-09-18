@@ -4,6 +4,7 @@ add_library(cx_graphics
     "${CMAKE_CURRENT_SOURCE_DIR}/circlerenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/cylinderimpostorrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/cylinderrenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/debugrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ellipsoidrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/frameworkrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/graphics.cpp"

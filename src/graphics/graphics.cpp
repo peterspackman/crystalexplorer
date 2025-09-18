@@ -27,7 +27,6 @@ void addCircleToCircleRenderer(CircleRenderer &c, const QVector3D &position,
   });
 }
 
-
 void addPartialDiskToCircleRenderer(CircleRenderer &c, const QVector3D &v0,
                                     const QVector3D &v1,
                                     const QVector3D &origin,

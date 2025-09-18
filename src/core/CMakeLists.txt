@@ -36,7 +36,7 @@ add_library(cx_core
 )
 
 target_link_libraries(
-    cx_core PUBLIC 
+    cx_core PUBLIC
     Qt6::Core Qt6::Gui Qt6::Concurrent
     Eigen3::Eigen fmt::fmt
     occ_core
@@ -56,6 +56,7 @@ target_compile_definitions(cx_core
     GL_SILENCE_DEPRECATION=1
 )
 
-target_include_directories(cx_core PUBLIC 
+target_include_directories(cx_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+

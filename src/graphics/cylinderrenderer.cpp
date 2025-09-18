@@ -9,8 +9,9 @@ CylinderRenderer::CylinderRenderer() {
 
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex,
-                                              cx::shader::loadShaderFile(":/shaders/cylinder.vert"));
+  m_program->addCacheableShaderFromSourceCode(
+      QOpenGLShader::Vertex,
+      cx::shader::loadShaderFile(":/shaders/cylinder.vert"));
   m_program->addCacheableShaderFromSourceCode(
       QOpenGLShader::Fragment,
       cx::shader::loadShaderFile(":/shaders/cylinder.frag"));
@@ -91,8 +92,9 @@ CylinderRenderer::CylinderRenderer() {
 CylinderRenderer::CylinderRenderer(const vector<CylinderInstance> &instances) {
   QOpenGLExtraFunctions f(QOpenGLContext::currentContext());
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex,
-                                              cx::shader::loadShaderFile(":/shaders/cylinder.vert"));
+  m_program->addCacheableShaderFromSourceCode(
+      QOpenGLShader::Vertex,
+      cx::shader::loadShaderFile(":/shaders/cylinder.vert"));
   m_program->addCacheableShaderFromSourceCode(
       QOpenGLShader::Fragment,
       cx::shader::loadShaderFile(":/shaders/cylinder.frag"));

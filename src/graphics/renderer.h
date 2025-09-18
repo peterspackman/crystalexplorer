@@ -61,7 +61,7 @@ public:
   }
   virtual void beginUpdates() { m_updatesDisabled = true; }
   virtual void endUpdates() { m_updatesDisabled = false; }
-  virtual void clear() { 
+  virtual void clear() {
     // do nothing in base case
   }
 

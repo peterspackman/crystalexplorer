@@ -1,6 +1,7 @@
 #include "frameworkrenderer.h"
 #include "drawingstyle.h"
 #include "graphics.h"
+#include "scene_export_data.h"
 #include "settings.h"
 #include <QElapsedTimer>
 
@@ -122,23 +123,24 @@ void FrameworkRenderer::handleInteractionsUpdate() {
     return;
 
   // Check impostor setting once per update for performance
-  bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+  bool useImpostors =
+      settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
 
   FragmentPairSettings pairSettings;
 
   pairSettings.allowInversion =
       m_options.allowInversion &
       m_interactions->hasPermutationSymmetry(m_options.model);
-  
+
   // Safety check: ensure structure has completed fragments before finding pairs
   if (m_structure->numberOfAtoms() == 0) {
     return;
   }
-  
+
   auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
 
   std::vector<FragmentDimer> uniquePairs = fragmentPairs.uniquePairs;
-  
+
   // Safety check: ensure we have valid fragment pairs
   if (uniquePairs.empty()) {
     return;
@@ -148,7 +150,8 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       m_interactions->getInteractionsMatchingFragments(uniquePairs);
 
   auto uniqueInteractions = interactionMap.value(m_options.model, {});
-  if (uniqueInteractions.empty() || uniqueInteractions.size() < uniquePairs.size())
+  if (uniqueInteractions.empty() ||
+      uniqueInteractions.size() < uniquePairs.size())
     return;
 
   QColor color = m_options.customColor;
@@ -239,23 +242,25 @@ void FrameworkRenderer::handleInteractionsUpdate() {
       const double lineWidth = DrawingStyleConstants::bondLineWidth;
 
       if (inv) {
+        if (pair.index.b > pair.index.a)
+          continue;
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           if (useImpostors) {
             // Use impostor renderers
-            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, va,
-                                                   color, std::abs(scale));
-            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, vb,
-                                                   color, std::abs(scale));
-            cx::graphics::addCylinderToCylinderRenderer(m_cylinderImpostorRenderer, va,
-                                                        vb, color, color, scale);
+            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer,
+                                                    va, color, std::abs(scale));
+            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer,
+                                                    vb, color, std::abs(scale));
+            cx::graphics::addCylinderToCylinderRenderer(
+                m_cylinderImpostorRenderer, va, vb, color, color, scale);
           } else {
             // Use geometry-based renderers
             cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
                                                        color, std::abs(scale));
             cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, vb,
                                                        color, std::abs(scale));
-            cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va,
-                                                        vb, color, color, scale);
+            cx::graphics::addCylinderToCylinderRenderer(
+                m_cylinderRenderer, va, vb, color, color, scale);
           }
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, vb,
@@ -268,20 +273,20 @@ void FrameworkRenderer::handleInteractionsUpdate() {
         if (m_options.display == FrameworkOptions::Display::Tubes) {
           if (useImpostors) {
             // Use impostor renderers
-            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, va,
-                                                   color, std::abs(scale));
+            cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer,
+                                                    va, color, std::abs(scale));
             cx::graphics::addSphereToSphereRenderer(m_sphereImpostorRenderer, m,
-                                                   color, std::abs(scale));
-            cx::graphics::addCylinderToCylinderRenderer(m_cylinderImpostorRenderer, va, m,
-                                                        color, color, scale);
+                                                    color, std::abs(scale));
+            cx::graphics::addCylinderToCylinderRenderer(
+                m_cylinderImpostorRenderer, va, m, color, color, scale);
           } else {
             // Use geometry-based renderers
             cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, va,
                                                        color, std::abs(scale));
             cx::graphics::addSphereToEllipsoidRenderer(m_ellipsoidRenderer, m,
                                                        color, std::abs(scale));
-            cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va, m,
-                                                        color, color, scale);
+            cx::graphics::addCylinderToCylinderRenderer(m_cylinderRenderer, va,
+                                                        m, color, color, scale);
           }
         } else if (m_options.display == FrameworkOptions::Display::Lines) {
           cx::graphics::addLineToLineRenderer(*m_lineRenderer, va, m, lineWidth,
@@ -302,11 +307,12 @@ void FrameworkRenderer::draw(bool forPicking) {
   }
 
   const auto storedRenderMode = m_uniforms.u_renderMode;
-  
+
   // Only draw based on the framework display mode
   if (m_options.display == FrameworkOptions::Display::Tubes) {
     // Check if impostor rendering is enabled for tubes mode
-    bool useImpostors = settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
+    bool useImpostors =
+        settings::readSetting(settings::keys::USE_IMPOSTOR_RENDERING).toBool();
 
     if (useImpostors) {
       // Use impostor renderers for better performance
@@ -345,6 +351,202 @@ void FrameworkRenderer::draw(bool forPicking) {
   m_uniforms.apply(m_labelRenderer);
   m_labelRenderer->draw();
   m_labelRenderer->release();
+}
+
+std::vector<FrameworkRenderer::FrameworkTube>
+FrameworkRenderer::generateFrameworkTubes() const {
+  std::vector<FrameworkTube> tubes;
+
+  if (!m_structure || !m_interactions) {
+    return tubes;
+  }
+
+  if (m_options.display == FrameworkOptions::Display::None) {
+    return tubes;
+  }
+
+  FragmentPairSettings pairSettings;
+  pairSettings.allowInversion =
+      m_options.allowInversion &
+      m_interactions->hasPermutationSymmetry(m_options.model);
+
+  // Safety check: ensure structure has completed fragments before finding pairs
+  if (m_structure->numberOfAtoms() == 0) {
+    return tubes;
+  }
+
+  auto fragmentPairs = m_structure->findFragmentPairs(pairSettings);
+  std::vector<FragmentDimer> uniquePairs = fragmentPairs.uniquePairs;
+
+  // Safety check: ensure we have valid fragment pairs
+  if (uniquePairs.empty()) {
+    return tubes;
+  }
+
+  auto interactionMap =
+      m_interactions->getInteractionsMatchingFragments(uniquePairs);
+
+  auto uniqueInteractions = interactionMap.value(m_options.model, {});
+  if (uniqueInteractions.empty() ||
+      uniqueInteractions.size() < uniquePairs.size())
+    return tubes;
+
+  QColor color = m_options.customColor;
+  if (m_options.coloring == FrameworkOptions::Coloring::Component) {
+    color = m_interactionComponentColors.value(
+        m_options.component.toLower(), m_defaultInteractionComponentColor);
+  }
+
+  std::vector<std::tuple<QColor, double, QString>> energies;
+  energies.reserve(uniqueInteractions.size());
+
+  double emin = std::numeric_limits<double>::max();
+  double emax = std::numeric_limits<double>::min();
+
+  for (const auto *interaction : uniqueInteractions) {
+    QColor c = color;
+    double energy = 0.0;
+    QString label = "";
+    if (interaction) {
+      energy = interaction->getComponent(m_options.component);
+      if (m_options.coloring == FrameworkOptions::Coloring::Interaction) {
+        c = interaction->color();
+      }
+      switch (m_options.labels) {
+      case FrameworkOptions::LabelDisplay::Value:
+        label = QString::number(energy, 'd', 1);
+        break;
+      case FrameworkOptions::LabelDisplay::Interaction: {
+        label = interaction->label();
+        break;
+      }
+      case FrameworkOptions::LabelDisplay::Fragments: {
+        const auto &params = interaction->parameters();
+        label = m_structure->getFragmentLabel(
+                    params.fragmentDimer.a.asymmetricFragmentIndex) +
+                ":" +
+                m_structure->getFragmentLabel(
+                    params.fragmentDimer.b.asymmetricFragmentIndex);
+        break;
+      }
+      default:
+        break;
+      }
+    }
+    emin = qMin(energy, emin);
+    emax = qMax(energy, emax);
+    energies.push_back({c, energy, label});
+  }
+
+  if (m_options.coloring == FrameworkOptions::Coloring::Value) {
+    ColorMap cmap("Turbo", emin, emax);
+    for (auto &[color, energy, label] : energies) {
+      color = cmap(energy);
+    }
+  }
+
+  const bool inv = pairSettings.allowInversion;
+  const auto selectedFragments = m_structure->selectedFragments();
+  ankerl::unordered_dense::set<FragmentIndex, FragmentIndexHash> selected(
+      selectedFragments.begin(), selectedFragments.end());
+
+  for (const auto &[fragIndex, molPairs] : fragmentPairs.pairs) {
+    for (const auto &[pair, uniqueIndex] : molPairs) {
+      if (selected.size() != 0) {
+        if (m_options.showOnlySelectedFragmentInteractions &&
+            selected.size() > 1) {
+          if (selected.find(pair.index.a) == selected.end() ||
+              selected.find(pair.index.b) == selected.end())
+            continue;
+        } else {
+          if (selected.find(pair.index.a) == selected.end() &&
+              selected.find(pair.index.b) == selected.end())
+            continue;
+        }
+      }
+      auto [tubeColor, energy, label] = energies[uniqueIndex];
+      if ((m_options.cutoff != 0.0) && (std::abs(energy) <= m_options.cutoff))
+        continue;
+      double scale = -energy * thickness();
+      if (std::abs(scale) < 1e-4)
+        continue;
+
+      auto [va, vb] = getPairPositions(pair);
+
+      if (m_options.display == FrameworkOptions::Display::Tubes) {
+        if (inv) {
+          // Full tube from va to vb
+          FrameworkTube tube;
+          tube.startPos = va;
+          tube.endPos = vb;
+          tube.color = tubeColor;
+          tube.radius = std::abs(scale);
+          tube.label = label;
+          tubes.push_back(tube);
+        } else {
+          // Two half-tubes
+          QVector3D m = va + (vb - va) * 0.5;
+
+          FrameworkTube tubeA;
+          tubeA.startPos = va;
+          tubeA.endPos = m;
+          tubeA.color = tubeColor;
+          tubeA.radius = std::abs(scale);
+          tubeA.label = label + "_A";
+          tubes.push_back(tubeA);
+
+          FrameworkTube tubeB;
+          tubeB.startPos = m;
+          tubeB.endPos = vb;
+          tubeB.color = tubeColor;
+          tubeB.radius = std::abs(scale);
+          tubeB.label = label + "_B";
+          tubes.push_back(tubeB);
+        }
+      }
+      // Note: We could extend this to handle Display::Lines mode by creating
+      // thin tubes
+    }
+  }
+
+  return tubes;
+}
+
+void FrameworkRenderer::getCurrentFrameworkForExport(
+    SceneExportData &data) const {
+  auto tubes = generateFrameworkTubes();
+
+  qDebug() << "Framework export: Generated" << tubes.size()
+           << "framework tubes";
+
+  for (const auto &tube : tubes) {
+    // Add cylinder
+    ExportCylinder cylinder;
+    cylinder.startPosition = tube.startPos;
+    cylinder.endPosition = tube.endPos;
+    cylinder.radius = tube.radius;
+    cylinder.color = tube.color;
+    cylinder.name = "Framework-" + tube.label;
+    cylinder.group = "Framework";
+    data.cylinders().push_back(cylinder);
+
+    // Add sphere caps at both ends
+    ExportSphere sphereA;
+    sphereA.position = tube.startPos;
+    sphereA.radius = tube.radius;
+    sphereA.color = tube.color;
+    sphereA.name = "Framework-" + tube.label + "-CapA";
+    sphereA.group = "Framework";
+    data.spheres().push_back(sphereA);
+
+    ExportSphere sphereB;
+    sphereB.position = tube.endPos;
+    sphereB.radius = tube.radius;
+    sphereB.color = tube.color;
+    sphereB.name = "Framework-" + tube.label + "-CapB";
+    sphereB.group = "Framework";
+    data.spheres().push_back(sphereB);
+  }
 }
 
 } // namespace cx::graphics

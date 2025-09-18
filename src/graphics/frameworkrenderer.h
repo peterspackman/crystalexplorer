@@ -1,14 +1,18 @@
 #pragma once
+#include "billboardrenderer.h"
 #include "chemicalstructure.h"
 #include "colormap.h"
-#include "billboardrenderer.h"
-#include "cylinderrenderer.h"
 #include "cylinderimpostorrenderer.h"
+#include "cylinderrenderer.h"
 #include "ellipsoidrenderer.h"
-#include "sphereimpostorrenderer.h"
 #include "frameworkoptions.h"
 #include "linerenderer.h"
 #include "rendereruniforms.h"
+#include "sphereimpostorrenderer.h"
+
+namespace cx::graphics {
+class SceneExportData;
+}
 
 namespace cx::graphics {
 
@@ -39,6 +43,9 @@ public:
 
   void draw(bool forPicking = false);
 
+  // Export convenience method
+  void getCurrentFrameworkForExport(SceneExportData &data) const;
+
   [[nodiscard]] inline CylinderRenderer *cylinderRenderer() {
     return m_cylinderRenderer;
   }
@@ -57,8 +64,17 @@ signals:
   void frameworkChanged();
 
 private:
+  struct FrameworkTube {
+    QVector3D startPos;
+    QVector3D endPos;
+    QColor color;
+    float radius;
+    QString label;
+  };
+
   void handleInteractionsUpdate();
   std::pair<QVector3D, QVector3D> getPairPositions(const FragmentDimer &) const;
+  std::vector<FrameworkTube> generateFrameworkTubes() const;
 
   [[nodiscard]] bool shouldSkipAtom(int idx) const;
 

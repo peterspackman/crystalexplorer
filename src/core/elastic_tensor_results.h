@@ -57,7 +57,7 @@ public:
 
   // Mesh generation for spatial visualization
   Mesh *createPropertyMesh(PropertyType property, int subdivisions = 3,
-                           double radius = 10.0) const;
+                           double radius = 10.0, const Eigen::Vector3d& centerOffset = Eigen::Vector3d::Zero()) const;
 
   // Eigenvalue analysis
   occ::Vec6 eigenvalues() const;

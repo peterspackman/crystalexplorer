@@ -197,7 +197,8 @@ const occ::Mat6 &ElasticTensorResults::voigtCompliance() const {
 
 Mesh *ElasticTensorResults::createPropertyMesh(PropertyType property,
                                                int subdivisions,
-                                               double radius) const {
+                                               double radius,
+                                               const Eigen::Vector3d& centerOffset) const {
   // Validate inputs
   if (subdivisions < 0 || subdivisions > 7) {
     qDebug() << "Invalid subdivisions:" << subdivisions;
@@ -361,13 +362,13 @@ Mesh *ElasticTensorResults::createPropertyMesh(PropertyType property,
     for (int i = 0; i < unitVertices.cols(); ++i) {
       occ::Vec3 direction = unitVertices.col(i);
       double scaleFactor = radius * std::abs(scalingValues(i)) / maxValue;
-      scaledVertices.col(i) = direction * scaleFactor;
+      // Apply scaling and center offset
+      scaledVertices.col(i) = direction * scaleFactor + centerOffset;
     }
-    qDebug() << "Scaled mesh with max property value:" << maxValue
-             << "radius:" << radius;
   } else {
-    qDebug() << "Warning: All property values near zero, using unit sphere";
-    scaledVertices = unitVertices * radius;
+    for (int i = 0; i < unitVertices.cols(); ++i) {
+      scaledVertices.col(i) = unitVertices.col(i) * radius + centerOffset;
+    }
   }
 
   // Create mesh with error handling
@@ -424,7 +425,13 @@ Mesh *ElasticTensorResults::createPropertyMesh(PropertyType property,
     // Set mesh name and description
     QString meshName = QString("%1 - %2").arg(propertyName, m_name);
     mesh->setObjectName(meshName);
-    mesh->setDescription(meshName);
+
+    QString meshDesc = meshName;
+    if (centerOffset.norm() > 1e-6) {
+      meshDesc += QString(" (centered at %.3f, %.3f, %.3f)")
+                     .arg(centerOffset.x()).arg(centerOffset.y()).arg(centerOffset.z());
+    }
+    mesh->setDescription(meshDesc);
 
     // Add default "None" property (required by renderer)
     mesh->setVertexProperty("None",

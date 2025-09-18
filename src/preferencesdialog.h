@@ -34,6 +34,7 @@ signals:
   void lightSettingsChanged();
   void textSettingsChanged();
   void targetFramerateChanged(int fps);
+  void debugVisualizationChanged(bool enabled);
 
 private slots:
   void getValueForExternalProgramSetting(QStandardItem *item);
@@ -56,6 +57,7 @@ private slots:
   void updateSliderPerspective();
   void contextualGlwindowBackgroundColor();
   void restoreExpertSettings();
+  void setDebugVisualizationEnabled(bool enabled);
   void setJmolColors(bool);
   void setScreenGamma(int);
   void setMaterialFactors();

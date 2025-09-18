@@ -5,6 +5,7 @@
 #include <QtOpenGL>
 
 #include "orientation.h"
+#include "scene_export_data.h"
 
 #include "atom_label_options.h"
 #include "billboardrenderer.h"
@@ -15,6 +16,7 @@
 #include "crystalstructure.h"
 #include "cylinderimpostorrenderer.h"
 #include "cylinderrenderer.h"
+#include "debugrenderer.h"
 #include "drawingstyle.h"
 #include "ellipsoidrenderer.h"
 #include "frameworkoptions.h"
@@ -125,6 +127,9 @@ public:
 
   AtomLabelOptions atomLabelOptions() const;
   void setAtomLabelOptions(const AtomLabelOptions &);
+
+  // Export support
+  cx::graphics::SceneExportData getExportData() const;
   void toggleShowAtomLabels();
 
   void setFrameworkOptions(const FrameworkOptions &options);
@@ -161,7 +166,7 @@ public:
 
   void setSelectionColor(const QColor &);
   void setDrawingStyle(DrawingStyle);
-  DrawingStyle drawingStyle();
+  DrawingStyle drawingStyle() const;
   void updateNoneProperties();
 
   void cycleDisorderHighlighting();
@@ -196,6 +201,11 @@ public:
   void generateInternalFragment();
   void generateExternalFragment();
   void generateAtomsInsideSurface();
+
+  // Debug visualization controls
+  void setDebugVisualizationEnabled(bool enabled);
+  bool isDebugVisualizationEnabled() const;
+  void clearDebugVisualization();
 
   bool hasAllAtomsSelected();
 
@@ -237,7 +247,6 @@ public:
   bool hasAtomsWithCustomColor() const;
 
   void generateSlab(SlabGenerationOptions);
-
 
   double getThermalEllipsoidProbability() const;
 
@@ -286,6 +295,7 @@ private:
 
   void drawLights();
   void drawMeasurements();
+  void drawDebugVisualization();
 
   void setLightPositionsBasedOnCamera();
 
@@ -309,6 +319,7 @@ private:
   cx::graphics::MeasurementRenderer *m_measurementRenderer{nullptr};
 
   EllipsoidRenderer *m_lightPositionRenderer{nullptr};
+  DebugRenderer *m_debugRenderer{nullptr};
   QMap<QString, Orientation> _savedOrientations;
 
   bool m_drawLights{false};

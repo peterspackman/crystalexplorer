@@ -1,13 +1,13 @@
 #pragma once
-#include "planevertex.h"
-#include "renderer.h"
 #include "plane.h"
 #include "planeinstance.h"
+#include "planevertex.h"
+#include "renderer.h"
 #include <QOpenGLBuffer>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLShaderProgram>
-#include <QOpenGLVertexArrayObject>
 #include <QOpenGLTexture>
+#include <QOpenGLVertexArrayObject>
 #include <vector>
 
 using std::vector;
@@ -37,8 +37,9 @@ private:
   void initializeGeometry();
   void updateBuffers();
   void updateInstanceBuffer();
-  
-  PlaneInstanceData createInstanceData(Plane *plane, PlaneInstance *instance) const;
+
+  PlaneInstanceData createInstanceData(Plane *plane,
+                                       PlaneInstance *instance) const;
 
   // Vertex data for plane quad (shared by all instances)
   QOpenGLBuffer m_vertexBuffer;
@@ -46,12 +47,12 @@ private:
   vector<PlaneVertex> m_vertices;
   vector<GLuint> m_indices;
   vector<PlaneInstanceData> m_instanceData;
-  
+
   // Track instances for updates
   QMap<PlaneInstance *, int> m_instanceMap;
-  
+
   // Texture support
   QOpenGLTexture *m_texture{nullptr};
-  
+
   bool m_geometryInitialized{false};
 };

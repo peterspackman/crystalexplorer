@@ -16,9 +16,9 @@ struct SelectionInfoVisitor {
         "<b>Element</b>:              {}<br/>"
         "<b>Covalent radius</b>:      {:9.3f}<br/>"
         "<b>Van der Waals radius</b>: {:9.3f}",
-        atom.label.toStdString(), atom.fragmentLabel.toStdString(), atomPosition.x(), atomPosition.y(),
-        atomPosition.z(), el->symbol().toStdString(), el->covRadius(),
-        el->vdwRadius()));
+        atom.label.toStdString(), atom.fragmentLabel.toStdString(),
+        atomPosition.x(), atomPosition.y(), atomPosition.z(),
+        el->symbol().toStdString(), el->covRadius(), el->vdwRadius()));
   }
 
   QString operator()(const SelectedBond &bond) const {
@@ -29,7 +29,8 @@ struct SelectionInfoVisitor {
         "<b>Atom label A</b>:    {}<br/>"
         "<b>Atom label B</b>:    {}<br/>"
         "<b>Unique fragment</b>: {}<br/>",
-        length, bond.a.label.toStdString(), bond.b.label.toStdString(), bond.fragmentLabel.toStdString()));
+        length, bond.a.label.toStdString(), bond.b.label.toStdString(),
+        bond.fragmentLabel.toStdString()));
   }
 
   QString operator()(const SelectedSurface &selection) const {

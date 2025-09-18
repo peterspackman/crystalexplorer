@@ -1,8 +1,7 @@
 #pragma once
-#include <QVector3D>
-#include <QString>
 #include "meshinstance.h"
-
+#include <QString>
+#include <QVector3D>
 
 struct SelectedAtom {
   int index{-1};
@@ -27,7 +26,7 @@ struct SelectedSurface {
   QString property{"None"};
 };
 
-
-using SelectionInfoVariant = std::variant<std::monostate, SelectedAtom, SelectedBond, SelectedSurface>;
+using SelectionInfoVariant =
+    std::variant<std::monostate, SelectedAtom, SelectedBond, SelectedSurface>;
 
 QString getSelectionInformationLabelText(const SelectionInfoVariant &);

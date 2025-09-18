@@ -9,13 +9,11 @@ EllipsoidRenderer::EllipsoidRenderer() {
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
   m_program->addCacheableShaderFromSourceCode(
-	  QOpenGLShader::Vertex,
-          cx::shader::loadShaderFile(":/shaders/ellipsoid.vert")
-  );
+      QOpenGLShader::Vertex,
+      cx::shader::loadShaderFile(":/shaders/ellipsoid.vert"));
   m_program->addCacheableShaderFromSourceCode(
       QOpenGLShader::Fragment,
-      cx::shader::loadShaderFile(":/shaders/ellipsoid.frag")
-  );
+      cx::shader::loadShaderFile(":/shaders/ellipsoid.frag"));
   m_program->link();
   m_program->bind();
 
@@ -88,9 +86,8 @@ EllipsoidRenderer::EllipsoidRenderer(
   QOpenGLExtraFunctions f(QOpenGLContext::currentContext());
   m_program = new QOpenGLShaderProgram();
   m_program->addCacheableShaderFromSourceCode(
-	  QOpenGLShader::Vertex,
-          cx::shader::loadShaderFile(":/shaders/ellipsoid.vert")
-  );
+      QOpenGLShader::Vertex,
+      cx::shader::loadShaderFile(":/shaders/ellipsoid.vert"));
 
   m_program->addCacheableShaderFromSourceCode(
       QOpenGLShader::Fragment,

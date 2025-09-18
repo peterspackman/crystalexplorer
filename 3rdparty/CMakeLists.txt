@@ -39,3 +39,12 @@ CPMAddPackage(
     GITHUB_REPOSITORY "nlohmann/json"
     VERSION "3.11.3"
 )
+
+CPMAddPackage(
+    NAME fastgltf
+    GITHUB_REPOSITORY "spnda/fastgltf"
+    GIT_TAG "v0.9.0"
+    OPTIONS "FASTGLTF_COMPILE_AS_CPP20 ON"
+    EXCLUDE_FROM_ALL YES
+)
+

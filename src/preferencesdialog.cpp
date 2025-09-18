@@ -240,6 +240,9 @@ void PreferencesDialog::initConnections() {
   // When accept is called on the preferences dialog, the CrystalExplorer
   // QSettings are updated accordingly.
 
+  connect(enableDebugVisualizationCheckBox, &QCheckBox::toggled, this,
+          &PreferencesDialog::setDebugVisualizationEnabled);
+
   connect(restoreExpertSettingsButton, &QPushButton::clicked, this,
           &PreferencesDialog::restoreExpertSettings);
 
@@ -566,6 +569,8 @@ void PreferencesDialog::updateDialogFromSettings() {
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool());
   preloadMeshCheckBox->setChecked(
       settings::readSetting(settings::keys::PRELOAD_MESH_FILES).toBool());
+  enableDebugVisualizationCheckBox->setChecked(
+      settings::readSetting(settings::keys::DEBUG_VISUALIZATION_ENABLED).toBool());
 
   _updateDialogFromSettingsDone = true;
 }
@@ -899,4 +904,9 @@ void PreferencesDialog::onTextFontFamilyChanged(const QFont &font) {
 void PreferencesDialog::onTextFontSizeChanged(int size) {
   settings::writeSetting(settings::keys::TEXT_FONT_SIZE, size);
   emit textSettingsChanged();
+}
+
+void PreferencesDialog::setDebugVisualizationEnabled(bool enabled) {
+  settings::writeSetting(settings::keys::DEBUG_VISUALIZATION_ENABLED, enabled);
+  emit debugVisualizationChanged(enabled);
 }

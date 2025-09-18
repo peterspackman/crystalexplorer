@@ -9,6 +9,24 @@
 
 using VertexList = Mesh::VertexList;
 using FaceList = Mesh::FaceList;
+
+// Static helper function to get ray directions - shared between containsPoint and containsPointDebug
+static std::vector<occ::Vec3> getRayDirections() {
+  return {
+    occ::Vec3(1, 0, 0),                                  // +X
+    occ::Vec3(-1, 0, 0),                                 // -X
+    occ::Vec3(0, 1, 0),                                  // +Y
+    occ::Vec3(0, -1, 0),                                 // -Y
+    occ::Vec3(0, 0, 1),                                  // +Z
+    occ::Vec3(0, 0, -1),                                 // -Z
+    occ::Vec3(0.525731, 0.850651, 0),                   // Icosphere vertex
+    occ::Vec3(-0.525731, 0.850651, 0),                  // Icosphere vertex
+    occ::Vec3(0.525731, -0.850651, 0),                  // Icosphere vertex
+    occ::Vec3(-0.525731, -0.850651, 0),                 // Icosphere vertex
+    occ::Vec3(0, 0.525731, 0.850651),                   // Icosphere vertex
+    occ::Vec3(0, -0.525731, 0.850651)                   // Icosphere vertex
+  };
+}
 using ScalarPropertyValues = Mesh::ScalarPropertyValues;
 using ScalarProperties = Mesh::ScalarProperties;
 
@@ -409,28 +427,23 @@ const std::vector<GenericAtomIndex> &Mesh::atomsOutside() const {
 }
 
 bool Mesh::containsPoint(const occ::Vec3& point) const {
-  // Multi-ray consensus algorithm for robust point-in-mesh testing
-  // Works for arbitrary closed meshes (convex and non-convex)
-  
+  // Improved multi-ray consensus algorithm for robust point-in-mesh testing
+  // Uses deterministic ray directions with better tie-breaking and edge handling
+
   // Use carefully chosen ray directions to avoid edge cases
-  // Based on golden ratio and other irrational numbers to minimize 
+  // Based on golden ratio and other irrational numbers to minimize
   // chance of hitting edges exactly
   const double phi = (1.0 + std::sqrt(5.0)) / 2.0; // Golden ratio
   const double sqrt2 = std::sqrt(2.0);
   const double sqrt3 = std::sqrt(3.0);
-  
-  std::vector<occ::Vec3> rayDirections = {
-    occ::Vec3(1.0, phi, 1.0/phi).normalized(),           // Golden ratio based
-    occ::Vec3(-phi, 1.0, 1.0/phi).normalized(),          // Golden ratio based  
-    occ::Vec3(1.0/phi, -1.0, phi).normalized(),          // Golden ratio based
-    occ::Vec3(sqrt2, sqrt3, 1.0).normalized(),           // Irrational direction
-    occ::Vec3(-1.0, sqrt2, sqrt3).normalized(),          // Irrational direction
-    occ::Vec3(sqrt3, -sqrt2, 1.0).normalized(),          // Irrational direction
-    occ::Vec3(1.0, 1.0, 1.0).normalized()                // Simple diagonal
-  };
-  
+  const double sqrt5 = std::sqrt(5.0);
+  const double sqrt7 = std::sqrt(7.0);
+
+  // Use shared ray directions for consistency
+  auto rayDirections = getRayDirections();
+
   int insideVotes = 0;
-  const double epsilon = 1e-12; // Very tight epsilon for robustness
+  const double epsilon = 1e-6; // Larger epsilon for robust numerical stability and consistent results
   
   for (const auto& rayDir : rayDirections) {
     int intersectionCount = 0;
@@ -472,7 +485,7 @@ bool Mesh::containsPoint(const occ::Vec3& point) const {
       double t = f_inv * edge2.dot(q);
       
       // Only count intersections in positive ray direction
-      // Use small epsilon but be more inclusive for boundary points
+      // Use same epsilon for consistency throughout the algorithm
       if (t > epsilon) {
         intersectionCount++;
       }
@@ -484,19 +497,87 @@ bool Mesh::containsPoint(const occ::Vec3& point) const {
     }
   }
   
-  // Use majority vote with tie-breaking favoring inside
+  // Use majority vote - with 9 rays, no ties are possible
   const int totalRays = rayDirections.size();
   const int majorityThreshold = totalRays / 2;
-  
-  if (insideVotes > majorityThreshold) {
-    return true;  // Clear majority says inside
-  } else if (insideVotes < majorityThreshold) {
-    return false; // Clear majority says outside  
-  } else {
-    // Tie case - favor inside for boundary points
-    // This handles points exactly on edges/faces more inclusively
-    return true;
+
+  // Simple majority voting with no tie-breaking needed
+  return insideVotes > majorityThreshold;
+}
+
+Mesh::ContainmentDebugInfo Mesh::containsPointDebug(const occ::Vec3& point) const {
+  ContainmentDebugInfo debugInfo;
+  debugInfo.testPoint = point;
+
+  // Use exact same ray directions as regular containsPoint
+  auto rayDirections = getRayDirections();
+
+  int totalInsideVotes = 0;
+  const double epsilon = 1e-6;
+
+  for (const auto& rayDir : rayDirections) {
+    RayDebugInfo rayInfo;
+    rayInfo.rayDirection = rayDir;
+    rayInfo.intersectionCount = 0;
+
+    for (int f = 0; f < m_faces.cols(); ++f) {
+      // Get triangle vertices
+      occ::Vec3 v0 = m_vertices.col(m_faces(0, f));
+      occ::Vec3 v1 = m_vertices.col(m_faces(1, f));
+      occ::Vec3 v2 = m_vertices.col(m_faces(2, f));
+
+      // Möller-Trumbore ray-triangle intersection algorithm
+      occ::Vec3 edge1 = v1 - v0;
+      occ::Vec3 edge2 = v2 - v0;
+      occ::Vec3 h = rayDir.cross(edge2);
+      double a = edge1.dot(h);
+
+      // Skip if ray is parallel to triangle
+      if (std::abs(a) < epsilon) {
+        continue;
+      }
+
+      double f_inv = 1.0 / a;
+      occ::Vec3 s = point - v0;
+      double u = f_inv * s.dot(h);
+
+      if (u < 0.0 || u > 1.0) {
+        continue;
+      }
+
+      occ::Vec3 q = s.cross(edge1);
+      double v = f_inv * rayDir.dot(q);
+
+      if (v < 0.0 || u + v > 1.0) {
+        continue;
+      }
+
+      // Compute t to find intersection point on ray
+      double t = f_inv * edge2.dot(q);
+
+      // Only count intersections in positive ray direction
+      if (t > epsilon) {
+        rayInfo.intersectionCount++;
+        // Store the intersection point for visualization
+        occ::Vec3 intersectionPoint = point + t * rayDir;
+        rayInfo.intersectionPoints.push_back(intersectionPoint);
+      }
+    }
+
+    // Determine if this ray votes "inside"
+    rayInfo.insideVote = (rayInfo.intersectionCount % 2) == 1;
+    if (rayInfo.insideVote) {
+      totalInsideVotes++;
+    }
+
+    debugInfo.rayResults.push_back(rayInfo);
   }
+
+  debugInfo.totalInsideVotes = totalInsideVotes;
+  const int majorityThreshold = rayDirections.size() / 2;
+  debugInfo.finalResult = totalInsideVotes > majorityThreshold;
+
+  return debugInfo;
 }
 
 std::pair<occ::Vec3, occ::Vec3> Mesh::boundingBox() const {

@@ -36,13 +36,10 @@ private:
 // Instance data for each plane instance
 class PlaneInstanceData {
 public:
-  Q_DECL_CONSTEXPR explicit PlaneInstanceData(const QVector3D &origin,
-                                               const QVector3D &axisA,
-                                               const QVector3D &axisB,
-                                               const QVector4D &color,
-                                               const QVector4D &gridParams,
-                                               const QVector4D &boundsA,
-                                               const QVector4D &boundsB)
+  Q_DECL_CONSTEXPR explicit PlaneInstanceData(
+      const QVector3D &origin, const QVector3D &axisA, const QVector3D &axisB,
+      const QVector4D &color, const QVector4D &gridParams,
+      const QVector4D &boundsA, const QVector4D &boundsB)
       : m_origin(origin), m_axisA(axisA), m_axisB(axisB), m_color(color),
         m_gridParams(gridParams), m_boundsA(boundsA), m_boundsB(boundsB) {}
 

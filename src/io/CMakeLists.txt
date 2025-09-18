@@ -3,6 +3,7 @@ add_library(cx_io
     "${CMAKE_CURRENT_SOURCE_DIR}/crystalclear.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_eps.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/genericxyzfile.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/gltf_exporter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/gulp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/io_utilities.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/load_mesh.cpp"
@@ -20,7 +21,7 @@ add_library(cx_io
 )
 
 target_link_libraries(
-    cx_io PUBLIC 
+    cx_io PUBLIC
     cx_core
     cx_graphics
     Qt6::Core Qt6::Gui Qt6::Widgets
@@ -28,10 +29,12 @@ target_link_libraries(
     unordered_dense::unordered_dense
     occ_core
     occ_crystal
+    fastgltf::fastgltf
 )
 
 target_compile_features(cx_io PUBLIC cxx_std_20)
 
-target_include_directories(cx_io PUBLIC 
+target_include_directories(cx_io PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+

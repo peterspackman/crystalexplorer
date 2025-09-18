@@ -933,16 +933,16 @@ void ChildPropertyController::createElasticTensorPropertiesTab() {
     }
     
     try {
-      Mesh* mesh = m_currentElasticTensor->createPropertyMesh(propType, subdivisions->value(), radius->value());
+      // Get the desired center offset
+      Eigen::Vector3d centerOffset(centerX->value(), centerY->value(), centerZ->value());
+
+      Mesh* mesh = m_currentElasticTensor->createPropertyMesh(propType, subdivisions->value(), radius->value(), centerOffset);
       if (mesh) {
         // Set the mesh's parent to the same as the elastic tensor (the ChemicalStructure)
         mesh->setParent(m_currentElasticTensor->parent());
-        
-        // Create MeshInstance with translation to specified center
-        MeshTransform transform = MeshTransform::Identity();
-        transform.translation() = Eigen::Vector3d(centerX->value(), centerY->value(), centerZ->value());
-        
-        MeshInstance *instance = new MeshInstance(mesh, transform);
+
+        // Create MeshInstance with identity transform since offset is already in base mesh
+        MeshInstance *instance = new MeshInstance(mesh, MeshTransform::Identity());
         instance->setObjectName(QString("%1 - %2").arg(combo->currentText(), m_currentElasticTensor->name()));
         
         qDebug() << "Successfully generated mesh for" << combo->currentText() << "from elastic tensor" << m_currentElasticTensor->name();

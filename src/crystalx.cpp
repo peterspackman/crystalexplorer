@@ -23,6 +23,7 @@
 #include "crystalx.h"
 #include "dialoghtml.h"
 #include "elementdata.h"
+#include "gltf_exporter.h"
 #include "isosurface_calculator.h"
 #include "load_wavefunction.h"
 #include "mathconstants.h"
@@ -404,6 +405,8 @@ void Crystalx::initMenuConnections() {
           &Crystalx::quickExportCurrentGraphics);
   connect(exportGeometryAction, &QAction::triggered, this,
           &Crystalx::handleExportCurrentGeometry);
+  connect(exportToGLTFAction, &QAction::triggered, this,
+          &Crystalx::handleExportToGLTF);
 
   // Scene menu
   connect(animateAction, &QAction::toggled, this, &Crystalx::setAnimateScene);
@@ -1923,6 +1926,40 @@ void Crystalx::handleExportCurrentGeometry() {
   }
 }
 
+void Crystalx::handleExportToGLTF() {
+  if (!project->currentScene())
+    return;
+
+  auto* structure = project->currentScene()->chemicalStructure();
+  if (!structure) {
+    showStatusMessage("No chemical structure available for export");
+    return;
+  }
+
+  QFileInfo fi(project->currentScene()->title());
+  QString suggestedFilename = fi.baseName() + ".glb";
+
+  QString filter = "Binary GLTF Files (*.glb);;GLTF Files (*.gltf)";
+  QString filename = QFileDialog::getSaveFileName(
+      this, tr("Export to GLTF"), suggestedFilename, filter);
+
+  if (!filename.isEmpty()) {
+    cx::core::GLTFExporter exporter;
+    cx::core::GLTFExporter::ExportOptions options;
+
+    // Set binary format based on file extension
+    options.binaryFormat = filename.endsWith(".glb", Qt::CaseInsensitive);
+
+    // Use scene export to get current display state including framework
+    bool success = exporter.exportScene(project->currentScene(), filename, options);
+    if (success) {
+      showStatusMessage("Exported structure to " + filename);
+    } else {
+      showStatusMessage("Failed to export structure to " + filename);
+    }
+  }
+}
+
 QString Crystalx::suggestedProjectFilename() {
   QString filename;
   if (project->previouslySaved()) {
@@ -1976,6 +2013,8 @@ void Crystalx::initPreferencesDialog() {
             glWindow, &GLWindow::lightSettingsChanged);
     connect(preferencesDialog, &PreferencesDialog::textSettingsChanged,
             glWindow, &GLWindow::textSettingsChanged);
+    connect(preferencesDialog, &PreferencesDialog::debugVisualizationChanged,
+            glWindow, &GLWindow::setDebugVisualizationEnabled);
     connect(preferencesDialog, &PreferencesDialog::glDepthTestEnabledChanged,
             glWindow, &GLWindow::updateDepthTest);
     connect(preferencesDialog, &PreferencesDialog::targetFramerateChanged,

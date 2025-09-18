@@ -1,9 +1,9 @@
 #pragma once
+#include "fragment.h"
 #include <QColor>
 #include <QObject>
 #include <QVector3D>
 #include <ankerl/unordered_dense.h>
-#include "fragment.h"
 #include <cstdint>
 
 namespace cx::graphics {
@@ -61,7 +61,6 @@ public:
   [[nodiscard]] QVector3D getColorFromId(quint32) const;
 
 private:
-
   std::vector<IdentifierIndexMap> m_indexMaps;
   std::vector<IndexIdentifierMap> m_identifierMaps;
 };

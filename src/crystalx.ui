@@ -59,6 +59,7 @@
     <addaction name="preferencesAction"/>
     <addaction name="actionExport_As"/>
     <addaction name="quickExportAction"/>
+    <addaction name="exportToGLTFAction"/>
    </widget>
    <widget class="QMenu" name="sceneMenu">
     <property name="title">
@@ -1242,6 +1243,17 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="exportToGLTFAction">
+   <property name="text">
+    <string>Export to GLTF...</string>
+   </property>
+   <property name="statusTip">
+    <string>Export current structure to GLTF format for 3D applications</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+G</string>
    </property>
   </action>
  </widget>

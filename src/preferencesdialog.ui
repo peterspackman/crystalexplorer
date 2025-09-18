@@ -1373,6 +1373,16 @@
             </property>
            </widget>
           </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="enableDebugVisualizationCheckBox">
+            <property name="toolTip">
+             <string>Controls whether debug visualization is shown. Shows rays, intersection points, and atom classifications for debugging mesh containment issues.</string>
+            </property>
+            <property name="text">
+             <string>Enable debug visualization</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

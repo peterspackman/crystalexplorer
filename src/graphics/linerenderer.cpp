@@ -5,10 +5,11 @@
 LineRenderer::LineRenderer() {
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex,
-                                              cx::shader::loadShaderFile(":/shaders/line.vert"));
-  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Fragment,
-                                              cx::shader::loadShaderFile(":/shaders/line.frag"));
+  m_program->addCacheableShaderFromSourceCode(
+      QOpenGLShader::Vertex, cx::shader::loadShaderFile(":/shaders/line.vert"));
+  m_program->addCacheableShaderFromSourceCode(
+      QOpenGLShader::Fragment,
+      cx::shader::loadShaderFile(":/shaders/line.frag"));
   m_program->link();
   m_program->bind();
 
@@ -65,10 +66,11 @@ LineRenderer::LineRenderer(const vector<LineVertex> &vertices)
     : m_vertex(QOpenGLBuffer::VertexBuffer) {
   // Create Shader (Do not release until VAO is created)
   m_program = new QOpenGLShaderProgram();
-  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex,
-                                              cx::shader::loadShaderFile(":/shaders/line.vert"));
-  m_program->addCacheableShaderFromSourceCode(QOpenGLShader::Fragment,
-                                              cx::shader::loadShaderFile(":/shaders/line.frag"));
+  m_program->addCacheableShaderFromSourceCode(
+      QOpenGLShader::Vertex, cx::shader::loadShaderFile(":/shaders/line.vert"));
+  m_program->addCacheableShaderFromSourceCode(
+      QOpenGLShader::Fragment,
+      cx::shader::loadShaderFile(":/shaders/line.frag"));
   m_program->link();
   m_program->bind();
 

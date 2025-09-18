@@ -198,8 +198,8 @@ void Measurement::drawDistance(LineRenderer *lines,
                                CircleRenderer *circles) const {
   const double LINE_RADIUS = lineRadius();
 
-  cx::graphics::addDashedLineToLineRenderer(*lines, _positions[0], _positions[1],
-                                        LINE_RADIUS, m_color);
+  cx::graphics::addDashedLineToLineRenderer(
+      *lines, _positions[0], _positions[1], LINE_RADIUS, m_color);
 }
 
 void Measurement::drawAngle(LineRenderer *lines,
@@ -213,7 +213,7 @@ void Measurement::drawAngle(LineRenderer *lines,
   //    SPHERE_RADIUS,
   //                                  ANGLE_COLOR);
   cx::graphics::addCurvedLineToLineRenderer(*lines, v0, v1, _positions[1],
-                                        LINE_RADIUS * 2, m_color);
+                                            LINE_RADIUS * 2, m_color);
 }
 
 void Measurement::drawDihedral(LineRenderer *lines,
@@ -230,18 +230,18 @@ void Measurement::drawDihedral(LineRenderer *lines,
   QVector3D d0 = a - QVector3D::dotProduct(a, b_norm) * b_norm;
   QVector3D p0 = center + LINE_LENGTH * d0.normalized();
   cx::graphics::addDashedLineToLineRenderer(*lines, center, p0, LINE_RADIUS,
-                                        m_color);
+                                            m_color);
 
   QVector3D c = _positions[3] - _positions[2];
   QVector3D d1 = c - QVector3D::dotProduct(c, b_norm) * b_norm;
   QVector3D p1 = center + LINE_LENGTH * d1.normalized();
   cx::graphics::addDashedLineToLineRenderer(*lines, center, p1, LINE_RADIUS,
-                                        m_color);
+                                            m_color);
 
   QVector3D v0 = p0 - center;
   QVector3D v1 = p1 - center;
   cx::graphics::addCurvedLineToLineRenderer(*lines, 0.5 * v0, 0.5 * v1, center,
-                                        LINE_RADIUS, m_color);
+                                            LINE_RADIUS, m_color);
 
   //  Graphics::drawPieBetweenVectors(v0, v1, center, LINE_LENGTH,
   //  SPHERE_RADIUS,
@@ -279,12 +279,13 @@ void Measurement::drawOutOfPlaneBend(LineRenderer *lines,
   up *= std::max(lx, ly);
   right *= std::max(lx, ly);
 
-  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + m, LINE_RADIUS,
-                                        m_color);
-  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + v, LINE_RADIUS,
-                                        m_color);
+  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + m,
+                                            LINE_RADIUS, m_color);
+  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + v,
+                                            LINE_RADIUS, m_color);
   cx::graphics::addCurvedLineBetweenVectors(*circles, v, m, center, m_color);
-  cx::graphics::addCircleToCircleRenderer(*circles, center, right, up, planeColor);
+  cx::graphics::addCircleToCircleRenderer(*circles, center, right, up,
+                                          planeColor);
 }
 
 void Measurement::drawInPlaneBend(LineRenderer *lines,
@@ -317,12 +318,13 @@ void Measurement::drawInPlaneBend(LineRenderer *lines,
   up *= std::max(lx, ly);
   right *= std::max(lx, ly);
 
-  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + u, LINE_RADIUS,
-                                        m_color);
-  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + m, LINE_RADIUS,
-                                        m_color);
+  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + u,
+                                            LINE_RADIUS, m_color);
+  cx::graphics::addDashedLineToLineRenderer(*lines, center, center + m,
+                                            LINE_RADIUS, m_color);
 
   cx::graphics::addCurvedLineBetweenVectors(*circles, u, m, center, m_color);
 
-  cx::graphics::addCircleToCircleRenderer(*circles, center, right, up, planeColor);
+  cx::graphics::addCircleToCircleRenderer(*circles, center, right, up,
+                                          planeColor);
 }

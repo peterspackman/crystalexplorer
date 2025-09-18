@@ -91,6 +91,7 @@ public slots:
   void updateProgressBar(int, int);
   void clearStatusMessage();
   void handleExportCurrentGeometry();
+  void handleExportToGLTF();
   void handleAtomLabelActions();
   void handleMeshSelectionChanged();
   void handleEnergyColorSchemeChanged();
