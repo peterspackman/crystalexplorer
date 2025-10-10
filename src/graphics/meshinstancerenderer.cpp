@@ -4,6 +4,11 @@
 
 #include <QOpenGLShaderProgram>
 
+// OpenGL constants not available in WebGL/GLES
+#ifndef GL_TEXTURE_BUFFER
+#define GL_TEXTURE_BUFFER 0x8C2A
+#endif
+
 MeshInstanceRenderer::MeshInstanceRenderer(Mesh *mesh)
     : QOpenGLExtraFunctions(QOpenGLContext::currentContext()) {
 

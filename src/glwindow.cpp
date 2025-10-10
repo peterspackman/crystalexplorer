@@ -14,7 +14,13 @@
 #include "renderselection.h"
 #include "settings.h"
 #include "performancetimer.h"
+#include "colorbarwidget.h"
 #include <fmt/core.h>
+
+// OpenGL ES compatibility
+#ifdef Q_OS_WASM
+#define glClearDepth glClearDepthf
+#endif
 
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) { 
   init(); 
@@ -166,6 +172,37 @@ void GLWindow::initializeGL() {
 
   // Create the shader program
   m_postprocessShader = new QOpenGLShaderProgram();
+#ifdef Q_OS_WASM
+  // WebGL/GLSL ES 300 shaders
+  m_postprocessShader->addShaderFromSourceCode(QOpenGLShader::Vertex, R"(
+      #version 300 es
+      layout (location = 0) in vec2 aPos;
+      layout (location = 1) in vec2 aTexCoords;
+
+      out vec2 TexCoords;
+
+      void main()
+      {
+          gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+          TexCoords = aTexCoords;
+      }
+  )");
+  m_postprocessShader->addShaderFromSourceCode(QOpenGLShader::Fragment, R"(
+      #version 300 es
+      precision highp float;
+
+      out vec4 FragColor;
+      in vec2 TexCoords;
+
+      uniform sampler2D screenTexture;
+
+      void main()
+      {
+          FragColor = texture(screenTexture, TexCoords);
+      }
+  )");
+#else
+  // Desktop OpenGL 3.3 shaders
   m_postprocessShader->addShaderFromSourceCode(QOpenGLShader::Vertex, R"(
       #version 330 core
       layout (location = 0) in vec2 aPos;
@@ -192,6 +229,7 @@ void GLWindow::initializeGL() {
           FragColor = texture(screenTexture, TexCoords);
       }
   )");
+#endif
   m_postprocessShader->bindAttributeLocation("aPos", 0);
   m_postprocessShader->bindAttributeLocation("aTexCoords", 1);
   m_postprocessShader->link();
@@ -227,7 +265,9 @@ void GLWindow::initializeGL() {
   glClearColor(_backgroundColor.redF(), _backgroundColor.greenF(),
                _backgroundColor.blueF(), _backgroundColor.alphaF());
   glEnable(GL_BLEND);
+#ifdef GL_MULTISAMPLE
   glEnable(GL_MULTISAMPLE);
+#endif
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
@@ -256,6 +296,13 @@ void GLWindow::resizeGL(int width, int height) {
   setProjection(width, height);
   m_textLayer = QImage(size(), QImage::Format_ARGB32);
   makeFrameBufferObject();
+
+  // Reposition colorbar if visible
+  if (m_colorBar && m_colorBar->isVisible()) {
+    int x = width - m_colorBar->width() - 10;
+    int y = height - m_colorBar->height() - 10;
+    m_colorBar->move(x, y);
+  }
 }
 
 void GLWindow::setAnimateScene(bool animate) {
@@ -715,6 +762,29 @@ void GLWindow::setObjectInformationTextAndPosition(QString text, QPoint pos) {
 void GLWindow::hideObjectInformation() {
   if (m_infoLabel) {
     m_infoLabel->hide();
+  }
+}
+
+void GLWindow::showColorBar(const QString &colorMapName, double minValue, double maxValue, const QString &label) {
+  if (!m_colorBar) {
+    m_colorBar = new ColorBarWidget(this);
+  }
+
+  m_colorBar->setColorMap(colorMapName, minValue, maxValue);
+  m_colorBar->setLabel(label);
+
+  // Position in lower right corner
+  int x = width() - m_colorBar->width() - 10;
+  int y = height() - m_colorBar->height() - 10;
+  m_colorBar->move(x, y);
+
+  m_colorBar->show();
+  m_colorBar->raise();
+}
+
+void GLWindow::hideColorBar() {
+  if (m_colorBar) {
+    m_colorBar->hide();
   }
 }
 

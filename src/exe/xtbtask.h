@@ -16,7 +16,7 @@ public:
   void setParameters(const xtb::Parameters &);
   const xtb::Parameters &getParameters() const;
 
-  const xtb::Result& getResult() const;
+  xtb::Result getResult() const;
 
   QString coordFilename() const;
   QString inputSuffix() const;
@@ -31,5 +31,4 @@ public:
 
 private:
   xtb::Parameters m_parameters;
-  xtb::Result m_result;
 };

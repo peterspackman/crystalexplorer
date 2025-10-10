@@ -36,6 +36,11 @@ QString readFileContents(const QString &filePath,
 }
 
 QString findProgramInPath(const QString &program) {
+#ifdef Q_OS_WASM
+  // External programs not supported in WASM
+  Q_UNUSED(program);
+  return QString();
+#else
   QFileInfo file(program);
   if (file.isAbsolute() && file.isExecutable()) {
     return program;
@@ -51,6 +56,7 @@ QString findProgramInPath(const QString &program) {
     }
   }
   return QString();
+#endif
 }
 
 } // namespace exe

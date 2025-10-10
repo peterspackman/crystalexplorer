@@ -37,12 +37,17 @@ add_library(cx_core
 
 target_link_libraries(
     cx_core PUBLIC
-    Qt6::Core Qt6::Gui Qt6::Concurrent
+    Qt6::Core Qt6::Gui
     Eigen3::Eigen fmt::fmt
     occ_core
     occ_crystal
     nlohmann_json::nlohmann_json
 )
+
+if(TARGET Qt6::Concurrent)
+    target_link_libraries(cx_core PUBLIC Qt6::Concurrent)
+    target_compile_definitions(cx_core PUBLIC CX_HAS_CONCURRENT)
+endif()
 
 target_compile_features(cx_core PUBLIC cxx_std_20)
 target_compile_definitions(cx_core

@@ -94,11 +94,9 @@ void XtbTask::postProcess() {
   outputs.propertiesPath = propertiesFilename();
   outputs.moldenPath = moldenFilename();
 
-  m_result.name = baseName();
-  m_result.stdoutContents = stdoutContents().toUtf8();
-  m_result.jsonContents = jsonContents().toUtf8();
-  m_result.propertiesContents = propertiesContents().toUtf8();
-  m_result.moldenContents = moldenContents().toUtf8();
+  // Store result data in properties (thread-safe)
+  setProperty("result_name", baseName());
+  setProperty("result_success", true);
 
   if (deleteWorkingFiles()) {
     emit progressText("Deleting XTB working files");
@@ -108,9 +106,20 @@ void XtbTask::postProcess() {
   }
   emit progressText("Finished post processing");
   qDebug() << "Finish post process" << baseName();
-  m_result.success = true;
 }
 
 QString XtbTask::inputSuffix() const { return inputSuffixDefault; }
 
-const xtb::Result &XtbTask::getResult() const { return m_result; }
+xtb::Result XtbTask::getResult() const {
+  xtb::Result result;
+
+  // Build result from properties (thread-safe)
+  result.name = property("result_name").toString();
+  result.success = property("result_success").toBool();
+  result.stdoutContents = stdoutContents().toUtf8();
+  result.jsonContents = jsonContents().toUtf8();
+  result.propertiesContents = propertiesContents().toUtf8();
+  result.moldenContents = moldenContents().toUtf8();
+
+  return result;
+}

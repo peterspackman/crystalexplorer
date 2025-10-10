@@ -32,3 +32,8 @@ stdin
 .vscode
 examples/
 tags
+
+# XTB calculation output files
+*.coord
+*.molden.input
+*.xtbout.json

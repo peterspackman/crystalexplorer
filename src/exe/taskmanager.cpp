@@ -1,11 +1,23 @@
 #include "taskmanager.h"
+#include "taskbackend.h"
 
-TaskManager::TaskManager(QObject *parent) : QObject(parent) {}
+TaskManager::TaskManager(QObject *parent) : QObject(parent) {
+    // Create shared backend for all tasks
+    // Backend is stateless so safe to share
+    m_backend = TaskBackendFactory::create();
+}
+
+TaskManager::~TaskManager() {
+    delete m_backend;
+}
 
 TaskID TaskManager::add(Task *task, bool start) {
   auto id = TaskID::createUuid();
   m_tasks.insert(id, task);
   task->setParent(this);
+
+  // Set backend for this task (shared backend is safe since it's stateless)
+  task->setBackend(m_backend);
 
   connect(task, &Task::completed,
           [this, id]() { this->handleTaskComplete(id); });

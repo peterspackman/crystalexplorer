@@ -2,12 +2,14 @@
 #include "pairinteractiontablemodel.h"
 #include "scene.h"
 #include <QWidget>
+#include <QPushButton>
 
 class QTabWidget;
 class QLabel;
 class QTableView;
 class QShowEvent;
 class QTextBrowser;
+class QStackedLayout;
 
 struct InteractionInfoSettings {
   QString colorScheme{"Viridis"};
@@ -24,9 +26,11 @@ public:
 public slots:
   void updateSettings(InteractionInfoSettings);
   void forceUpdate();
+  void enableExperimentalFeatures(bool enable);
 
 signals:
   void currentModelChanged(const QString &modelName);
+  void elasticTensorRequested(const QString &modelName);
 
 protected:
   void showEvent(QShowEvent *event) override;
@@ -39,6 +43,9 @@ private:
   void showNoDataMessage();
   void setupTableForModel(const QString &model);
   void setupCopyAction();
+  void setupExportAction();
+  void exportCurrentModelToJson();
+  void estimateElasticTensor();
   QString generateCitationHtml(const QString &model);
   QWidget* createTableWithCitations(const QString &model);
 
@@ -46,8 +53,12 @@ private:
   QMenu *m_headerContextMenu{nullptr};
 
   QAction *m_copyAction{nullptr};
+  QAction *m_exportAction{nullptr};
+  QPushButton *m_exportButton{nullptr};
+  QPushButton *m_elasticTensorButton{nullptr};
   Scene *m_scene{nullptr};
   QTabWidget *m_tabWidget{nullptr};
+  QStackedLayout *m_stackedLayout{nullptr};
   QLabel *m_noDataLabel{nullptr};
   QTextBrowser *m_citationBrowser{nullptr};
   InteractionInfoSettings m_settings;

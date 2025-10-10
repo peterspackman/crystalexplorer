@@ -4,6 +4,11 @@
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLShaderProgram>
 
+// OpenGL constants not available in WebGL/GLES
+#ifndef GL_PROGRAM_POINT_SIZE
+#define GL_PROGRAM_POINT_SIZE 0x8642
+#endif
+
 PointCloudRenderer::PointCloudRenderer()
     : m_vertex(QOpenGLBuffer::VertexBuffer) {
   // Create Shader (Do not release until VAO is created)

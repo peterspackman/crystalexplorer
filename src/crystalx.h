@@ -1,11 +1,13 @@
 #pragma once
 #include <QCloseEvent>
 #include <QDockWidget>
-#include <QFutureWatcher>
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QTextEdit>
+#ifdef CX_HAS_CONCURRENT
+#include <QFutureWatcher>
 #include <QtConcurrent>
+#endif
 
 #include "childpropertycontroller.h"
 #include "fingerprintwindow.h"
@@ -24,6 +26,7 @@
 #include "exportdialog.h"
 #include "fragmentstatedialog.h"
 #include "infoviewer.h"
+#include "latticeenergydialog.h"
 #include "pair_energy_parameters.h"
 #include "planedialog.h"
 #include "planegenerationdialog.h"
@@ -153,7 +156,12 @@ private slots:
   void allowCloneSurfaceAction();
   void allowCalculateEnergiesAction();
   void showEnergyCalculationDialog();
+  void exportCurrentSurface();
   void showElasticTensorImportDialog();
+  void showLatticeEnergyDialog();
+  void calculateElasticTensor(const QString &modelName);
+  void calculateLatticeEnergy(const QString &modelName, double radius, int threads, const QString &cifFile);
+  void loadLatticeEnergyResults(const QString &filename, const QString &modelName);
 
   void showEnergyFrameworkDialog();
   void cycleEnergyFrameworkBackwards();

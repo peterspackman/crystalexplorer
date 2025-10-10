@@ -62,6 +62,10 @@ inline const char *fingerprint_serif_font = "Georgia";
 #elif defined(Q_OS_LINUX)
 inline const char *fingerprint_sans_font = "Ubuntu";
 inline const char *fingerprint_serif_font = "Times New Roman";
+#else
+// Fallback for WASM and other platforms
+inline const char *fingerprint_sans_font = "sans-serif";
+inline const char *fingerprint_serif_font = "serif";
 #endif
 
 const QFont TITLE_FONT = QFont(fingerprint_sans_font, 14, QFont::Bold, true);

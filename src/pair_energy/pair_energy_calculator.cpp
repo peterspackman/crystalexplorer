@@ -5,6 +5,7 @@
 #include "load_wavefunction.h"
 #include "molecular_wavefunction_provider.h"
 #include "occpairtask.h"
+#include "xtbtask.h"
 #include "settings.h"
 #include "simple_energy_provider.h"
 #include <QFile>
@@ -40,13 +41,11 @@ PairEnergyCalculator::PairEnergyCalculator(QObject *parent) : QObject(parent) {
   m_environment.insert("OCC_BASIS_PATH", dataDir);
 
   m_xtb = new XtbEnergyCalculator(this);
-  connect(m_xtb, &XtbEnergyCalculator::calculationComplete, this,
-          &PairEnergyCalculator::handleXtbTaskComplete);
+  // No longer connect to shared signal - we'll connect to individual tasks
 }
 
 void PairEnergyCalculator::setTaskManager(TaskManager *mgr) {
   m_taskManager = mgr;
-  m_xtb->setTaskManager(mgr);
 }
 
 void PairEnergyCalculator::start(pair_energy::Parameters params) {
@@ -58,8 +57,17 @@ void PairEnergyCalculator::start(pair_energy::Parameters params) {
 
   if (params.isXtbModel()) {
     xtb::Parameters xtb_params = pair2xtb(params);
-    m_parameters[xtb_params.name] = params;
-    m_xtb->start(xtb_params);
+
+    // Create task, connect to it, then submit to TaskManager
+    XtbTask *task = m_xtb->createTask(xtb_params);
+    if (task) {
+      // Store original pair_energy params in task for retrieval in slot
+      task->setProperty("pair_params", QVariant::fromValue(params));
+      connect(task, &Task::completed, this, [this]() {
+        onXtbTaskComplete();
+      });
+      m_taskManager->add(task);  // TaskManager starts it
+    }
     return;
   } else {
     auto *task = new OccPairTask();
@@ -71,9 +79,12 @@ void PairEnergyCalculator::start(pair_energy::Parameters params) {
     task->setEnvironment(m_environment);
     QString jsonFilename = task->jsonFilename();
 
+    // Store context in task properties for safe retrieval in slot
+    task->setProperty("pair_params", QVariant::fromValue(params));
+
     auto taskId = m_taskManager->add(task);
-    connect(task, &Task::completed, [&, task, params, jsonFilename, name]() {
-      this->pairEnergyComplete(params, task);
+    connect(task, &Task::completed, this, [this]() {
+      onPairEnergyTaskComplete();
     });
   }
 }
@@ -96,10 +107,18 @@ void PairEnergyCalculator::start_batch(
 
     if (params.isXtbModel()) {
       xtb::Parameters xtb_params = pair2xtb(params);
-      m_parameters[xtb_params.name] = params;
-      m_xtb->start(xtb_params);
+
+      // Create task, connect to it, then submit to TaskManager
+      XtbTask *task = m_xtb->createTask(xtb_params);
+      if (task) {
+        // Store original pair_energy params in task for retrieval in slot
+        task->setProperty("pair_params", QVariant::fromValue(params));
+        connect(task, &Task::completed, this, [this]() {
+        onXtbTaskComplete();
+      });
+        m_taskManager->add(task);  // TaskManager starts it
+      }
       continue;
-      ;
     }
 
     auto *task = new OccPairTask();
@@ -110,9 +129,13 @@ void PairEnergyCalculator::start_batch(
     task->setProperty("name", name);
     task->setProperty("basename", name);
 
+    // Store context in task properties for safe retrieval in slot
+    task->setProperty("pair_params", QVariant::fromValue(params));
+
     tasks.append(task);
-    connect(task, &Task::completed, this,
-            [this, task, params]() { this->pairEnergyComplete(params, task); });
+    connect(task, &Task::completed, this, [this]() {
+      onPairEnergyTaskComplete();
+    });
   }
 
   for (auto *task : tasks) {
@@ -120,15 +143,29 @@ void PairEnergyCalculator::start_batch(
   }
 }
 
-void PairEnergyCalculator::pairEnergyComplete(pair_energy::Parameters params,
-                                              OccPairTask *task) {
-  qDebug() << "Task" << task->baseName() << "finished in PairEnergyCalculator";
+void PairEnergyCalculator::onPairEnergyTaskComplete() {
+  Task *taskBase = qobject_cast<Task*>(sender());
+  if (!taskBase) {
+    qWarning() << "onPairEnergyTaskComplete called with invalid sender";
+    return;
+  }
+
+  OccPairTask *task = dynamic_cast<OccPairTask*>(taskBase);
+  if (!task) {
+    qWarning() << "onPairEnergyTaskComplete: sender is not an OccPairTask";
+    return;
+  }
+
+  // Retrieve context from task properties
+  pair_energy::Parameters params = taskBase->property("pair_params").value<pair_energy::Parameters>();
+
+  QString jsonFile = task->jsonFilename();
+  qDebug() << "[SLOT START]" << task->baseName() << "loading" << jsonFile;
   if (params.structure) {
     auto *interactions = params.structure->pairInteractions();
-    auto *result = load_pair_energy_json(task->jsonFilename());
+    auto *result = load_pair_energy_json(jsonFile);
     result->setParameters(params);
-    qDebug() << "Loaded interaction energies from" << task->jsonFilename()
-             << result;
+    qDebug() << "[SLOT DONE]" << task->baseName() << "model:" << result->objectName();
     interactions->add(result);
     m_completedTaskCount++;
     if (m_completedTaskCount == m_totalTasks) {
@@ -141,29 +178,61 @@ void PairEnergyCalculator::pairEnergyComplete(pair_energy::Parameters params,
   }
 }
 
-void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params,
-                                                 xtb::Result result) {
-  qDebug() << "Xtb task complete" << result.name;
-  if (params.structure) {
-    auto *interactions = params.structure->pairInteractions();
+void PairEnergyCalculator::onXtbTaskComplete() {
+  Task *taskBase = qobject_cast<Task*>(sender());
+  if (!taskBase) {
+    qWarning() << "onXtbTaskComplete called with invalid sender";
+    return;
+  }
+
+  XtbTask *task = dynamic_cast<XtbTask*>(taskBase);
+  if (!task) {
+    qWarning() << "onXtbTaskComplete: sender is not an XtbTask";
+    return;
+  }
+
+  // Retrieve original pair_energy params from task properties
+  pair_energy::Parameters originalParams = taskBase->property("pair_params").value<pair_energy::Parameters>();
+  xtb::Parameters xtbParams = taskBase->property("xtb_params").value<xtb::Parameters>();
+
+  // Debug: check task state before getting result
+  QString taskName = taskBase->property("name").toString();
+  QString taskBaseName = taskBase->property("basename").toString();
+  qDebug() << "onXtbTaskComplete: task name=" << taskName << "basename=" << taskBaseName;
+
+  xtb::Result result = task->getResult();
+
+  qDebug() << "Xtb task complete result.name=" << result.name << "jsonSize=" << result.jsonContents.size();
+
+  // Skip tasks with invalid results
+  if (result.name.isEmpty()) {
+    qWarning() << "Skipping XTB task with empty name (task basename was" << taskBaseName << ")";
+    return;
+  }
+
+  if (result.jsonContents.isEmpty()) {
+    qWarning() << "Skipping XTB task" << result.name << "with empty JSON";
+    return;
+  }
+  if (xtbParams.structure) {
+    auto *interactions = xtbParams.structure->pairInteractions();
     auto *wfn = new MolecularWavefunction();
     bool success =
         io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
     success = success & io::populateWavefunctionFromXtbStdoutContents(
                             wfn, result.stdoutContents);
-    auto pair = new PairInteraction(xtb::methodToString(params.method));
+    auto pair = new PairInteraction(xtb::methodToString(xtbParams.method));
     qDebug() << success << "wfn->totalEnergy" << wfn->totalEnergy() << "ref"
-             << params.reference_energy;
+             << xtbParams.reference_energy;
     if (!success) {
       qWarning() << "Invalid result from xtb task!";
     }
 
     // Use provider system for interaction energy calculation
     SimpleEnergyProvider combinedProvider(wfn->totalEnergy(),
-                                          xtb::methodToString(params.method));
+                                          xtb::methodToString(xtbParams.method));
 
     // Get original parameters to access monomer wavefunctions
-    const auto &originalParams = m_parameters[result.name];
     if (originalParams.wfnA && originalParams.wfnB) {
       MolecularWavefunctionProvider providerA(originalParams.wfnA);
       MolecularWavefunctionProvider providerB(originalParams.wfnB);
@@ -180,15 +249,15 @@ void PairEnergyCalculator::handleXtbTaskComplete(xtb::Parameters params,
         qWarning() << "Provider-based calculation failed:"
                    << calcResult.description;
         // Fallback to original calculation
-        double e = wfn->totalEnergy() - params.reference_energy;
+        double e = wfn->totalEnergy() - xtbParams.reference_energy;
         pair->addComponent("Total", e * 2625.5);
       }
     } else {
       qWarning() << "No monomer wavefunctions available, using fallback";
-      double e = wfn->totalEnergy() - params.reference_energy;
+      double e = wfn->totalEnergy() - xtbParams.reference_energy;
       pair->addComponent("Total", e * 2625.5);
     }
-    pair->setParameters(m_parameters[result.name]);
+    pair->setParameters(originalParams);
     interactions->add(pair);
 
     delete wfn;

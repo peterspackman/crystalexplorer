@@ -1,6 +1,7 @@
 #pragma once
 #include "generic_atom_index.h"
 #include <QString>
+#include <QMetaType>
 #include <ankerl/unordered_dense.h>
 
 class ChemicalStructure;
@@ -67,3 +68,5 @@ QString programName(Program);
 Program programFromName(const QString &programString);
 
 } // namespace wfn
+
+Q_DECLARE_METATYPE(wfn::Parameters)

@@ -48,6 +48,16 @@ add_executable(elastic_tensor_tests "${CMAKE_CURRENT_SOURCE_DIR}/elastic_tensor_
 target_link_libraries(elastic_tensor_tests PRIVATE cx_core Catch2::Catch2WithMain)
 catch_discover_tests(elastic_tensor_tests)
 
+# Standalone tool for elat round-trip testing
+add_executable(elat_roundtrip_tool "${CMAKE_CURRENT_SOURCE_DIR}/elat_roundtrip_tool.cpp")
+target_link_libraries(elat_roundtrip_tool PRIVATE cx_core cx_crystal cx_io Qt6::Core)
+
 add_executable(mesh_tests "${CMAKE_CURRENT_SOURCE_DIR}/mesh_tests.cpp")
 target_link_libraries(mesh_tests PRIVATE cx_core cx_crystal Catch2::Catch2WithMain)
 catch_discover_tests(mesh_tests)
+
+add_executable(test_task_system
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_task_system.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp")
+target_link_libraries(test_task_system PRIVATE cx_exe Catch2::Catch2 Qt6::Core Qt6::Test)
+catch_discover_tests(test_task_system)

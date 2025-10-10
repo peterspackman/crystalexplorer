@@ -42,6 +42,10 @@ void InfoViewer::initConnections() {
           &InfoViewer::updateEnergyColorSettings);
   connect(distancePrecisionSpinBox, &QSpinBox::valueChanged, this,
           &InfoViewer::updateInteractionDisplaySettings);
+
+  // Forward elastic tensor request signal
+  connect(interactionsInfoDocument, &InteractionInfoDocument::elasticTensorRequested,
+          this, &InfoViewer::elasticTensorRequested);
 }
 
 void InfoViewer::accept() {
@@ -137,4 +141,8 @@ void InfoViewer::updateEnergyColorSettings() {
   settings::writeSetting(settings::keys::ENERGY_COLOR_SCHEME, colorScheme);
   interactionsInfoDocument->forceUpdate();
   emit energyColorSchemeChanged();
+}
+
+void InfoViewer::enableExperimentalFeatures(bool enable) {
+  interactionsInfoDocument->enableExperimentalFeatures(enable);
 }

@@ -1,12 +1,16 @@
+# All source files (includes WASM stubs where needed)
 add_library(cx_exe
     "${CMAKE_CURRENT_SOURCE_DIR}/exefileutilities.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/externalprogram.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/mocktask.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/occelastictensortask.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/occelattask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occpairtask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occsurfacetask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/occwavefunctiontask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/orcatask.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/task.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/taskbackend.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanager.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/taskmanagerwidget.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/wavefunction_calculator.cpp"
@@ -15,7 +19,7 @@ add_library(cx_exe
 )
 
 target_link_libraries(
-    cx_exe PUBLIC 
+    cx_exe PUBLIC
     unordered_dense::unordered_dense
     occ_core
     cx_core
@@ -23,8 +27,12 @@ target_link_libraries(
     Qt6::Gui
     Qt6::Widgets
     Qt6::Core
-    Qt6::Concurrent
 )
+
+if(TARGET Qt6::Concurrent)
+    target_link_libraries(cx_exe PUBLIC Qt6::Concurrent)
+    target_compile_definitions(cx_exe PUBLIC CX_HAS_CONCURRENT)
+endif()
 
 target_compile_features(cx_exe PUBLIC cxx_std_20)
 

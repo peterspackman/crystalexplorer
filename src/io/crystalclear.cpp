@@ -149,6 +149,45 @@ CrystalStructure *loadCrystalClearJson(const QString &filename) {
 
   CrystalStructure *result = new CrystalStructure();
   result->setOccCrystal(crystal);
+
+  // Calculate max radius from loaded dimers to rebuild DimerMappingTable with correct radius
+  double maxRadius = 0.0;
+  const auto& occCrystal = result->occCrystal();
+  const auto& unitCell = occCrystal.unit_cell();
+  const auto& ucAtoms = occCrystal.unit_cell_atoms();
+
+  for (const auto& offsetList : atomIndices) {
+    for (const auto& dimer : offsetList) {
+      // Calculate distance between centroids of molecules A and B
+      occ::Vec3 centroidA = occ::Vec3::Zero();
+      occ::Vec3 centroidB = occ::Vec3::Zero();
+
+      // Calculate centroid of molecule A
+      for (const auto& atomIdx : dimer.a) {
+        occ::Vec3 frac_pos = ucAtoms.frac_pos.col(atomIdx.unique) + occ::Vec3(atomIdx.x, atomIdx.y, atomIdx.z);
+        centroidA += unitCell.to_cartesian(frac_pos);
+      }
+      centroidA /= dimer.a.size();
+
+      // Calculate centroid of molecule B
+      for (const auto& atomIdx : dimer.b) {
+        occ::Vec3 frac_pos = ucAtoms.frac_pos.col(atomIdx.unique) + occ::Vec3(atomIdx.x, atomIdx.y, atomIdx.z);
+        centroidB += unitCell.to_cartesian(frac_pos);
+      }
+      centroidB /= dimer.b.size();
+
+      double dist = (centroidB - centroidA).norm();
+      maxRadius = std::max(maxRadius, dist);
+    }
+  }
+
+  // Add 10% margin to ensure all dimers are captured
+  maxRadius *= 1.1;
+  qDebug() << "Calculated max radius from JSON:" << maxRadius << "Angstroms";
+
+  // Rebuild dimer mapping table with correct radius
+  result->buildDimerMappingTable(maxRadius);
+
   result->setPairInteractionsFromDimerAtoms(interactions, atomIndices,
                                             hasPermutationSymmetry);
   result->setName(QString::fromStdString(title));

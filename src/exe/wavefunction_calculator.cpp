@@ -6,6 +6,7 @@
 #include "occwavefunctiontask.h"
 #include "orcainput.h"
 #include "orcatask.h"
+#include "xtbtask.h"
 #include "settings.h"
 #include <QFile>
 #include <QTextStream>
@@ -75,13 +76,11 @@ WavefunctionCalculator::WavefunctionCalculator(QObject *parent)
   m_environment.insert("OCC_DATA_PATH", dataDir);
   m_environment.insert("OCC_BASIS_PATH", dataDir);
   m_xtb = new XtbEnergyCalculator(this);
-  connect(m_xtb, &XtbEnergyCalculator::calculationComplete, this,
-          &WavefunctionCalculator::handleXtbTaskComplete);
+  // No longer connect to shared signal - we'll connect to individual tasks
 }
 
 void WavefunctionCalculator::setTaskManager(TaskManager *mgr) {
   m_taskManager = mgr;
-  m_xtb->setTaskManager(mgr);
 }
 
 Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
@@ -109,11 +108,14 @@ Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
   task->setDeleteWorkingFiles(m_deleteWorkingFiles);
   QString wavefunctionFilename = task->wavefunctionFilename();
 
-  connect(task, &Task::completed,
-          [&, params, wavefunctionName, wavefunctionFilename]() {
-            this->handleTaskComplete(params, wavefunctionFilename,
-                                     wavefunctionName);
-          });
+  // Store context in task properties for safe retrieval in slot
+  task->setProperty("wfn_params", QVariant::fromValue(params));
+  task->setProperty("wfn_filename", wavefunctionFilename);
+  task->setProperty("wfn_name", wavefunctionName);
+
+  connect(task, &Task::completed, this, [this]() {
+    onWavefunctionTaskComplete();
+  });
 
   return task;
 }
@@ -138,11 +140,14 @@ Task *WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
   QString wavefunctionFilename = task->moldenFilename();
   qDebug() << "Molden filename" << wavefunctionFilename;
 
-  connect(task, &Task::completed,
-          [&, params, wavefunctionName, wavefunctionFilename]() {
-            this->handleTaskComplete(params, wavefunctionFilename,
-                                     wavefunctionName);
-          });
+  // Store context in task properties for safe retrieval in slot
+  task->setProperty("wfn_params", QVariant::fromValue(params));
+  task->setProperty("wfn_filename", wavefunctionFilename);
+  task->setProperty("wfn_name", wavefunctionName);
+
+  connect(task, &Task::completed, this, [this]() {
+    onWavefunctionTaskComplete();
+  });
 
   return task;
 }
@@ -192,7 +197,15 @@ void WavefunctionCalculator::start(xtb::Parameters params) {
     return;
   }
   m_structure = params.structure;
-  m_xtb->start(params);
+
+  // Create task, connect to it, then submit to TaskManager
+  XtbTask *task = m_xtb->createTask(params);
+  if (task) {
+    connect(task, &Task::completed, this, [this]() {
+      onXtbTaskComplete();
+    });
+    m_taskManager->add(task);  // TaskManager starts it
+  }
 }
 
 void WavefunctionCalculator::start_batch(
@@ -244,9 +257,19 @@ void WavefunctionCalculator::start_batch(
   }
 }
 
-void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
-                                                QString filename,
-                                                QString name) {
+void WavefunctionCalculator::onWavefunctionTaskComplete() {
+  Task *task = qobject_cast<Task*>(sender());
+  if (!task) {
+    qWarning() << "onWavefunctionTaskComplete called with invalid sender";
+    return;
+  }
+
+  // Retrieve context from task properties
+  wfn::Parameters params = task->property("wfn_params").value<wfn::Parameters>();
+  QString filename = task->property("wfn_filename").toString();
+  QString name = task->property("wfn_name").toString();
+
+  // Process the completed task
   qDebug() << "Task" << name << "finished in WavefunctionCalculator";
   auto wfn = io::loadWavefunction(filename);
   qDebug() << "Loaded wavefunction from" << filename << wfn
@@ -272,9 +295,41 @@ void WavefunctionCalculator::handleTaskComplete(wfn::Parameters params,
   }
 }
 
-void WavefunctionCalculator::handleXtbTaskComplete(xtb::Parameters params,
-                                                   xtb::Result result) {
-  qDebug() << "Task" << result.name << "finished in WavefunctionCalculator";
+void WavefunctionCalculator::onXtbTaskComplete() {
+  Task *taskBase = qobject_cast<Task*>(sender());
+  if (!taskBase) {
+    qWarning() << "onXtbTaskComplete called with invalid sender";
+    return;
+  }
+
+  XtbTask *task = dynamic_cast<XtbTask*>(taskBase);
+  if (!task) {
+    qWarning() << "onXtbTaskComplete: sender is not an XtbTask";
+    return;
+  }
+
+  // Retrieve params and result from task
+  xtb::Parameters params = taskBase->property("xtb_params").value<xtb::Parameters>();
+
+  // Debug: check task state
+  QString taskName = taskBase->property("name").toString();
+  qDebug() << "onXtbTaskComplete (WavefunctionCalculator): task name=" << taskName;
+
+  xtb::Result result = task->getResult();
+
+  qDebug() << "Task result.name=" << result.name << "jsonSize=" << result.jsonContents.size()
+           << "finished in WavefunctionCalculator";
+
+  // Validate result
+  if (result.name.isEmpty()) {
+    qWarning() << "Skipping XTB task with empty name (task name was" << taskName << ")";
+    return;
+  }
+
+  if (result.jsonContents.isEmpty() && result.moldenContents.isEmpty()) {
+    qWarning() << "Skipping XTB task" << result.name << "with no output data";
+    return;
+  }
   auto *wfn = new MolecularWavefunction();
   bool success =
       io::populateWavefunctionFromJsonContents(wfn, result.jsonContents);
@@ -304,6 +359,7 @@ void WavefunctionCalculator::handleXtbTaskComplete(xtb::Parameters params,
   }
   wfn->setObjectName(result.name);
   wfn->setParent(m_structure);
+
   if (m_complete) {
     emit calculationComplete();
   }
@@ -312,3 +368,9 @@ void WavefunctionCalculator::handleXtbTaskComplete(xtb::Parameters params,
 MolecularWavefunction *WavefunctionCalculator::getWavefunction() const {
   return m_wavefunction;
 }
+
+#ifdef Q_OS_WASM
+// WASM stubs - these should never be called as external programs aren't supported
+// but we need the symbols for linking
+#warning "WavefunctionCalculator will not work in WASM - external programs not supported"
+#endif

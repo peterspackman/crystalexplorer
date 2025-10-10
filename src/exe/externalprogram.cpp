@@ -3,8 +3,10 @@
 #include <QByteArray>
 #include <QDebug>
 #include <QFileInfo>
-#include <QProcess>
 #include <QTextStream>
+
+#ifndef Q_OS_WASM
+#include <QProcess>
 
 namespace exe {
 
@@ -126,16 +128,10 @@ bool ExternalProgramTask::copyRequirements(const QString &path) {
 
 bool ExternalProgramTask::copyResults(const QString &path) {
   bool force = overwrite();
-  // List contents of the temp directory
-  QDir tempDir(path);
-  qDebug() << "Contents of temporary directory" << path << ":";
-  for (const auto &entry :
-       tempDir.entryList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot)) {
-    qDebug() << "  " << entry;
-  }
+  qDebug() << "[COPY START]" << property("name").toString();
+
   for (const auto &[output, output_dest] : m_outputs) {
     QString tmpOutput = path + QDir::separator() + QFileInfo(output).fileName();
-    qDebug() << "Copying " << tmpOutput << "to" << output_dest;
     if (!io::copyFile(tmpOutput, output_dest, force)) {
       setErrorMessage(
           QString(
@@ -148,6 +144,7 @@ bool ExternalProgramTask::copyResults(const QString &path) {
     setProperty(getOutputFilePropertyName(output),
                 exe::readFileContents(tmpOutput));
   }
+  qDebug() << "[COPY DONE]" << property("name").toString();
   return true;
 }
 
@@ -170,7 +167,7 @@ void ExternalProgramTask::postProcess() {
   // Default implementation - can be overridden in derived classes
 }
 
-bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
+bool ExternalProgramTask::runExternalProgram(std::function<void(int, QString)> progress) {
   QString exe = m_executable;
   QStringList args = m_arguments;
   {
@@ -185,14 +182,13 @@ bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
 
     if (!m_tempDir->isValid()) {
       setErrorMessage("Cannot create temporary directory");
-      promise.finish();
       return false;
     }
-    promise.setProgressValueAndText(1, "Temporary directory created");
+    progress(1, "Temporary directory created");
 
     process.setProcessEnvironment(m_environment);
     process.setWorkingDirectory(m_tempDir->path());
-    promise.setProgressValueAndText(2, "Process environment set");
+    progress(2, "Process environment set");
 
     setupProcessConnectionsPrivate(process);
 
@@ -201,29 +197,29 @@ bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
           "Could not copy necessary files into temporary directory");
       return false;
     }
-    promise.setProgressValueAndText(3, "Copied files to temporary directory");
+    progress(3, "Copied files to temporary directory");
     process.start(exe, args);
-    promise.setProgressValueAndText(4, "Starting background process");
+    progress(4, "Starting background process");
     process.waitForStarted();
-    promise.setProgressValueAndText(5, "Background process started");
+    progress(5, "Background process started");
 
     int timeTaken = 0;
 
     while (!process.waitForFinished(m_timeIncrement)) {
       timeTaken += m_timeIncrement;
       updateStdoutStderr(process);
-      promise.setProgressValueAndText(timeTaken / m_timeIncrement,
+      progress(timeTaken / m_timeIncrement,
                                       QString("Running %1").arg(m_executable));
-      if (promise.isCanceled()) {
-        setErrorMessage("Promise was canceled");
+      if (isCanceled()) {
+        setErrorMessage("Task was canceled");
         process.kill();
-        promise.setProgressValueAndText(100, "Promise canceled");
+        progress(100, "Task canceled");
         return false;
       }
       if (m_timeout > 0) {
         if (timeTaken > m_timeout) {
           setErrorMessage("Process timeout");
-          promise.setProgressValueAndText(
+          progress(
               100, "Background process canceled due to timeout");
           process.kill();
           return false;
@@ -231,14 +227,14 @@ bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
       }
 
       if (process.error() != QProcess::Timedout) {
-        promise.setProgressValueAndText(100,
+        progress(100,
                                         "Background process failed: " +
                                             exe::errorString(process.error()));
         process.kill();
         return false;
       }
     }
-    promise.setProgressValueAndText(90, "Background process complete");
+    progress(90, "Background process complete");
     updateStdoutStderr(process);
 
     // Explicitly close all channels before process object is destroyed
@@ -269,25 +265,21 @@ bool ExternalProgramTask::runExternalProgram(QPromise<void> &promise) {
 
 // In the cpp file:
 void ExternalProgramTask::start() {
-  auto taskLogic = [this](QPromise<void> &promise) {
+  auto taskLogic = [this](std::function<void(int, QString)> progress) {
     preProcess();
 
-    if (!runExternalProgram(promise)) {
-      promise.finish();
+    if (!runExternalProgram(progress)) {
       return;
     }
 
-    promise.setProgressValueAndText(95, "Begin any post-processing steps");
+    progress(95, "Begin any post-processing steps");
     postProcess();
 
     if (deleteWorkingFiles())
       deleteRequirements();
 
-    promise.setProgressValueAndText(100, "Task complete");
-    qDebug() << "Task " << property("name").toString() << " finished"
-             << errorMessage();
-
-    promise.finish();
+    progress(100, "Task complete");
+    qDebug() << "[TASK LOGIC DONE]" << property("name").toString();
   };
 
   Task::run(taskLogic);
@@ -328,3 +320,32 @@ void ExternalProgramTask::setOverwrite(bool overwrite) {
 bool ExternalProgramTask::overwrite() const {
   return properties().value("overwrite", true).toBool();
 }
+
+#else // Q_OS_WASM - Stubs for WASM build
+
+// WASM stubs - external processes not supported in browsers
+namespace exe {
+QString errorString(int errorType) { return "External processes not supported in WASM"; }
+}
+
+ExternalProgramTask::ExternalProgramTask(QObject *parent) : Task(parent) {}
+ExternalProgramTask::~ExternalProgramTask() {}
+void ExternalProgramTask::start() {
+  setErrorMessage("External program execution not supported in WASM");
+  emit errorOccurred(errorMessage());
+}
+void ExternalProgramTask::stop() {}
+void ExternalProgramTask::preProcess() {}
+void ExternalProgramTask::postProcess() {}
+QString ExternalProgramTask::baseName() const { return QString(); }
+QString ExternalProgramTask::hashedBaseName() const { return QString(); }
+void ExternalProgramTask::setOverwrite(bool) {}
+bool ExternalProgramTask::overwrite() const { return false; }
+QString ExternalProgramTask::getInputFilePropertyName(QString filename) {
+  return "input_" + filename;
+}
+QString ExternalProgramTask::getOutputFilePropertyName(QString filename) {
+  return "output_" + filename;
+}
+
+#endif // Q_OS_WASM

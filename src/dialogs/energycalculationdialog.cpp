@@ -97,6 +97,12 @@ bool EnergyCalculationDialog::handleStructureChange() {
   m_requiredWavefunctions.clear();
   if (!m_structure)
     return false;
+
+  // Ensure dimer mapping table is built for the current atom extent
+  // This ensures fragment pair finding works correctly even if user has
+  // expanded atoms beyond the default radius
+  m_structure->ensureDimerMappingTableForCurrentExtent();
+
   updateWavefunctionComboBox();
 
   auto selectedFragments = m_structure->selectedFragments();

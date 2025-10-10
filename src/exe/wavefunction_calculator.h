@@ -26,8 +26,8 @@ signals:
   void calculationComplete();
 
 private slots:
-  void handleTaskComplete(wfn::Parameters, QString filename, QString name);
-  void handleXtbTaskComplete(xtb::Parameters, xtb::Result);
+  void onWavefunctionTaskComplete();
+  void onXtbTaskComplete();
 
 private:
   Task * makeOccTask(wfn::Parameters);

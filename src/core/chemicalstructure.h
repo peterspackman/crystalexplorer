@@ -96,6 +96,7 @@ public:
 
   virtual void setShowContacts(const ContactSettings &settings = {});
   virtual void updateBondGraph();
+  virtual void ensureDimerMappingTableForCurrentExtent() {}
 
   occ::Vec3 atomPosition(GenericAtomIndex) const;
   inline const occ::Mat3N &atomicPositions() const { return m_atomicPositions; }

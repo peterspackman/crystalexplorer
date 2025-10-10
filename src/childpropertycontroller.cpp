@@ -8,6 +8,7 @@
 #include <QLocale>
 #include <QVBoxLayout>
 
+#include "colormap.h"
 #include "plane.h"
 #include "planeinstance.h"
 #include "settings.h"
@@ -78,6 +79,9 @@ void ChildPropertyController::setup() {
           &ChildPropertyController::onSurfaceTransparencyChange);
   connect(transparencySpinBox, &QDoubleSpinBox::valueChanged, this,
           &ChildPropertyController::onSurfaceVarTransparecyChange);
+
+  connect(showColorBarCheckBox, &QCheckBox::toggled, this,
+          &ChildPropertyController::onShowColorBarChanged);
 
   connect(surfacePropertyComboBox, &QComboBox::currentTextChanged, this,
           &ChildPropertyController::onComboBoxPropertySelectionChanged);
@@ -451,9 +455,43 @@ void ChildPropertyController::onSurfaceVarTransparecyChange(
   m_meshPropertyModel->setTransparency(transparency);
 }
 
+void ChildPropertyController::onShowColorBarChanged(bool show) {
+  if (show && m_meshPropertyModel->isValid()) {
+    QString colorMapName = m_meshPropertyModel->getSelectedPropertyColorMap();
+    auto range = m_meshPropertyModel->getSelectedPropertyRange();
+    QString propertyName = m_meshPropertyModel->getSelectedProperty();
+
+    // Validate colormap name - if empty, use Viridis as fallback
+    if (colorMapName.isEmpty()) {
+      qDebug() << "ColorBar: Empty colormap name for property" << propertyName << ", using Viridis";
+      colorMapName = "Viridis";
+    }
+
+    // Check if colormap exists (allow "None" as a special case)
+    QStringList availableMaps = availableColorMaps();
+    if (colorMapName != "None" && !availableMaps.contains(colorMapName)) {
+      qDebug() << "ColorBar: Unknown colormap" << colorMapName << "for property" << propertyName << ", using Viridis";
+      colorMapName = "Viridis";
+    }
+
+    qDebug() << "ColorBar: Showing colorbar for property" << propertyName
+             << "with colormap" << colorMapName
+             << "range [" << range.lower << "," << range.upper << "]";
+
+    emit colorBarVisibilityChanged(true, colorMapName, range.lower, range.upper, propertyName);
+  } else {
+    emit colorBarVisibilityChanged(false, "", 0.0, 0.0, "");
+  }
+}
+
 void ChildPropertyController::onComboBoxPropertySelectionChanged(
     QString property) {
   m_meshPropertyModel->setSelectedProperty(property);
+
+  // Update colorbar if it's currently shown
+  if (showColorBarCheckBox->isChecked()) {
+    onShowColorBarChanged(true);
+  }
 }
 
 void ChildPropertyController::onModelPropertySelectionChanged(
@@ -528,6 +566,11 @@ void ChildPropertyController::propertyRangeChanged() {
   m_meshPropertyModel->setSelectedPropertyRange(
       {static_cast<float>(minPropSpinBox->value()),
        static_cast<float>(maxPropSpinBox->value())});
+
+  // Update colorbar if it's currently shown
+  if (showColorBarCheckBox->isChecked()) {
+    onShowColorBarChanged(true);
+  }
 }
 
 void ChildPropertyController::currentSurfaceVisibilityChanged(bool visible) {

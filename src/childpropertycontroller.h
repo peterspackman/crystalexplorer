@@ -63,6 +63,7 @@ protected slots:
   void onMeshModelUpdate();
   void onFrameworkColoringChanged();
   void onGenerateSlabRequested(int h, int k, int l, double offset);
+  void onShowColorBarChanged(bool);
 
 signals:
   void surfacePropertyChosen(int);
@@ -72,6 +73,7 @@ signals:
   void meshSelectionChanged();
   void generateSlabRequested(int h, int k, int l, double offset);
   void elasticTensorSelectionChanged();
+  void colorBarVisibilityChanged(bool show, QString colorMapName, double minValue, double maxValue, QString label);
 
 private:
   enum class DisplayState {

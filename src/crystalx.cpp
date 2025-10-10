@@ -14,6 +14,7 @@
 #include <QProcess>
 #include <QRegularExpression>
 #include <QTextBrowser>
+#include <QThread>
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QtDebug>
@@ -22,17 +23,23 @@
 #include "confirmationbox.h"
 #include "crystalx.h"
 #include "dialoghtml.h"
+#include "elastic_tensor_results.h"
 #include "elementdata.h"
 #include "gltf_exporter.h"
 #include "isosurface_calculator.h"
 #include "load_wavefunction.h"
 #include "mathconstants.h"
+#include "crystalclear.h"
+#include "occelastictensortask.h"
+#include "occelattask.h"
 #include "pair_energy_calculator.h"
 #include "plane.h"
 #include "planeinstance.h"
+#include "save_pair_energy_json.h"
 #include "settings.h"
 #include "slabstructure.h"
 #include "surface_cut_generator.h"
+#include "ply_writer.h"
 #include "wavefunction_calculator.h"
 
 Crystalx::Crystalx() : QMainWindow() {
@@ -64,7 +71,10 @@ void Crystalx::init() {
   initCloseContactsDialog();
   initSurfaceActions();
   updateCrystalActions();
-  enableExperimentalFeatures(ENABLE_EXPERIMENTAL_FEATURES);
+
+  // Enable experimental features based on settings
+  bool experimentalEnabled = settings::readSetting(settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG).toBool();
+  enableExperimentalFeatures(experimentalEnabled);
 
   updateWorkingDirectories(".");
   m_exportDialog = new ExportDialog(this);
@@ -214,6 +224,9 @@ void Crystalx::initInfoViewer() {
   connect(infoViewer, &InfoViewer::energyColorSchemeChanged, this,
           &Crystalx::handleEnergyColorSchemeChanged);
 
+  connect(infoViewer, &InfoViewer::elasticTensorRequested, this,
+          &Crystalx::calculateElasticTensor);
+
   // Connect surface selection changes to update info viewer
   connect(project, &Project::surfaceSelectionChanged, infoViewer,
           &InfoViewer::updateInfoViewerForSurfaceChange);
@@ -271,6 +284,18 @@ void Crystalx::createChildPropertyControllerDockWidget() {
   connect(childPropertyController,
           &ChildPropertyController::elasticTensorSelectionChanged, this,
           &Crystalx::handleElasticTensorSelectionChanged);
+  connect(childPropertyController,
+          &ChildPropertyController::exportCurrentSurface, this,
+          &Crystalx::exportCurrentSurface);
+  connect(childPropertyController,
+          &ChildPropertyController::colorBarVisibilityChanged,
+          [this](bool show, QString colorMapName, double minValue, double maxValue, QString label) {
+            if (show) {
+              glWindow->showColorBar(colorMapName, minValue, maxValue, label);
+            } else {
+              glWindow->hideColorBar();
+            }
+          });
 }
 
 void Crystalx::createProjectControllerDockWidget() {
@@ -498,6 +523,8 @@ void Crystalx::initMenuConnections() {
           &Crystalx::cloneSurface);
   connect(calculateEnergiesAction, &QAction::triggered, this,
           &Crystalx::showEnergyCalculationDialog);
+  connect(calculateLatticeEnergyAction, &QAction::triggered, this,
+          &Crystalx::showLatticeEnergyDialog);
   connect(setFragmentChargesAction, &QAction::triggered, this,
           &Crystalx::setFragmentStates);
 
@@ -578,6 +605,7 @@ void Crystalx::initSurfaceActions() {
 void Crystalx::enableExperimentalFeatures(bool enable) {
   experimentalAction->setEnabled(enable);
   experimentalAction->setVisible(enable);
+  infoViewer->enableExperimentalFeatures(enable);
 }
 
 void Crystalx::gotoCrystalExplorerWebsite() {
@@ -2019,6 +2047,8 @@ void Crystalx::initPreferencesDialog() {
             glWindow, &GLWindow::updateDepthTest);
     connect(preferencesDialog, &PreferencesDialog::targetFramerateChanged,
             glWindow, &GLWindow::updateTargetFramerate);
+    connect(preferencesDialog, &PreferencesDialog::experimentalFeaturesChanged,
+            this, &Crystalx::enableExperimentalFeatures);
   }
 }
 
@@ -2104,6 +2134,68 @@ void Crystalx::initDepthFadingAndClippingDialog() {
     connect(depthFadingAndClippingDialog,
             &DepthFadingAndClippingDialog::frontClippingPlaneChanged, glWindow,
             &GLWindow::updateFrontClippingPlane);
+  }
+}
+
+void Crystalx::exportCurrentSurface() {
+  auto *meshInstance = childPropertyController->getCurrentMeshInstance();
+  if (!meshInstance) {
+    QMessageBox::warning(this, "Export Surface",
+                        "No surface selected. Please select a surface to export.");
+    return;
+  }
+
+  Mesh *mesh = meshInstance->mesh();
+  if (!mesh) {
+    return;
+  }
+
+  QString suggestedName = mesh->objectName();
+  if (suggestedName.isEmpty()) {
+    suggestedName = "surface";
+  }
+  suggestedName += ".ply";
+
+  QString filename = QFileDialog::getSaveFileName(
+      this, "Export Surface", suggestedName,
+      "PLY Files (*.ply);;All Files (*)");
+
+  if (filename.isEmpty()) {
+    return;
+  }
+
+  // Extract vertex colors from current renderer state
+  std::vector<float> vertexColors;
+  Scene *scene = project->currentScene();
+  if (scene) {
+    auto exportData = scene->getExportData();
+    // Find the matching mesh in export data
+    for (const auto &exportMesh : exportData.meshes()) {
+      if (!exportMesh.colors.empty()) {
+        vertexColors = exportMesh.colors;
+        break; // Use first mesh with colors (should be the current one)
+      }
+    }
+  }
+
+  // Prepare metadata
+  nlohmann::json metadata;
+  metadata["description"] = mesh->objectName().toStdString();
+  const auto &attr = mesh->attributes();
+  metadata["kind"] = isosurface::kindToString(attr.kind).toStdString();
+  metadata["isovalue"] = attr.isovalue;
+  metadata["separation"] = attr.separation / occ::units::BOHR_TO_ANGSTROM;
+
+  // Write using PlyWriter
+  bool success =
+      cx::io::PlyWriter::writeToFile(mesh, filename, vertexColors, metadata);
+
+  if (success) {
+    showStatusMessage(QString("Surface exported to %1").arg(filename));
+  } else {
+    QMessageBox::critical(
+        this, "Export Failed",
+        QString("Failed to export surface to:\n%1").arg(filename));
   }
 }
 
@@ -2730,4 +2822,299 @@ void Crystalx::dropEvent(QDropEvent *event) {
 
     event->acceptProposedAction();
   }
+}
+
+void Crystalx::calculateElasticTensor(const QString &modelName) {
+  Scene *scene = project->currentScene();
+  if (!scene) {
+    return;
+  }
+
+  auto *structure = scene->chemicalStructure();
+  if (!structure) {
+    return;
+  }
+
+  auto *interactions = structure->pairInteractions();
+  if (!interactions || interactions->getCount() == 0) {
+    QMessageBox::warning(this, "No Data",
+                        "No pair interactions available. Please calculate pair energies first.");
+    return;
+  }
+
+  // Create a temporary JSON file with the pair energies
+  QTemporaryFile *tempFile = new QTemporaryFile(this);
+  tempFile->setAutoRemove(false); // Keep for debugging if needed
+
+  if (!tempFile->open()) {
+    QMessageBox::critical(this, "Error",
+                         "Failed to create temporary file for elastic tensor calculation.");
+    delete tempFile;
+    return;
+  }
+
+  QString tempJsonPath = tempFile->fileName();
+  tempFile->close();
+
+  // Export the current model's energies to the temp file
+  bool exported = save_pair_interactions_for_model_json(
+      interactions, structure, modelName, tempJsonPath);
+
+  if (!exported) {
+    QMessageBox::critical(this, "Export Failed",
+                         "Failed to export pair energies for elastic tensor calculation.");
+    delete tempFile;
+    return;
+  }
+
+  // Create and run the elastic tensor task
+  auto *elasticTask = new OccElasticTensorTask(this);
+  elasticTask->setProperty("name", QString("elastic_fit_%1").arg(modelName));
+  elasticTask->setInputJsonFile(tempJsonPath);
+
+  QString outputFile = elasticTask->outputJsonFilename();
+
+  connect(elasticTask, &OccElasticTensorTask::completed, this,
+          [this, tempFile, modelName, outputFile, scene]() {
+    // Load the elastic tensor from file
+    QFile file(outputFile);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      QTextStream in(&file);
+      occ::Mat6 matrix;
+
+      // Read 6x6 matrix from file
+      for (int i = 0; i < 6; i++) {
+        QString line = in.readLine();
+        QStringList values = line.simplified().split(' ', Qt::SkipEmptyParts);
+        if (values.size() >= 6) {
+          for (int j = 0; j < 6; j++) {
+            matrix(i, j) = values[j].toDouble();
+          }
+        }
+      }
+      file.close();
+
+      // Create and add elastic tensor result to structure
+      auto *structure = scene->chemicalStructure();
+      if (structure) {
+        auto *tensorResult = new ElasticTensorResults(matrix, modelName, structure);
+
+        // Update info viewer to show elastic tensor tab
+        infoViewer->setTab(InfoType::ElasticTensor);
+
+        statusBar()->showMessage(QString("Elastic tensor calculated for model '%1'").arg(modelName), 3000);
+      }
+    } else {
+      QMessageBox::warning(this, "Load Failed",
+                          QString("Elastic tensor calculated but failed to load from:\n%1")
+                          .arg(outputFile));
+    }
+    tempFile->deleteLater();
+  });
+
+  connect(elasticTask, &OccElasticTensorTask::errorOccurred, this,
+          [this, tempFile](const QString &error) {
+    QMessageBox::critical(this, "Calculation Failed",
+                         QString("Failed to calculate elastic tensor.\n\nError: %1")
+                         .arg(error));
+    tempFile->deleteLater();
+  });
+
+  m_taskManager->add(elasticTask);
+}
+
+void Crystalx::showLatticeEnergyDialog() {
+  Scene *scene = project->currentScene();
+  if (!scene) {
+    QMessageBox::warning(this, "No Crystal Structure",
+                        "Please load a crystal structure first.");
+    return;
+  }
+
+  auto *structure = scene->chemicalStructure();
+  if (!structure) {
+    return;
+  }
+
+  // Check that we have a CIF file
+  QString cifFile = structure->filename();
+  if (cifFile.isEmpty()) {
+    QMessageBox::warning(this, "No CIF File",
+                        "No CIF file is associated with this structure.");
+    return;
+  }
+
+  LatticeEnergyDialog dialog(this);
+  if (dialog.exec() == QDialog::Accepted) {
+    QString model = dialog.selectedModel();
+    double radius = dialog.radius();
+    int threads = dialog.threads();
+    calculateLatticeEnergy(model, radius, threads, cifFile);
+  }
+}
+
+void Crystalx::calculateLatticeEnergy(const QString &modelName, double radius, int threads, const QString &cifFile) {
+  // Create and run the lattice energy task
+  auto *elatTask = new OccElatTask(this);
+  elatTask->setProperty("name", QString("lattice_energy_%1").arg(modelName));
+  elatTask->setCrystalStructureFile(cifFile);
+  elatTask->setEnergyModel(modelName);
+  elatTask->setRadius(radius);
+  elatTask->setThreads(threads);
+
+  QString outputFilename = elatTask->outputJsonFilename();
+  QFileInfo cifInfo(cifFile);
+  QString fullOutputPath = cifInfo.absolutePath() + "/" + outputFilename;
+
+  Scene *scenePtr = project->currentScene();
+
+  connect(elatTask, &OccElatTask::completed, this,
+          [this, modelName, fullOutputPath]() {
+    loadLatticeEnergyResults(fullOutputPath, modelName);
+  });
+
+  connect(elatTask, &OccElatTask::errorOccurred, this,
+          [this](const QString &error) {
+    QMessageBox::critical(this, "Calculation Failed",
+                         QString("Failed to calculate lattice energy.\n\nError: %1")
+                         .arg(error));
+  });
+
+  m_taskManager->add(elatTask);
+}
+
+void Crystalx::loadLatticeEnergyResults(const QString &filename, const QString &modelName) {
+  Scene *scene = project->currentScene();
+  if (!scene) {
+    QMessageBox::warning(this, "No Scene",
+                        "No active scene to load results into.");
+    return;
+  }
+
+  auto *currentStructure = qobject_cast<CrystalStructure*>(scene->chemicalStructure());
+  if (!currentStructure) {
+    QMessageBox::warning(this, "Not a Crystal",
+                        "Current structure is not a crystal structure.");
+    return;
+  }
+
+  // Load the elat results structure
+  auto *loadedStructure = io::loadCrystalClearJson(filename);
+  if (!loadedStructure) {
+    QMessageBox::critical(this, "Load Failed",
+                         QString("Failed to load lattice energy results from:\n%1")
+                         .arg(filename));
+    return;
+  }
+
+  // Get the interactions from the loaded structure
+  auto *loadedInteractions = loadedStructure->pairInteractions();
+  if (!loadedInteractions || !loadedInteractions->haveInteractions()) {
+    QMessageBox::warning(this, "No Data",
+                        "No interaction data found in file.");
+    delete loadedStructure;
+    return;
+  }
+
+  // Get the interactions for the model
+  auto modelInteractions = loadedInteractions->filterByModel(modelName);
+  if (modelInteractions.empty()) {
+    QMessageBox::warning(this, "No Data",
+                        QString("No interactions found for model '%1' in file.")
+                        .arg(modelName));
+    delete loadedStructure;
+    return;
+  }
+
+  // Now we need to get the raw data to call setPairInteractionsFromDimerAtoms
+  // Since we can't extract it back out easily, just load the same file again
+  // and extract the raw data ourselves
+  QFile file(filename);
+  if (!file.open(QIODevice::ReadOnly)) {
+    QMessageBox::critical(this, "Load Failed",
+                         QString("Failed to open file:\n%1").arg(filename));
+    delete loadedStructure;
+    return;
+  }
+
+  QByteArray data = file.readAll();
+  file.close();
+
+  try {
+    auto json = nlohmann::json::parse(data.constData());
+
+    bool hasPermutationSymmetry = true;
+    if (json.contains("has_permutation_symmetry")) {
+      hasPermutationSymmetry = json["has_permutation_symmetry"];
+    }
+
+    QList<QList<PairInteraction*>> interactions;
+    QList<QList<DimerAtoms>> atomIndices;
+
+    auto pairsArray = json["pairs"];
+    interactions.resize(pairsArray.size());
+    atomIndices.resize(pairsArray.size());
+
+    for (size_t i = 0; i < pairsArray.size(); ++i) {
+      auto siteEnergies = pairsArray[i];
+      auto &neighbors = interactions[i];
+      auto &offsets = atomIndices[i];
+      neighbors.reserve(siteEnergies.size());
+      offsets.reserve(siteEnergies.size());
+
+      for (size_t j = 0; j < siteEnergies.size(); ++j) {
+        auto *pair = new PairInteraction(modelName);
+        pair_energy::Parameters params;
+        params.hasPermutationSymmetry = hasPermutationSymmetry;
+        pair->setParameters(params);
+
+        const auto &dimerObj = siteEnergies[j];
+        pair->setLabel(QString::number(j + 1));
+
+        // Load energies
+        const auto &energiesObj = dimerObj["energies"];
+        for (auto it = energiesObj.begin(); it != energiesObj.end(); ++it) {
+          QString key = QString::fromStdString(it.key());
+          if (it->is_number()) {
+            pair->addComponent(key, it->get<double>());
+          }
+        }
+
+        // Load atom offsets
+        const auto &offsetsObj = dimerObj["uc_atom_offsets"];
+        DimerAtoms d;
+        const auto &a = offsetsObj[0];
+        d.a.reserve(a.size());
+        for (size_t k = 0; k < a.size(); k++) {
+          auto idx = a[k];
+          d.a.push_back(GenericAtomIndex{idx[0], idx[1], idx[2], idx[3]});
+        }
+        const auto &b = offsetsObj[1];
+        d.b.reserve(b.size());
+        for (size_t k = 0; k < b.size(); k++) {
+          auto idx = b[k];
+          d.b.push_back(GenericAtomIndex{idx[0], idx[1], idx[2], idx[3]});
+        }
+
+        neighbors.push_back(pair);
+        offsets.push_back(d);
+      }
+    }
+
+    // Now set the interactions on the current structure
+    currentStructure->setPairInteractionsFromDimerAtoms(interactions, atomIndices, hasPermutationSymmetry);
+
+    // Update the info viewer to show the energies tab
+    infoViewer->setTab(InfoType::InteractionEnergy);
+
+    statusBar()->showMessage(
+        QString("Lattice energy loaded for model '%1'").arg(modelName), 3000);
+
+  } catch (const std::exception &e) {
+    QMessageBox::critical(this, "Parse Error",
+                         QString("Failed to parse lattice energy file:\n%1\n\nError: %2")
+                         .arg(filename, e.what()));
+  }
+
+  delete loadedStructure;
 }

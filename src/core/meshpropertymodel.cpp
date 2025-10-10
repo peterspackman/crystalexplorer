@@ -203,6 +203,8 @@ QString MeshPropertyModel::getSelectedPropertyColorMap() const {
   if (it != m_propertyDescriptions.descriptions.end()) {
     return it->cmap;
   }
+
+  qDebug() << "Property" << propertyName << "not found in property descriptions, using Viridis";
   return "Viridis";
 }
 

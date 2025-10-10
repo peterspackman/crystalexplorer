@@ -563,6 +563,9 @@ public:
   inline const auto &bond_overrides() const { return m_bond_overrides; }
   void clear_bond_overrides();
 
+  int normalize_hydrogen_bondlengths(
+      const ankerl::unordered_dense::map<int, double>& custom_lengths = {});
+
 private:
   AsymmetricUnit m_asymmetric_unit;
   SpaceGroup m_space_group;

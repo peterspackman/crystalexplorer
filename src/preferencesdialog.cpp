@@ -243,6 +243,9 @@ void PreferencesDialog::initConnections() {
   connect(enableDebugVisualizationCheckBox, &QCheckBox::toggled, this,
           &PreferencesDialog::setDebugVisualizationEnabled);
 
+  connect(enableExperimentalFeaturesCheckBox, &QCheckBox::toggled, this,
+          &PreferencesDialog::experimentalFeaturesChanged);
+
   connect(restoreExpertSettingsButton, &QPushButton::clicked, this,
           &PreferencesDialog::restoreExpertSettings);
 
@@ -571,6 +574,8 @@ void PreferencesDialog::updateDialogFromSettings() {
       settings::readSetting(settings::keys::PRELOAD_MESH_FILES).toBool());
   enableDebugVisualizationCheckBox->setChecked(
       settings::readSetting(settings::keys::DEBUG_VISUALIZATION_ENABLED).toBool());
+  enableExperimentalFeaturesCheckBox->setChecked(
+      settings::readSetting(settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG).toBool());
 
   _updateDialogFromSettingsDone = true;
 }
@@ -612,6 +617,8 @@ void PreferencesDialog::updateSettingsFromDialog() {
        {settings::keys::XH_NORMALIZATION,
         enableXHNormalisationCheckBox->isChecked()},
        {settings::keys::PRELOAD_MESH_FILES, preloadMeshCheckBox->isChecked()},
+       {settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG,
+        enableExperimentalFeaturesCheckBox->isChecked()},
        {settings::keys::PREFERRED_WAVEFUNCTION_SOURCE,
         preferredWavefunctionSourceComboBox->currentText()}});
   updateExternalProgramSettings();
@@ -838,11 +845,14 @@ void PreferencesDialog::resetAllElements() {
 void PreferencesDialog::restoreExpertSettings() {
 
   settings::restoreDefaultSettings(
-      {settings::keys::DELETE_WORKING_FILES, settings::keys::XH_NORMALIZATION});
+      {settings::keys::DELETE_WORKING_FILES, settings::keys::XH_NORMALIZATION,
+       settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG});
   deleteWorkingFilesCheckBox->setChecked(
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool());
   enableXHNormalisationCheckBox->setChecked(
       settings::readSetting(settings::keys::XH_NORMALIZATION).toBool());
+  enableExperimentalFeaturesCheckBox->setChecked(
+      settings::readSetting(settings::keys::ENABLE_EXPERIMENTAL_FEATURE_FLAG).toBool());
 }
 
 void PreferencesDialog::setEnergyFrameworkPositiveColor() {

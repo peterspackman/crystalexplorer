@@ -26,11 +26,13 @@ public slots:
   void updateInfoViewerForSurfaceChange();
   void updateInteractionDisplaySettings();
   void updateEnergyColorSettings();
+  void enableExperimentalFeatures(bool enable);
 
 signals:
   void infoViewerClosed();
   void energyColorSchemeChanged();
   void tabChangedTo(InfoType);
+  void elasticTensorRequested(const QString &modelName);
 
 private slots:
   void tabChanged(int index);

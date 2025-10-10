@@ -17,14 +17,10 @@ XtbEnergyCalculator::XtbEnergyCalculator(QObject *parent) : QObject(parent) {
       settings::readSetting(settings::keys::DELETE_WORKING_FILES).toBool();
 }
 
-void XtbEnergyCalculator::setTaskManager(TaskManager *mgr) {
-  m_taskManager = mgr;
-}
-
-void XtbEnergyCalculator::start(xtb::Parameters params) {
+XtbTask* XtbEnergyCalculator::createTask(xtb::Parameters params) {
   if (!params.structure) {
     qDebug() << "Found nullptr for chemical structure in XtbEnergyCalculator";
-    return;
+    return nullptr;
   }
   auto idx = params.structure->atomsWithFlags(AtomFlag::Selected);
   occ::IVec nums = params.structure->atomicNumbersForIndices(idx);
@@ -36,7 +32,7 @@ void XtbEnergyCalculator::start(xtb::Parameters params) {
   if(params.userEditRequested) {
     params.userInputContents = io::requestUserTextEdit("XTB input", xtbCoordString(params));
     // TODO report to user that the job will be canceled
-    if(params.userInputContents.isEmpty()) return;
+    if(params.userInputContents.isEmpty()) return nullptr;
   }
   auto *task = new XtbTask();
   task->setParameters(params);
@@ -46,21 +42,9 @@ void XtbEnergyCalculator::start(xtb::Parameters params) {
   task->setEnvironment(m_environment);
   task->setDeleteWorkingFiles(m_deleteWorkingFiles);
 
-  auto taskId = m_taskManager->add(task);
-  connect(
-      task, &Task::completed,
-      [&, taskPtr = QPointer<XtbTask>(task)]() {
-        if (taskPtr) {
-          this->handleFinishedTask(taskPtr->getParameters(), taskPtr->getResult());
-        } else {
-          qWarning() << "Task pointer for" << params.name
-                     << "already deleted when completed signal was received?";
-        }
-      });
-}
+  // Store params in task properties for caller's convenience
+  task->setProperty("xtb_params", QVariant::fromValue(params));
 
-void XtbEnergyCalculator::handleFinishedTask(xtb::Parameters params,
-                                             xtb::Result result) {
-  qDebug() << "Task" << result.name << "finished in XtbEnergyCalculator";
-  emit calculationComplete(params, result);
+  // Return configured task - caller will connect then add to TaskManager
+  return task;
 }

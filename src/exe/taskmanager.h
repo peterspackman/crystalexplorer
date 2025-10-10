@@ -7,11 +7,13 @@
 
 using TaskID = QUuid;
 
+class TaskBackend;
 
 class TaskManager : public QObject {
     Q_OBJECT
 public:
     explicit TaskManager(QObject *parent = nullptr);
+    ~TaskManager();
 
     TaskID add(Task* task, bool start=true);
     void remove(TaskID taskId);
@@ -37,6 +39,7 @@ private:
     void handleTaskError(TaskID, QString);
     void startNextTask();
 
+    TaskBackend *m_backend{nullptr};
     QMap<TaskID, Task*> m_tasks;
     QQueue<TaskID> m_pendingTasks;
 

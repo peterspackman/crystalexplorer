@@ -189,6 +189,30 @@
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_colorbar">
+         <item>
+          <widget class="QCheckBox" name="showColorBarCheckBox">
+           <property name="text">
+            <string>Show Color Bar</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_colorbar">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
         <widget class="QPushButton" name="exportSurfaceButton">
          <property name="text">
           <string>Export Current Surface</string>

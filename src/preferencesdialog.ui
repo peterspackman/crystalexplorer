@@ -1383,6 +1383,16 @@
             </property>
            </widget>
           </item>
+          <item row="4" column="0">
+           <widget class="QCheckBox" name="enableExperimentalFeaturesCheckBox">
+            <property name="toolTip">
+             <string>Enable experimental features such as elastic tensor estimation and pair energy export to JSON.</string>
+            </property>
+            <property name="text">
+             <string>Enable experimental features</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

@@ -97,6 +97,7 @@
     <addaction name="createPlaneAction"/>
     <addaction name="cloneSurfaceAction"/>
     <addaction name="calculateEnergiesAction"/>
+    <addaction name="calculateLatticeEnergyAction"/>
     <addaction name="separator"/>
     <addaction name="generateWavefunctionAction"/>
     <addaction name="separator"/>
@@ -1001,6 +1002,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="calculateLatticeEnergyAction">
+   <property name="text">
+    <string>Calculate Lattice Energy...</string>
+   </property>
+   <property name="toolTip">
+    <string>Calculate lattice energy using occ elat</string>
    </property>
   </action>
   <action name="infoAction">

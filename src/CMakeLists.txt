@@ -72,9 +72,19 @@ target_link_libraries(
     cx_graphics
     cx_pair_energy
     cx_dialogs
-    Qt6::Widgets Qt6::Concurrent
-    Qt6::OpenGLWidgets Qt6::DBus
+    Qt6::Widgets
+    Qt6::OpenGLWidgets
 )
+
+if(TARGET Qt6::Concurrent)
+    target_link_libraries(cx PUBLIC Qt6::Concurrent)
+    target_compile_definitions(cx PUBLIC CX_HAS_CONCURRENT)
+endif()
+
+if(TARGET Qt6::Graphs)
+    target_link_libraries(cx PUBLIC Qt6::Graphs)
+    target_compile_definitions(cx PUBLIC CX_HAS_GRAPHS)
+endif()
 target_include_directories(cx
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
     PUBLIC ${CMAKE_CURRENT_BINARY_DIR}

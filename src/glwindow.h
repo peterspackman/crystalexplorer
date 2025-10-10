@@ -97,6 +97,8 @@ public slots:
   void handleAtomLabelOptionsChanged(AtomLabelOptions);
   void pauseRendering();
   void resumeRendering();
+  void showColorBar(const QString &colorMapName, double minValue, double maxValue, const QString &label = QString());
+  void hideColorBar();
 
 signals:
   void scaleChanged(float);
@@ -266,12 +268,13 @@ private:
   QImage m_textLayer;
 
   QLabel *m_infoLabel{nullptr};
+  class ColorBarWidget *m_colorBar{nullptr};
 
   QOpenGLFramebufferObject *m_framebuffer{nullptr};
   QOpenGLFramebufferObject *m_resolvedFramebuffer{nullptr};
   QOpenGLShaderProgram *m_postprocessShader{nullptr};
   QOpenGLVertexArrayObject m_quadVAO;
   QOpenGLBuffer m_quadVBO;
-  
+
   QTimer *m_redrawBatchTimer{nullptr};
 };

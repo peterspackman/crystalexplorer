@@ -4,6 +4,14 @@
 
 #include <QOpenGLShaderProgram>
 
+// OpenGL constants not available in WebGL/GLES
+#ifndef GL_TEXTURE_BUFFER
+#define GL_TEXTURE_BUFFER 0x8C2A
+#endif
+#ifndef GL_PROGRAM_POINT_SIZE
+#define GL_PROGRAM_POINT_SIZE 0x8642
+#endif
+
 PointCloudInstanceRenderer::PointCloudInstanceRenderer(Mesh *mesh)
     : QOpenGLExtraFunctions(QOpenGLContext::currentContext()) {
 

@@ -3,6 +3,7 @@
 #include <occ/core/kdtree.h>
 #include <occ/core/linear_algebra.h>
 #include <occ/crystal/crystal.h>
+#include <occ/crystal/standard_bonds.h>
 #include <occ/crystal/unit_cell_connectivity.h>
 
 namespace occ::crystal {
@@ -818,5 +819,120 @@ Crystal::dimer_symmetry_string(const occ::core::Dimer &dimer) const {
 }
 
 double Crystal::volume() const { return m_unit_cell.volume(); }
+
+int Crystal::normalize_hydrogen_bondlengths(
+    const ankerl::unordered_dense::map<int, double>& custom_lengths) {
+
+  int normalized_count = 0;
+
+  // Get unit cell connectivity to find bonds
+  const auto& bond_graph = unit_cell_connectivity();
+  const auto& uc_atoms = unit_cell_atoms();
+
+  // Work with asymmetric unit positions
+  Mat3N cart_pos = to_cartesian(m_asymmetric_unit.positions);
+
+  // Track which hydrogens we've already normalized
+  ankerl::unordered_dense::set<int> normalized_h;
+
+  // Iterate through all vertices and their neighbors in the bond graph
+  const auto& adjacency_list = bond_graph.adjacency_list();
+  const auto& vertices = bond_graph.vertices();
+  const auto& edges = bond_graph.edges();
+
+  for (const auto& [v1, neighbors] : adjacency_list) {
+    // Get the first vertex's unit cell atom index
+    auto v1_it = vertices.find(v1);
+    if (v1_it == vertices.end()) continue;
+    int uc_idx1 = v1_it->second.uc_idx;
+
+    for (const auto& [v2, edge_desc] : neighbors) {
+      // Only process covalent bonds, skip VDW contacts and hydrogen bonds
+      const auto& edge = edges.at(edge_desc);
+      if (edge.connectionType != occ::core::graph::PeriodicEdge::Connection::CovalentBond) {
+        continue;
+      }
+
+      // Get the second vertex's unit cell atom index
+      auto v2_it = vertices.find(v2);
+      if (v2_it == vertices.end()) continue;
+      int uc_idx2 = v2_it->second.uc_idx;
+
+      // Map back to asymmetric unit indices
+      if (uc_idx1 >= uc_atoms.asym_idx.size() || uc_idx2 >= uc_atoms.asym_idx.size()) {
+        continue;
+      }
+
+      int asym_idx1 = uc_atoms.asym_idx(uc_idx1);
+      int asym_idx2 = uc_atoms.asym_idx(uc_idx2);
+
+      // Skip if indices are out of range
+      if (asym_idx1 < 0 || asym_idx2 < 0 ||
+          asym_idx1 >= m_asymmetric_unit.atomic_numbers.size() ||
+          asym_idx2 >= m_asymmetric_unit.atomic_numbers.size()) {
+        continue;
+      }
+
+      int h_idx = -1;
+      int heavy_idx = -1;
+
+      // Check if one is hydrogen and the other is not
+      if (m_asymmetric_unit.atomic_numbers(asym_idx1) == 1 &&
+          m_asymmetric_unit.atomic_numbers(asym_idx2) != 1) {
+        h_idx = asym_idx1;
+        heavy_idx = asym_idx2;
+      } else if (m_asymmetric_unit.atomic_numbers(asym_idx2) == 1 &&
+                 m_asymmetric_unit.atomic_numbers(asym_idx1) != 1) {
+        h_idx = asym_idx2;
+        heavy_idx = asym_idx1;
+      } else {
+        continue; // Not an H-X bond
+      }
+
+      // Skip if we've already normalized this hydrogen
+      if (normalized_h.contains(h_idx)) {
+        continue;
+      }
+
+      int heavy_atom_z = m_asymmetric_unit.atomic_numbers(heavy_idx);
+
+      // Get target bond length
+      double target_length = -1.0;
+      if (custom_lengths.contains(heavy_atom_z)) {
+        target_length = custom_lengths.at(heavy_atom_z);
+      } else {
+        target_length = StandardBondLengths::get_hydrogen_bond_length(heavy_atom_z);
+      }
+
+      // Skip if no standard length available
+      if (target_length < 0) {
+        continue;
+      }
+
+      // Calculate normalized position
+      Vec3 bond_vector = cart_pos.col(h_idx) - cart_pos.col(heavy_idx);
+      double current_length = bond_vector.norm();
+
+      // Only normalize if the difference is significant (> 0.001 Å)
+      if (std::abs(current_length - target_length) > 0.001) {
+        bond_vector = (target_length / current_length) * bond_vector;
+        cart_pos.col(h_idx) = cart_pos.col(heavy_idx) + bond_vector;
+        normalized_h.insert(h_idx);
+        normalized_count++;
+      }
+    }
+  }
+
+  // Convert back to fractional coordinates
+  m_asymmetric_unit.positions = to_fractional(cart_pos);
+
+  // After changing positions, mark all cached data as needing update
+  m_unit_cell_atoms_needs_update = true;
+  m_unit_cell_molecules_needs_update = true;
+  m_unit_cell_connectivity_needs_update = true;
+  m_symmetry_unique_molecules_needs_update = true;
+
+  return normalized_count;
+}
 
 } // namespace occ::crystal

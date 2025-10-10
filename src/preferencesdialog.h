@@ -35,6 +35,7 @@ signals:
   void textSettingsChanged();
   void targetFramerateChanged(int fps);
   void debugVisualizationChanged(bool enabled);
+  void experimentalFeaturesChanged(bool enabled);
 
 private slots:
   void getValueForExternalProgramSetting(QStandardItem *item);

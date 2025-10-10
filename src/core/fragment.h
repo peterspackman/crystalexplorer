@@ -66,7 +66,7 @@ struct Fragment {
 };
 
 struct FragmentDimer {
-  explicit FragmentDimer() {};
+  FragmentDimer() = default;
   explicit FragmentDimer(const Fragment &, const Fragment &);
 
   Fragment a;

@@ -99,6 +99,18 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INSTALL_PREFIX": "/usr"
       }
+    },
+    {
+      "name": "wasm",
+      "inherits": "base",
+      "displayName": "WebAssembly Config",
+      "description": "Target WebAssembly with Emscripten",
+      "binaryDir": "${sourceDir}/build-wasm",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CPACK_SYSTEM_NAME": "wasm",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/wasm"
+      }
     }
   ],
   "buildPresets": [
@@ -125,6 +137,10 @@
     {
       "name": "ubuntu-latest-x86_64",
       "configurePreset": "ubuntu-latest-x86_64"
+    },
+    {
+      "name": "wasm",
+      "configurePreset": "wasm"
     }
   ],
   "testPresets": [
@@ -193,6 +209,17 @@
         "noTestsAction": "error",
         "stopOnFailure": true
       }
+    },
+    {
+      "name": "wasm",
+      "configurePreset": "wasm",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
     }
   ],
   "packagePresets": [
@@ -236,6 +263,13 @@
       "configurePreset": "ubuntu-latest-x86_64",
       "generators": [
         "DEB"
+      ]
+    },
+    {
+      "name": "wasm",
+      "configurePreset": "wasm",
+      "generators": [
+        "TGZ"
       ]
     }
   ]

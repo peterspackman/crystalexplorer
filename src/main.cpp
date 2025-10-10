@@ -81,17 +81,23 @@ int main(int argc, char *argv[]) {
   format.setStencilBufferSize(
       settings::readSetting(settings::keys::SURFACE_STENCIL_BUFFER_SIZE)
           .toInt());
+#ifdef Q_OS_WASM
+  // WebGL only supports OpenGL ES 3.0, not desktop OpenGL 4.3
+  format.setVersion(3, 0);
+  format.setRenderableType(QSurfaceFormat::OpenGLES);
+#else
   format.setVersion(4, 3);
   format.setProfile(QSurfaceFormat::CoreProfile);
+#endif
 #ifdef QT_DEBUG
   format.setOption(QSurfaceFormat::DebugContext, true);
 #endif
   format.setSamples(0); // Disable widget MSAA, use FBO MSAA instead for better control
-  
+
   // Configure VSync
   bool vsyncEnabled = settings::readSetting(settings::keys::SURFACE_VSYNC_ENABLED).toBool();
   format.setSwapInterval(vsyncEnabled ? 1 : 0); // 1 = VSync on, 0 = VSync off
-  
+
   QSurfaceFormat::setDefaultFormat(format);
 
   QApplication app(argc, argv);

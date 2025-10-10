@@ -135,6 +135,16 @@ public:
   // Public spatial query methods
   std::vector<GenericAtomIndex> atomsInBoundingBox(const occ::Vec3& min, const occ::Vec3& max) const override;
 
+  inline const occ::crystal::DimerMappingTable &dimerMappingTable(bool allowInversion = true) const {
+    return allowInversion ? m_dimerMappingTable : m_dimerMappingTableNoInv;
+  }
+
+  void buildDimerMappingTable(double maxRadius = 12.0);
+
+  int normalizeHydrogenBondLengths(bool enabled = true);
+
+  void ensureDimerMappingTableForCurrentExtent() override;
+
 private:
   void updateFragments();
   void updateAtomFragmentMapping(const Fragment &frag);
@@ -152,8 +162,6 @@ private:
   void addVanDerWaalsContactAtoms();
   void removeVanDerWaalsContactAtoms();
   void deleteAtomsByOffset(const std::vector<int> &atomIndices);
-
-  void buildDimerMappingTable(double maxRadius = 12.0);
 
   OccCrystal m_crystal;
 

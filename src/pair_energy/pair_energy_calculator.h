@@ -20,8 +20,8 @@ signals:
     void calculationComplete();
 
 private slots:
-    void pairEnergyComplete(pair_energy::Parameters, OccPairTask *);
-    void handleXtbTaskComplete(xtb::Parameters, xtb::Result);
+    void onPairEnergyTaskComplete();
+    void onXtbTaskComplete();
 
 private:
     std::vector<GenericAtomIndex> m_atomsA;
@@ -35,6 +35,5 @@ private:
     int m_totalTasks{0};
     bool m_complete{false};
     QString m_occExecutable{"occ"};
-    QMap<QString, pair_energy::Parameters> m_parameters;
     QProcessEnvironment m_environment;
 };

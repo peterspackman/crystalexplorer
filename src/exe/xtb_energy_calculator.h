@@ -4,27 +4,22 @@
 #include "xtb_parameters.h"
 #include "xtb.h"
 #include <QObject>
+#include <QProcessEnvironment>
+
+class Task;
+class XtbTask;
 
 class XtbEnergyCalculator : public QObject {
   Q_OBJECT
 public:
   XtbEnergyCalculator(QObject *parent = nullptr);
 
-  void setTaskManager(TaskManager *);
-  void start(xtb::Parameters);
-
-signals:
-  void calculationComplete(xtb::Parameters, xtb::Result);
-
-private slots:
-  void handleFinishedTask(xtb::Parameters, xtb::Result);
+  // Creates and configures an XTB task (doesn't add to TaskManager)
+  // Caller should connect to signals then add to TaskManager
+  XtbTask* createTask(xtb::Parameters);
 
 private:
-  TaskManager *m_taskManager{nullptr};
   QString m_xtbExecutable{"xtb"};
   QProcessEnvironment m_environment;
-
-  bool m_complete{false};
   bool m_deleteWorkingFiles{false};
-  int completedTaskCount{0};
 };

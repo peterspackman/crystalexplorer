@@ -5,6 +5,7 @@
 #include "wavefunction_parameters.h"
 #include <Eigen/Geometry>
 #include <QString>
+#include <QMetaType>
 #include <ankerl/unordered_dense.h>
 
 class MolecularWavefunction;
@@ -59,6 +60,8 @@ struct Result {
 };
 
 } // namespace pair_energy
+
+Q_DECLARE_METATYPE(pair_energy::Parameters)
 
 void to_json(nlohmann::json &j, const pair_energy::Parameters &);
 void from_json(const nlohmann::json &j, pair_energy::Parameters &);

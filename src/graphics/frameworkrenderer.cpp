@@ -203,7 +203,11 @@ void FrameworkRenderer::handleInteractionsUpdate() {
   }
 
   if (m_options.coloring == FrameworkOptions::Coloring::Value) {
-    ColorMap cmap("Turbo", emin, emax);
+    // Blue (binding/negative) to White (neutral) to Orange (repulsive/positive)
+    // For tricolor map, ensure range spans from negative to positive
+    double minVal = qMin(emin, 0.0);
+    double maxVal = qMax(emax, 0.0);
+    ColorMap cmap("OrangeWhiteBlue", minVal, maxVal);
     for (auto &[color, energy, label] : energies) {
       color = cmap(energy);
     }
@@ -439,7 +443,11 @@ FrameworkRenderer::generateFrameworkTubes() const {
   }
 
   if (m_options.coloring == FrameworkOptions::Coloring::Value) {
-    ColorMap cmap("Turbo", emin, emax);
+    // Blue (binding/negative) to White (neutral) to Orange (repulsive/positive)
+    // For tricolor map, ensure range spans from negative to positive
+    double minVal = qMin(emin, 0.0);
+    double maxVal = qMax(emax, 0.0);
+    ColorMap cmap("OrangeWhiteBlue", minVal, maxVal);
     for (auto &[color, energy, label] : energies) {
       color = cmap(energy);
     }

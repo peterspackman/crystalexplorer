@@ -1,5 +1,6 @@
 #include "interactioninfodocument.h"
 #include "publication_reference.h"
+#include "save_pair_energy_json.h"
 #include <QApplication>
 #include <QHeaderView>
 #include <QLabel>
@@ -15,18 +16,46 @@
 #include <QUrl>
 #include <QFrame>
 #include <QPalette>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QToolBar>
+#include <QToolButton>
 
 InteractionInfoDocument::InteractionInfoDocument(QWidget *parent)
     : QWidget(parent), m_tabWidget(new QTabWidget(this)),
       m_noDataLabel(new QLabel(this)) {
 
-  QStackedLayout *stackedLayout = new QStackedLayout(this);
-  stackedLayout->addWidget(m_tabWidget);
+  QVBoxLayout *mainLayout = new QVBoxLayout(this);
+  mainLayout->setContentsMargins(0, 0, 0, 0);
+  mainLayout->setSpacing(0);
+
+  // Add export button at the top
+  QHBoxLayout *buttonLayout = new QHBoxLayout();
+  buttonLayout->setContentsMargins(4, 4, 4, 4);
+  buttonLayout->addStretch();
+
+  m_exportButton = new QPushButton("Export to JSON", this);
+  m_exportButton->setToolTip("Export current model's pair energies to elat_results.json format (Ctrl+E)");
+  buttonLayout->addWidget(m_exportButton);
+
+  m_elasticTensorButton = new QPushButton("Estimate Elastic Tensor", this);
+  m_elasticTensorButton->setToolTip("Estimate elastic tensor using current model");
+  buttonLayout->addWidget(m_elasticTensorButton);
+
+  // Hide experimental features by default
+  m_exportButton->setVisible(false);
+  m_elasticTensorButton->setVisible(false);
+
+  mainLayout->addLayout(buttonLayout);
+
+  // Create stacked layout for tab widget and no data message
+  m_stackedLayout = new QStackedLayout();
+  m_stackedLayout->addWidget(m_tabWidget);
 
   // Create a more aesthetically pleasing "no data" message
   QWidget *noDataContainer = new QWidget(this);
   QVBoxLayout *noDataLayout = new QVBoxLayout(noDataContainer);
-  
+
   // Simple, clean no data message
   m_noDataLabel->setText("<html><body>"
                          "<p style='font-size: 14pt;'>No interaction information available</p>"
@@ -34,17 +63,23 @@ InteractionInfoDocument::InteractionInfoDocument(QWidget *parent)
                          "</body></html>");
   m_noDataLabel->setAlignment(Qt::AlignCenter);
   m_noDataLabel->setWordWrap(true);
-  
+
   noDataLayout->addStretch();
   noDataLayout->addWidget(m_noDataLabel, 0, Qt::AlignCenter);
   noDataLayout->addStretch();
-  stackedLayout->addWidget(noDataContainer);
+  m_stackedLayout->addWidget(noDataContainer);
 
-  setLayout(stackedLayout);
+  mainLayout->addLayout(m_stackedLayout);
 
   showNoDataMessage();
 
   setupCopyAction();
+  setupExportAction();
+
+  connect(m_exportButton, &QPushButton::clicked, this,
+          &InteractionInfoDocument::exportCurrentModelToJson);
+  connect(m_elasticTensorButton, &QPushButton::clicked, this,
+          &InteractionInfoDocument::estimateElasticTensor);
   connect(m_tabWidget, &QTabWidget::currentChanged, this,
           &InteractionInfoDocument::onTabChanged);
 }
@@ -85,7 +120,7 @@ void InteractionInfoDocument::updateContent() {
     return;
   }
 
-  static_cast<QStackedLayout *>(layout())->setCurrentWidget(m_tabWidget);
+  m_stackedLayout->setCurrentWidget(m_tabWidget);
 
   QList<QString> sortedModels = interactions->interactionModels();
   std::sort(sortedModels.begin(), sortedModels.end());
@@ -106,7 +141,7 @@ void InteractionInfoDocument::updateContent() {
 }
 
 void InteractionInfoDocument::showNoDataMessage() {
-  static_cast<QStackedLayout *>(layout())->setCurrentIndex(1);
+  m_stackedLayout->setCurrentIndex(1);
 }
 
 void InteractionInfoDocument::updateSettings(InteractionInfoSettings settings) {
@@ -146,6 +181,7 @@ void InteractionInfoDocument::setupTableForModel(const QString &model) {
 
   tableView->setModel(tableModel);
   tableView->addAction(m_copyAction); // Use the shared copy action
+  tableView->addAction(m_exportAction); // Use the shared export action
 
   tableView->resizeColumnsToContents();
   tableView->setColumnWidth(0, 30);
@@ -398,4 +434,83 @@ void InteractionInfoDocument::showHeaderContextMenu(const QPoint &pos) {
   }
 
   m_headerContextMenu->exec(header->mapToGlobal(pos));
+}
+
+void InteractionInfoDocument::setupExportAction() {
+  if (!m_exportAction) {
+    m_exportAction = new QAction("Export to JSON...", this);
+    m_exportAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_E));
+    connect(m_exportAction, &QAction::triggered, this,
+            &InteractionInfoDocument::exportCurrentModelToJson);
+  }
+}
+
+void InteractionInfoDocument::exportCurrentModelToJson() {
+  if (!m_scene || !m_scene->chemicalStructure()) {
+    return;
+  }
+
+  auto *interactions = m_scene->chemicalStructure()->pairInteractions();
+  if (!interactions || interactions->getCount() == 0) {
+    return;
+  }
+
+  QString currentModel = m_tabWidget->tabText(m_tabWidget->currentIndex());
+  if (currentModel.isEmpty()) {
+    QMessageBox::warning(this, "Export Failed",
+                        "No model selected. Please select a tab first.");
+    return;
+  }
+
+  // Suggest a filename based on the structure and model
+  QString suggestedName = QString("%1_%2_elat_results.json")
+                            .arg(m_scene->chemicalStructure()->name())
+                            .arg(QString(currentModel).replace(" ", "_"));
+
+  QString filename = QFileDialog::getSaveFileName(
+      this, "Export Pair Energies to JSON", suggestedName,
+      "JSON Files (*.json);;All Files (*)");
+
+  if (filename.isEmpty()) {
+    return;
+  }
+
+  // Export all interactions for the current model in elat_results.json format
+  bool success = save_pair_interactions_for_model_json(interactions, m_scene->chemicalStructure(), currentModel, filename);
+
+  if (success) {
+    QMessageBox::information(this, "Export Successful",
+                            QString("Pair energies for model '%1' exported to:\n%2")
+                            .arg(currentModel, filename));
+  } else {
+    QMessageBox::critical(this, "Export Failed",
+                         "Failed to write JSON file. Check file permissions and that interactions exist for this model.");
+  }
+}
+
+void InteractionInfoDocument::estimateElasticTensor() {
+  if (!m_scene || !m_scene->chemicalStructure()) {
+    return;
+  }
+
+  auto *interactions = m_scene->chemicalStructure()->pairInteractions();
+  if (!interactions || interactions->getCount() == 0) {
+    QMessageBox::warning(this, "No Data",
+                        "No pair interactions available. Please calculate pair energies first.");
+    return;
+  }
+
+  QString currentModel = m_tabWidget->tabText(m_tabWidget->currentIndex());
+  if (currentModel.isEmpty()) {
+    QMessageBox::warning(this, "No Model Selected",
+                        "No model selected. Please select a tab first.");
+    return;
+  }
+
+  emit elasticTensorRequested(currentModel);
+}
+
+void InteractionInfoDocument::enableExperimentalFeatures(bool enable) {
+  m_exportButton->setVisible(enable);
+  m_elasticTensorButton->setVisible(enable);
 }

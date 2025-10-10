@@ -2,6 +2,7 @@ add_library(cx_graphics
     "${CMAKE_CURRENT_SOURCE_DIR}/billboardrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/chemicalstructurerenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/circlerenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/colorbarwidget.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/cylinderimpostorrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/cylinderrenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/debugrenderer.cpp"
@@ -26,12 +27,16 @@ add_library(cx_graphics
 )
 
 target_link_libraries(
-    cx_graphics PUBLIC 
+    cx_graphics PUBLIC
     cx_core
     cx_crystal
-    Qt6::Core Qt6::OpenGL
-    OpenGL::GL
+    Qt6::Core Qt6::OpenGL Qt6::Widgets
 )
+
+# Link system OpenGL only for non-WASM builds
+if(NOT CPACK_SYSTEM_NAME STREQUAL "wasm")
+    target_link_libraries(cx_graphics PUBLIC OpenGL::GL)
+endif()
 
 target_compile_features(cx_graphics PUBLIC cxx_std_20)
 

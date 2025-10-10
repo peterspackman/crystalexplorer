@@ -2,6 +2,7 @@
 #include "generic_atom_index.h"
 #include "wavefunction_parameters.h"
 #include <QString>
+#include <QMetaType>
 #include <ankerl/unordered_dense.h>
 
 class ChemicalStructure;
@@ -93,3 +94,6 @@ inline bool isXtbMethod(const QString &s) {
 }
 
 } // namespace xtb
+
+Q_DECLARE_METATYPE(xtb::Parameters)
+Q_DECLARE_METATYPE(xtb::Result)

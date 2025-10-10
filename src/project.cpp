@@ -11,6 +11,7 @@
 #include "gulp.h"
 #include "pdbfile.h"
 #include "project.h"
+#include "settings.h"
 #include "version.h"
 #include "xyzfile.h"
 #include "slabstructure.h"
@@ -352,6 +353,8 @@ bool Project::loadCrystalStructuresFromPdbFile(const QString &filename) {
   for (int i = 0; i < pdbReader.numberOfCrystals(); i++) {
     CrystalStructure *tmp = new CrystalStructure();
     tmp->setOccCrystal(pdbReader.getCrystalStructure(i));
+    bool normalizeH = settings::readSetting(settings::keys::XH_NORMALIZATION).toBool();
+    tmp->normalizeHydrogenBondLengths(normalizeH);
     tmp->setFilename(filename);
     // tmp->setFileContents(pdbReader.getCrystalCifContents(i));
     // tmp->setName(pdbReader.getCrystalName(i));
@@ -431,6 +434,8 @@ bool Project::loadCrystalStructuresFromCifFile(const QString &filename) {
   for (int i = 0; i < cifReader.numberOfCrystals(); i++) {
     CrystalStructure *tmp = new CrystalStructure();
     tmp->setOccCrystal(cifReader.getCrystalStructure(i));
+    bool normalizeH = settings::readSetting(settings::keys::XH_NORMALIZATION).toBool();
+    tmp->normalizeHydrogenBondLengths(normalizeH);
     tmp->setFileContents(cifReader.getCrystalCifContents(i));
     tmp->setFilename(filename);
     tmp->setName(cifReader.getCrystalName(i));

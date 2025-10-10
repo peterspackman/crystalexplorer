@@ -283,6 +283,23 @@ void CrystalStructure::setOccCrystal(const OccCrystal &crystal) {
   resetAtomsAndBonds();
 }
 
+int CrystalStructure::normalizeHydrogenBondLengths(bool enabled) {
+  if (!enabled) return 0;
+
+  ankerl::unordered_dense::map<int, double> custom_lengths;
+  int count = m_crystal.normalize_hydrogen_bondlengths(custom_lengths);
+
+  if (count > 0) {
+    // After normalizing, we need to update everything that depends on atomic positions
+    updateFragments();
+    updateAtomicDisplacementParameters();
+    buildDimerMappingTable();
+    resetAtomsAndBonds();
+  }
+
+  return count;
+}
+
 void CrystalStructure::updateFragments() {
   m_symmetryUniqueFragments.clear();
   std::vector<FragmentIndex> asymmetricMoleculeIndices;
@@ -1025,6 +1042,13 @@ void CrystalStructure::expandAtomsWithinRadius(float radius, bool selected) {
       return;
   }
 
+  // Check if we need to rebuild the dimer mapping table with a larger radius
+  if (radius > m_unitCellDimers.radius) {
+    qDebug() << "Requested radius" << radius << "exceeds current dimer table radius"
+             << m_unitCellDimers.radius << "- rebuilding";
+    buildDimerMappingTable(radius);
+  }
+
   auto uc_regions = m_crystal.unit_cell_atom_surroundings(radius);
   GenericAtomIndexSet atomsToAdd;
   for (int atomIndex = 0; atomIndex < numberOfAtoms(); atomIndex++) {
@@ -1074,6 +1098,13 @@ std::vector<GenericAtomIndex> CrystalStructure::atomsSurroundingAtoms(
   GenericAtomIndexSet idx_set(idxs.begin(), idxs.end());
   GenericAtomIndexSet unique_idxs;
 
+  // Check if we need to rebuild the dimer mapping table with a larger radius
+  if (radius > m_unitCellDimers.radius) {
+    qDebug() << "Requested radius" << radius << "exceeds current dimer table radius"
+             << m_unitCellDimers.radius << "- rebuilding";
+    const_cast<CrystalStructure*>(this)->buildDimerMappingTable(radius);
+  }
+
   auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
 
   for (const auto &idx : idx_set) {
@@ -1107,6 +1138,13 @@ CrystalStructure::atomsSurroundingAtomsWithFlags(const AtomFlags &flags,
   }
 
   GenericAtomIndexSet unique_idxs;
+
+  // Check if we need to rebuild the dimer mapping table with a larger radius
+  if (radius > m_unitCellDimers.radius) {
+    qDebug() << "Requested radius" << radius << "exceeds current dimer table radius"
+             << m_unitCellDimers.radius << "- rebuilding";
+    const_cast<CrystalStructure*>(this)->buildDimerMappingTable(radius);
+  }
 
   auto uc_neighbors = m_crystal.unit_cell_atom_surroundings(radius);
 
@@ -1517,8 +1555,6 @@ CrystalStructure::atomicDisplacementParameters(GenericAtomIndex idx) const {
 }
 
 void CrystalStructure::buildDimerMappingTable(double maxRadius) {
-  // TODO extend dimer calculationg on the fly when people have dimers with
-  // higher than current max radius
   qDebug() << "Evaluating unit cell dimers: " << maxRadius;
   qDebug() << "Evaluating unit cell molecules: "
            << m_crystal.unit_cell_molecules().size();
@@ -1534,6 +1570,36 @@ void CrystalStructure::buildDimerMappingTable(double maxRadius) {
   m_dimerMappingTableNoInv =
       occ::crystal::DimerMappingTable(m_crystal, m_unitCellDimers, false);
   qDebug() << "Built dimer mapping table";
+}
+
+void CrystalStructure::ensureDimerMappingTableForCurrentExtent() {
+  if (m_unitCellOffsets.empty()) {
+    return; // No atoms, nothing to do
+  }
+
+  // Calculate the maximum extent of current atoms from the origin cell
+  double maxExtent = 0.0;
+  const auto &uc = m_crystal.unit_cell();
+
+  for (const auto &offset : m_unitCellOffsets) {
+    // Convert cell offset to cartesian distance
+    occ::Vec3 cellOffset(offset.x, offset.y, offset.z);
+    occ::Vec3 cartOffset = uc.to_cartesian(cellOffset);
+    double dist = cartOffset.norm();
+    maxExtent = std::max(maxExtent, dist);
+  }
+
+  // Add a buffer for molecular radius (assume ~10Å as reasonable max molecular radius)
+  // This ensures we can find all dimers involving the outermost atoms
+  const double molecularRadiusBuffer = 10.0;
+  double requiredRadius = maxExtent + molecularRadiusBuffer;
+
+  // Rebuild if needed
+  if (requiredRadius > m_unitCellDimers.radius) {
+    qDebug() << "Current atom extent requires dimer table radius" << requiredRadius
+             << "but current radius is" << m_unitCellDimers.radius << "- rebuilding";
+    buildDimerMappingTable(requiredRadius);
+  }
 }
 
 FragmentPairs

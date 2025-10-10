@@ -9,7 +9,10 @@ namespace cx::paths {
 inline QString determineOCCDataDirectoryPath() {
   const QString appDirPath = QCoreApplication::applicationDirPath();
 
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_WASM)
+  // For WASM, external processes not supported - return empty path
+  return QString();
+#elif defined(Q_OS_MACOS)
   // For macOS, data is in .app/Contents/Resources/
   QDir dir(appDirPath);
   dir.cdUp();
@@ -30,7 +33,10 @@ inline QString determineOCCDataDirectoryPath() {
 inline QString determineResourcesPath() {
   const QString appDirPath = QCoreApplication::applicationDirPath();
 
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_WASM)
+  // For WASM, resources are served from web root
+  return appDirPath;
+#elif defined(Q_OS_MACOS)
   // For macOS, resources are in .app/Contents/Resources/
   QDir dir(appDirPath);
   dir.cdUp();
@@ -50,7 +56,11 @@ inline QString determineResourcesPath() {
 
 inline QString determineOCCExecutablePath() {
   const QString appDirPath = QCoreApplication::applicationDirPath();
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_WASM)
+  // For WASM, external processes not supported - return empty path
+  // Future: could return path to occ.js/occ.wasm module
+  return QString();
+#elif defined(Q_OS_MACOS)
   // For macOS, executable is in .app/Contents/MacOS/
   return QDir(appDirPath).filePath("occ");
 #elif defined(Q_OS_LINUX)
