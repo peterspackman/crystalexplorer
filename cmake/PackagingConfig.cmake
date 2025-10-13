@@ -16,7 +16,11 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Crystal structure analysis with Hirshfeld
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_CONTACT "Peter Spackman <peterspackman@fastmail.com>")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_RESOURCE_FILE_LICENSE ${LICENSE_FILE})
+# Note: CPACK_RESOURCE_FILE_LICENSE is not set here for WiX compatibility
+# WiX requires RTF or TXT format. See BundleWindows.cmake for WiX-specific license handling
+if(NOT WIN32)
+    set(CPACK_RESOURCE_FILE_LICENSE ${LICENSE_FILE})
+endif()
 set(CPACK_STRIP_FILES ON)
 
 if(CMAKE_CONFIGURATION_TYPES)
@@ -30,7 +34,7 @@ elseif(UNIX)
     message(STATUS "Packaging for Linux")
     include(BundleLinux)
 elseif(WIN32)
-    message(STATUS "Packaging for Windows (defaults to using NSIS)")
+    message(STATUS "Packaging for Windows (using WiX for MSI installer)")
     include(BundleWindows)
 endif(APPLE)
 
