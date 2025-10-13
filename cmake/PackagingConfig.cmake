@@ -30,7 +30,7 @@ elseif(UNIX)
     message(STATUS "Packaging for Linux")
     include(BundleLinux)
 elseif(WIN32)
-    message(STATUS "Packaging for Windows (defaults to using NSIS)")
+    message(STATUS "Packaging for Windows (using WiX for MSI installer)")
     include(BundleWindows)
 endif(APPLE)
 
