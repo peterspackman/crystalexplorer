@@ -37,10 +37,19 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/icons/wix_dialog.bmp")
     set(CPACK_WIX_UI_DIALOG "${PROJECT_SOURCE_DIR}/icons/wix_dialog.bmp")
 endif()
 
-# License file (optional - WiX will use default EULA if not provided)
-if(EXISTS "${PROJECT_SOURCE_DIR}/LICENSE.rtf")
+# License file for WiX (requires RTF or TXT format)
+# Convert COPYING.LESSER to LICENSE.txt for WiX compatibility
+if(EXISTS "${PROJECT_SOURCE_DIR}/COPYING.LESSER")
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/COPYING.LESSER"
+        "${CMAKE_BINARY_DIR}/LICENSE.txt"
+        COPYONLY
+    )
+    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/LICENSE.txt")
+    message(STATUS "Using COPYING.LESSER as LICENSE.txt for WiX installer")
+elseif(EXISTS "${PROJECT_SOURCE_DIR}/LICENSE.rtf")
     set(CPACK_WIX_LICENSE_RTF "${PROJECT_SOURCE_DIR}/LICENSE.rtf")
     message(STATUS "Using LICENSE.rtf for WiX installer")
 else()
-    message(STATUS "No LICENSE.rtf found - WiX will use default EULA")
+    message(STATUS "No license file found - WiX will use default EULA")
 endif()
