@@ -101,6 +101,20 @@ bool ElementData::resetAll(bool useJmolColors) {
 }
 
 Element *ElementData::elementFromSymbol(const QString &symbol) {
+  // Special case for deuterium (D) - return hydrogen with mass 2
+  if (symbol.toUpper() == "D") {
+    static Element *deuterium = nullptr;
+    if (!deuterium) {
+      Element *hydrogen = elementFromSymbol("H");
+      if (hydrogen) {
+        deuterium = new Element(hydrogen->name(), "D", hydrogen->number(),
+                                hydrogen->covRadius(), hydrogen->vdwRadius(),
+                                2.014f, hydrogen->color());
+      }
+    }
+    return deuterium;
+  }
+
   for (const auto &el : std::as_const(g_elementData)) {
     if (el->symbol().toUpper() == symbol.toUpper())
       return el;

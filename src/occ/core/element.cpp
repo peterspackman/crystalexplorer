@@ -12,6 +12,14 @@ Element::Element(const std::string &s, bool exact_match)
   // capitalize the symbol first
   auto symbol = occ::util::trim_copy(s);
   auto capitalized = occ::util::capitalize_copy(s);
+
+  // Special case for deuterium (D) - treat as hydrogen with mass 2
+  if (symbol == "D" || symbol == "d") {
+    m_data = ELEMENTDATA_TABLE[1]; // hydrogen data
+    m_data.mass = 2.014f; // deuterium mass
+    return;
+  }
+
   size_t match_length = 0;
   for (size_t i = ELEMENT_MAX - 1; i > 0; i--) {
     const auto dat = ELEMENTDATA_TABLE[i];
