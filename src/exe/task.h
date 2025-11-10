@@ -63,7 +63,7 @@ public:
     }
 
     // Called by TaskManager to set backend
-    void setBackend(TaskBackend *backend);
+    virtual void setBackend(TaskBackend *backend);
 
 protected:
     /**

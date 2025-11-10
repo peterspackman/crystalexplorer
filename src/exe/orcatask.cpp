@@ -141,3 +141,16 @@ void OrcaWavefunctionTask::scfFinished() {
 }
 
 void OrcaWavefunctionTask::conversionFinished() { emit completed(); }
+
+void OrcaWavefunctionTask::setBackend(TaskBackend *backend) {
+  // Set backend for this task
+  Task::setBackend(backend);
+
+  // Propagate backend to sub-tasks
+  if (m_scfTask) {
+    m_scfTask->setBackend(backend);
+  }
+  if (m_convertTask) {
+    m_convertTask->setBackend(backend);
+  }
+}

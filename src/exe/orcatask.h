@@ -50,6 +50,7 @@ class OrcaWavefunctionTask : public ExternalProgramTask {
 public:
   explicit OrcaWavefunctionTask(QObject *parent = nullptr);
   void start() override;
+  void setBackend(TaskBackend *backend) override;
   inline void setParameters(const wfn::Parameters &p) { m_scfTask->setParameters(p); }
   inline const wfn::Parameters &getParameters() const { return m_scfTask->getParameters(); }
 
