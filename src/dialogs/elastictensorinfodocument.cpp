@@ -1,7 +1,11 @@
 #include "elastictensorinfodocument.h"
+#include "predictelastictensordialog.h"
+#include "chemicalstructure.h"
 #include "scene.h"
 #include "icosphere_mesh.h"
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QFont>
 #include <occ/core/constants.h>
 
@@ -18,6 +22,18 @@ ElasticTensorInfoDocument::ElasticTensorInfoDocument(QWidget *parent)
 void ElasticTensorInfoDocument::setupUI() {
     QVBoxLayout *layout = new QVBoxLayout(this);
 
+    // Predict button at the top
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+
+    m_calculateButton = new QPushButton("Predict Elastic Tensor...", this);
+    m_calculateButton->setEnabled(false);
+    connect(m_calculateButton, &QPushButton::clicked, this, &ElasticTensorInfoDocument::onCalculateButtonClicked);
+
+    buttonLayout->addWidget(m_calculateButton);
+    buttonLayout->addStretch();
+
+    layout->addLayout(buttonLayout);
+
     QFont monoFont("Courier");
     monoFont.setStyleHint(QFont::Monospace);
     monoFont.setFixedPitch(true);
@@ -25,6 +41,42 @@ void ElasticTensorInfoDocument::setupUI() {
     m_contents = new QTextEdit(this);
     m_contents->document()->setDefaultFont(monoFont);
     layout->addWidget(m_contents);
+}
+
+void ElasticTensorInfoDocument::onCalculateButtonClicked() {
+    if (!m_scene) return;
+
+    auto *structure = m_scene->chemicalStructure();
+    if (!structure) return;
+
+    auto *interactions = structure->pairInteractions();
+    if (!interactions || interactions->getCount() == 0) return;
+
+    PredictElasticTensorDialog dialog(this);
+    dialog.setAvailableModels(interactions->interactionModels());
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QString model = dialog.selectedModel();
+        double radius = dialog.cutoffRadius();
+        if (!model.isEmpty()) {
+            emit calculateElasticTensorRequested(model, radius);
+        }
+    }
+}
+
+void ElasticTensorInfoDocument::updateButtonState() {
+    bool hasInteractions = false;
+    if (m_scene) {
+        auto *structure = m_scene->chemicalStructure();
+        if (structure) {
+            auto *interactions = structure->pairInteractions();
+            if (interactions && interactions->getCount() > 0) {
+                hasInteractions = true;
+            }
+        }
+    }
+
+    m_calculateButton->setEnabled(hasInteractions);
 }
 
 void ElasticTensorInfoDocument::populateDocument() {
@@ -56,6 +108,7 @@ void ElasticTensorInfoDocument::resetCursorToBeginning() {
 
 void ElasticTensorInfoDocument::updateScene(Scene *scene) {
     m_scene = scene;
+    updateButtonState();
     populateDocument();
 }
 
@@ -175,23 +228,24 @@ void ElasticTensorInfoDocument::insertEigenvalues(QTextCursor &cursor, ElasticTe
     cursor.insertText(INFO_HORIZONTAL_RULE);
     cursor.insertText("\n");
     
+    constexpr double tolerance = 1e-8;
     occ::Vec6 eigenvals = tensor->eigenvalues();
-    
+
     cursor.insertText("Eigenvalue  Value (GPa)  Stability\n");
     cursor.insertText("--------------------------------\n");
-    
+
     for (int i = 0; i < 6; ++i) {
         double val = eigenvals(i);
-        QString stability = (val > 0) ? "Stable  " : "Unstable";
+        QString stability = (val >= tolerance) ? "Stable  " : "Unstable";
         cursor.insertText(QString("λ%1          %2    %3\n")
             .arg(i+1)
             .arg(val, 9, 'e', 3)
             .arg(stability));
     }
     cursor.insertText("\n");
-    
+
     bool allPositive = tensor->isStable();
-    cursor.insertText(QString("Overall Stability: %1\n").arg(allPositive ? "Stable (all eigenvalues > 0)" : "Unstable (some eigenvalues ≤ 0)"));
+    cursor.insertText(QString("Overall Stability: %1\n").arg(allPositive ? "Stable (all eigenvalues > 0)" : "Unstable (singular or negative eigenvalues)"));
     cursor.insertText("\n");
 }
 

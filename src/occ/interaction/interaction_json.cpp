@@ -1,88 +1,8 @@
 #include <occ/interaction/interaction_json.h>
-#include <occ/crystal/dimer_labeller.h>
 #include <fstream>
 #include <stdexcept>
 
 namespace occ::interaction {
-
-void write_elat_json(const std::string& filename, const ElatResults& results) {
-  using occ::crystal::SymmetryDimerLabeller;
-
-  nlohmann::json j;
-  j["result_type"] = "elat";
-  j["title"] = results.title;
-  j["crystal"] = results.crystal;
-  j["model"] = results.model;
-  j["has_permutation_symmetry"] = true;
-
-  const auto& crystal = results.crystal;
-  const auto& dimers = results.lattice_energy_result.dimers;
-
-  auto dimer_labeller = SymmetryDimerLabeller(crystal);
-  dimer_labeller.connection = "-";
-  dimer_labeller.format.fmt_string = "{}";
-
-  j["pairs"] = {};
-  for (const auto &mol_pairs : dimers.molecule_neighbors) {
-    nlohmann::json m;
-    for (const auto &[dimer, unique_idx] : mol_pairs) {
-      const auto &unique_dimer = dimers.unique_dimers[unique_idx];
-      if (unique_dimer.interaction_energy() == 0.0)
-        continue;
-
-      nlohmann::json d;
-      nlohmann::json e;
-
-      // Label generation
-      auto label = dimer_labeller(dimer);
-      d["Label"] = label;
-      d["Unique Index"] = unique_idx;
-
-      // Energy components
-      const auto &energies = unique_dimer.interaction_energies();
-      for (const auto &[k, v] : energies) {
-        e[k] = v;
-      }
-      d["energies"] = e;
-
-      // Nearest neighbor calculation based on distance threshold
-      bool is_nearest = dimer.nearest_distance() <= 4.0;
-      d["Nearest Neighbor"] = is_nearest;
-
-      // Unit cell atom offsets
-      nlohmann::json offsets_a = {};
-      {
-        const auto &a = dimer.a();
-        const auto &a_uc_idx = a.unit_cell_idx();
-        const auto &a_uc_shift = a.unit_cell_atom_shift();
-        for (int i = 0; i < a_uc_idx.rows(); i++) {
-          offsets_a.push_back(std::array<int, 4>{a_uc_idx(i), a_uc_shift(0, i),
-                                                 a_uc_shift(1, i),
-                                                 a_uc_shift(2, i)});
-        }
-      }
-
-      nlohmann::json offsets_b = {};
-      {
-        const auto &b = dimer.b();
-        const auto &b_uc_idx = b.unit_cell_idx();
-        const auto &b_uc_shift = b.unit_cell_atom_shift();
-        for (int i = 0; i < b_uc_idx.rows(); i++) {
-          offsets_b.push_back(std::array<int, 4>{b_uc_idx(i), b_uc_shift(0, i),
-                                                 b_uc_shift(1, i),
-                                                 b_uc_shift(2, i)});
-        }
-      }
-      d["uc_atom_offsets"] = {offsets_a, offsets_b};
-
-      m.push_back(d);
-    }
-    j["pairs"].push_back(m);
-  }
-
-  std::ofstream dest(filename);
-  dest << j.dump(2);
-}
 
 ElatResults read_elat_json(const std::string& filename) {
   // Load JSON file

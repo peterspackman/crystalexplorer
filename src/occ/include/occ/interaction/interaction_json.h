@@ -34,20 +34,10 @@ struct ElatResults {
 };
 
 /**
- * \brief Write elat JSON results in compact format
- *
- * Writes crystal, dimers, and energy data to JSON file
- *
- * \param filename Output filename
- * \param results ElatResults to write
- */
-void write_elat_json(const std::string& filename, const ElatResults& results);
-
-/**
  * \brief Read elat JSON results and reconstruct data structures
  *
  * Loads crystal and reconstructs LatticeEnergyResult with energies
- * mapped from the compact JSON format produced by write_elat_json()
+ * from the JSON format produced by occ elat
  *
  * \param filename Path to elat JSON results file
  * \return ElatResults containing crystal and lattice energy data

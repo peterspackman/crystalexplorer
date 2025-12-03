@@ -35,6 +35,7 @@
 #include "pair_energy_calculator.h"
 #include "plane.h"
 #include "planeinstance.h"
+#include "elastic_fit_io.h"
 #include "save_pair_energy_json.h"
 #include "settings.h"
 #include "slabstructure.h"
@@ -2355,15 +2356,19 @@ void Crystalx::showElasticTensorImportDialog() {
           if (structure) {
             // Add the elastic tensor as a child of the chemical structure
             tensorResults->setParent(structure);
-            
+
+            // Show info viewer with the new tensor selected
+            infoViewer->elasticTensorInfoDocument->updateElasticTensor(tensorResults);
+            infoViewer->setTab(InfoType::ElasticTensor);
+            infoViewer->show();
+
             statusBar()->showMessage(QString("Imported elastic tensor: %1").arg(tensorResults->name()), 3000);
-            qDebug() << "Elastic tensor added to structure:" << tensorResults->name();
           } else {
-            QMessageBox::warning(this, "Import Error", 
+            QMessageBox::warning(this, "Import Error",
               "No chemical structure available. Please load a structure first.");
           }
         } else {
-          QMessageBox::warning(this, "Import Error", 
+          QMessageBox::warning(this, "Import Error",
             "No scene available. Please create or load a project first.");
         }
       }
@@ -2824,7 +2829,7 @@ void Crystalx::dropEvent(QDropEvent *event) {
   }
 }
 
-void Crystalx::calculateElasticTensor(const QString &modelName) {
+void Crystalx::calculateElasticTensor(const QString &modelName, double cutoffRadius) {
   Scene *scene = project->currentScene();
   if (!scene) {
     return;
@@ -2856,8 +2861,8 @@ void Crystalx::calculateElasticTensor(const QString &modelName) {
   QString tempJsonPath = tempFile->fileName();
   tempFile->close();
 
-  // Export the current model's energies to the temp file
-  bool exported = save_pair_interactions_for_model_json(
+  // Export the current model's energies to the temp file (elastic_fit_pairs format)
+  bool exported = save_elastic_fit_pairs_json(
       interactions, structure, modelName, tempJsonPath);
 
   if (!exported) {
@@ -2867,6 +2872,9 @@ void Crystalx::calculateElasticTensor(const QString &modelName) {
     return;
   }
 
+  // Create tensor name with model and radius
+  QString tensorName = QString("%1 (r=%2 \u00C5)").arg(modelName).arg(cutoffRadius, 0, 'f', 1);
+
   // Create and run the elastic tensor task
   auto *elasticTask = new OccElasticTensorTask(this);
   elasticTask->setProperty("name", QString("elastic_fit_%1").arg(modelName));
@@ -2875,7 +2883,7 @@ void Crystalx::calculateElasticTensor(const QString &modelName) {
   QString outputFile = elasticTask->outputJsonFilename();
 
   connect(elasticTask, &OccElasticTensorTask::completed, this,
-          [this, tempFile, modelName, outputFile, scene]() {
+          [this, tempFile, tensorName, outputFile, scene]() {
     // Load the elastic tensor from file
     QFile file(outputFile);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -2897,12 +2905,14 @@ void Crystalx::calculateElasticTensor(const QString &modelName) {
       // Create and add elastic tensor result to structure
       auto *structure = scene->chemicalStructure();
       if (structure) {
-        auto *tensorResult = new ElasticTensorResults(matrix, modelName, structure);
+        auto *tensorResult = new ElasticTensorResults(matrix, tensorName, structure);
 
-        // Update info viewer to show elastic tensor tab
+        // Show info viewer with the new tensor selected
+        infoViewer->elasticTensorInfoDocument->updateElasticTensor(tensorResult);
         infoViewer->setTab(InfoType::ElasticTensor);
+        infoViewer->show();
 
-        statusBar()->showMessage(QString("Elastic tensor calculated for model '%1'").arg(modelName), 3000);
+        statusBar()->showMessage(QString("Elastic tensor predicted: %1").arg(tensorName), 3000);
       }
     } else {
       QMessageBox::warning(this, "Load Failed",

@@ -85,6 +85,7 @@ public:
   void setSymmetryUniqueFragmentState(FragmentIndex, Fragment::State) override;
 
   const FragmentMap &symmetryUniqueFragments() const override;
+  const FragmentMap &unitCellFragments() const;
 
   CellIndexSet occupiedCells() const override;
 
@@ -137,6 +138,10 @@ public:
 
   inline const occ::crystal::DimerMappingTable &dimerMappingTable(bool allowInversion = true) const {
     return allowInversion ? m_dimerMappingTable : m_dimerMappingTableNoInv;
+  }
+
+  inline const occ::crystal::CrystalDimers &unitCellDimers() const {
+    return m_unitCellDimers;
   }
 
   void buildDimerMappingTable(double maxRadius = 12.0);

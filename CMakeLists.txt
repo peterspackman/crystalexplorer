@@ -23,7 +23,7 @@ message(STATUS "Using CPACK_SYSTEM_NAME=${CPACK_SYSTEM_NAME}")
 
 option(ENABLE_CX_TESTS "Enable testing" OFF)
 option(ENABLE_PERFORMANCE_TIMING "Enable performance timing and logging" OFF)
-set(OCC_VERSION "0.8.3" CACHE STRING "OCC version number for download")
+set(OCC_VERSION "0.8.8" CACHE STRING "OCC version number for download")
 set(OCC_PLATFORM "${CPACK_SYSTEM_NAME}" CACHE STRING "OCC platform string for download")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")

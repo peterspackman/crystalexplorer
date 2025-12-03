@@ -32,7 +32,7 @@ signals:
   void infoViewerClosed();
   void energyColorSchemeChanged();
   void tabChangedTo(InfoType);
-  void elasticTensorRequested(const QString &modelName);
+  void elasticTensorRequested(const QString &modelName, double cutoffRadius);
 
 private slots:
   void tabChanged(int index);

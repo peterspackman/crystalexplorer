@@ -1,5 +1,6 @@
 #include "infoviewer.h"
 #include "colormap.h"
+#include "elastictensorinfodocument.h"
 
 #include <QtDebug>
 
@@ -43,8 +44,10 @@ void InfoViewer::initConnections() {
   connect(distancePrecisionSpinBox, &QSpinBox::valueChanged, this,
           &InfoViewer::updateInteractionDisplaySettings);
 
-  // Forward elastic tensor request signal
+  // Forward elastic tensor request signals
   connect(interactionsInfoDocument, &InteractionInfoDocument::elasticTensorRequested,
+          this, &InfoViewer::elasticTensorRequested);
+  connect(elasticTensorInfoDocument, &ElasticTensorInfoDocument::calculateElasticTensorRequested,
           this, &InfoViewer::elasticTensorRequested);
 }
 

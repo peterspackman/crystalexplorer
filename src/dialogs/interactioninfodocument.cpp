@@ -1,6 +1,6 @@
 #include "interactioninfodocument.h"
+#include "predictelastictensordialog.h"
 #include "publication_reference.h"
-#include "save_pair_energy_json.h"
 #include <QApplication>
 #include <QHeaderView>
 #include <QLabel>
@@ -29,21 +29,16 @@ InteractionInfoDocument::InteractionInfoDocument(QWidget *parent)
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
-  // Add export button at the top
+  // Add button bar at the top
   QHBoxLayout *buttonLayout = new QHBoxLayout();
   buttonLayout->setContentsMargins(4, 4, 4, 4);
   buttonLayout->addStretch();
 
-  m_exportButton = new QPushButton("Export to JSON", this);
-  m_exportButton->setToolTip("Export current model's pair energies to elat_results.json format (Ctrl+E)");
-  buttonLayout->addWidget(m_exportButton);
-
-  m_elasticTensorButton = new QPushButton("Estimate Elastic Tensor", this);
-  m_elasticTensorButton->setToolTip("Estimate elastic tensor using current model");
+  m_elasticTensorButton = new QPushButton("Predict Elastic Tensor...", this);
+  m_elasticTensorButton->setToolTip("Predict elastic tensor from pair interaction energies");
   buttonLayout->addWidget(m_elasticTensorButton);
 
   // Hide experimental features by default
-  m_exportButton->setVisible(false);
   m_elasticTensorButton->setVisible(false);
 
   mainLayout->addLayout(buttonLayout);
@@ -74,10 +69,7 @@ InteractionInfoDocument::InteractionInfoDocument(QWidget *parent)
   showNoDataMessage();
 
   setupCopyAction();
-  setupExportAction();
 
-  connect(m_exportButton, &QPushButton::clicked, this,
-          &InteractionInfoDocument::exportCurrentModelToJson);
   connect(m_elasticTensorButton, &QPushButton::clicked, this,
           &InteractionInfoDocument::estimateElasticTensor);
   connect(m_tabWidget, &QTabWidget::currentChanged, this,
@@ -181,7 +173,6 @@ void InteractionInfoDocument::setupTableForModel(const QString &model) {
 
   tableView->setModel(tableModel);
   tableView->addAction(m_copyAction); // Use the shared copy action
-  tableView->addAction(m_exportAction); // Use the shared export action
 
   tableView->resizeColumnsToContents();
   tableView->setColumnWidth(0, 30);
@@ -436,58 +427,6 @@ void InteractionInfoDocument::showHeaderContextMenu(const QPoint &pos) {
   m_headerContextMenu->exec(header->mapToGlobal(pos));
 }
 
-void InteractionInfoDocument::setupExportAction() {
-  if (!m_exportAction) {
-    m_exportAction = new QAction("Export to JSON...", this);
-    m_exportAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_E));
-    connect(m_exportAction, &QAction::triggered, this,
-            &InteractionInfoDocument::exportCurrentModelToJson);
-  }
-}
-
-void InteractionInfoDocument::exportCurrentModelToJson() {
-  if (!m_scene || !m_scene->chemicalStructure()) {
-    return;
-  }
-
-  auto *interactions = m_scene->chemicalStructure()->pairInteractions();
-  if (!interactions || interactions->getCount() == 0) {
-    return;
-  }
-
-  QString currentModel = m_tabWidget->tabText(m_tabWidget->currentIndex());
-  if (currentModel.isEmpty()) {
-    QMessageBox::warning(this, "Export Failed",
-                        "No model selected. Please select a tab first.");
-    return;
-  }
-
-  // Suggest a filename based on the structure and model
-  QString suggestedName = QString("%1_%2_elat_results.json")
-                            .arg(m_scene->chemicalStructure()->name())
-                            .arg(QString(currentModel).replace(" ", "_"));
-
-  QString filename = QFileDialog::getSaveFileName(
-      this, "Export Pair Energies to JSON", suggestedName,
-      "JSON Files (*.json);;All Files (*)");
-
-  if (filename.isEmpty()) {
-    return;
-  }
-
-  // Export all interactions for the current model in elat_results.json format
-  bool success = save_pair_interactions_for_model_json(interactions, m_scene->chemicalStructure(), currentModel, filename);
-
-  if (success) {
-    QMessageBox::information(this, "Export Successful",
-                            QString("Pair energies for model '%1' exported to:\n%2")
-                            .arg(currentModel, filename));
-  } else {
-    QMessageBox::critical(this, "Export Failed",
-                         "Failed to write JSON file. Check file permissions and that interactions exist for this model.");
-  }
-}
-
 void InteractionInfoDocument::estimateElasticTensor() {
   if (!m_scene || !m_scene->chemicalStructure()) {
     return;
@@ -500,17 +439,28 @@ void InteractionInfoDocument::estimateElasticTensor() {
     return;
   }
 
+  // Pre-select current model if available
   QString currentModel = m_tabWidget->tabText(m_tabWidget->currentIndex());
-  if (currentModel.isEmpty()) {
-    QMessageBox::warning(this, "No Model Selected",
-                        "No model selected. Please select a tab first.");
-    return;
+
+  PredictElasticTensorDialog dialog(this);
+  dialog.setAvailableModels(interactions->interactionModels());
+  if (!currentModel.isEmpty()) {
+    // Set the current model as default selection
+    int idx = dialog.findChild<QComboBox*>()->findText(currentModel);
+    if (idx >= 0) {
+      dialog.findChild<QComboBox*>()->setCurrentIndex(idx);
+    }
   }
 
-  emit elasticTensorRequested(currentModel);
+  if (dialog.exec() == QDialog::Accepted) {
+    QString model = dialog.selectedModel();
+    double radius = dialog.cutoffRadius();
+    if (!model.isEmpty()) {
+      emit elasticTensorRequested(model, radius);
+    }
+  }
 }
 
 void InteractionInfoDocument::enableExperimentalFeatures(bool enable) {
-  m_exportButton->setVisible(enable);
   m_elasticTensorButton->setVisible(enable);
 }

@@ -176,9 +176,10 @@ occ::Vec6 ElasticTensorResults::eigenvalues() const {
 }
 
 bool ElasticTensorResults::isStable() const {
+  constexpr double tolerance = 1e-8;
   auto evals = eigenvalues();
   for (int i = 0; i < evals.size(); ++i) {
-    if (evals(i) <= 0.0) {
+    if (evals(i) < tolerance) {
       return false;
     }
   }

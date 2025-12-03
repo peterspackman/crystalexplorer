@@ -27,7 +27,8 @@ void ElasticTensorDialog::setupUI() {
     // Name input
     auto *nameLayout = new QHBoxLayout;
     nameLayout->addWidget(new QLabel("Name:"));
-    m_nameEdit = new QLineEdit("Elastic Tensor");
+    m_nameEdit = new QLineEdit("Imported");
+    m_nameEdit->setPlaceholderText("e.g., Experimental, DFT, Literature...");
     nameLayout->addWidget(m_nameEdit);
     mainLayout->addLayout(nameLayout);
     
@@ -195,21 +196,16 @@ void ElasticTensorDialog::matrixTextChanged() {
     
     if (parseSuccess) {
         // Check if matrix is physically reasonable
+        constexpr double tolerance = 1e-8;
         auto eigenvals = occ::core::ElasticTensor(m_currentMatrix).eigenvalues();
-        bool stable = true;
-        for (int i = 0; i < eigenvals.size(); ++i) {
-            if (eigenvals(i) <= 0.0) {
-                stable = false;
-                break;
-            }
-        }
-        
+        bool stable = eigenvals.minCoeff() >= tolerance;
+
         if (stable) {
             m_statusLabel->setText("✓ Valid elastic tensor matrix");
             m_statusLabel->setStyleSheet("color: green;");
             updateAverageProperties(m_currentMatrix);
         } else {
-            m_statusLabel->setText("⚠ Matrix parsed but not physically stable (negative eigenvalues)");
+            m_statusLabel->setText("⚠ Matrix parsed but not physically stable (singular or negative eigenvalues)");
             m_statusLabel->setStyleSheet("color: orange;");
             m_matrixValid = false;
         }
@@ -232,12 +228,13 @@ void ElasticTensorDialog::updateAverageProperties(const occ::Mat6 &matrix) {
     try {
         occ::core::ElasticTensor tensor(matrix);
         
+        constexpr double tolerance = 1e-8;
         double bulkModulus = tensor.average_bulk_modulus();
         double shearModulus = tensor.average_shear_modulus();
         double youngsModulus = tensor.average_youngs_modulus();
         double poissonRatio = tensor.average_poisson_ratio();
-        bool stable = tensor.eigenvalues().minCoeff() > 0.0;
-        
+        bool stable = tensor.eigenvalues().minCoeff() >= tolerance;
+
         m_bulkModulusLabel->setText(QString::number(bulkModulus, 'f', 2));
         m_shearModulusLabel->setText(QString::number(shearModulus, 'f', 2));
         m_youngsModulusLabel->setText(QString::number(youngsModulus, 'f', 2));

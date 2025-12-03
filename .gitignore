@@ -33,6 +33,10 @@ stdin
 examples/
 tags
 
+# output files
+*.owf.json
+*.molden
+
 # XTB calculation output files
 *.coord
 *.molden.input

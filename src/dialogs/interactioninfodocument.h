@@ -30,7 +30,7 @@ public slots:
 
 signals:
   void currentModelChanged(const QString &modelName);
-  void elasticTensorRequested(const QString &modelName);
+  void elasticTensorRequested(const QString &modelName, double cutoffRadius);
 
 protected:
   void showEvent(QShowEvent *event) override;
@@ -43,8 +43,6 @@ private:
   void showNoDataMessage();
   void setupTableForModel(const QString &model);
   void setupCopyAction();
-  void setupExportAction();
-  void exportCurrentModelToJson();
   void estimateElasticTensor();
   QString generateCitationHtml(const QString &model);
   QWidget* createTableWithCitations(const QString &model);
@@ -53,8 +51,6 @@ private:
   QMenu *m_headerContextMenu{nullptr};
 
   QAction *m_copyAction{nullptr};
-  QAction *m_exportAction{nullptr};
-  QPushButton *m_exportButton{nullptr};
   QPushButton *m_elasticTensorButton{nullptr};
   Scene *m_scene{nullptr};
   QTabWidget *m_tabWidget{nullptr};

@@ -1208,6 +1208,10 @@ const FragmentMap &CrystalStructure::symmetryUniqueFragments() const {
   return m_symmetryUniqueFragments;
 }
 
+const FragmentMap &CrystalStructure::unitCellFragments() const {
+  return m_unitCellFragments;
+}
+
 FragmentIndex
 CrystalStructure::fragmentIndexForGeneralAtom(GenericAtomIndex index) const {
   if (m_unitCellAtomFragments.size() == 0)

@@ -40,7 +40,7 @@
 
 #include "ui_crystalx.h"
 
-const bool ENABLE_EXPERIMENTAL_FEATURES = false;
+const bool ENABLE_EXPERIMENTAL_FEATURES = true;
 const bool EXPERIMENT_BUTTON_IS_TOGGLE = false;
 
 const int MAXHISTORYSIZE = 10;
@@ -159,7 +159,7 @@ private slots:
   void exportCurrentSurface();
   void showElasticTensorImportDialog();
   void showLatticeEnergyDialog();
-  void calculateElasticTensor(const QString &modelName);
+  void calculateElasticTensor(const QString &modelName, double cutoffRadius);
   void calculateLatticeEnergy(const QString &modelName, double radius, int threads, const QString &cifFile);
   void loadLatticeEnergyResults(const QString &filename, const QString &modelName);
 
