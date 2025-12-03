@@ -200,6 +200,10 @@ void restoreDefaultSetting(const QString &key);
 void writeSetting(const QString key, const QVariant value);
 void writeSettings(const QMap<QString, QVariant> &newSettings);
 void writeSettingIfEmpty(const QString key, const QVariant value);
+
+// Lighting settings helpers
+void restoreDefaultLightingSettings();
+QStringList getLightingSettingsKeys();
 QStringList settingsFromGroup(const QString &group);
 
 void writeAllDefaultSettings(bool overwrite = false);

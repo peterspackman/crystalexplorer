@@ -35,14 +35,15 @@ void MolecularWavefunction::setAtomIndices(
   m_parameters.atoms = idxs;
 }
 
-void MolecularWavefunction::writeToFile(const QString &filename) {
+bool MolecularWavefunction::writeToFile(const QString &filename) {
   QFile file(filename);
   if (file.open(QIODevice::WriteOnly)) {
     file.write(this->rawContents());
     file.close();
+    return true;
   } else {
-    qDebug() << "Could not open file for writing in "
-                "MolecularWavefunction::writeToFile";
+    qWarning() << "Could not open file for writing:" << filename;
+    return false;
   }
 }
 

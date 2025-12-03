@@ -410,28 +410,7 @@ void PreferencesDialog::updateLightsFromSettings() {
 }
 
 void PreferencesDialog::restoreDefaultLightingSettings() {
-  // TODO shift this into Settings, functionality should be in there.
-  settings::restoreDefaultSettings({
-      settings::keys::LIGHT_TRACKS_CAMERA,
-      settings::keys::LIGHT_AMBIENT,
-      settings::keys::LIGHT_AMBIENT_INTENSITY,
-      settings::keys::SHOW_LIGHT_POSITIONS,
-      settings::keys::LIGHT_SPECULAR_1,
-      settings::keys::LIGHT_SPECULAR_2,
-      settings::keys::LIGHT_SPECULAR_3,
-      settings::keys::LIGHT_SPECULAR_4,
-      settings::keys::LIGHT_POSITION_1,
-      settings::keys::LIGHT_POSITION_2,
-      settings::keys::LIGHT_POSITION_3,
-      settings::keys::LIGHT_POSITION_4,
-      settings::keys::LIGHT_INTENSITY_1,
-      settings::keys::LIGHT_INTENSITY_2,
-      settings::keys::LIGHT_INTENSITY_3,
-      settings::keys::LIGHT_INTENSITY_4,
-      settings::keys::LIGHT_ATTENUATION_MINIMUM,
-      settings::keys::LIGHT_ATTENUATION_MAXIMUM,
-  });
-
+  settings::restoreDefaultLightingSettings();
   updateLightsFromSettings();
   emit lightSettingsChanged();
 }

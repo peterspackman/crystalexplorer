@@ -7,7 +7,20 @@ MeshInstance::MeshInstance(Mesh *parent, const MeshTransform &transform)
   if (m_mesh) {
     populateSurroundingAtoms();
     m_selectedProperty = m_mesh->getSelectedProperty();
-    // TODO remove these connections
+
+    // Forward instance property changes to parent mesh for backward compatibility
+    // These connections maintain compatibility with code that listens to mesh-level signals
+    // rather than instance-level signals. This design allows:
+    //   1. Legacy code to work without modification (listens to Mesh signals)
+    //   2. New code to listen directly to specific instances (more precise)
+    //
+    // ARCHITECTURAL NOTE: In an ideal design, listeners would connect directly to
+    // MeshInstance signals rather than relying on these forwarded Mesh signals.
+    // This would eliminate the need for these connections and make the signal flow
+    // more explicit. Consider refactoring when updating mesh-related rendering code.
+    //
+    // Current behavior: When ANY instance changes a property, ALL listeners on the
+    // parent mesh are notified, even if they only care about specific instances.
     connect(this, &MeshInstance::visibilityChanged, m_mesh,
             &Mesh::visibilityChanged);
     connect(this, &MeshInstance::transparencyChanged, m_mesh,

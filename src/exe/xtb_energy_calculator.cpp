@@ -31,8 +31,10 @@ XtbTask* XtbEnergyCalculator::createTask(xtb::Parameters params) {
   }
   if(params.userEditRequested) {
     params.userInputContents = io::requestUserTextEdit("XTB input", xtbCoordString(params));
-    // TODO report to user that the job will be canceled
-    if(params.userInputContents.isEmpty()) return nullptr;
+    if(params.userInputContents.isEmpty()) {
+      qInfo() << "XTB calculation canceled by user";
+      return nullptr;
+    }
   }
   auto *task = new XtbTask();
   task->setParameters(params);

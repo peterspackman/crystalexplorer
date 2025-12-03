@@ -112,7 +112,6 @@ PairInteractions::filterByModel(const QString &model) const {
 }
 
 void PairInteractions::remove(PairInteraction *result) {
-  // TODO update maxDistance
   QString model = result->interactionModel();
   auto kv = m_pairInteractions.find(model);
   if (kv == m_pairInteractions.end())
@@ -124,8 +123,24 @@ void PairInteractions::remove(PairInteraction *result) {
     interactions.erase(result->pairIndex());
     removeModel = (interactions.size() == 0);
   }
-  if (removeModel)
+
+  if (removeModel) {
     m_pairInteractions.erase(model);
+    m_distanceRange.erase(model);
+  } else {
+    // Recalculate distance range for this model
+    auto &interactions = kv->second;
+    if (!interactions.empty()) {
+      impl::ValueRange newRange;
+      for (const auto &[pairIdx, interaction] : interactions) {
+        double d = interaction->nearestAtomDistance();
+        newRange = newRange.update(d);
+      }
+      m_distanceRange[model] = newRange;
+      qDebug() << "Updated distance range for model" << model
+               << "to [" << newRange.minValue << "," << newRange.maxValue << "]";
+    }
+  }
 
   emit interactionRemoved();
 }

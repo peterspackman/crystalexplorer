@@ -159,7 +159,7 @@ void SurfaceGenerationDialog::validate() {
 void SurfaceGenerationDialog::updateSettings() {
   ui->resolutionComboBox->setCurrentIndex(
       static_cast<int>(isosurface::Resolution::High));
-  // TODO defaultOrbitalType
+  // Default orbital type (HOMO) is automatically selected by MolecularOrbitalSelector
   ui->surfaceOptionsBox->setHidden(defaultHideSurfaceOptionsBox);
   ui->showDescriptionsCheckBox->setCheckState(defaultShowDescriptions);
 

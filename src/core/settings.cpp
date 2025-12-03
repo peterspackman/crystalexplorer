@@ -192,4 +192,31 @@ void writeAllDefaultSettings(bool override) {
   }
 }
 
+QStringList getLightingSettingsKeys() {
+  return {
+    keys::LIGHT_TRACKS_CAMERA,
+    keys::LIGHT_AMBIENT,
+    keys::LIGHT_AMBIENT_INTENSITY,
+    keys::SHOW_LIGHT_POSITIONS,
+    keys::LIGHT_SPECULAR_1,
+    keys::LIGHT_SPECULAR_2,
+    keys::LIGHT_SPECULAR_3,
+    keys::LIGHT_SPECULAR_4,
+    keys::LIGHT_POSITION_1,
+    keys::LIGHT_POSITION_2,
+    keys::LIGHT_POSITION_3,
+    keys::LIGHT_POSITION_4,
+    keys::LIGHT_INTENSITY_1,
+    keys::LIGHT_INTENSITY_2,
+    keys::LIGHT_INTENSITY_3,
+    keys::LIGHT_INTENSITY_4,
+    keys::LIGHT_ATTENUATION_MINIMUM,
+    keys::LIGHT_ATTENUATION_MAXIMUM,
+  };
+}
+
+void restoreDefaultLightingSettings() {
+  restoreDefaultSettings(getLightingSettingsKeys());
+}
+
 } // namespace settings

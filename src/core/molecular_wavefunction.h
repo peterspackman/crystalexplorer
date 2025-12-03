@@ -23,7 +23,7 @@ public:
 
   [[nodiscard]] bool haveContents() const;
 
-  void writeToFile(const QString &);
+  bool writeToFile(const QString &);
 
   wfn::FileFormat fileFormat() const;
   void setFileFormat(wfn::FileFormat);

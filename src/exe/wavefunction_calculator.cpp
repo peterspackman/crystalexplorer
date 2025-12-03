@@ -95,9 +95,10 @@ Task *WavefunctionCalculator::makeOccTask(wfn::Parameters params) {
   if (params.userEditRequested) {
     params.userInputContents = io::requestUserTextEdit(
         "OCC input", io::getOccWavefunctionJson(params));
-    // TODO report to user that the job will be canceled
-    if (params.userInputContents.isEmpty())
+    if (params.userInputContents.isEmpty()) {
+      qInfo() << "Wavefunction calculation canceled by user";
       return nullptr;
+    }
   }
   auto *task = new OccWavefunctionTask();
   task->setParameters(params);
@@ -126,9 +127,10 @@ Task *WavefunctionCalculator::makeOrcaTask(wfn::Parameters params) {
   if (params.userEditRequested) {
     params.userInputContents =
         io::requestUserTextEdit("OCC input", io::orcaInputString(params));
-    // TODO report to user that the job will be canceled
-    if (params.userInputContents.isEmpty())
+    if (params.userInputContents.isEmpty()) {
+      qInfo() << "Wavefunction calculation canceled by user";
       return nullptr;
+    }
   }
 
   auto *task = new OrcaWavefunctionTask();

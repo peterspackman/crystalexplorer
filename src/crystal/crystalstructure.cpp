@@ -1279,8 +1279,20 @@ CrystalStructure::findUnitCellFragment(const Fragment &frag) const {
 Fragment
 CrystalStructure::makeFragmentFromFragmentIndex(FragmentIndex idx) const {
   FragmentIndex unitCellIndex{idx.u, 0, 0, 0};
-  // TODO add error checking
-  Fragment result = m_unitCellFragments.at(unitCellIndex);
+
+  // Validate fragment index exists
+  auto it = m_unitCellFragments.find(unitCellIndex);
+  if (it == m_unitCellFragments.end()) {
+    qWarning() << "Invalid fragment index requested:" << idx.u << idx.h << idx.k << idx.l;
+    qWarning() << "Available unit cell fragment indices:" << m_unitCellFragments.size();
+    // Return an empty fragment rather than crashing
+    Fragment emptyFragment;
+    emptyFragment.index = idx;
+    emptyFragment.name = "Invalid Fragment";
+    return emptyFragment;
+  }
+
+  Fragment result = it->second;
   for (auto &atomIndex : result.atomIndices) {
     atomIndex.x += idx.h;
     atomIndex.y += idx.k;

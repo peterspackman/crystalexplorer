@@ -17,6 +17,7 @@ public:
 
 signals:
   void calculationComplete(isosurface::Result);
+  void errorOccurred(QString);
 
 private slots:
   void surfaceComplete();

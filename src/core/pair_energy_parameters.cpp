@@ -35,13 +35,23 @@ bool Parameters::operator==(const Parameters &rhs) const {
 QString Parameters::deriveName() const { return fragmentDimer.getName(); }
 
 int Parameters::charge() const {
-  // TODO
-  return 0;
+  // Calculate total charge from both fragments
+  return fragmentDimer.a.state.charge + fragmentDimer.b.state.charge;
 }
 
 int Parameters::multiplicity() const {
-  // TODO
-  return 1;
+  // For a dimer, multiplicity calculation depends on the individual fragment multiplicities
+  // and how their unpaired electrons couple.
+  // Number of unpaired electrons = multiplicity - 1
+  int unpairedA = fragmentDimer.a.state.multiplicity - 1;
+  int unpairedB = fragmentDimer.b.state.multiplicity - 1;
+
+  // Total unpaired electrons (assuming high-spin coupling)
+  // For most non-covalent interactions, fragments don't share electrons,
+  // so we add unpaired electrons
+  int totalUnpaired = unpairedA + unpairedB;
+
+  return totalUnpaired + 1;
 }
 
 bool Parameters::isXtbModel() const { return xtb::isXtbMethod(model); }

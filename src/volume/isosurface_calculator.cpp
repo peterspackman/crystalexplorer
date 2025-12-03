@@ -68,8 +68,11 @@ void IsosurfaceCalculator::start(isosurface::Parameters params) {
   if (params.wfn) {
     QString suffix = params.wfn->fileFormatSuffix();
     wavefunctionFilename = m_structure->name() + "_wfn" + suffix;
-    // TODO report error
-    params.wfn->writeToFile(wavefunctionFilename);
+    if (!params.wfn->writeToFile(wavefunctionFilename)) {
+      qWarning() << "Failed to write wavefunction file:" << wavefunctionFilename;
+      emit errorOccurred("Failed to write wavefunction file: " + wavefunctionFilename);
+      return;
+    }
   }
 
   if (params.kind == isosurface::Kind::Void) {

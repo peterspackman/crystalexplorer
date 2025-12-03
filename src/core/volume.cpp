@@ -1,4 +1,5 @@
 #include "volume.h"
+#include <QDebug>
 
 Volume::Volume(const Dimensions &dims, QObject *parent) : QObject(parent)  {
     setDimensions(dims);
@@ -13,7 +14,22 @@ size_t Volume::count(Eigen::Index dim) const {
 }
 
 void Volume::setDimensions(const Volume::Dimensions &dims) {
-    // TODO check compatibility
+    // Validate dimension counts are positive
+    if (dims.counts(0) <= 0 || dims.counts(1) <= 0 || dims.counts(2) <= 0) {
+        qWarning() << "Invalid volume dimensions: counts must be positive"
+                   << dims.counts(0) << dims.counts(1) << dims.counts(2);
+        return;
+    }
+
+    // Check compatibility with existing scalar values
+    size_t expectedSize = dims.counts(0) * dims.counts(1) * dims.counts(2);
+    if (m_scalarValues.size() > 0 && m_scalarValues.size() != expectedSize) {
+        qWarning() << "Volume dimension size mismatch: expected" << expectedSize
+                   << "but have" << m_scalarValues.size() << "scalar values";
+        qWarning() << "Clearing existing scalar values";
+        m_scalarValues.resize(0);
+    }
+
     m_dimensions = dims;
 }
 

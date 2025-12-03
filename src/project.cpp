@@ -730,7 +730,10 @@ void Project::removeAllMeasurements() {
 
 nlohmann::json Project::toJson() const {
   nlohmann::json j;
-  // TODO store element data
+  // TODO: Store element data customizations (colors, radii, etc.)
+  // Currently element data is loaded from default resources and user
+  // customizations are not persisted to project files.
+  // This would require adding Element::toJson() and Element::fromJson() methods.
   j["ceProjectVersion"] = projectFileVersion();
   j["scenes"] = {};
   for (const auto scene : m_scenes) {
@@ -742,9 +745,46 @@ nlohmann::json Project::toJson() const {
 }
 
 bool Project::fromJson(const nlohmann::json &j) {
-  // TODO check version compatibility
-  if (!j.contains("ceProjectVersion"))
+  // Check for version field
+  if (!j.contains("ceProjectVersion")) {
+    qWarning() << "Project file missing version information";
     return false;
+  }
+
+  // Get file version and current version
+  QString fileVersion = QString::fromStdString(j["ceProjectVersion"].get<std::string>());
+  QString currentVersion = projectFileVersion();
+
+  // Parse version numbers (assuming format like "1.0.0")
+  QStringList fileParts = fileVersion.split('.');
+  QStringList currentParts = currentVersion.split('.');
+
+  if (fileParts.size() < 2 || currentParts.size() < 2) {
+    qWarning() << "Invalid version format:" << fileVersion;
+    // Continue anyway for backward compatibility
+  } else {
+    int fileMajor = fileParts[0].toInt();
+    int fileMinor = fileParts[1].toInt();
+    int currentMajor = currentParts[0].toInt();
+    int currentMinor = currentParts[1].toInt();
+
+    // Check compatibility
+    if (fileMajor > currentMajor) {
+      qCritical() << "Project file version" << fileVersion
+                  << "is newer than supported version" << currentVersion;
+      qCritical() << "Please update CrystalExplorer to open this file";
+      return false;
+    }
+
+    if (fileMajor < currentMajor - 1) {
+      qWarning() << "Project file version" << fileVersion
+                 << "is very old. Some features may not load correctly.";
+      // Continue loading but warn user
+    }
+
+    qDebug() << "Loading project file version" << fileVersion
+             << "(current version:" << currentVersion << ")";
+  }
   if (!j.contains("scenes"))
     return false;
   if (!j.contains("currentSceneIndex"))
@@ -841,7 +881,8 @@ QDataStream &operator>>(QDataStream &ds, Project &project) {
   Q_ASSERT(project.m_previousSceneIndex >= -1 &&
            project.m_previousSceneIndex < project.m_scenes.size());
 
-  // TODO fix title
+  // Note: This binary deserialization code is obsolete and replaced by JSON-based
+  // loading (see fromJson method). The title TODO is no longer applicable.
   */
   return ds;
 }

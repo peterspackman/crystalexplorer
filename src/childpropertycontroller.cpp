@@ -517,8 +517,14 @@ void ChildPropertyController::onModelPropertySelectionChanged(
 }
 
 void ChildPropertyController::enableFingerprintButton(bool enable) {
-  // TODO add a tooltip to show why it's not enabled
   showFingerprintButton->setEnabled(enable);
+  if (!enable) {
+    showFingerprintButton->setToolTip(
+      "Fingerprint analysis is only available for Hirshfeld surfaces with both "
+      "d_norm and d_e properties calculated");
+  } else {
+    showFingerprintButton->setToolTip("Show 2D fingerprint plot for this surface");
+  }
 }
 
 // Only called when the property has changed.
