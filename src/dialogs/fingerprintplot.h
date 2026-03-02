@@ -14,7 +14,8 @@ const QString plotTypeLabel =
 // dnormPlot - plots property 3 on x-axis and property 4 on y-axis i.e. dnormi
 // vs dnorme
 
-struct FingerprintPlotSettings {
+struct FingerprintPlotSettings
+{
   QString label{"Standard"};
   double rangeMinimum{0.4};
   double rangeMaximum{2.6};
@@ -24,10 +25,17 @@ struct FingerprintPlotSettings {
   int samplesPerEdge{3};
 };
 
-enum class FingerprintPlotRange { Standard, Translated, Expanded };
+enum class FingerprintPlotRange
+{
+  Standard,
+  Translated,
+  Expanded
+};
 
-inline FingerprintPlotSettings plotRangeSettings(FingerprintPlotRange r) {
-  switch (r) {
+inline FingerprintPlotSettings plotRangeSettings(FingerprintPlotRange r)
+{
+  switch (r)
+  {
 
   case FingerprintPlotRange::Translated:
     return FingerprintPlotSettings{"Translated", 0.8, 3.0, 0.01, 0.2};
@@ -89,7 +97,13 @@ const int AXIS_SCALE_OFFSET = 30;
 const int AXIS_SCALE_TEXT_OFFSET = 2;
 
 // Fingerprint filtering
-enum class FingerprintFilterMode { None, Element, Di, De };
+enum class FingerprintFilterMode
+{
+  None,
+  Element,
+  Di,
+  De
+};
 
 inline const QStringList fingerprintFilterLabels{
     "None",
@@ -98,7 +112,8 @@ inline const QStringList fingerprintFilterLabels{
     "Distance External",
 };
 
-struct FingerprintFilterOptions {
+struct FingerprintFilterOptions
+{
   FingerprintFilterMode filterMode{FingerprintFilterMode::None};
   bool includeReciprocalContacts{false};
   bool filterInsideElement{false};
@@ -118,7 +133,8 @@ inline const QVector<FingerprintFilterMode> requestableFilters{
 
 const QString NO_FINGERPRINT_MESSAGE = "Fingerprint Plot Unavailable";
 
-class FingerprintPlot : public QWidget {
+class FingerprintPlot : public QWidget
+{
   Q_OBJECT
 
 public:
@@ -140,6 +156,8 @@ signals:
 protected:
   void paintEvent(QPaintEvent *);
   void mousePressEvent(QMouseEvent *);
+  void resizeEvent(QResizeEvent *) override;
+  QSize sizeHint() const override;
 
 private:
   void init();
