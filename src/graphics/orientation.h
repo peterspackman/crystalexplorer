@@ -1,6 +1,7 @@
 #pragma once
 #include "json.h"
 #include <QMatrix4x4>
+#include <QQuaternion>
 
 class Orientation {
 public:

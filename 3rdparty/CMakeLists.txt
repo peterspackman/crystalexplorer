@@ -22,7 +22,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME fmt
     GITHUB_REPOSITORY "fmtlib/fmt"
-    GIT_TAG master
+    GIT_TAG "11.0.2"
     EXCLUDE_FROM_ALL YES
 )
 
