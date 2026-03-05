@@ -454,6 +454,18 @@ QImage GLWindow::exportToImage(int scaleFactor, const QColor &background) {
   fbo.release();
 
   QImage result(fbo.toImage());
+  // Render the color bar widget on top of the exported scene image if it exists
+  if (m_colorBar!=NULL && m_colorBar->isVisible()) {
+
+    QPainter painter(&result);
+
+    QPoint pos = m_colorBar->pos() * scaleFactor;
+    painter.translate(pos);
+
+    painter.scale(scaleFactor, scaleFactor);
+
+    m_colorBar->render(&painter);
+  }
   const QColor &color = scene->backgroundColor();
   glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
   glClearDepth(0);
@@ -486,10 +498,23 @@ QImage GLWindow::renderToImage(int scaleFactor, bool for_picking) {
   fbo.release();
 
   QImage result(fbo.toImage());
+
   if (for_picking) {
     const QColor &color = scene->backgroundColor();
     glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF());
     glClearDepth(0);
+  }
+  // Adding colorbar widget to the preview if it exists
+  else if (!for_picking && m_colorBar!=NULL && m_colorBar->isVisible()) {
+
+    QPainter painter(&result);
+
+    QPoint pos = m_colorBar->pos() * scaleFactor;
+
+    painter.translate(pos);
+    painter.scale(scaleFactor, scaleFactor);
+
+    m_colorBar->render(&painter);
   }
   doneCurrent();
   return result;
