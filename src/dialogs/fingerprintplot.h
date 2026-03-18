@@ -140,6 +140,8 @@ signals:
 protected:
   void paintEvent(QPaintEvent *);
   void mousePressEvent(QMouseEvent *);
+  void resizeEvent(QResizeEvent *) override;
+  QSize sizeHint() const override;
 
 private:
   void init();

@@ -22,11 +22,34 @@
 FingerprintPlot::FingerprintPlot(QWidget *parent) : QWidget(parent) { init(); }
 
 void FingerprintPlot::init() {
-  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   m_mesh = nullptr;
   setRange(FingerprintPlotRange::Standard);
 
   resetFilter();
+}
+
+// resize when widget size changes 
+void FingerprintPlot::resizeEvent(QResizeEvent *event)
+{
+  QWidget::resizeEvent(event);
+  if (width() <= 0 || height() <= 0)
+    return;
+  if (m_mesh)
+  {
+    drawFingerprint();
+  }
+  else
+  {
+    drawEmptyFingerprint();
+  }
+  update();
+}
+
+QSize FingerprintPlot::sizeHint() const
+{
+  int side = m_settings.pixelsPerBin * numberOfBins() + leftMargin() + bottomMargin();
+  return QSize(side, side);
 }
 
 void FingerprintPlot::resetFilter() { setFilter({}); }
@@ -109,8 +132,6 @@ void FingerprintPlot::updateFingerprintPlot() {
   } else {
     drawEmptyFingerprint();
   }
-  setFixedSize(plotSize());
-  parentWidget()->adjustSize();
   update();
 }
 
@@ -957,8 +978,8 @@ void FingerprintPlot::drawBins(QPainter *painter) {
         }
         painter->setBrush(QBrush(color, Qt::SolidPattern));
         QPoint pos = t((xOffset + i) * pointRatio, (yOffset + j) * pointRatio);
-        painter->drawRect(pos.x(), pos.y() - (m_settings.pixelsPerBin / 2),
-                          m_settings.pixelsPerBin, m_settings.pixelsPerBin);
+        int binPx = static_cast<int>(std::ceil(pointRatio));
+        painter->drawRect(pos.x(), pos.y() - (binPx / 2), binPx, binPx);
       }
     }
   }
@@ -1017,8 +1038,9 @@ void FingerprintPlot::paintEvent(QPaintEvent *event) {
   Q_UNUSED(event);
 
   QStylePainter painter(this);
-  painter.drawPixmap(0, 0, plotPixmap);
-}
+  int xOffset = (width() - plotPixmap.width()) / 2; // Recenter the plot 
+  int yOffset = (height() - plotPixmap.height()) / 2;
+  painter.drawPixmap(xOffset, yOffset, plotPixmap);}
 
 void FingerprintPlot::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton) {
@@ -1320,14 +1342,16 @@ QRect FingerprintPlot::plotRect() const {
   return QRect(QPoint(0, 0), QSize(plotWidth, plotHeight));
 }
 
-QRect FingerprintPlot::graphRect() const {
-  int graphWidthInPixels = m_settings.pixelsPerBin * numberOfBins();
-  QSize graphSize =
-      QSize(graphWidthInPixels,
-            graphWidthInPixels); // Make the graph height equal to the width
+QRect FingerprintPlot::graphRect() const
+{
+  int fallback = m_settings.pixelsPerBin * numberOfBins();
 
-  return QRect(QPoint(0, 0), graphSize);
-}
+  int available = qMin(
+      width() - AXIS_SCALE_OFFSET, // Chage the size of the Graph
+      height() - AXIS_SCALE_OFFSET);
+
+  int side = (available > 0) ? available : fallback;
+  return QRect(QPoint(0, 0), QSize(side, side));}
 
 QSize FingerprintPlot::graphSize() const { return graphRect().size(); }
 
